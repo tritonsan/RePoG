@@ -1,0 +1,220 @@
+# Campaign Creation Interview
+
+Use this interview when starting a Lite campaign from scratch.
+
+Do not ask every question at once. Ask exactly one question per assistant
+message, then wait for the Designer's answer. Move through Session 0 modules
+in order, explain each question, give short examples, and let the Designer
+answer in natural language.
+
+If the Designer says to use defaults, choose coherent defaults and state the
+assumptions before creating campaign files.
+
+## Question Format
+
+Every interview question should include:
+
+- current module;
+- one decision question;
+- why it matters;
+- 2 to 4 neutral examples or options.
+
+Then stop.
+
+The first question should be only:
+
+> What is the campaign pitch: the universe, tone, and player fantasy you want?
+
+## Session 0 Modules
+
+### 1. Campaign Pitch
+
+Ask for the universe or genre, emotional tone, player fantasy, core play feel,
+and what the campaign should not become.
+
+### 2. Group Contract
+
+Ask about boundaries, content limits, seriousness, humor, violence, moral
+pressure, agency, failure, loss, and how often Codex should clarify before
+acting.
+
+### 3. System Fit
+
+Ask what kind of play the campaign should support: combat, social pressure,
+investigation, survival, travel, intrigue, heist, horror, drama, or a mix.
+Then establish mechanics weight, stats, starting level, and which areas need
+deterministic checks versus GM judgment.
+
+### 4. Canon Policy
+
+For original settings, confirm `original`. For existing settings, ask canon
+closeness, allowed canon elements, timeline or continuity, and whether player
+actions may contradict canon.
+
+### 5. Palette
+
+Ask for Yes / No / Maybe lists: what belongs, what stays out, and what needs
+permission. Include genre cliches, power types, faction styles, visual motifs,
+and storytelling habits.
+
+### 6. World Truths
+
+Ask playable truth categories one at a time as needed:
+
+- society and class;
+- authority and law;
+- economy and resources;
+- travel and communication;
+- technology, magic, powers, or expertise;
+- religion, belief, and taboo;
+- common dangers;
+- history and recent wounds;
+- everyday life;
+- what people are wrong about.
+
+Each truth should include what pressure, opportunity, or constraint it creates
+in play.
+
+### 7. Scale
+
+Ask the initial playable scale: one building, neighborhood, settlement, island,
+region, route, faction web, or larger sandbox. Decide what is onstage for the
+first session and what stays offscreen.
+
+### 8. Current And Impending Issues
+
+Ask for active problems instead of a fixed plot. For each issue, capture what
+is wrong, who benefits, who suffers, what visible sign reaches the player, what
+happens if nobody acts, and what open question makes it playable.
+
+### 9. Factions
+
+Ask only for factions needed by the initial scale. Each faction needs a linked
+issue, public mask, true desire, methods, resources, face, key place, pressure
+tactic, player knowledge boundary, and next move if unopposed.
+
+### 10. Faces And Places
+
+Ask for NPCs and locations as playable handles for issues, factions, and player
+ties. A face/place should represent a pressure, offer a real table interaction,
+want something independently, and hold back unrevealed truth until play earns
+it.
+
+### 11. Progression And Rewards
+
+Ask how often the player should receive upgrade opportunities and which
+closure levels matter: session, scenario, arc, or campaign. Establish whether
+rewards should lean toward power, access, recognition, agency, identity, world
+change, or a mix. Ask how OOC upgrade check-ins should feel and how companion
+or allied NPC advancement should work.
+
+Record durable decisions in `progression.md`. Use `arc_closure.md` later for
+actual closure reviews and chosen upgrades.
+
+### 12. Player Character
+
+Ask these one by one:
+
+- name, alias, and concept;
+- appearance;
+- personality;
+- background;
+- starting level;
+- numeric stats;
+- setting-appropriate special capabilities.
+
+Default stats:
+
+- Power
+- Agility
+- Endurance
+- Technique
+- Perception
+- Wits
+- Presence
+- Will
+
+Scale: 1 to 5.
+
+Starting budgets:
+
+- Beginner: 16 points, recommended max 3.
+- Competent: 20 points, recommended max 4.
+- Advanced: 24 points, recommended max 4.
+- Elite: 28 points, recommended max 5.
+
+For every special capability, capture:
+
+- what it does;
+- its limit;
+- its cost or risk;
+- when it does not help;
+- how it can create story trouble;
+- what can counter it.
+
+The model should derive capability options from the chosen setting.
+
+### 13. PC Integration
+
+Ask how the player character revises the world: linked issues, linked factions,
+faces, places, personal pressure, companion, mentor, rival, enemy, family,
+debt, secret, patron, or backstory limits Codex must not invent.
+
+### 14. Starting Situation / Session 0.5
+
+Ask where the character begins, when and how they arrived, what they know, what
+is visibly happening, what neutral action space exists, what pressure or hook
+is present, and what must not be revealed yet.
+
+### 15. Continuity Rules
+
+Ask what must stay coherent: canon limits, power escalation, NPC knowledge,
+secrecy, creation capture, relationship capture, advancement cadence,
+companion advancement, protected proper nouns, player/PC knowledge, companion
+knowledge, Designer-approval triggers, and distill expectations.
+
+## Storytelling Defaults
+
+Default to natural GM narration:
+
+- no routine "What do you do?" endings;
+- no menu-like choice lists;
+- no opening lore dump;
+- no reveal of GM-only truths before discovery;
+- evidence-bound and fallible NPC inference;
+- living locations before quest clues;
+- gated hard clues;
+- flexible secrets and clues;
+- distinct NPC voices with rotated metaphor families;
+- suspicion is not the default NPC posture;
+- plain speech comes before polished or cryptic speech.
+
+## Output Files
+
+Use the interview to create:
+
+- `session_zero.md`
+- `campaign_one_pager.md`
+- `world.md`
+- `boundaries.md`
+- `system_fit.md`
+- `palette.md`
+- `world_truths.md`
+- `issues.md`
+- `faces_and_places.md`
+- `progression.md`
+- `arc_closure.md`
+- `knowledge_boundaries.md`
+- `storytelling.md`
+- `opening_brief.md`
+- `first_session.md`
+- `player.md`
+- `player_ties.md`
+- `current_state.yaml`
+- `creation_ledger.md`
+- `relationship_map.md`
+- `secrets_and_clues.md`
+- `session_brief.md`
+- `threads.md`
+- `rules.md`
+- character, place, and faction notes as needed.

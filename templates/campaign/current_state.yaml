@@ -1,0 +1,40 @@
+campaign_id: replace_me
+mode: lite
+status: draft
+last_updated: ""
+
+player:
+  name: ""
+  concept: ""
+  level_band: beginner
+  condition: ready
+  current_goal: ""
+  stats:
+    Power: 2
+    Agility: 2
+    Endurance: 2
+    Technique: 2
+    Perception: 2
+    Wits: 2
+    Presence: 2
+    Will: 2
+  capabilities: []
+
+current_scene:
+  title: ""
+  location: ""
+  summary: ""
+  present_npcs: []
+  immediate_pressure: ""
+  open_choices: []
+
+inventory: []
+
+conditions: []
+
+active_clocks: []
+
+active_threats: []
+
+notes_for_next_turn: []
+
