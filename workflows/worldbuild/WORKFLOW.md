@@ -84,6 +84,7 @@ Decide what kind of play the campaign engine should support:
   intrigue, heist, horror, drama, or another mode;
 - mechanics weight: loose, moderate, tactical, or mostly narrative;
 - stat model and starting level;
+- campaign stage and current power band;
 - how special capabilities, expertises, powers, technology, social influence,
   or resources should be treated;
 - what needs deterministic checks versus GM judgment.
@@ -146,6 +147,7 @@ Decide the initial playable scale:
 - how far the first session can reasonably move;
 - what stays offscreen until play expands;
 - how power level and travel speed affect scope.
+- what local, regional, and legendary power bands mean in this world.
 
 Record the durable version in `world.md`, `first_session.md`, and
 `current_state.yaml`.
@@ -178,6 +180,8 @@ For each faction, ask:
 - true desire;
 - methods;
 - resources;
+- faction power band;
+- typical member, specialist, and leader stat ranges;
 - face or representative;
 - key place;
 - pressure tactic;
@@ -199,6 +203,7 @@ important face/place, ask:
 - what the player can actually do with it;
 - what it wants independently of the player's current objective;
 - what clue, offer, cost, obstacle, or temptation can surface there;
+- what stats or difficulties define its important opposition;
 - what should remain unknown until play earns it.
 - which proper names or truths must be protected in `knowledge_boundaries.md`
   until a naming event reveals them.
@@ -465,6 +470,8 @@ answered through player action.
 Every important NPC should have:
 
 - a tier in `creation_ledger.md`;
+- a power band and stats calibrated to campaign stage;
+- clear key capabilities and weak stats or blind spots;
 - a table hook;
 - a default posture;
 - a current mundane agenda;
@@ -496,6 +503,7 @@ Every important location should have:
 - clues that can surface there without being locked there;
 - non-quest affordances;
 - ordinary NPC activity;
+- common obstacles with relevant stats, difficulty, and outcome meanings;
 - at least one issue, faction, face, or player tie it represents;
 - something to inspect, risk, bargain over, overhear, steal, protect, or flee;
 - at least one pressure that can change during play.
@@ -503,6 +511,8 @@ Every important location should have:
 Every faction should have:
 
 - a tier in `creation_ledger.md`;
+- a faction power band;
+- typical member, specialist, and elite/leader stat guidance;
 - a linked issue;
 - a desire;
 - a method;

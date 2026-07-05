@@ -6,6 +6,49 @@ First appeared:
 
 Linked elements:
 
+Power Band:
+
+## Stats
+
+- Power:
+- Agility:
+- Endurance:
+- Technique:
+- Perception:
+- Wits:
+- Presence:
+- Will:
+
+## Key Capabilities
+
+What this character can do better than their raw stats suggest, including
+powers, training, tools, social authority, local knowledge, or resources.
+
+## Weak Stats / Blind Spots
+
+Stats, situations, assumptions, or pressures where this character is notably
+weak, overconfident, inexperienced, or easy to mislead.
+
+## What They Can Reliably Do
+
+Tasks this character should usually succeed at without the GM inventing extra
+friction.
+
+## What They Cannot Do
+
+Things this character should not accomplish without help, leverage, special
+conditions, or growth.
+
+## Growth Ceiling For Current Stage
+
+How far this character can reasonably grow before the campaign stage expands.
+
+## Combat / Social / Influence Positioning
+
+How this character performs in direct violence, social pressure, institutional
+influence, stealth, investigation, or other conflict modes relevant to the
+campaign.
+
 ## Represents
 
 - Issues:

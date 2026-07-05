@@ -6,6 +6,47 @@ First appeared:
 
 Linked elements:
 
+Faction Power Band:
+
+## Faction Capability Profile
+
+- Influence:
+- Resources:
+- Violence:
+- Secrecy:
+- Mobility:
+- Legitimacy:
+- Information:
+
+Use the same 1 to 5 meaning as character stats, but treat these as broad
+organizational capabilities, not one person's attributes.
+
+## Typical Member Stats
+
+- Power:
+- Agility:
+- Endurance:
+- Technique:
+- Perception:
+- Wits:
+- Presence:
+- Will:
+
+## Specialist Stats
+
+What a trained specialist, agent, veteran, or professional representative looks
+like mechanically at the current campaign stage.
+
+## Elite / Leader Stats
+
+What the faction's serious leaders or elite threats can do, and why those stats
+fit the current campaign stage.
+
+## Weak Points And Limits
+
+Where the faction is overextended, blind, vulnerable, slow, arrogant, divided,
+or dependent on specific people or places.
+
 ## Related Issues
 
 Current or impending issues this faction represents, worsens, hides, profits

@@ -73,6 +73,20 @@ Who belongs here, who visits, and who watches.
 
 What can go wrong here.
 
+## Common Obstacles And Difficulties
+
+Use this for recurring or important obstacles in the place.
+
+### Obstacle Name
+
+- Relevant stat:
+- Difficulty: trivial, routine, challenging, hard, or extreme.
+- Why this fits the current campaign stage:
+- Clean success:
+- Partial success:
+- Failure:
+- Bypass, leverage, or alternate approach:
+
 ## Opportunities
 
 What can be found, learned, stolen, protected, negotiated, or misunderstood.

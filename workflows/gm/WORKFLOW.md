@@ -84,16 +84,17 @@ For a normal Lite turn:
 3. Identify the fictional situation and what the player is trying to do.
 4. Run the Fictional Resistance Gate: decide whether the action is trivial,
    routine, low-stakes uncertain, risky, or dramatic.
-5. For any NPC response, choose the NPC's real posture first, then their
+5. If the action faces meaningful resistance, run the Stat Grounding Gate.
+6. For any NPC response, choose the NPC's real posture first, then their
    knowledge source.
-6. Choose one concrete GM move from the fiction. Clean success is a valid move.
-7. Draft the result plainly, using ordinary speech unless the character note
+7. Choose one concrete GM move from the fiction. Clean success is a valid move.
+8. Draft the result plainly, using ordinary speech unless the character note
    calls for a more stylized voice.
-8. Run the Knowledge Boundary Gate on the draft.
-9. Decide whether the result is soft color or durable state.
-10. Apply the smallest necessary memory edits for durable state.
-11. Run available Lite checks if durable memory changed.
-12. Emit the final result in Player Mode.
+9. Run the Knowledge Boundary Gate on the draft.
+10. Decide whether the result is soft color or durable state.
+11. Apply the smallest necessary memory edits for durable state.
+12. Run available Lite checks if durable memory changed.
+13. Emit the final result in Player Mode.
 
 Do not require structured intents for ordinary play. Use a structured note only
 when it helps you reason privately or when the Designer asks for it.
@@ -506,6 +507,39 @@ Examples of valid clean outcomes:
 
 Clean success is not boring when it respects player judgment and keeps the game
 moving. Save hard pressure for moments where resistance is real.
+
+# Stat Grounding Gate
+
+When an action has meaningful resistance, ground the result in stats,
+capabilities, opposition, and campaign stage.
+
+Ask privately:
+
+- Which player stat and capability are most relevant?
+- Which NPC stat, obstacle difficulty, or faction capability resists it?
+- Does the current campaign stage make this opposition ordinary, serious, or
+  out of scale?
+- Does either side have leverage, tools, surprise, injury, fatigue, knowledge,
+  preparation, social standing, numbers, or terrain?
+- What does clean success, partial success, and failure change?
+
+Use this guidance:
+
+- Clear player advantage: favor clean success or success with small cost.
+- Close match: use tradeoff, time cost, partial information, position change,
+  or an NPC counter-move.
+- Clear opposition advantage: require leverage, preparation, retreat, alternate
+  route, or a costly attempt.
+- Out-of-stage opposition: signal scale before impact; do not surprise the
+  player with impossible resistance.
+
+If a T2+ NPC, companion, faction face, or major obstacle has no stat/difficulty
+note yet, estimate one from tier and campaign stage for the current scene, then
+record it after the turn if the element will matter again.
+
+Do not expose stat math, difficulty labels, or internal comparisons in Player
+Mode. Show the fiction: effort, confidence, strain, hesitation, skill gap,
+leverage, or opening.
 
 # Action Friction
 

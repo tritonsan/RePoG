@@ -38,6 +38,62 @@ Default stats:
 
 Campaigns may rename tiers to match the setting. Keep the numeric limits clear.
 
+## Stat Use And Opposition Model
+
+Stats are not only for the player. Use the same 1 to 5 scale for T2+ NPCs,
+companions, major antagonists, important faction faces, and significant
+obstacles.
+
+Use stats as fictional capability anchors:
+
+- 1: usually fails without help, leverage, time, or favorable conditions.
+- 2: handles ordinary pressure but struggles against specialists.
+- 3: reliable professional capability.
+- 4: exceptional local or regional capability.
+- 5: elite, defining, or campaign-stage-significant capability.
+
+When an action faces resistance, identify:
+
+- the player's relevant stat and capability;
+- the opposition stat, obstacle difficulty, or faction capability;
+- any leverage, preparation, tools, knowledge, injury, exhaustion, surprise, or
+  positional advantage;
+- what clean success, partial success, and failure mean in the fiction.
+
+Do not let special capabilities erase stats. A special capability changes what
+is possible and which stat matters, but it still has limits, counters, and
+fictional requirements.
+
+## Campaign Stage And Power Bands
+
+Calibrate stats to the current campaign stage. In a long campaign, early
+ordinary NPCs should not be built like endgame threats.
+
+Default bands:
+
+- Incidental: most stats 1 to 2; rarely one 3.
+- Local professional: one main stat 3; supporting stats 1 to 2.
+- Local elite / serious obstacle: one main stat 4; clear weak areas remain.
+- Regional threat: several 3 to 4 stats; rarely one 5.
+- Legendary / endgame: 5 only when the campaign stage supports it.
+
+Companions can have future potential, but their current stats should fit the
+present stage. Growth should be recorded through advancement, not assumed at
+creation.
+
+## Obstacle Difficulty
+
+Important obstacles should have a difficulty note:
+
+- Trivial: should pass unless something unusual interferes.
+- Routine: succeeds with fitting stat/capability or enough time.
+- Challenging: requires a relevant strength, preparation, leverage, or risk.
+- Hard: requires strong stat/capability plus leverage or a costly approach.
+- Extreme: beyond current stage unless the player finds a major advantage.
+
+Record which stat applies, why the difficulty fits this campaign stage, and
+what each outcome changes.
+
 ## Special Capabilities
 
 Special capabilities are setting-specific. They may be powers, expertises,

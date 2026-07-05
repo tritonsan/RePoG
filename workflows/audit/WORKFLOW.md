@@ -60,7 +60,17 @@ Check:
 - T2+ ledger entries have matching notes under `characters/`, `places/`, or
   `factions/`;
 - T2+ NPC notes include table hook, default posture, mundane agenda, plain
-  speech sample, and key info separated from personality;
+  speech sample, stat block, power band, weak stats/blind spots, and key info
+  separated from personality;
+- companion notes include stats, key capabilities, weak stats, and current
+  growth ceiling;
+- major obstacles have relevant stat, difficulty, and clean/partial/failure
+  outcome notes;
+- important factions include faction power band plus typical member,
+  specialist, and elite/leader stat guidance;
+- early-stage campaigns do not overfill ordinary NPCs with 4 or 5 stats;
+- player outcomes generally respect player stat strengths, weak stats,
+  capabilities, and known opposition;
 - T2+ NPCs are not all suspicious, cryptic, testing, or polished in the same
   way;
 - character notes do not hide important clues only inside personality prose;

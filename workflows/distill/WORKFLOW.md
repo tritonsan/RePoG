@@ -63,10 +63,12 @@ Update the smallest necessary files:
   arc;
 - update `threads.md` for resolved, escalated, or newly opened threads;
 - update character notes for attitude, posture, mundane agenda, ordinary speech
-  sample, useful voice, secrets, injuries, debts, promises, or changed leverage;
+  sample, useful voice, stats, capabilities, blind spots, secrets, injuries,
+  debts, promises, or changed leverage;
 - update place notes for damage, rumors, new dangers, changed access, local
-  routine, disruption, or reaction point;
-- update faction notes for visible moves or hidden pressure;
+  routine, disruption, reaction point, or obstacle difficulty;
+- update faction notes for visible moves, hidden pressure, or changed faction
+  capability;
 - update `current_state.yaml` for immediate next-session state;
 - update `opening_brief.md` as `post_arc_opening` when the next session needs a
   fresh opening bridge.
@@ -176,6 +178,21 @@ At the end of a session or arc, review recurring NPCs:
   busy, warm, indifferent, practical, afraid, greedy, official, or helpful.
 - If a key clue was buried inside personality prose, move it into
   `secrets_and_clues.md` or the NPC's `Key Info, If Any`.
+
+# Stat And Difficulty Review
+
+At the end of a session or arc, review stat grounding:
+
+- If a T1 NPC became T2, add a stat block, power band, key capabilities, and
+  weak stats or blind spots.
+- If a companion meaningfully participated, verify their stats and current
+  growth ceiling still fit the campaign stage.
+- If an obstacle became important, add relevant stat, difficulty, and outcome
+  meanings to the place note or rules.
+- If fiction showed an NPC or faction to be stronger or weaker than written,
+  update the note instead of letting future play drift.
+- If too many early-stage NPCs have 4 or 5 stats, lower ordinary characters or
+  explain why they are exceptional.
 
 # Next Session Brief
 
