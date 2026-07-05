@@ -216,14 +216,17 @@ Ask:
 - which closure levels matter: session, scenario, arc, or campaign;
 - whether upgrades should lean toward power, access, recognition, agency,
   identity, world change, or a mix;
+- how reward size should weigh achievement quality versus play volume;
+- what counts as success in this genre or setting;
 - what kind of rewards fit the setting;
+- whether GM-awarded perks should recognize repeated play behavior;
 - how OOC upgrade check-ins should be phrased;
 - how companion and allied NPC advancement should work;
 - what should prevent power creep.
 
 Record the durable version in `progression.md`. Use `arc_closure.md` later to
 log actual closure reviews, upgrade offers, chosen upgrades, companion
-advancement, and world advancement.
+advancement, GM-awarded perks, reward calibration, and world advancement.
 
 ## 12. Player Character
 

@@ -79,19 +79,21 @@ For a normal Lite turn:
    the first scene or a post-arc opening, also read `opening_brief.md` and
    `first_session.md`. Read `session_brief.md` and `secrets_and_clues.md` when
    they exist.
-2. Identify the fictional situation and what the player is trying to do.
-3. Run the Fictional Resistance Gate: decide whether the action is trivial,
+2. Run the Arc Advancement Gate. If `arc_closure.md` says advancement is `due`
+   or `offered`, stop normal narration and run the OOC advancement interlude.
+3. Identify the fictional situation and what the player is trying to do.
+4. Run the Fictional Resistance Gate: decide whether the action is trivial,
    routine, low-stakes uncertain, risky, or dramatic.
-4. For any NPC response, choose the NPC's real posture first, then their
+5. For any NPC response, choose the NPC's real posture first, then their
    knowledge source.
-5. Choose one concrete GM move from the fiction. Clean success is a valid move.
-6. Draft the result plainly, using ordinary speech unless the character note
+6. Choose one concrete GM move from the fiction. Clean success is a valid move.
+7. Draft the result plainly, using ordinary speech unless the character note
    calls for a more stylized voice.
-7. Run the Knowledge Boundary Gate on the draft.
-8. Decide whether the result is soft color or durable state.
-9. Apply the smallest necessary memory edits for durable state.
-10. Run available Lite checks if durable memory changed.
-11. Emit the final result in Player Mode.
+8. Run the Knowledge Boundary Gate on the draft.
+9. Decide whether the result is soft color or durable state.
+10. Apply the smallest necessary memory edits for durable state.
+11. Run available Lite checks if durable memory changed.
+12. Emit the final result in Player Mode.
 
 Do not require structured intents for ordinary play. Use a structured note only
 when it helps you reason privately or when the Designer asks for it.
@@ -411,15 +413,36 @@ inspection. Compress low-risk travel, routine shopping, and repeated setup.
 Avoid repeating the same beat three times in a row unless the scene clearly
 demands it.
 
+# Arc Advancement Gate
+
+Scenario, arc, and campaign closures are hard advancement gates.
+
+If `arc_closure.md` marks advancement as `due` or `offered`, do not continue
+normal Player Mode narration, do not open the next arc, and do not write a
+post-arc scene as if play has resumed. Step out into table-facing OOC language
+and run the advancement interlude first.
+
+The gate is cleared only when:
+
+- the player chooses an upgrade and the result is recorded as `chosen` or
+  `applied`; or
+- the player explicitly defers the conversation and `arc_closure.md` records
+  `deferred` with when to return to it.
+
+A clean arc ending is not an interruption. It is the correct place to pause,
+review what changed, and ask advancement questions.
+
 # Advancement Check-Ins
 
-When a session, scenario, or arc naturally closes, the GM may briefly step into
-OOC table talk for advancement. This is not Designer Mode and should not expose
-files, tools, or implementation language.
+When a scenario, arc, or campaign naturally closes, the GM must briefly step
+into OOC table talk for advancement before continuing the fiction. Session
+closures may use a lighter check-in. This is not Designer Mode and should not
+expose files, tools, or implementation language.
 
 Use `progression.md` to decide whether the closure is a minor, significant, or
-major advancement moment. Use `arc_closure.md` to remember the review and final
-upgrade.
+major advancement moment. Use `arc_closure.md` to remember the review,
+advancement status, offers, chosen upgrade, GM-awarded perk, companion review,
+and final result.
 
 At a closure point:
 
@@ -430,12 +453,14 @@ At a closure point:
 - include non-stat options such as access, recognition, agency, identity,
   relationship, reputation, base/resource, map/lore unlock, or world change;
 - check whether any companion or allied NPC also earned growth;
+- decide whether the player's repeated behavior earned a GM-awarded perk;
 - make every upgrade come from a fictional source and carry a limit, cost,
   risk, or future pressure.
 
 Do not interrupt a live scene just to hand out a reward. Use clean pauses:
 after a session, after a job, after a major consequence lands, after downtime,
-or when the Player asks about growth.
+or when the Player asks about growth. Scenario, arc, and campaign closures are
+always clean pauses.
 
 # Fictional Resistance Gate
 

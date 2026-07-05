@@ -39,6 +39,12 @@ Check:
   learned;
 - advancement rewards are tied to player actions and fiction sources, not
   arbitrary gifts;
+- scenario, arc, or campaign closures have an advancement status of `due`,
+  `offered`, `chosen`, `deferred`, or `applied`;
+- normal fiction does not continue past a `due` or `offered` advancement gate;
+- reward budget is driven by achievement quality first and play volume second;
+- GM-awarded perks are fiction-derived, limited, and not exchangeable for a
+  different reward;
 - major arc closure changes world state, access, reputation, faction status, or
   identity in addition to raw character power;
 - companion or allied NPC advancement is considered when an NPC meaningfully

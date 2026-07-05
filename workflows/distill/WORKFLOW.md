@@ -99,18 +99,28 @@ this review before finalizing memory:
    faction_shift, moral_choice, sacrifice, personal_goal, world_change,
    resource_gain, failure_with_consequence, companion_bond,
    reputation_change, or base_or_access_gain.
-3. Identify the player's motivation signals: power, tactics, story, roleplay,
+3. Estimate play volume: short, medium, long, or saga.
+4. Evaluate achievement quality: minor, moderate, major, or transformative.
+5. Set reward budget from achievement quality first and play volume second:
+   low, standard, high, or exceptional.
+6. Identify the player's motivation signals: power, tactics, story, roleplay,
    exploration, social, collection, or mastery.
-4. Build 2 to 3 reward options from the fiction.
-5. Include non-stat rewards: access, recognition, agency, identity,
+7. Build 2 to 3 reward options from the fiction.
+8. Include non-stat rewards: access, recognition, agency, identity,
    relationship, reputation, base/resource, lore/map unlock, or world change.
-6. Check companion or allied NPC advancement eligibility.
-7. Bind each reward to a fiction source, cost, limit, risk, and future
+9. Check companion or allied NPC advancement eligibility.
+10. Decide whether repeated player behavior earned a GM-awarded perk.
+11. Bind each reward and perk to a fiction source, cost, limit, risk, and future
    pressure.
-8. Record the review and final chosen upgrade in `arc_closure.md`.
+12. Record the review and advancement status in `arc_closure.md`.
 
 Major arc closure should usually change both character capability and world
 state. Do not reduce every reward to a stat increase.
+
+For scenario, arc, and campaign closures, set `Advancement status` to `due`
+unless the OOC advancement interlude has already been offered. A post-arc
+opening may be drafted, but the GM must not play it while advancement is `due`
+or `offered`.
 
 # Memory Hygiene
 
