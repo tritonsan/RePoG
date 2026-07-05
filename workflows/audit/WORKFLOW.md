@@ -46,6 +46,8 @@ Check:
 - `current_state.yaml` is readable and small;
 - `storytelling.md` exists and defines option prompting, reveal policy, and
   pacing defaults;
+- `storytelling.md` defines challenge density, routine competence, clean
+  success, consequence severity, and breather scene preferences;
 - `opening_brief.md` exists and gives location, arrival context, player-known
   context, neutral action space, and hidden information boundaries;
 - `creation_ledger.md` contains every T1+ named NPC, location, and faction;
@@ -82,6 +84,8 @@ Check:
 - player-facing examples do not overuse cryptic, aphoristic, or market-style
   dialogue;
 - ordinary NPCs have ordinary needs and speech when the scene calls for it;
+- low-risk competent actions are not routinely turned into tests,
+  complications, suspicion, or hard consequences;
 - the opening or next scene gives the player something actionable.
 
 # When Tools Exist

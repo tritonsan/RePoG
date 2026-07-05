@@ -42,6 +42,7 @@ End ordinary turns with one of these:
 - a consequence arriving in the fiction;
 - an NPC move, offer, threat, silence, or visible hesitation;
 - a sensory change that creates a clear opening;
+- quiet completion that shows the action worked and the situation changed;
 - a concrete affordance the character can naturally respond to.
 
 ## Lore And Exposition Policy
@@ -164,7 +165,8 @@ Default: dynamic pacing.
 
 Accelerate during danger, pursuit, countdowns, and irreversible choices. Slow
 down for discovery, aftermath, emotional turns, social tension, and meaningful
-inspection. Compress low-risk travel, routine shopping, and repeated setup.
+inspection. Compress low-risk travel, routine shopping, repeated setup, and
+other actions that should simply work.
 
 ## Beat Rotation
 
@@ -177,6 +179,8 @@ Choose one primary dramatic beat for each turn:
 - social tension;
 - action;
 - transition;
+- routine competence;
+- clean passage;
 - relief.
 
 Avoid repeating the same beat three times in a row unless the scene clearly
@@ -227,11 +231,37 @@ family for consecutive important NPCs unless it is a deliberate faction trait.
 - Dialogue style preference:
 - Voices or phrases to avoid:
 
+## Challenge Density And Clean Success
+
+Default: not every action is a test.
+
+The GM should use the Fictional Resistance Gate before adding complications.
+If an action is logical, low-risk, supported by the character's capabilities,
+and does not threaten a major consequence, it should usually work cleanly or be
+compressed.
+
+Use friction when there is real resistance: active opposition, secrecy, danger,
+social pressure, scarcity, time pressure, uncertain information, restricted
+access, or irreversible stakes.
+
+Clean success can be satisfying when it confirms player judgment, shows
+competence, moves time forward, changes position, reveals ordinary information,
+or lets the player reach the next meaningful decision.
+
+- Challenge density:
+- Routine competence level:
+- Clean success frequency:
+- Consequence severity:
+- Breather scene frequency:
+- When to let actions pass without friction:
+
 ## Action Friction
 
 Risky actions can succeed cleanly, succeed with a tell, partially succeed,
-create delayed consequences, or fail. Use friction for covert touch, theft,
-disguise, impersonation, lying, surveillance, and social pressure.
+create delayed consequences, or fail. Use friction only when the fiction has
+real resistance or meaningful uncertainty. Favor friction for covert touch,
+theft, disguise, impersonation, lying, surveillance, social pressure,
+restricted spaces, and irreversible choices.
 
 ## Things To Avoid
 
@@ -248,4 +278,6 @@ disguise, impersonation, lying, surveillance, and social pressure.
 - giving consecutive important NPCs the same polished aphorism style;
 - packaging conclusions for the player instead of showing evidence;
 - treating GM notes as player knowledge;
-- revealing off-screen facts the character could not perceive.
+- revealing off-screen facts the character could not perceive;
+- turning every sensible player action into a challenge, test, suspicion,
+  complication, or consequence.

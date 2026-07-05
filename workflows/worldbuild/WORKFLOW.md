@@ -354,6 +354,10 @@ group contract, system fit, and continuity modules:
 - how much local noise, unrelated activity, or false leads the campaign wants;
 - how varied or stylized important NPC voices should be;
 - which metaphor families, stock phrases, or narrator habits should be avoided;
+- how dense challenges should be, and when routine competence should simply
+  pass;
+- how often clean success, quiet passage, or breather scenes should appear;
+- how severe consequences should be when real resistance exists;
 - pacing preference: fast, slow, dynamic, action-heavy, social-heavy, or mixed;
 - what information must stay hidden until the player discovers it.
 
@@ -372,6 +376,10 @@ Default storytelling stance:
 - store discoveries in `secrets_and_clues.md` so they can surface through
   multiple channels;
 - give important NPCs distinct voices and rotate metaphor families;
+- let competent, low-risk, logical actions succeed cleanly instead of inventing
+  friction;
+- reserve hard complications for real resistance, meaningful uncertainty, or
+  irreversible stakes;
 - vary pacing and dramatic beat instead of repeating the same rhythm.
 
 # From-Scratch Campaign Procedure
