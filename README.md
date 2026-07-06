@@ -1,164 +1,184 @@
-# RePoG
+# RePoG: A GM Workspace For Agentic Coding Tools
 
-RePoG is a Codex-first tabletop RPG workspace.
+RePoG turns an agentic coding workspace into a long-form tabletop RPG Game
+Master.
 
-It is designed to be opened in OpenAI Codex and used as a natural-language Game
-Master system with durable Markdown memory. For now, RePoG is not a standalone
-app, web service, Discord bot, VTT plugin, or general RPG engine. The intended
-runtime is Codex.
+You bring the character, the world idea, and the choices. Your coding agent
+uses this repository as its notebook: it builds the campaign with you, remembers
+NPCs and places, tracks secrets and relationships, prepares new arcs, and keeps
+the game moving in natural language.
 
-## What RePoG Does
+RePoG is currently shaped and tested for OpenAI Codex-style repo workflows, but
+the idea is broader: any agentic coding tool that can read and edit a folder of
+Markdown files can use the same structure.
 
-RePoG helps Codex run an RPG campaign by giving it:
+## What You Can Do With RePoG
 
-- repo-local instructions in `AGENTS.md`;
-- GM, worldbuilding, distill, and audit workflows;
-- a campaign memory template made of readable Markdown files;
-- lightweight Python checks for campaign shape, snapshots, and player-facing
-  leakage;
-- guardrails for NPC knowledge, hidden information, storytelling pace,
-  progression, companion growth, and relationship tracking.
+- Start a fresh RPG campaign from any genre or universe.
+- Build a world through a guided Session 0 interview.
+- Play in natural language instead of commands or menus.
+- Keep NPCs, companions, factions, locations, items, secrets, and relationships
+  from being forgotten.
+- Let the GM hide information until the character actually discovers it.
+- Track character growth, companion growth, rewards, and major arc closures.
+- Prepare the next act from what happened before, instead of starting each arc
+  from a blank slate.
+- Use web or source research during worldbuilding when canon, history, physics,
+  culture, or genre logic matters.
 
-The goal is a table-like RPG flow: the player talks naturally, Codex plays the
-world naturally, and the notes stay organized enough for long-running play.
+The goal is simple: a campaign that feels like sitting with a GM, while the
+agent quietly keeps a very good notebook.
 
-## What Is Included
+## How It Feels In Play
+
+You write what your character does:
 
 ```text
-RePoG/
-  AGENTS.md
-  README.md
-  START_HERE.md
-  briefs/
-  workflows/
-    gm/
-    worldbuild/
-    distill/
-    audit/
-  templates/
-    campaign/
-  campaigns/
-  tools/
+I keep my smile, lower my voice, and ask the dock clerk who paid him to delay
+the cargo.
 ```
 
-No setting-specific campaign is included. RePoG is universe-neutral by default.
+The agent answers as the GM:
 
-## Requirements
+```text
+The clerk's pen stops moving. For a moment he keeps his eyes on the ledger, as
+if the numbers might protect him. Then he closes the book with two fingers and
+says, "If I answer that, I need to know you're not about to make my day worse."
+```
 
-- OpenAI Codex.
-- Python 3.10 or newer for the optional local helper tools.
+Behind the scenes, RePoG helps the agent remember what the clerk knows, what
+the player has discovered, what should stay hidden, and what consequences may
+return later. The player should not have to see that machinery during normal
+play.
 
-The helper tools use only Python's standard library.
+## Quick Start
 
-## Use RePoG In Your Codex
-
-1. Download or clone this repository.
+1. Download or clone the repository.
 
    ```bash
-   git clone <your-repog-repo-url> RePoG
+   git clone <repo-url> RePoG
    ```
 
-2. Open the `RePoG` folder in Codex.
+2. Open the `RePoG` folder in your agentic coding tool.
 
-3. Start a new thread in that folder.
+3. Start a new thread or session in that folder.
 
-4. Ask Codex to create a campaign. Example:
+4. Paste this prompt:
 
    ```text
    Create a new RePoG campaign from scratch.
-   Use the full modular Session 0 interview.
-   Ask exactly one question at a time and wait for my answer.
-   Keep the campaign setting-neutral until I choose a universe.
+   Guide me through Session 0 one question at a time.
+   Keep the setting open until I choose a universe, genre, and tone.
+   If the world needs canon, historical, real-world, scientific, or genre
+   research, make a short research dossier before locking the world rules.
+   When the campaign is ready, create the campaign folder, check it, take a
+   starting snapshot, and begin with a natural opening scene.
    ```
 
-5. Codex should read:
+5. Answer the questions. When the setup is finished, play by writing your
+   character's actions in ordinary language.
 
-   - `AGENTS.md`
-   - `workflows/worldbuild/WORKFLOW.md`
-   - `briefs/campaign_creation_interview.md`
+## What RePoG Tracks
 
-6. Codex should ask the Session 0 questions one by one, then create a campaign
-   folder under `campaigns/<campaign_id>/`.
+RePoG gives the agent a campaign memory structure for:
 
-7. When campaign files are created, run:
+- the campaign promise and tone;
+- world rules, canon policy, and source research;
+- the player character's stats, abilities, limits, and risks;
+- NPCs, companions, factions, and locations;
+- who knows what, including hidden facts and protected names;
+- secrets and clues that can surface in different ways;
+- relationships, debts, promises, reputation, and consequences;
+- items, conditions, threats, and active threads;
+- rewards, upgrades, companion growth, and arc closure;
+- next-act preparation after a major arc ends.
 
-   ```bash
-   python tools/check_state.py campaigns/<campaign_id>
-   ```
+The files are readable Markdown, so you can inspect or edit them when you want.
+During play, the agent should keep them out of the narration.
 
-8. Before play starts, ask Codex to draft the opening scene and scan it:
+## What RePoG Is Not
 
-   ```bash
-   python tools/check_player_facing.py --text "<opening scene>"
-   ```
+RePoG is not a standalone game app.
 
-9. Create a starting snapshot:
+It is also not a virtual tabletop, Discord bot, dice engine, ruleset clone, or
+prewritten campaign. It is a structured campaign workspace for an AI coding
+agent acting as GM.
 
-   ```bash
-   python tools/snapshot.py campaigns/<campaign_id> --label start
-   ```
+You can play fantasy, sci-fi, crime, horror, political intrigue, anime-inspired
+adventure, historical drama, or a completely original setting. The repository
+does not ship with a fixed world.
 
-10. Begin play. In normal play, the player can write actions in natural
-    language. Codex should use `workflows/gm/WORKFLOW.md`.
+## What's Next For RePoG
 
-## Session 0 Modules
+The current version focuses on the campaign notebook and GM behavior. The next
+useful improvements are:
 
-RePoG creates campaigns through a modular Session 0 interview:
+- better first-run examples for different genres;
+- more sample campaigns that do not depend on any specific IP;
+- clearer prompts for non-Codex agentic tools;
+- image generation and image use for agentic tools that support visual
+  workflows, such as character portraits, location moodboards, maps, clues,
+  items, and faction symbols;
+- optional dice and challenge helpers, only where they improve play;
+- stronger audit tools for continuity, hidden knowledge, and arc transitions;
+- improved guidance for publishing and sharing campaign templates.
 
-1. Campaign Pitch.
-2. Group Contract.
-3. System Fit.
-4. Canon Policy.
-5. Palette.
-6. World Truths.
-7. Scale.
-8. Current And Impending Issues.
-9. Factions.
-10. Faces And Places.
-11. Progression And Rewards.
-12. Player Character.
-13. PC Integration.
-14. Starting Situation / Session 0.5.
-15. Continuity Rules.
+The guiding rule is: add structure only when it helps the game feel more
+natural, coherent, and alive.
 
-Codex should ask one question at a time. The world should begin as a playable
-core, not a complete encyclopedia.
+<details>
+<summary>For Agentic Tool Users</summary>
 
-## Campaign Memory
+RePoG works best when the agent can:
 
-A campaign folder is built from the template in `templates/campaign/`.
+- read repository instructions;
+- edit Markdown and YAML files;
+- run small Python helper scripts;
+- keep a long-running conversation grounded in the campaign folder.
 
-Important files include:
+For OpenAI Codex, the main instruction file is `AGENTS.md`. Other agentic coding
+tools can adapt the same files by reading the repository-local instructions and
+following the workflows under `workflows/`.
 
-- `world.md`: summary campaign bible.
-- `campaign_one_pager.md`: player-facing campaign promise.
-- `storytelling.md`: narration style, pacing, exposition, and reveal policy.
-- `knowledge_boundaries.md`: who knows what; protected names; safe wording.
-- `opening_brief.md`: first or post-arc opening source.
-- `player.md`: player character.
-- `player_ties.md`: character-linked world details.
-- `creation_ledger.md`: compact record of named NPCs, places, and factions.
-- `relationship_map.md`: compact edge-list relationship map.
-- `secrets_and_clues.md`: flexible clues and discoveries.
-- `progression.md`: rewards, milestones, companion advancement.
-- `arc_closure.md`: closure reviews and upgrade decisions.
-- `current_state.yaml`: small structured campaign state.
+Recommended startup files:
 
-## Normal Play
+1. `AGENTS.md`
+2. `workflows/worldbuild/WORKFLOW.md`
+3. `briefs/campaign_creation_interview.md`
 
-When the player writes an action, Codex should:
+</details>
 
-1. Read the relevant campaign memory.
-2. Check what the player character, companions, NPCs, and factions actually
-   know.
-3. Respond in Player Mode with only living fiction.
-4. Update the smallest necessary memory files if the fiction changed.
-5. Run helper checks when durable memory changed.
+<details>
+<summary>Campaign Folder Shape</summary>
 
-Player-facing narration must not expose file names, YAML, Markdown structure,
-tool calls, prompts, internal notes, or implementation language.
+A campaign folder is created under `campaigns/<campaign_id>/`.
 
-## Helper Tools
+Important memory files include:
+
+- `campaign_one_pager.md`: the campaign promise.
+- `research_dossier.md`: source research, canon, realism, and world logic.
+- `world.md`: the compact campaign bible.
+- `player.md`: the player character.
+- `player_ties.md`: how the character changes the world.
+- `storytelling.md`: narration and reveal preferences.
+- `knowledge_boundaries.md`: who knows what.
+- `creation_ledger.md`: named NPCs, places, and factions.
+- `relationship_map.md`: compact relationship links.
+- `secrets_and_clues.md`: flexible discoveries.
+- `progression.md`: rewards and advancement expectations.
+- `arc_closure.md`: milestone and upgrade reviews.
+- `next_act_prep.md`: what carries forward into the next major act.
+- `opening_brief.md`: the next opening scene source.
+- `current_state.yaml`: small structured state for checks.
+
+The full template lives in `templates/campaign/`.
+
+</details>
+
+<details>
+<summary>Optional Helper Tools</summary>
+
+The helper tools use Python's standard library.
 
 Check campaign shape:
 
@@ -166,7 +186,7 @@ Check campaign shape:
 python tools/check_state.py campaigns/<campaign_id>
 ```
 
-Scan player-facing text:
+Scan player-facing text for technical leakage:
 
 ```bash
 python tools/check_player_facing.py --text "You step into the rain."
@@ -178,16 +198,37 @@ Create a reversible snapshot:
 python tools/snapshot.py campaigns/<campaign_id> --label before_scene
 ```
 
-## Design Philosophy
+These tools are optional guardrails. The main experience is still the agent
+reading and writing campaign notes.
 
-RePoG is intentionally small.
+</details>
 
-Use Markdown instructions and campaign memory before adding code. Add new tools
-only when repeated play proves that a deterministic check protects immersion,
-continuity, or safety.
+<details>
+<summary>Session 0 Modules</summary>
 
-If a feature makes play feel like operating software instead of sitting with a
-GM, challenge it before adding more machinery.
+RePoG creates campaigns through a guided Session 0:
+
+1. Campaign Pitch
+2. Research Need Gate
+3. Group Contract
+4. System Fit
+5. Canon Policy
+6. Palette
+7. World Truths
+8. Scale
+9. Current And Impending Issues
+10. Factions
+11. Faces And Places
+12. Progression And Rewards
+13. Player Character
+14. PC Integration
+15. Starting Situation / Session 0.5
+16. Continuity Rules
+
+The agent should ask one question at a time. The world should begin as a
+playable core, not a complete encyclopedia.
+
+</details>
 
 ## License
 

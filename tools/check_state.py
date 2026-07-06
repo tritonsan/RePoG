@@ -11,6 +11,8 @@ from pathlib import Path
 
 REQUIRED_FILES = [
     "world.md",
+    "research_dossier.md",
+    "next_act_prep.md",
     "boundaries.md",
     "storytelling.md",
     "knowledge_boundaries.md",

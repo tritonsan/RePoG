@@ -7,6 +7,7 @@ module files:
 
 - `session_zero.md`
 - `campaign_one_pager.md`
+- `research_dossier.md`
 - `system_fit.md`
 - `palette.md`
 - `world_truths.md`
@@ -14,6 +15,7 @@ module files:
 - `faces_and_places.md`
 - `progression.md`
 - `arc_closure.md`
+- `next_act_prep.md`
 - `knowledge_boundaries.md`
 - `player_ties.md`
 - `opening_brief.md`
@@ -65,7 +67,8 @@ Starting tier and what that means in the setting.
 For original settings, write `original`. For existing settings, describe how
 close the campaign is to canon and what canon elements may appear.
 
-See `palette.md` and `boundaries.md` for exact Yes / No / Maybe limits.
+See `research_dossier.md`, `palette.md`, and `boundaries.md` for source scope,
+canon/realism policy, and exact Yes / No / Maybe limits.
 
 ## Setting-Specific Power And Expertise Model
 

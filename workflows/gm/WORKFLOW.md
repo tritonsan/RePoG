@@ -73,28 +73,33 @@ sample player-facing narration.
 For a normal Lite turn:
 
 1. Read the active campaign's relevant memory, including `world.md`,
-   `boundaries.md`, `system_fit.md`, `palette.md`, `world_truths.md`,
-   `issues.md`, `faces_and_places.md`, `progression.md`, `arc_closure.md`, and
-   `knowledge_boundaries.md` when present, and `storytelling.md`. If this is
+   `boundaries.md`, `research_dossier.md`, `system_fit.md`, `palette.md`,
+   `world_truths.md`, `issues.md`, `faces_and_places.md`, `progression.md`,
+   `arc_closure.md`, `next_act_prep.md`, and `knowledge_boundaries.md` when
+   present, and `storytelling.md`. If this is
    the first scene or a post-arc opening, also read `opening_brief.md` and
    `first_session.md`. Read `session_brief.md` and `secrets_and_clues.md` when
    they exist.
 2. Run the Arc Advancement Gate. If `arc_closure.md` says advancement is `due`
    or `offered`, stop normal narration and run the OOC advancement interlude.
-3. Identify the fictional situation and what the player is trying to do.
-4. Run the Fictional Resistance Gate: decide whether the action is trivial,
+3. Run the Next Act Prep Gate if a scenario, arc, or campaign just closed or a
+   post-arc opening is about to begin.
+4. Identify the fictional situation and what the player is trying to do.
+5. Run the Fictional Resistance Gate: decide whether the action is trivial,
    routine, low-stakes uncertain, risky, or dramatic.
-5. If the action faces meaningful resistance, run the Stat Grounding Gate.
-6. For any NPC response, choose the NPC's real posture first, then their
+6. If the action faces meaningful resistance, run the Stat Grounding Gate.
+7. For any NPC response, choose the NPC's real posture first, then their
    knowledge source.
-7. Choose one concrete GM move from the fiction. Clean success is a valid move.
-8. Draft the result plainly, using ordinary speech unless the character note
+8. Choose one concrete GM move from the fiction. Clean success is a valid move.
+9. Draft the result plainly, using ordinary speech unless the character note
    calls for a more stylized voice.
-9. Run the Knowledge Boundary Gate on the draft.
-10. Decide whether the result is soft color or durable state.
-11. Apply the smallest necessary memory edits for durable state.
-12. Run available Lite checks if durable memory changed.
-13. Emit the final result in Player Mode.
+10. Run the Knowledge Boundary Gate on the draft.
+11. Run the Source Consistency Gate if the turn touches canon, realism,
+    physical rules, power limits, institutions, or major world logic.
+12. Decide whether the result is soft color or durable state.
+13. Apply the smallest necessary memory edits for durable state.
+14. Run available Lite checks if durable memory changed.
+15. Emit the final result in Player Mode.
 
 Do not require structured intents for ordinary play. Use a structured note only
 when it helps you reason privately or when the Designer asks for it.
@@ -184,6 +189,21 @@ A naming event can be:
 If the player uses a hidden name OOC, do not automatically make it PC-known.
 Ask briefly whether they mean it as table talk, or answer without confirming it
 inside the fiction.
+
+# Source Consistency Gate
+
+Before making a durable world fact, check `research_dossier.md` when the fact
+touches canon, realism, physics, magic, technology, social structure, power
+limits, institutions, travel, medicine, economics, or source-specific rules.
+
+If the dossier says research is `needed_pending` or `unavailable`, keep new
+facts conservative and local. Do not make uncertain source assumptions central
+to the campaign. If the answer matters, ask the Designer in Designer Mode or
+mark it as an open Session 0/source question.
+
+If a proposed fact conflicts with the dossier, revise it or ask for a Designer
+ruling before making it durable. Player Mode should never expose this source
+check; show only the corrected fiction.
 
 # NPC Knowledge Protocol
 
@@ -432,6 +452,27 @@ The gate is cleared only when:
 
 A clean arc ending is not an interruption. It is the correct place to pause,
 review what changed, and ask advancement questions.
+
+# Next Act Prep Gate
+
+After a scenario, arc, or campaign closure, do not open the next major act from
+raw improvisation.
+
+Before a post-arc opening or new act begins:
+
+- `arc_closure.md` must not have advancement status `due` or `offered`;
+- `next_act_prep.md` must classify carry-forward elements from prior play;
+- required next-act questions in `next_act_prep.md` must be answered,
+  defaulted, or intentionally deferred;
+- `opening_brief.md` must be updated from `next_act_prep.md` as a
+  `post_arc_opening`;
+- the new opening must respect active NPCs, companions, items, conditions,
+  factions, secrets, promises, debts, injuries, resources, reputation, and
+  unresolved pressures carried from previous acts.
+
+If `next_act_prep.md` is still `needed` or `drafting`, pause in table-facing
+OOC language and ask the next required act-framing question. Do not continue
+normal Player Mode fiction until the next-act frame is ready.
 
 # Advancement Check-Ins
 

@@ -8,6 +8,7 @@ Keep each module short, current, and useful at the table.
 ## Module Status
 
 - Campaign Pitch: open
+- Research Need Gate: open
 - Group Contract: open
 - System Fit: open
 - Canon Policy: open
@@ -38,7 +39,17 @@ Status terms:
 - Core play feel:
 - This campaign is not:
 
-## 2. Group Contract
+## 2. Research Need Gate
+
+See `research_dossier.md`.
+
+- Research mode:
+- Research status:
+- Web search decision:
+- Source scope:
+- Open source questions:
+
+## 3. Group Contract
 
 - Content boundaries:
 - Tone boundaries:
@@ -46,7 +57,7 @@ Status terms:
 - Failure and consequence appetite:
 - Clarification preference:
 
-## 3. System Fit
+## 4. System Fit
 
 - Dominant play modes:
 - Mechanics weight:
@@ -55,7 +66,7 @@ Status terms:
 - Deterministic checks:
 - GM judgment zones:
 
-## 4. Canon Policy
+## 5. Canon Policy
 
 - Canon status:
 - Allowed canon elements:
@@ -63,57 +74,58 @@ Status terms:
 - Player action versus canon:
 - Ask before durable:
 
-## 5. Palette
+## 6. Palette
 
 See `palette.md`.
 
-## 6. World Truths
+## 7. World Truths
 
 See `world_truths.md`.
 
-## 7. Scale
+## 8. Scale
 
 - Initial playable scale:
 - First-session onstage area:
 - Offscreen until later:
 - Power/travel implications:
 
-## 8. Current And Impending Issues
+## 9. Current And Impending Issues
 
 See `issues.md`.
 
-## 9. Factions
+## 10. Factions
 
 - Initial faction scope:
 - Factions created:
 - Factions deferred:
 
-## 10. Faces And Places
+## 11. Faces And Places
 
 See `faces_and_places.md`.
 
-## 11. Progression And Rewards
+## 12. Progression And Rewards
 
-See `progression.md` and `arc_closure.md`.
+See `progression.md`, `arc_closure.md`, and `next_act_prep.md`.
 
-## 12. Player Character
+## 13. Player Character
 
 See `player.md`.
 
-## 13. PC Integration
+## 14. PC Integration
 
 See `player_ties.md`.
 
-## 14. Starting Situation / Session 0.5
+## 15. Starting Situation / Session 0.5
 
 See `opening_brief.md` and `first_session.md`.
 
-## 15. Continuity Rules
+## 16. Continuity Rules
 
 - Creation capture:
 - Relationship capture:
 - Secret and clue handling:
 - Knowledge boundaries:
+- Research/source boundaries:
 - NPC knowledge limits:
 - Power escalation limits:
 - Progression and reward cadence:

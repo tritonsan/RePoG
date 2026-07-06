@@ -15,6 +15,14 @@ narrative fact is schema-normalized.
 Check:
 
 - `session_zero.md` exists and tracks the Session 0 module decisions;
+- `research_dossier.md` exists and records research status, mode, source scope,
+  canon/realism policy, hard boundaries, and open source questions;
+- existing canon and specific real-world campaigns do not lock major world
+  truths, powers, institutions, or factions while research is still
+  `needed_pending` unless the Designer explicitly accepted that risk;
+- fully original campaigns do not import external canon through research; they
+  use adjacent research only as grounding and keep unresolved rules as
+  Designer questions;
 - `campaign_one_pager.md` is player-safe and does not reveal GM-only secrets;
 - `system_fit.md` explains the expected play activity mix and mechanics
   weight;
@@ -30,6 +38,11 @@ Check:
   check-ins, reward pool, balance checks, and companion advancement;
 - `arc_closure.md`, when used, records closure reviews and chosen upgrades
   without becoming a transcript;
+- `next_act_prep.md` exists and, after scenario/arc/campaign closure, carries
+  forward active NPCs, companions, factions, locations, items, conditions,
+  secrets, relationships, resources, and unresolved pressures;
+- a post-arc opening is not drafted from scratch while `next_act_prep.md` is
+  still `needed` or `drafting`;
 - `knowledge_boundaries.md` separates GM-only truth, player/PC knowledge,
   companion knowledge, NPC/faction knowledge, protected names, safe wording,
   and reveal triggers;

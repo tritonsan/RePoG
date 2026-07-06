@@ -101,6 +101,7 @@ A campaign should use this shape:
 campaigns/<campaign_id>/
   session_zero.md
   campaign_one_pager.md
+  research_dossier.md
   world.md
   boundaries.md
   system_fit.md
@@ -110,6 +111,7 @@ campaigns/<campaign_id>/
   faces_and_places.md
   progression.md
   arc_closure.md
+  next_act_prep.md
   knowledge_boundaries.md
   storytelling.md
   opening_brief.md
@@ -136,6 +138,9 @@ The memory model is intentionally small:
   creation.
 - `campaign_one_pager.md` is the compact player-facing campaign promise and
   table alignment page.
+- `research_dossier.md` records source research status, source scope, canon or
+  realism assumptions, hard boundaries, world logic, and open Session 0
+  questions for settings that need outside grounding.
 - `world.md` is the summary campaign bible, not a full encyclopedia.
 - `boundaries.md` defines canon limits, tone, safety, and behavior constraints.
 - `system_fit.md` explains what kind of play the structure should support.
@@ -149,6 +154,8 @@ The memory model is intentionally small:
   advancement.
 - `arc_closure.md` records closure reviews, upgrade offers, chosen upgrades,
   companion advancement, and world advancement.
+- `next_act_prep.md` carries forward active elements from closed scenarios,
+  arcs, or campaigns before a new major act opens.
 - `knowledge_boundaries.md` separates GM-only truth, player/PC knowledge,
   companion knowledge, NPC/faction knowledge, protected names, safe wording,
   and reveal triggers.
@@ -185,25 +192,33 @@ default. Read `workflows/worldbuild/WORKFLOW.md` and run the repo-local
 modular Session 0 interview:
 
 1. Campaign Pitch.
-2. Group Contract.
-3. System Fit.
-4. Canon Policy.
-5. Palette.
-6. World Truths.
-7. Scale.
-8. Current And Impending Issues.
-9. Factions.
-10. Faces And Places.
-11. Progression And Rewards.
-12. Player Character.
-13. PC Integration.
-14. Starting Situation / Session 0.5.
-15. Continuity Rules.
+2. Research Need Gate.
+3. Group Contract.
+4. System Fit.
+5. Canon Policy.
+6. Palette.
+7. World Truths.
+8. Scale.
+9. Current And Impending Issues.
+10. Factions.
+11. Faces And Places.
+12. Progression And Rewards.
+13. Player Character.
+14. PC Integration.
+15. Starting Situation / Session 0.5.
+16. Continuity Rules.
 
 The interview is setting-neutral. Codex must first understand the chosen
 universe, genre, storytelling preferences, power and expertise model, and canon
 level, then derive character capabilities, issues, factions, faces, places,
 progression cadence, reward types, and player ties from that setting.
+
+During Session 0, decide whether web research, user-provided sources, adjacent
+genre research, or no outside research is needed. Existing canon settings and
+specific real-world settings should usually get a `research_dossier.md` before
+durable world truths, power rules, factions, or major NPCs are locked. Fully
+original worlds should use research only for adjacent grounding and should ask
+the Designer when new world rules cannot be resolved from the pitch.
 
 During campaign creation, ask exactly one interview question per assistant
 message and wait for the Designer's answer. Do not list all worldbuilding
@@ -256,8 +271,9 @@ For a play turn:
 
 1. Identify the active campaign.
 2. Read `current_state.yaml`, `world.md`, `boundaries.md`, `system_fit.md`,
-   `palette.md`, `world_truths.md`, `issues.md`, `faces_and_places.md`,
-   `progression.md`, `arc_closure.md`, `knowledge_boundaries.md`,
+   `research_dossier.md`, `palette.md`, `world_truths.md`, `issues.md`,
+   `faces_and_places.md`, `progression.md`, `arc_closure.md`,
+   `next_act_prep.md`, `knowledge_boundaries.md`,
    `storytelling.md`, `opening_brief.md` when opening or bridging a scene,
    `creation_ledger.md`, `relationship_map.md`, `secrets_and_clues.md`,
    `session_brief.md` and `first_session.md` when present, `threads.md`,

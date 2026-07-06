@@ -1,37 +1,29 @@
 # Start Here
 
-Open this folder in Codex and start a new thread.
+Open this folder in your agentic coding tool and start a new thread or session.
 
-Ask Codex to start a campaign with the full modular Session 0 interview.
-
-Example prompt:
+Paste this:
 
 ```text
 Create a new RePoG campaign from scratch.
-Use the full modular Session 0 interview.
-Ask exactly one question per message and wait for my answer.
-Keep the campaign setting-neutral until I choose a universe.
-When the campaign is ready, create the campaign folder, run the checks, take a
-starting snapshot, and begin from the opening scene.
+Guide me through Session 0 one question at a time.
+Keep the setting open until I choose a universe, genre, and tone.
+If the world needs canon, historical, real-world, scientific, or genre
+research, make a short research dossier before locking the world rules.
+When the campaign is ready, create the campaign folder, check it, take a
+starting snapshot, and begin with a natural opening scene.
 ```
 
-Codex should read:
+Then answer the questions naturally.
+
+You do not need to understand the folder structure before playing. RePoG is
+designed so the agent handles the notebook while you focus on the character,
+the world, and the choices.
+
+For OpenAI Codex, the agent should read:
 
 1. `AGENTS.md`
 2. `workflows/worldbuild/WORKFLOW.md`
 3. `briefs/campaign_creation_interview.md`
 
-After the campaign folder exists, run:
-
-```bash
-python tools/check_state.py campaigns/<campaign_id>
-python tools/snapshot.py campaigns/<campaign_id> --label start
-```
-
-Before showing the first scene to the player, scan the draft:
-
-```bash
-python tools/check_player_facing.py --text "<opening scene>"
-```
-
-Then play in natural language.
+After setup, play in natural language.

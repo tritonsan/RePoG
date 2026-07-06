@@ -16,6 +16,8 @@ Read:
 - `session_log.md`;
 - `current_state.yaml`;
 - `world.md`;
+- `research_dossier.md`, when source scope, canon, realism, or world logic was
+  tested;
 - `system_fit.md`, when the play activity mix or mechanics assumptions changed;
 - `palette.md`, when a tone/canon boundary was tested;
 - `world_truths.md`, when play established or contradicted a durable truth;
@@ -23,6 +25,8 @@ Read:
 - `faces_and_places.md`;
 - `progression.md`;
 - `arc_closure.md`;
+- `next_act_prep.md`, when preparing or carrying forward a scenario, arc, or
+  campaign closure;
 - `knowledge_boundaries.md`;
 - `creation_ledger.md`;
 - `relationship_map.md`;
@@ -45,10 +49,15 @@ Update the smallest necessary files:
 - update `faces_and_places.md` when an issue gained or lost a useful NPC/place
   handle;
 - update `world_truths.md` only when play establishes a durable setting truth;
+- update `research_dossier.md` when source scope, canon/realism assumptions,
+  source uncertainty, or open research questions changed;
 - update `palette.md` only when the Designer explicitly changes a Yes / No /
   Maybe boundary;
 - update `arc_closure.md` when a beat, session, scenario, arc, or campaign
   closure is reviewed;
+- update `next_act_prep.md` after scenario, arc, or campaign closure to carry
+  forward active NPCs, companions, factions, locations, items, conditions,
+  secrets, relationships, resources, and unresolved pressures;
 - update `progression.md` only when the campaign's advancement cadence or
   reward philosophy changes;
 - update `creation_ledger.md` for new, promoted, dormant, or resolved elements;
@@ -124,6 +133,37 @@ unless the OOC advancement interlude has already been offered. A post-arc
 opening may be drafted, but the GM must not play it while advancement is `due`
 or `offered`.
 
+# Carry-Forward Review
+
+After a scenario, arc, or campaign closure, prepare the next act before play
+continues.
+
+Read `creation_ledger.md`, `threads.md`, `relationship_map.md`,
+`knowledge_boundaries.md`, `current_state.yaml`, relevant character/place/
+faction notes, inventory, conditions, and recent `session_log.md` entries.
+
+Classify each important element:
+
+- `active`: should still affect the next act;
+- `resolved`: completed, with only historical consequence remaining;
+- `dormant`: not pressing now, but can return later;
+- `transformed`: changed role, allegiance, state, location, or meaning;
+- `unknown`: outcome is uncertain and should not be assumed;
+- `must_return`: should appear or visibly pressure the next act;
+- `hold_for_later`: important but should not enter the next act yet.
+
+Write the result to `next_act_prep.md`. Include NPCs, companions, factions,
+locations, items, conditions, injuries, debts, promises, identities, reputation,
+resources, secrets, clues, and unresolved consequences that the Player may
+remember or that the world should remember.
+
+If the next act requires Designer decisions, write concise questions in
+`next_act_prep.md` instead of silently choosing the whole new frame.
+
+Use `next_act_prep.md` to update `opening_brief.md` as `post_arc_opening` only
+after the advancement gate is cleared and the required next-act questions are
+answered or defaulted.
+
 # Memory Hygiene
 
 Keep old facts only if they still matter. Mark resolved threads clearly. Do not
@@ -150,6 +190,22 @@ At the end of a session or arc, review every important discovery:
 
 Update `knowledge_boundaries.md` before the next play turn. If only evidence
 was found, record safe wording and do not mark the proper noun as revealed.
+
+# Source Consistency Distill
+
+At the end of a session or arc, review whether play introduced or pressured a
+source-sensitive fact:
+
+- canon or continuity assumptions;
+- real-world place, period, law, profession, culture, or institution;
+- physical, metaphysical, magic, technology, travel, medicine, or economic
+  rules;
+- power scale or capability limits;
+- genre expectations that should become a durable boundary.
+
+If the fact is established and compatible with `research_dossier.md`, summarize
+it in the smallest relevant file. If it conflicts or remains uncertain, record
+an open question in `research_dossier.md` instead of silently normalizing it.
 
 # Creation Promotion Check
 

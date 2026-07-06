@@ -64,7 +64,38 @@ Define the campaign in one strong paragraph:
 
 The pitch should be short enough to fit in `campaign_one_pager.md`.
 
-## 2. Group Contract
+## 2. Research Need Gate
+
+Decide whether the campaign needs source research before durable worldbuilding.
+
+Ask:
+
+- whether the campaign uses an existing canon, real-world specificity,
+  user-supplied homebrew, genre-adjacent inspiration, or a fully original world;
+- whether web search should be used now, deferred, skipped, or replaced by
+  Designer-provided sources;
+- what source scope matters: canon rules, physical rules, social structure,
+  history, technology, power limits, genre conventions, or factual realism;
+- what unresolved world rules should be asked as Session 0 questions instead
+  of silently invented.
+
+Defaults:
+
+- Existing canon worlds: recommend web search and create a sourced dossier
+  before Canon Policy, World Truths, factions, powers, or major NPCs are locked.
+- Real-world-specific games: research the relevant place, period, profession,
+  law, culture, crime, technology, or institution when specificity matters.
+- Fully original worlds: do not import canon; optionally research adjacent
+  genres, real-world analogues, science, culture, economy, or ecology only to
+  make the original rules more coherent.
+- User-supplied homebrew: treat the Designer's material as authoritative and
+  ask before using outside references.
+
+Record the durable version in `research_dossier.md`. If web search is not
+available, set `research_status: unavailable` and write conservative
+assumptions plus open questions.
+
+## 3. Group Contract
 
 Set table expectations before lore:
 
@@ -76,7 +107,7 @@ Set table expectations before lore:
 
 Record the durable version in `boundaries.md` and `session_zero.md`.
 
-## 3. System Fit
+## 4. System Fit
 
 Decide what kind of play the campaign engine should support:
 
@@ -91,7 +122,7 @@ Decide what kind of play the campaign engine should support:
 
 Record the durable version in `system_fit.md` and summarize it in `rules.md`.
 
-## 4. Canon Policy
+## 5. Canon Policy
 
 For original settings, write `original`.
 
@@ -103,9 +134,10 @@ For existing settings, decide:
 - whether player actions may contradict canon;
 - what must be asked before becoming durable.
 
-Record the durable version in `boundaries.md`, `palette.md`, and `world.md`.
+Record the durable version in `research_dossier.md`, `boundaries.md`,
+`palette.md`, and `world.md`.
 
-## 5. Palette
+## 6. Palette
 
 Use a clear Yes / No / Maybe palette to prevent tonal drift.
 
@@ -113,9 +145,11 @@ Ask what belongs in the campaign, what should stay out, and what is possible
 only with permission. Include genre cliches, content types, power types,
 faction styles, visual motifs, and storytelling habits.
 
-Record the durable version in `palette.md`.
+Record the durable version in `palette.md`. Use `research_dossier.md` to keep
+source-breaking assumptions, realism errors, and genre mismatches out of the
+Yes list.
 
-## 6. World Truths
+## 7. World Truths
 
 Build the setting from playable truths, not encyclopedia entries.
 
@@ -136,9 +170,10 @@ Each truth should include a game implication: what pressure, opportunity, or
 constraint it creates at the table.
 
 Record the durable version in `world_truths.md` and summarize key items in
-`world.md`.
+`world.md`. Do not lock a truth that conflicts with `research_dossier.md`
+unless the Designer explicitly changes the campaign's source or realism policy.
 
-## 7. Scale
+## 8. Scale
 
 Decide the initial playable scale:
 
@@ -152,7 +187,7 @@ Decide the initial playable scale:
 Record the durable version in `world.md`, `first_session.md`, and
 `current_state.yaml`.
 
-## 8. Current And Impending Issues
+## 9. Current And Impending Issues
 
 Create active problems instead of a fixed plot.
 
@@ -169,7 +204,7 @@ player ignores them. For each issue, record:
 Record the durable version in `issues.md`, `threads.md`, and
 `secrets_and_clues.md` when discoveries are involved.
 
-## 9. Factions
+## 10. Factions
 
 Create only the factions needed for the first playable scale.
 
@@ -191,7 +226,7 @@ For each faction, ask:
 Record factions in `factions/*.md`, `creation_ledger.md`, and
 `relationship_map.md`.
 
-## 10. Faces And Places
+## 11. Faces And Places
 
 Give issues and factions playable handles.
 
@@ -211,7 +246,7 @@ important face/place, ask:
 Record the index in `faces_and_places.md`, and use `characters/*.md` and
 `places/*.md` for durable notes.
 
-## 11. Progression And Rewards
+## 12. Progression And Rewards
 
 Decide how the campaign keeps growth alive.
 
@@ -233,7 +268,7 @@ Record the durable version in `progression.md`. Use `arc_closure.md` later to
 log actual closure reviews, upgrade offers, chosen upgrades, companion
 advancement, GM-awarded perks, reward calibration, and world advancement.
 
-## 12. Player Character
+## 13. Player Character
 
 Ask these one by one:
 
@@ -280,7 +315,7 @@ For every special capability, record:
 
 Do not force setting-specific examples. Derive choices from the world.
 
-## 13. PC Integration
+## 14. PC Integration
 
 Revise the world after the player character exists.
 
@@ -301,7 +336,7 @@ trouble.
 Record the durable version in `player_ties.md`, `relationship_map.md`, and
 `threads.md`.
 
-## 14. Starting Situation / Session 0.5
+## 15. Starting Situation / Session 0.5
 
 Build the first playable situation, not a railroad.
 
@@ -321,11 +356,12 @@ antagonist plan, faction map, or hidden truth.
 
 Record the durable version in `opening_brief.md` and `first_session.md`.
 
-## 15. Continuity Rules
+## 16. Continuity Rules
 
 Decide what must stay coherent during play:
 
 - canon limits;
+- research dossier status and open source questions;
 - power escalation limits;
 - NPC knowledge limits;
 - secrecy and reveal policy;
@@ -337,7 +373,8 @@ Decide what must stay coherent during play:
 - how GM-only facts, protected proper nouns, player/PC knowledge, companion
   knowledge, and NPC/faction knowledge are tracked.
 
-Record the durable version in `rules.md`, `storytelling.md`, `creation_ledger.md`
+Record the durable version in `rules.md`, `storytelling.md`,
+`research_dossier.md`, `creation_ledger.md`
 rules, `relationship_map.md` format notes, `progression.md`,
 `knowledge_boundaries.md`, and `session_zero.md`.
 
@@ -398,10 +435,11 @@ When starting a new Lite campaign from scratch:
 2. Copy `templates/campaign/` to `campaigns/<campaign_id>/`.
 3. Run the Session 0 module pipeline, or state chosen defaults.
 4. Fill `session_zero.md` as the module index and decision log.
-5. Fill the module files: `campaign_one_pager.md`, `system_fit.md`,
-   `palette.md`, `world_truths.md`, `issues.md`, `faces_and_places.md`,
-   `progression.md`, `arc_closure.md`, `knowledge_boundaries.md`, `world.md`,
-   `boundaries.md`, `storytelling.md`, and `rules.md`.
+5. Fill the module files: `campaign_one_pager.md`, `research_dossier.md`,
+   `system_fit.md`, `palette.md`, `world_truths.md`, `issues.md`,
+   `faces_and_places.md`, `progression.md`, `arc_closure.md`,
+   `next_act_prep.md`, `knowledge_boundaries.md`, `world.md`, `boundaries.md`,
+   `storytelling.md`, and `rules.md`.
 6. Create the player files: `player.md`, `player_ties.md`, and
    `current_state.yaml`.
 7. Create only enough NPCs, places, factions, threads, and flexible clues to
@@ -423,6 +461,7 @@ Create or revise these files:
 
 - `session_zero.md`
 - `campaign_one_pager.md`
+- `research_dossier.md`
 - `world.md`
 - `boundaries.md`
 - `system_fit.md`
@@ -432,6 +471,7 @@ Create or revise these files:
 - `faces_and_places.md`
 - `progression.md`
 - `arc_closure.md`
+- `next_act_prep.md`
 - `knowledge_boundaries.md`
 - `storytelling.md`
 - `opening_brief.md`
@@ -457,6 +497,7 @@ Prefer playable content over encyclopedia content.
 Worlds should start with a playable core:
 
 - campaign promise;
+- research status, source scope, and open source questions;
 - 3 to 7 durable truths;
 - 2 to 4 current or impending issues;
 - a small faction web only as large as the first playable scale needs;
