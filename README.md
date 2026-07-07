@@ -1,37 +1,84 @@
 # RePoG: A GM Workspace For Agentic Coding Tools
 
-RePoG turns an agentic coding workspace into a long-form tabletop RPG Game
-Master.
+RePoG turns an agentic coding workspace into a long-form solo tabletop RPG
+Game Master.
 
-You bring the character, the world idea, and the choices. Your coding agent
-uses this repository as its notebook: it builds the campaign with you, remembers
-NPCs and places, tracks secrets and relationships, prepares new arcs, and keeps
-the game moving in natural language.
+You bring the character, the world idea, and the choices. Your agent uses this
+folder as its campaign notebook: it builds the world with you, remembers NPCs
+and places, tracks secrets and relationships, prepares new arcs, and keeps the
+game moving in natural language.
 
-RePoG is currently shaped and tested for OpenAI Codex-style repo workflows, but
-the idea is broader: any agentic coding tool that can read and edit a folder of
-Markdown files can use the same structure.
+RePoG is designed and tested around OpenAI Codex-style repo workflows, but the
+pattern is broader: any agentic coding tool that can read instructions, edit
+Markdown files, and run small helper scripts can adapt it.
 
-## What You Can Do With RePoG
+## Why This Matters
 
-- Start a fresh RPG campaign from any genre or universe.
-- Build a world through a guided Session 0 interview.
-- Play in natural language instead of commands or menus.
-- Keep NPCs, companions, factions, locations, items, secrets, and relationships
-  from being forgotten.
-- Let the GM hide information until the character actually discovers it.
-- Track character growth, companion growth, rewards, and major arc closures.
-- Prepare the next act from what happened before, instead of starting each arc
-  from a blank slate.
-- Use web or source research during worldbuilding when canon, history, physics,
-  culture, or genre logic matters.
+Long AI roleplay sessions often break in familiar ways:
+
+- the model forgets NPCs, locations, debts, clues, and old decisions;
+- NPCs accidentally know secrets the player character never revealed;
+- every scene starts to feel like the same funnel toward the same clue;
+- major arc endings happen without proper rewards, upgrades, or follow-through;
+- the next session starts from vibes instead of durable campaign memory.
+
+RePoG treats those problems as workspace problems. The campaign lives in files:
+world notes, knowledge boundaries, creation ledgers, relationship maps,
+progression reviews, snapshots, and lightweight checks. The GM can still
+improvise, but important facts have somewhere to live.
 
 The goal is simple: a campaign that feels like sitting with a GM, while the
 agent quietly keeps a very good notebook.
 
+## What You Can Do
+
+- Start a fresh RPG campaign from any genre or universe.
+- Build the world through a guided Session 0 interview.
+- Play in ordinary natural language instead of commands or menus.
+- Keep NPCs, companions, factions, locations, items, secrets, and relationships
+  from being forgotten.
+- Separate GM-only truth from what the player, companions, NPCs, and factions
+  actually know.
+- Track character growth, companion growth, rewards, and major arc closures.
+- Carry old NPCs, items, debts, threads, and consequences into the next act.
+- Use optional source or web research when canon, history, physics, culture, or
+  genre logic matters.
+- Extend the workspace toward visual references when your agentic tool supports
+  image generation or image display.
+
+## Quick Start
+
+1. Clone the repository.
+
+   ```bash
+   git clone https://github.com/tritonsan/RePoG.git
+   cd RePoG
+   ```
+
+2. Open the `RePoG` folder in your agentic coding tool.
+
+3. Start a new thread or session in that folder.
+
+4. Paste this prompt:
+
+   ```text
+   Create a new RePoG campaign from scratch.
+   Guide me through Session 0 one question at a time.
+   Keep the setting open until I choose a universe, genre, and tone.
+   If the world needs canon, historical, real-world, scientific, or genre
+   research, make a short research dossier before locking the world rules.
+   When the campaign is ready, create the campaign folder, check it, take a
+   starting snapshot, and begin with a natural opening scene.
+   ```
+
+5. Answer the questions naturally. When setup is finished, play by writing what
+   your character does.
+
+For a shorter first step, open [`START_HERE.md`](START_HERE.md).
+
 ## How It Feels In Play
 
-You write what your character does:
+You write:
 
 ```text
 I keep my smile, lower my voice, and ask the dock clerk who paid him to delay
@@ -51,34 +98,53 @@ the player has discovered, what should stay hidden, and what consequences may
 return later. The player should not have to see that machinery during normal
 play.
 
-## Quick Start
+## Why Codex Is A Good Fit
 
-1. Download or clone the repository.
+RePoG is a strong fit for Codex because Codex already works inside a repo:
 
-   ```bash
-   git clone <repo-url> RePoG
-   ```
+- `AGENTS.md` gives durable project instructions.
+- `workflows/` tells the agent how to run worldbuilding, play, distill, and
+  audit tasks.
+- `templates/` gives every new campaign the same memory shape.
+- `tools/` provides small checks for campaign state, player-facing leakage, and
+  snapshots.
+- Markdown memory lets Codex revise the world as play continues instead of
+  relying only on chat history.
 
-2. Open the `RePoG` folder in your agentic coding tool.
+Read the longer rationale in [`docs/why-codex.md`](docs/why-codex.md).
 
-3. Start a new thread or session in that folder.
+## Examples
 
-4. Paste this prompt:
+Starter examples are intentionally generic and non-IP:
 
-   ```text
-   Create a new RePoG campaign from scratch.
-   Guide me through Session 0 one question at a time.
-   Keep the setting open until I choose a universe, genre, and tone.
-   If the world needs canon, historical, real-world, scientific, or genre
-   research, make a short research dossier before locking the world rules.
-   When the campaign is ready, create the campaign folder, check it, take a
-   starting snapshot, and begin with a natural opening scene.
-   ```
+- [`examples/fantasy-frontier`](examples/fantasy-frontier/)
+- [`examples/orbital-noir`](examples/orbital-noir/)
+- [`examples/historical-intrigue`](examples/historical-intrigue/)
 
-5. Answer the questions. When the setup is finished, play by writing your
-   character's actions in ordinary language.
+They are not full campaigns. They show the kind of pitch, Session 0 answers,
+world notes, player seed, and first scene brief RePoG expects.
 
-## What RePoG Tracks
+## Project Status
+
+RePoG is early, playable, and actively evolving. The current focus is the Lite
+workspace: Markdown memory, natural GM behavior, Session 0 worldbuilding,
+continuity, progression, and lightweight checks.
+
+See:
+
+- [`docs/roadmap.md`](docs/roadmap.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
+- [`CONTRIBUTING.md`](CONTRIBUTING.md)
+
+## What RePoG Is Not
+
+RePoG is not a standalone game app, virtual tabletop, Discord bot, dice engine,
+ruleset clone, or prewritten campaign.
+
+It is a structured campaign workspace for an AI coding agent acting as GM.
+
+<details>
+<summary>What RePoG Tracks</summary>
 
 RePoG gives the agent a campaign memory structure for:
 
@@ -96,35 +162,7 @@ RePoG gives the agent a campaign memory structure for:
 The files are readable Markdown, so you can inspect or edit them when you want.
 During play, the agent should keep them out of the narration.
 
-## What RePoG Is Not
-
-RePoG is not a standalone game app.
-
-It is also not a virtual tabletop, Discord bot, dice engine, ruleset clone, or
-prewritten campaign. It is a structured campaign workspace for an AI coding
-agent acting as GM.
-
-You can play fantasy, sci-fi, crime, horror, political intrigue, anime-inspired
-adventure, historical drama, or a completely original setting. The repository
-does not ship with a fixed world.
-
-## What's Next For RePoG
-
-The current version focuses on the campaign notebook and GM behavior. The next
-useful improvements are:
-
-- better first-run examples for different genres;
-- more sample campaigns that do not depend on any specific IP;
-- clearer prompts for non-Codex agentic tools;
-- image generation and image use for agentic tools that support visual
-  workflows, such as character portraits, location moodboards, maps, clues,
-  items, and faction symbols;
-- optional dice and challenge helpers, only where they improve play;
-- stronger audit tools for continuity, hidden knowledge, and arc transitions;
-- improved guidance for publishing and sharing campaign templates.
-
-The guiding rule is: add structure only when it helps the game feel more
-natural, coherent, and alive.
+</details>
 
 <details>
 <summary>For Agentic Tool Users</summary>
@@ -232,4 +270,4 @@ playable core, not a complete encyclopedia.
 
 ## License
 
-RePoG is licensed under the Apache License, Version 2.0. See `LICENSE`.
+RePoG is licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
