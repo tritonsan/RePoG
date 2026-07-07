@@ -46,6 +46,7 @@ RePoG is a useful Codex example because it combines several Codex strengths:
 - running local checks before and after changes;
 - extending the same workspace pattern toward images or other assets when the
   agentic tool supports them;
+- previewing a local player dashboard through the same file-backed workflow;
 - turning a folder of plain files into a specialized interactive environment.
 
 The result is not just a game. It is a demonstration of how agentic coding tools

@@ -20,6 +20,8 @@ Read:
   tested;
 - `system_fit.md`, when the play activity mix or mechanics assumptions changed;
 - `palette.md`, when a tone/canon boundary was tested;
+- `appearance_guide.md`, when appearance detail rules, visual continuity, or
+  image-readiness changed;
 - `world_truths.md`, when play established or contradicted a durable truth;
 - `issues.md`;
 - `faces_and_places.md`;
@@ -37,6 +39,7 @@ Read:
 - relevant `places/*.md`;
 - relevant `factions/*.md`;
 - `opening_brief.md` when preparing a next-scene or post-arc opening;
+- `dashboard/dashboard_state.json` when the campaign uses a local dashboard;
 - `rules.md` if rulings changed.
 
 # Distill Outputs
@@ -53,6 +56,8 @@ Update the smallest necessary files:
   source uncertainty, or open research questions changed;
 - update `palette.md` only when the Designer explicitly changes a Yes / No /
   Maybe boundary;
+- update `appearance_guide.md` only when the campaign changes appearance
+  detail level, visual continuity rules, or appearance boundaries;
 - update `arc_closure.md` when a beat, session, scenario, arc, or campaign
   closure is reviewed;
 - update `next_act_prep.md` after scenario, arc, or campaign closure to carry
@@ -72,15 +77,19 @@ Update the smallest necessary files:
   arc;
 - update `threads.md` for resolved, escalated, or newly opened threads;
 - update character notes for attitude, posture, mundane agenda, ordinary speech
-  sample, useful voice, stats, capabilities, blind spots, secrets, injuries,
-  debts, promises, or changed leverage;
+  sample, useful voice, appearance changes, stable visual details, stats,
+  capabilities, blind spots, secrets, injuries, debts, promises, or changed
+  leverage;
 - update place notes for damage, rumors, new dangers, changed access, local
-  routine, disruption, reaction point, or obstacle difficulty;
+  routine, disruption, reaction point, spatial/visual changes, or obstacle
+  difficulty;
 - update faction notes for visible moves, hidden pressure, or changed faction
-  capability;
+  capability or visual identity;
 - update `current_state.yaml` for immediate next-session state;
 - update `opening_brief.md` as `post_arc_opening` when the next session needs a
   fresh opening bridge.
+- update `dashboard/dashboard_state.json` when player-known scene, thread,
+  clue, inventory, NPC, map, visual, or character information changed.
 
 # Summary Shape
 
@@ -99,6 +108,25 @@ A good Lite distill captures:
 
 Avoid summaries that read like command logs. Prefer dramatic consequence over
 mechanical bookkeeping.
+
+# Appearance Continuity Review
+
+At the end of a session or arc, review whether recurring elements need better
+appearance memory:
+
+- T1 named characters or places that the Player noticed should gain a compact
+  first-glance read before they are forgotten.
+- T2+ characters should have stable silhouette, clothing/gear, marks, sensory
+  tell, mannerism, changeable details, and do-not-change notes.
+- T2+ places should have exterior/approach, primary area, landmarks, key props,
+  atmosphere, texture/wear, hidden visual facts, and changeable details.
+- T2+ factions should have a public visual identity and hidden visual facts
+  separated.
+- Accepted images should update text appearance notes only for details the
+  Player accepted as canon.
+
+Do not bloat notes. Add the smallest appearance detail that preserves future
+continuity and useful staging.
 
 # Closure And Advancement Review
 
@@ -261,6 +289,17 @@ next session would benefit from a light prep page. Keep it short:
 - secrets/clues that might surface;
 - useful NPCs with posture and mundane agenda;
 - live locations.
+
+# Dashboard Distill
+
+If the campaign uses a local dashboard, refresh it after distillation.
+
+The dashboard should show only stable, player-known information that remains
+useful for the next scene or session. Remove stale visible NPCs, resolved
+threads that no longer matter, and draft visuals that were not accepted.
+
+Do not use the dashboard to preserve GM-only truth. Keep hidden facts in
+campaign memory and knowledge boundaries until play reveals them.
 
 # Post-Arc Opening Brief
 

@@ -43,6 +43,8 @@ agent quietly keeps a very good notebook.
 - Carry old NPCs, items, debts, threads, and consequences into the next act.
 - Use optional source or web research when canon, history, physics, culture, or
   genre logic matters.
+- Open a local auto-refresh campaign board for the current scene, known clues,
+  visible NPCs, inventory, map links, and accepted visuals.
 - Extend the workspace toward visual references when your agentic tool supports
   image generation or image display.
 
@@ -133,6 +135,7 @@ continuity, progression, and lightweight checks.
 See:
 
 - [`docs/roadmap.md`](docs/roadmap.md)
+- [`docs/dashboard.md`](docs/dashboard.md)
 - [`CHANGELOG.md`](CHANGELOG.md)
 - [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
@@ -199,6 +202,8 @@ Important memory files include:
 - `player.md`: the player character.
 - `player_ties.md`: how the character changes the world.
 - `storytelling.md`: narration and reveal preferences.
+- `appearance_guide.md`: player, NPC, faction, and location appearance detail
+  rules for continuity, staging, and future visuals.
 - `knowledge_boundaries.md`: who knows what.
 - `creation_ledger.md`: named NPCs, places, and factions.
 - `relationship_map.md`: compact relationship links.
@@ -208,6 +213,7 @@ Important memory files include:
 - `next_act_prep.md`: what carries forward into the next major act.
 - `opening_brief.md`: the next opening scene source.
 - `current_state.yaml`: small structured state for checks.
+- `dashboard/`: optional local player board.
 
 The full template lives in `templates/campaign/`.
 
@@ -234,6 +240,18 @@ Create a reversible snapshot:
 
 ```bash
 python tools/snapshot.py campaigns/<campaign_id> --label before_scene
+```
+
+Check a dashboard state file:
+
+```bash
+python tools/check_dashboard.py campaigns/<campaign_id>/dashboard/dashboard_state.json
+```
+
+Open a local campaign board:
+
+```bash
+python -m http.server 8787 --directory campaigns/<campaign_id>/dashboard
 ```
 
 These tools are optional guardrails. The main experience is still the agent

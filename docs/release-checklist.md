@@ -13,8 +13,9 @@ Use this before publishing a GitHub release.
 - [ ] Public checks pass:
 
   ```bash
-  python -m py_compile tools/check_state.py tools/check_player_facing.py tools/snapshot.py
+  python -m py_compile tools/check_state.py tools/check_player_facing.py tools/snapshot.py tools/check_dashboard.py
   python tools/check_state.py templates/campaign
+  python tools/check_dashboard.py templates/campaign/dashboard/dashboard_state.json
   python tools/check_player_facing.py --text "You step into the rain."
   ```
 

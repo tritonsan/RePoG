@@ -28,6 +28,9 @@ Check:
   weight;
 - `palette.md` has Yes / No / Maybe boundaries that do not conflict with
   `boundaries.md`;
+- `appearance_guide.md` exists and defines middle-detail appearance rules,
+  tiered appearance depth, location description fields, faction visual
+  identity, and boundaries against invasive or spoiler-heavy details;
 - `world_truths.md` stores playable truths with table impact, not encyclopedia
   lore;
 - `issues.md` has at least one current or impending issue with visible signs
@@ -73,8 +76,8 @@ Check:
 - T2+ ledger entries have matching notes under `characters/`, `places/`, or
   `factions/`;
 - T2+ NPC notes include table hook, default posture, mundane agenda, plain
-  speech sample, stat block, power band, weak stats/blind spots, and key info
-  separated from personality;
+  speech sample, compact appearance card, stat block, power band, weak
+  stats/blind spots, and key info separated from personality;
 - companion notes include stats, key capabilities, weak stats, and current
   growth ceiling;
 - major obstacles have relevant stat, difficulty, and clean/partial/failure
@@ -88,7 +91,7 @@ Check:
   way;
 - character notes do not hide important clues only inside personality prose;
 - T2+ place notes include baseline routine, reaction point, ordinary NPC
-  activity, and clue exposure gates;
+  activity, spatial/visual description, and clue exposure gates;
 - `secrets_and_clues.md`, when present, keeps discoveries short and flexible
   instead of locked to one NPC or one required action;
 - `session_brief.md`, when present, is short prep rather than a plot script;
@@ -96,6 +99,8 @@ Check:
   a required route;
 - important factions link to at least one issue, representative face, or key
   place;
+- important factions include a visual identity and hidden visual facts are kept
+  separate from player-facing faction appearance;
 - important NPCs/places represent an issue, faction, or player tie instead of
   existing only as lore;
 - every T1+ ledger entry has at least one compact edge in `relationship_map.md`;
@@ -109,6 +114,13 @@ Check:
 - faction moves have consequences or visible pressure;
 - no player-facing sample text contains file paths, raw ids, tool names, YAML,
   checks, prompts, or implementation language;
+- if `dashboard/` exists, it has `index.html`, `dashboard_state.json`, and
+  `assets/`;
+- dashboard text does not contain GM-only truth, protected names before reveal,
+  hidden clues, internal ids, file paths outside `assets/`, prompts, tools,
+  scripts, YAML, Markdown, or implementation language;
+- dashboard NPCs, clues, threads, visuals, map nodes, and inventory are all
+  player-known or character-perceivable;
 - no obvious mojibake or placeholder names remain;
 - player-facing examples do not overuse cryptic, aphoristic, or market-style
   dialogue;
@@ -123,6 +135,7 @@ Use Lite tools when available:
 
 - `tools/check_player_facing.py` for leakage;
 - `tools/check_state.py` for state sanity;
+- `tools/check_dashboard.py` for local dashboard state;
 - `tools/snapshot.py` before larger repairs.
 
 If the tools are not implemented yet, perform a manual audit and report that

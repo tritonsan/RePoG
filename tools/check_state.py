@@ -14,6 +14,7 @@ REQUIRED_FILES = [
     "research_dossier.md",
     "next_act_prep.md",
     "boundaries.md",
+    "appearance_guide.md",
     "storytelling.md",
     "knowledge_boundaries.md",
     "opening_brief.md",
@@ -232,6 +233,44 @@ def _note_exists(folder: Path, value: str) -> bool:
     return False
 
 
+def _check_dashboard(campaign_path: Path, findings: list[dict]) -> None:
+    dashboard_dir = campaign_path / "dashboard"
+    if not dashboard_dir.exists():
+        return
+
+    if not dashboard_dir.is_dir():
+        _add(findings, "error", "dashboard_not_directory", "dashboard exists but is not a directory.", dashboard_dir)
+        return
+
+    index_path = dashboard_dir / "index.html"
+    state_path = dashboard_dir / "dashboard_state.json"
+    assets_path = dashboard_dir / "assets"
+
+    if not index_path.is_file():
+        _add(findings, "error", "dashboard_index_missing", "dashboard/index.html is missing.", index_path)
+
+    if not assets_path.is_dir():
+        _add(findings, "warning", "dashboard_assets_missing", "dashboard/assets directory is missing.", assets_path)
+
+    if not state_path.is_file():
+        _add(findings, "error", "dashboard_state_missing", "dashboard/dashboard_state.json is missing.", state_path)
+        return
+
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        _add(findings, "error", "dashboard_state_invalid", f"Dashboard state is not valid JSON: {exc}", state_path)
+        return
+
+    if not isinstance(state, dict):
+        _add(findings, "error", "dashboard_state_not_object", "Dashboard state should be a JSON object.", state_path)
+        return
+
+    for key in ["schema_version", "campaign", "scene", "player", "map", "visuals"]:
+        if key not in state:
+            _add(findings, "warning", "dashboard_key_missing", f"Dashboard state missing key: {key}", state_path)
+
+
 def _check_player_state(state_text: str, state_path: Path, findings: list[dict]) -> None:
     player_block = _block(state_text, "player")
     if not player_block:
@@ -334,6 +373,8 @@ def check_campaign(campaign_path: Path) -> dict:
         path = campaign_path / relative
         if not path.is_dir():
             _add(findings, "error", "required_dir_missing", f"Missing required directory: {relative}", path)
+
+    _check_dashboard(campaign_path, findings)
 
     state_path = campaign_path / "current_state.yaml"
     state_text = _read(state_path, findings) if state_path.is_file() else ""

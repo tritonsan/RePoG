@@ -78,6 +78,15 @@ See `research_dossier.md`.
 
 See `palette.md`.
 
+## Appearance Detail
+
+See `appearance_guide.md`.
+
+- Appearance detail level:
+- Image-readiness:
+- Stable detail policy:
+- Changeable detail policy:
+
 ## 7. World Truths
 
 See `world_truths.md`.

@@ -61,6 +61,23 @@ campaign.
 One visible detail and one playable mannerism the GM can use immediately at
 the table.
 
+## Appearance
+
+See `appearance_guide.md`. For T1 characters, keep this to 1 or 2 lines. For
+T2+ characters, fill the compact card.
+
+- First-glance read:
+- Silhouette and build:
+- Posture and movement:
+- Face, hair, and eyes:
+- Clothing and gear:
+- Marks and history traces:
+- Sensory tell:
+- Mannerism:
+- Image-generation anchor:
+- Changeable details:
+- Do not change:
+
 ## Default Posture
 
 The character's ordinary social stance toward the player before new evidence

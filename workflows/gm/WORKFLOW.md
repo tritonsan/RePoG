@@ -74,9 +74,10 @@ For a normal Lite turn:
 
 1. Read the active campaign's relevant memory, including `world.md`,
    `boundaries.md`, `research_dossier.md`, `system_fit.md`, `palette.md`,
-   `world_truths.md`, `issues.md`, `faces_and_places.md`, `progression.md`,
-   `arc_closure.md`, `next_act_prep.md`, and `knowledge_boundaries.md` when
-   present, and `storytelling.md`. If this is
+   `appearance_guide.md`, `world_truths.md`, `issues.md`,
+   `faces_and_places.md`, `progression.md`, `arc_closure.md`,
+   `next_act_prep.md`, and `knowledge_boundaries.md` when present, and
+   `storytelling.md`. If this is
    the first scene or a post-arc opening, also read `opening_brief.md` and
    `first_session.md`. Read `session_brief.md` and `secrets_and_clues.md` when
    they exist.
@@ -98,11 +99,35 @@ For a normal Lite turn:
     physical rules, power limits, institutions, or major world logic.
 12. Decide whether the result is soft color or durable state.
 13. Apply the smallest necessary memory edits for durable state.
-14. Run available Lite checks if durable memory changed.
-15. Emit the final result in Player Mode.
+14. If the turn introduces or changes a T1+ character/place/faction appearance,
+    run the Appearance Continuity Gate.
+15. If the campaign has a dashboard, run the Player Dashboard Update Gate.
+16. Run available Lite checks if durable memory changed.
+17. Emit the final result in Player Mode.
 
 Do not require structured intents for ordinary play. Use a structured note only
 when it helps you reason privately or when the Designer asks for it.
+
+# Appearance Continuity Gate
+
+When a character, companion, faction, place, ship, base, or important item
+returns to play, reuse its recorded appearance instead of reinventing it.
+
+When creating or promoting an element:
+
+- T0 incidental elements need no durable appearance.
+- T1 named elements need a first-glance read, one visible marker, and one
+  mannerism or sensory tell.
+- T2+ elements need the compact card from `appearance_guide.md`.
+- T3 elements should be image-ready enough that a future visual can be created
+  without inventing core details from scratch.
+
+Keep stable details separate from changeable details such as clothing, injury,
+disguise, weather, lighting, crowd, damage, or age. Do not reveal hidden visual
+facts in Player Mode before the character could perceive them.
+
+Avoid invasive anatomical detail by default. Appearance should support play,
+continuity, staging, and optional visuals.
 
 # Narration Shape
 
@@ -632,6 +657,33 @@ phrases like "you now have three pieces of information" or "your options are".
 
 Leave the evidence in the scene: heard words, visible reactions, changed access,
 new risks, and concrete openings. Let the Player connect the dots.
+
+# Player Dashboard Update Gate
+
+The optional dashboard is player-facing. Treat
+`dashboard/dashboard_state.json` like a visual player handout, not GM memory.
+
+Update it only with:
+
+- the current scene title, location, time, summary, and visible pressure;
+- player character condition, goal, stats, and known capabilities;
+- companions and visible NPCs as the player can currently understand them;
+- player-known active threads, known clues, inventory, simple map links, and
+  accepted visuals.
+
+Never add:
+
+- GM-only truth;
+- protected names before a naming event;
+- clues the player has not discovered;
+- NPC motives or faction plans that are still hidden;
+- internal ids;
+- file paths outside `assets/`;
+- prompts, tools, checks, scripts, YAML, Markdown, or implementation language.
+
+If unsure whether a fact is safe, leave it out or write the evidence instead
+of the secret. Campaign memory remains the source of truth; the dashboard is a
+read-only table surface.
 
 # Single-Track Funnel Avoidance
 

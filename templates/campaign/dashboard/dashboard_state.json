@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "",
+  "refresh_interval_ms": 4000,
+  "campaign": {
+    "title": "New Campaign",
+    "pitch": "The campaign board will fill in as play begins.",
+    "tone": "Unset"
+  },
+  "theme": {
+    "accent": "#c8a24a",
+    "background": "#111418",
+    "mood": "Quiet table"
+  },
+  "scene": {
+    "title": "Ready For Session Zero",
+    "location": "Not set yet",
+    "time": "",
+    "summary": "Answer the setup questions, then this board can show the current place, visible pressure, and player-known context.",
+    "pressure": "",
+    "image": ""
+  },
+  "player": {
+    "name": "Unnamed Character",
+    "concept": "Not created yet",
+    "condition": "Ready",
+    "goal": "",
+    "stats": {
+      "Power": 2,
+      "Agility": 2,
+      "Endurance": 2,
+      "Technique": 2,
+      "Perception": 2,
+      "Wits": 2,
+      "Presence": 2,
+      "Will": 2
+    },
+    "capabilities": []
+  },
+  "companions": [],
+  "visible_npcs": [],
+  "active_threads": [],
+  "known_clues": [],
+  "inventory": [],
+  "map": {
+    "nodes": [],
+    "edges": []
+  },
+  "visuals": []
+}

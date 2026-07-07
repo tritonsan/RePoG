@@ -16,6 +16,7 @@ agentic RPG workspace.
 - Add more audit guidance for hidden knowledge leaks.
 - Improve examples of major arc closure, rewards, and companion upgrades.
 - Add optional check helpers only when they catch real campaign problems.
+- Improve the optional local dashboard after playtesting it in real campaigns.
 - Improve visual workflow guidance for tools that can generate or display
   images.
 

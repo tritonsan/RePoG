@@ -17,6 +17,23 @@ Linked elements:
 
 What the place feels, sounds, smells, and moves like.
 
+## Spatial And Visual Description
+
+See `appearance_guide.md`. Keep this image-ready, but do not turn it into an
+architectural encyclopedia.
+
+- First-glance read:
+- Exterior or approach:
+- Interior or primary area:
+- Secondary areas:
+- Navigation landmarks:
+- Key props and affordances:
+- Sound, smell, and motion:
+- Texture and wear:
+- Image-generation anchor:
+- Hidden visual facts:
+- Changeable details:
+
 ## Reaction Point
 
 The pressure, opportunity, visible change, or NPC action the scene should land

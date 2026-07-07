@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RePoG Campaign Board</title>
+  <style>
+    :root {
+      --bg: #111418;
+      --panel: #191f25;
+      --panel-soft: #202830;
+      --text: #f0eadc;
+      --muted: #aeb7ba;
+      --line: #33404a;
+      --accent: #c8a24a;
+      --teal: #62b7a7;
+      --coral: #d27c5c;
+      --shadow: rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at top left, rgba(98, 183, 167, 0.14), transparent 32rem),
+        linear-gradient(180deg, #101317 0%, var(--bg) 46%, #0e1012 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 20px 0 28px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: end;
+      padding: 12px 0 18px;
+      border-bottom: 1px solid rgba(240, 234, 220, 0.12);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      line-height: 1.1;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 0.82rem;
+      font-weight: 760;
+      color: var(--accent);
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 720;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      max-width: 74ch;
+      color: var(--muted);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      padding: 7px 10px;
+      border: 1px solid rgba(240, 234, 220, 0.13);
+      background: rgba(25, 31, 37, 0.76);
+      border-radius: 8px;
+      color: var(--muted);
+      white-space: nowrap;
+      box-shadow: 0 10px 24px var(--shadow);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: 0 0 18px rgba(98, 183, 167, 0.72);
+    }
+
+    .dot.warn {
+      background: var(--coral);
+      box-shadow: 0 0 18px rgba(210, 124, 92, 0.72);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .card {
+      border: 1px solid rgba(240, 234, 220, 0.12);
+      border-radius: 8px;
+      background: rgba(25, 31, 37, 0.84);
+      box-shadow: 0 14px 40px var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-pad {
+      padding: 16px;
+    }
+
+    .scene-visual {
+      min-height: 320px;
+      background:
+        linear-gradient(135deg, rgba(200, 162, 74, 0.15), transparent 48%),
+        linear-gradient(180deg, rgba(98, 183, 167, 0.14), rgba(17, 20, 24, 0.9));
+      position: relative;
+      display: grid;
+      align-items: end;
+    }
+
+    .scene-visual img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .scene-visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.7));
+      pointer-events: none;
+    }
+
+    .scene-copy {
+      position: relative;
+      z-index: 1;
+      padding: 18px;
+    }
+
+    .kicker {
+      color: var(--teal);
+      font-size: 0.8rem;
+      font-weight: 720;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .scene-title {
+      margin-top: 6px;
+      font-size: 1.55rem;
+      line-height: 1.14;
+      font-weight: 760;
+    }
+
+    .scene-meta {
+      margin-top: 6px;
+      color: var(--muted);
+    }
+
+    .scene-summary {
+      margin-top: 12px;
+      max-width: 78ch;
+    }
+
+    .pressure {
+      margin-top: 12px;
+      color: #ffcf9e;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 3px 8px;
+      border: 1px solid rgba(240, 234, 220, 0.13);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: grid;
+      gap: 5px;
+      padding: 10px;
+      border: 1px solid rgba(240, 234, 220, 0.09);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .row-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 700;
+    }
+
+    .row small,
+    .empty {
+      color: var(--muted);
+    }
+
+    .character {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      border: 1px solid rgba(240, 234, 220, 0.16);
+      background:
+        linear-gradient(135deg, rgba(98, 183, 167, 0.24), rgba(200, 162, 74, 0.16)),
+        var(--panel-soft);
+      overflow: hidden;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .stats {
+      display: grid;
+      gap: 8px;
+    }
+
+    .stat {
+      display: grid;
+      grid-template-columns: minmax(88px, 0.8fr) minmax(90px, 1.2fr) 22px;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(240, 234, 220, 0.13);
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--accent));
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .map-wrap {
+      min-height: 230px;
+      border: 1px solid rgba(240, 234, 220, 0.09);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+      overflow: hidden;
+    }
+
+    svg {
+      width: 100%;
+      min-height: 230px;
+      display: block;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .thumb {
+      min-height: 138px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(240, 234, 220, 0.1);
+      background: rgba(255, 255, 255, 0.035);
+      display: grid;
+      align-content: end;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 112px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .thumb div {
+      padding: 8px;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .status {
+        justify-self: start;
+      }
+
+      .scene-visual {
+        min-height: 260px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 10px;
+      }
+
+      h1 {
+        font-size: 1.42rem;
+      }
+
+      .scene-title {
+        font-size: 1.24rem;
+      }
+
+      .stat {
+        grid-template-columns: 1fr 1fr 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <div class="kicker" id="campaignTone">RePoG Campaign Board</div>
+        <h1 id="campaignTitle">Loading campaign</h1>
+        <p class="subtitle" id="campaignPitch">Preparing the player board.</p>
+      </div>
+      <div class="status" aria-live="polite">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Loading</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="stack">
+        <article class="card">
+          <div class="scene-visual" id="sceneVisual">
+            <div class="scene-copy">
+              <div class="kicker" id="sceneLocation">Current Scene</div>
+              <div class="scene-title" id="sceneTitle">Waiting for scene</div>
+              <div class="scene-meta" id="sceneTime"></div>
+              <p class="scene-summary" id="sceneSummary">The board will update when the campaign begins.</p>
+              <p class="pressure" id="scenePressure"></p>
+            </div>
+          </div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head">
+            <h2>Known Threads</h2>
+            <span class="tag" id="threadCount">0 active</span>
+          </div>
+          <div class="list" id="threads"></div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head">
+            <h2>Known Clues</h2>
+            <span class="tag" id="clueCount">0 known</span>
+          </div>
+          <div class="list" id="clues"></div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head">
+            <h2>Local Map</h2>
+            <span class="tag">Player-known</span>
+          </div>
+          <div class="map-wrap" id="map"></div>
+        </article>
+      </div>
+
+      <aside class="stack">
+        <article class="card card-pad">
+          <div class="section-head">
+            <h2>Character</h2>
+            <span class="tag" id="playerCondition">Ready</span>
+          </div>
+          <div class="list">
+            <div class="row">
+              <div class="row-title">
+                <span id="playerName">Unnamed Character</span>
+              </div>
+              <small id="playerConcept">Not created yet</small>
+              <p id="playerGoal"></p>
+            </div>
+            <div class="stats" id="playerStats"></div>
+            <div class="chips" id="playerCapabilities"></div>
+          </div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head">
+            <h2>Companions</h2>
+            <span class="tag" id="companionCount">0</span>
+          </div>
+          <div class="list" id="companions"></div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head">
+            <h2>Visible NPCs</h2>
+            <span class="tag" id="npcCount">0</span>
+          </div>
+          <div class="list" id="npcs"></div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head">
+            <h2>Inventory</h2>
+            <span class="tag" id="inventoryCount">0</span>
+          </div>
+          <div class="chips" id="inventory"></div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head">
+            <h2>Visuals</h2>
+            <span class="tag" id="visualCount">0</span>
+          </div>
+          <div class="gallery" id="visuals"></div>
+        </article>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const stateUrl = "dashboard_state.json";
+    let refreshTimer = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function text(value, fallback = "") {
+      if (value === null || value === undefined) return fallback;
+      const clean = String(value).trim();
+      return clean || fallback;
+    }
+
+    function setText(id, value, fallback = "") {
+      $(id).textContent = text(value, fallback);
+    }
+
+    function setStatus(message, warning = false) {
+      setText("statusText", message);
+      $("statusDot").classList.toggle("warn", warning);
+    }
+
+    function image(src, alt) {
+      const clean = text(src);
+      if (!clean) return null;
+      const img = document.createElement("img");
+      img.src = clean;
+      img.alt = text(alt, "Campaign visual");
+      img.loading = "lazy";
+      return img;
+    }
+
+    function clear(node) {
+      node.replaceChildren();
+    }
+
+    function empty(label) {
+      const node = document.createElement("p");
+      node.className = "empty";
+      node.textContent = label;
+      return node;
+    }
+
+    function row(title, body, meta) {
+      const node = document.createElement("div");
+      node.className = "row";
+
+      const titleNode = document.createElement("div");
+      titleNode.className = "row-title";
+      const label = document.createElement("span");
+      label.textContent = text(title, "Untitled");
+      titleNode.append(label);
+
+      if (meta) {
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = meta;
+        titleNode.append(tag);
+      }
+
+      node.append(titleNode);
+      if (body) {
+        const copy = document.createElement("small");
+        copy.textContent = body;
+        node.append(copy);
+      }
+      return node;
+    }
+
+    function characterRow(person) {
+      const node = document.createElement("div");
+      node.className = "row character";
+
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      const img = image(person.image, person.name);
+      if (img) avatar.append(img);
+
+      const copy = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "row-title";
+      const name = document.createElement("span");
+      name.textContent = text(person.name, "Unknown");
+      title.append(name);
+      if (person.status || person.role) {
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = text(person.status || person.role);
+        title.append(tag);
+      }
+      const small = document.createElement("small");
+      small.textContent = text(person.summary || person.role, "Present");
+      copy.append(title, small);
+
+      node.append(avatar, copy);
+      return node;
+    }
+
+    function renderList(id, items, emptyText, renderer = row) {
+      const target = $(id);
+      clear(target);
+      if (!Array.isArray(items) || items.length === 0) {
+        target.append(empty(emptyText));
+        return;
+      }
+      items.forEach((item) => {
+        if (typeof item === "string") {
+          target.append(row(item));
+        } else {
+          target.append(renderer(item.title || item.name, item.summary || item.note || item.detail, item.status || item.type));
+        }
+      });
+    }
+
+    function renderChips(id, items, emptyText) {
+      const target = $(id);
+      clear(target);
+      if (!Array.isArray(items) || items.length === 0) {
+        target.append(empty(emptyText));
+        return;
+      }
+      items.forEach((item) => {
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = typeof item === "string" ? item : text(item.name || item.title, "Item");
+        target.append(tag);
+      });
+    }
+
+    function renderStats(stats) {
+      const target = $("playerStats");
+      clear(target);
+      if (!stats || typeof stats !== "object") {
+        target.append(empty("No stats yet."));
+        return;
+      }
+      Object.entries(stats).forEach(([name, raw]) => {
+        const value = Math.max(0, Math.min(5, Number(raw) || 0));
+        const node = document.createElement("div");
+        node.className = "stat";
+        const label = document.createElement("span");
+        label.textContent = name;
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        const fill = document.createElement("span");
+        fill.style.width = `${(value / 5) * 100}%`;
+        bar.append(fill);
+        const num = document.createElement("span");
+        num.textContent = String(value);
+        node.append(label, bar, num);
+        target.append(node);
+      });
+    }
+
+    function renderMap(map) {
+      const target = $("map");
+      clear(target);
+      const nodes = Array.isArray(map?.nodes) ? map.nodes : [];
+      const edges = Array.isArray(map?.edges) ? map.edges : [];
+      if (nodes.length === 0) {
+        target.append(empty("No player-known map yet."));
+        return;
+      }
+
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 600 320");
+      svg.setAttribute("role", "img");
+      svg.setAttribute("aria-label", "Player-known location map");
+
+      const byId = new Map(nodes.map((node, index) => {
+        const x = Number(node.x ?? 80 + (index % 4) * 140);
+        const y = Number(node.y ?? 80 + Math.floor(index / 4) * 120);
+        return [String(node.id || node.label || index), { ...node, x, y }];
+      }));
+
+      edges.forEach((edge) => {
+        const from = byId.get(String(edge.from));
+        const to = byId.get(String(edge.to));
+        if (!from || !to) return;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", from.x);
+        line.setAttribute("y1", from.y);
+        line.setAttribute("x2", to.x);
+        line.setAttribute("y2", to.y);
+        line.setAttribute("stroke", "rgba(240,234,220,0.24)");
+        line.setAttribute("stroke-width", "2");
+        svg.append(line);
+      });
+
+      byId.forEach((node) => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", node.x);
+        circle.setAttribute("cy", node.y);
+        circle.setAttribute("r", "16");
+        circle.setAttribute("fill", node.current ? "var(--accent)" : "var(--teal)");
+        circle.setAttribute("opacity", node.current ? "1" : "0.78");
+        svg.append(circle);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", node.x);
+        label.setAttribute("y", node.y + 35);
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("fill", "var(--text)");
+        label.setAttribute("font-size", "16");
+        label.textContent = text(node.label || node.name, "Place");
+        svg.append(label);
+      });
+
+      target.append(svg);
+    }
+
+    function renderVisuals(items) {
+      const target = $("visuals");
+      clear(target);
+      if (!Array.isArray(items) || items.length === 0) {
+        target.append(empty("No accepted visuals yet."));
+        return;
+      }
+      items.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "thumb";
+        const img = image(item.src || item.image, item.title || item.name);
+        if (img) card.append(img);
+        const label = document.createElement("div");
+        label.textContent = text(item.title || item.name, "Visual");
+        card.append(label);
+        target.append(card);
+      });
+    }
+
+    function applyTheme(theme) {
+      const root = document.documentElement;
+      if (theme?.accent) root.style.setProperty("--accent", theme.accent);
+      if (theme?.background) root.style.setProperty("--bg", theme.background);
+    }
+
+    function render(data) {
+      applyTheme(data.theme || {});
+
+      setText("campaignTitle", data.campaign?.title, "New Campaign");
+      setText("campaignPitch", data.campaign?.pitch, "Campaign board ready.");
+      setText("campaignTone", data.campaign?.tone || data.theme?.mood, "RePoG Campaign Board");
+
+      setText("sceneLocation", data.scene?.location, "Current Scene");
+      setText("sceneTitle", data.scene?.title, "Waiting for scene");
+      setText("sceneTime", data.scene?.time, "");
+      setText("sceneSummary", data.scene?.summary, "The board will update when the campaign begins.");
+      setText("scenePressure", data.scene?.pressure, "");
+
+      const visual = $("sceneVisual");
+      const existing = visual.querySelector(":scope > img");
+      if (existing) existing.remove();
+      const sceneImg = image(data.scene?.image, data.scene?.title);
+      if (sceneImg) visual.prepend(sceneImg);
+
+      setText("playerName", data.player?.name, "Unnamed Character");
+      setText("playerConcept", data.player?.concept, "Not created yet");
+      setText("playerGoal", data.player?.goal, "");
+      setText("playerCondition", data.player?.condition, "Ready");
+      renderStats(data.player?.stats);
+      renderChips("playerCapabilities", data.player?.capabilities, "No capabilities yet.");
+
+      const companions = Array.isArray(data.companions) ? data.companions : [];
+      const npcs = Array.isArray(data.visible_npcs) ? data.visible_npcs : [];
+      const threads = Array.isArray(data.active_threads) ? data.active_threads : [];
+      const clues = Array.isArray(data.known_clues) ? data.known_clues : [];
+      const inventory = Array.isArray(data.inventory) ? data.inventory : [];
+      const visuals = Array.isArray(data.visuals) ? data.visuals : [];
+
+      setText("companionCount", companions.length);
+      setText("npcCount", npcs.length);
+      setText("threadCount", `${threads.length} active`);
+      setText("clueCount", `${clues.length} known`);
+      setText("inventoryCount", inventory.length);
+      setText("visualCount", visuals.length);
+
+      clear($("companions"));
+      if (companions.length === 0) $("companions").append(empty("No companions present."));
+      companions.forEach((person) => $("companions").append(characterRow(person)));
+
+      clear($("npcs"));
+      if (npcs.length === 0) $("npcs").append(empty("No visible named NPCs."));
+      npcs.forEach((person) => $("npcs").append(characterRow(person)));
+
+      renderList("threads", threads, "No active player-known threads.");
+      renderList("clues", clues, "No player-known clues yet.");
+      renderChips("inventory", inventory, "Inventory is empty.");
+      renderMap(data.map || {});
+      renderVisuals(visuals);
+
+      const stamp = text(data.updated_at, "not timestamped");
+      setStatus(`Updated ${stamp}`);
+
+      const interval = Math.max(1500, Number(data.refresh_interval_ms) || 4000);
+      if (!refreshTimer || refreshTimer.interval !== interval) {
+        if (refreshTimer) clearInterval(refreshTimer.handle);
+        refreshTimer = {
+          interval,
+          handle: setInterval(loadState, interval)
+        };
+      }
+    }
+
+    async function loadState() {
+      try {
+        const response = await fetch(`${stateUrl}?t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("State file is not available yet.");
+        const data = await response.json();
+        render(data);
+      } catch (error) {
+        setStatus("Waiting for campaign state", true);
+      }
+    }
+
+    loadState();
+  </script>
+</body>
+</html>

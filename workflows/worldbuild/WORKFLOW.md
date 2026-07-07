@@ -237,6 +237,9 @@ important face/place, ask:
 - what issue, faction, or player tie it represents;
 - what the player can actually do with it;
 - what it wants independently of the player's current objective;
+- what its first-glance visual read is;
+- what stable appearance, spatial, or visual identity details should remain
+  consistent when it returns later;
 - what clue, offer, cost, obstacle, or temptation can surface there;
 - what stats or difficulties define its important opposition;
 - what should remain unknown until play earns it.
@@ -273,7 +276,7 @@ advancement, GM-awarded perks, reward calibration, and world advancement.
 Ask these one by one:
 
 - name, alias, and concept;
-- appearance;
+- appearance, using the compact card in `appearance_guide.md`;
 - personality;
 - background;
 - starting level;
@@ -329,9 +332,9 @@ Ask how the character connects to:
 - things Codex must not invent from the character's past.
 
 If the Designer wants a companion or close relation in depth, create that NPC
-with the same seriousness as the player character: appearance, personality,
-stats, capabilities, background, relationship dynamic, need, risk, and likely
-trouble.
+with the same seriousness as the player character: appearance card,
+personality, stats, capabilities, background, relationship dynamic, need,
+risk, and likely trouble.
 
 Record the durable version in `player_ties.md`, `relationship_map.md`, and
 `threads.md`.
@@ -439,7 +442,7 @@ When starting a new Lite campaign from scratch:
    `system_fit.md`, `palette.md`, `world_truths.md`, `issues.md`,
    `faces_and_places.md`, `progression.md`, `arc_closure.md`,
    `next_act_prep.md`, `knowledge_boundaries.md`, `world.md`, `boundaries.md`,
-   `storytelling.md`, and `rules.md`.
+   `storytelling.md`, `appearance_guide.md`, and `rules.md`.
 6. Create the player files: `player.md`, `player_ties.md`, and
    `current_state.yaml`.
 7. Create only enough NPCs, places, factions, threads, and flexible clues to
@@ -448,9 +451,11 @@ When starting a new Lite campaign from scratch:
    as the Session 0.5 prep page.
 9. Draft the first player-facing scene from `opening_brief.md`, then check it
    for leakage.
-10. Record the used opening in `session_log.md`.
-11. Run the Lite state check.
-12. Take a starting snapshot.
+10. If the campaign uses the optional dashboard, fill
+    `dashboard/dashboard_state.json` with only player-safe opening information.
+11. Record the used opening in `session_log.md`.
+12. Run the Lite state check.
+13. Take a starting snapshot.
 
 Do not require an existing campaign. A port from another project is an optional
 comparison exercise, not the default workflow.
@@ -474,6 +479,7 @@ Create or revise these files:
 - `next_act_prep.md`
 - `knowledge_boundaries.md`
 - `storytelling.md`
+- `appearance_guide.md`
 - `opening_brief.md`
 - `first_session.md`
 - `player.md`
@@ -488,6 +494,7 @@ Create or revise these files:
 - `characters/*.md`
 - `places/*.md`
 - `factions/*.md`
+- `dashboard/dashboard_state.json`, when the optional dashboard is used
 - the opening entry in `session_log.md`, if play is about to begin.
 
 # Worldbuilding Principles
@@ -514,6 +521,7 @@ Every important NPC should have:
 - a power band and stats calibrated to campaign stage;
 - clear key capabilities and weak stats or blind spots;
 - a table hook;
+- a compact appearance card;
 - a default posture;
 - a current mundane agenda;
 - a public face;
@@ -533,6 +541,7 @@ Every important location should have:
 
 - a tier in `creation_ledger.md`;
 - a sensory identity;
+- a spatial and visual description;
 - a reaction point;
 - a baseline routine;
 - a current disruption;
@@ -553,6 +562,7 @@ Every faction should have:
 
 - a tier in `creation_ledger.md`;
 - a faction power band;
+- a visual identity;
 - typical member, specialist, and elite/leader stat guidance;
 - a linked issue;
 - a desire;

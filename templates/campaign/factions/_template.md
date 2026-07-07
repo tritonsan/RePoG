@@ -47,6 +47,19 @@ fit the current campaign stage.
 Where the faction is overextended, blind, vulnerable, slow, arrogant, divided,
 or dependent on specific people or places.
 
+## Visual Identity
+
+See `appearance_guide.md`. Use this to make the faction recognizable without
+revealing hidden symbols or secret structure too early.
+
+- Public visual identity:
+- Symbol, colors, or uniform:
+- Typical member look:
+- Elite or specialist variation:
+- Associated places, vehicles, or tools:
+- Visual tells outsiders can notice:
+- Hidden visual facts:
+
 ## Related Issues
 
 Current or impending issues this faction represents, worsens, hides, profits

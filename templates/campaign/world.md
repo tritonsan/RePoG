@@ -10,6 +10,7 @@ module files:
 - `research_dossier.md`
 - `system_fit.md`
 - `palette.md`
+- `appearance_guide.md`
 - `world_truths.md`
 - `issues.md`
 - `faces_and_places.md`
@@ -48,6 +49,9 @@ foreshadowing, and hidden-information rules.
 
 See `knowledge_boundaries.md` for protected names, who knows what, safe
 wording, and reveal triggers.
+
+See `appearance_guide.md` for player, NPC, faction, and location appearance
+detail rules.
 
 ## Mechanical Weight
 

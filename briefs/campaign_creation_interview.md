@@ -113,7 +113,8 @@ tactic, player knowledge boundary, and next move if unopposed.
 Ask for NPCs and locations as playable handles for issues, factions, and player
 ties. A face/place should represent a pressure, offer a real table interaction,
 want something independently, and hold back unrevealed truth until play earns
-it.
+it. Ask for first-glance visual read and stable appearance/spatial details for
+T2+ faces and places.
 
 ### 12. Progression And Rewards
 
@@ -131,7 +132,7 @@ actual closure reviews and chosen upgrades.
 Ask these one by one:
 
 - name, alias, and concept;
-- appearance;
+- appearance using the compact card in `appearance_guide.md`;
 - personality;
 - background;
 - starting level;
@@ -224,6 +225,7 @@ Use the interview to create:
 - `next_act_prep.md`
 - `knowledge_boundaries.md`
 - `storytelling.md`
+- `appearance_guide.md`
 - `opening_brief.md`
 - `first_session.md`
 - `player.md`

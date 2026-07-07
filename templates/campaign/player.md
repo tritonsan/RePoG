@@ -6,7 +6,20 @@ Who the character is in one clear playable sentence.
 
 ## Appearance
 
-Silhouette, clothing, marks, carried symbols, and first impression.
+See `appearance_guide.md`. Keep this detailed enough for visual continuity and
+possible image generation, but compact enough to stay playable.
+
+- First-glance read:
+- Silhouette and build:
+- Posture and movement:
+- Face, hair, and eyes:
+- Clothing and gear:
+- Marks and history traces:
+- Sensory tell:
+- Mannerism:
+- Image-generation anchor:
+- Changeable details:
+- Do not change:
 
 ## Personality
 
@@ -52,4 +65,3 @@ What pulls the character into the opening situation.
 ## GM Use
 
 How to pressure, tempt, challenge, and spotlight this character.
-

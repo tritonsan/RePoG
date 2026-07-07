@@ -130,6 +130,7 @@ campaigns/<campaign_id>/
   places/
   factions/
   snapshots/
+  dashboard/
 ```
 
 The memory model is intentionally small:
@@ -161,6 +162,9 @@ The memory model is intentionally small:
   and reveal triggers.
 - `storytelling.md` defines narration voice, option prompting, pacing,
   exposition, foreshadowing, and hidden-information rules.
+- `appearance_guide.md` defines middle-detail appearance, visual continuity,
+  image-ready character/place/faction fields, and boundaries against invasive
+  or spoiler-heavy description.
 - `opening_brief.md` defines the next opening's type, location, arrival
   context, player-known facts, visible situation, neutral action space, and
   GM-only information that must not be revealed yet.
@@ -184,6 +188,8 @@ The memory model is intentionally small:
 - `rules.md` stores table rulings, optional dice rules, and recurring
   mechanics.
 - `characters/`, `places/`, and `factions/` hold readable GM notes.
+- `dashboard/` is an optional player-facing local board. It mirrors only
+  player-safe information and is never the source of truth.
 
 # Campaign Creation Interview
 
@@ -219,6 +225,9 @@ specific real-world settings should usually get a `research_dossier.md` before
 durable world truths, power rules, factions, or major NPCs are locked. Fully
 original worlds should use research only for adjacent grounding and should ask
 the Designer when new world rules cannot be resolved from the pitch.
+
+During Session 0, also record the campaign's appearance detail expectations in
+`appearance_guide.md`; use middle-detail cards by default.
 
 During campaign creation, ask exactly one interview question per assistant
 message and wait for the Designer's answer. Do not list all worldbuilding
@@ -271,8 +280,8 @@ For a play turn:
 
 1. Identify the active campaign.
 2. Read `current_state.yaml`, `world.md`, `boundaries.md`, `system_fit.md`,
-   `research_dossier.md`, `palette.md`, `world_truths.md`, `issues.md`,
-   `faces_and_places.md`, `progression.md`, `arc_closure.md`,
+   `research_dossier.md`, `palette.md`, `appearance_guide.md`,
+   `world_truths.md`, `issues.md`, `faces_and_places.md`, `progression.md`, `arc_closure.md`,
    `next_act_prep.md`, `knowledge_boundaries.md`,
    `storytelling.md`, `opening_brief.md` when opening or bridging a scene,
    `creation_ledger.md`, `relationship_map.md`, `secrets_and_clues.md`,
@@ -283,8 +292,30 @@ For a play turn:
 4. Decide whether the result is purely narrative or durable.
 5. If durable, update the smallest necessary memory files before final
    narration.
-6. Run available checks when durable memory changed.
-7. Reply in Player Mode with no technical leakage.
+6. If the campaign has `dashboard/dashboard_state.json`, update it with only
+   player-safe current information.
+7. Run available checks when durable memory changed.
+8. Reply in Player Mode with no technical leakage.
+
+# Player Dashboard
+
+The optional dashboard is a local read-only player board opened through a
+browser. It may show current scene context, visible NPCs, companions,
+player-known threads, known clues, inventory, simple map links, accepted
+visuals, and player character state.
+
+The dashboard must not show GM-only truth, protected names before reveal,
+unrevealed clues, internal ids, file paths outside `assets/`, prompts, tools,
+scripts, checks, YAML, Markdown, or explanations of how the campaign memory is
+stored.
+
+When updating `dashboard/dashboard_state.json`, curate it from the player's
+confirmed knowledge and what the character can currently perceive. If a
+dashboard fact conflicts with campaign memory, campaign memory wins and the
+dashboard should be corrected.
+
+Do not mention dashboard file updates in Player Mode. If the Designer asks how
+to open it, use Designer Mode and point them to `docs/dashboard.md`.
 
 # File And Tool Boundaries
 
@@ -305,8 +336,12 @@ Content is ready for play when:
 - NPCs have motives, leverage, and a current attitude;
 - important NPCs have a posture, mundane agenda, ordinary speech sample, and
   key info separated from personality;
+- important NPCs and companions have compact appearance cards when they become
+  T2+;
 - locations have things to inspect, risk, bargain over, or misunderstand;
 - locations have local routine, ordinary activity, and reaction points;
+- important locations have spatial and visual descriptions that can support
+  future generated visuals without revealing hidden facts;
 - open threads point toward playable choices;
 - the Player can act in natural language;
 - no player-facing text exposes technical terms or raw ids;

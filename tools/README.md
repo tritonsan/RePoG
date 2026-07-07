@@ -5,6 +5,7 @@ Phase 3 includes these small deterministic helpers:
 - `snapshot.py`
 - `check_player_facing.py`
 - `check_state.py`
+- `check_dashboard.py`
 
 These tools should remain guardrails. They should not become a narrative
 engine.
@@ -27,6 +28,12 @@ Check a campaign folder:
 
 ```bash
 python tools/check_state.py campaigns/<campaign_id>
+```
+
+Check a player dashboard state file:
+
+```bash
+python tools/check_dashboard.py campaigns/<campaign_id>/dashboard/dashboard_state.json
 ```
 
 ## Deferred
