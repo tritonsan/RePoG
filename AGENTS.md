@@ -301,7 +301,7 @@ For a play turn:
 
 The optional dashboard is a local read-only player board opened through a
 browser. It may show current scene context, visible NPCs, companions,
-player-known threads, known clues, inventory, simple map links, accepted
+player-known threads, known clues, inventory, a pan/zoom local atlas, accepted
 visuals, and player character state.
 
 The dashboard must not show GM-only truth, protected names before reveal,
@@ -313,6 +313,11 @@ When updating `dashboard/dashboard_state.json`, curate it from the player's
 confirmed knowledge and what the character can currently perceive. If a
 dashboard fact conflicts with campaign memory, campaign memory wins and the
 dashboard should be corrected.
+
+For Dashboard V2, use `dashboard_version: 2` and set `map.mode` to
+`leaflet_simple`. The atlas is not a secret map; every node, route, label,
+image, and summary must be player-known or directly perceivable. Use
+`assets/...` relative paths only for player-visible images and map backgrounds.
 
 Do not mention dashboard file updates in Player Mode. If the Designer asks how
 to open it, use Designer Mode and point them to `docs/dashboard.md`.

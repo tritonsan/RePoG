@@ -5,7 +5,7 @@ RePoG can include a local, auto-refreshing player board for each campaign.
 The dashboard is optional. It is not the campaign's source of truth. It is a
 player-facing surface that shows selected, safe information from the campaign:
 current scene, character state, visible NPCs, known clues, active threads,
-inventory, simple map links, and accepted visuals.
+inventory, a pan/zoom local atlas, and accepted visuals.
 
 ## How It Works
 
@@ -16,13 +16,51 @@ campaigns/<campaign_id>/dashboard/
   index.html
   dashboard_state.json
   assets/
+  vendor/leaflet/
 ```
 
 `dashboard_state.json` is curated by the agent. It should contain only
 information the player character can know, perceive, or has already confirmed.
 
 `index.html` reads `dashboard_state.json` every few seconds and updates the
-view. It has no external dependencies.
+view. The V2 template vendors Leaflet locally for the atlas; it does not use a
+CDN and should keep working offline once the repository is present.
+Leaflet's license is included under `vendor/leaflet/LICENSE`.
+
+## Dashboard V2 Shape
+
+V2 is still read-only and player-safe. Add these optional fields when a
+campaign wants the richer local atlas:
+
+```json
+{
+  "dashboard_version": 2,
+  "map": {
+    "mode": "leaflet_simple",
+    "summary": "Player-known space",
+    "background_image": "assets/maps/local-atlas.png",
+    "bounds": { "width": 1000, "height": 640 },
+    "current_node_id": "dock",
+    "nodes": [
+      {
+        "id": "dock",
+        "label": "Old Dock",
+        "type": "place",
+        "x": 420,
+        "y": 280,
+        "status": "current",
+        "summary": "Where the character is now."
+      }
+    ],
+    "edges": [
+      { "from": "dock", "to": "market", "status": "known", "label": "main road" }
+    ]
+  }
+}
+```
+
+If no atlas image exists, keep `background_image` blank. The board will render a
+neutral abstract map surface with player-known nodes and routes.
 
 ## Open It Locally
 
@@ -76,6 +114,9 @@ Use relative paths in `dashboard_state.json`, such as:
 Do not reference absolute local paths, external URLs, draft images, or secret
 GM-only visuals.
 
+For V2, map backgrounds also count as dashboard assets and must use
+`assets/...` paths.
+
 ## Checks
 
 Validate the dashboard state:
@@ -93,7 +134,7 @@ python tools/check_state.py campaigns/<campaign_id>
 ## Known Limits
 
 - The dashboard is read-only. Player actions still happen in the agent chat.
-- The dashboard is local-only in V1.
+- The dashboard is local-only.
 - The agent must curate `dashboard_state.json`; there is no automatic exporter
   from all campaign notes yet.
 - If the local server is not running, the page may not load the JSON in some

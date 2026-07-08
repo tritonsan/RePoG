@@ -35,6 +35,16 @@ REQUIRED_OBJECTS = {
     "map": {"nodes", "edges"},
 }
 
+V2_MAP_KEYS = {
+    "mode",
+    "summary",
+    "background_image",
+    "bounds",
+    "current_node_id",
+    "nodes",
+    "edges",
+}
+
 REQUIRED_LISTS = {
     "companions",
     "visible_npcs",
@@ -72,7 +82,14 @@ def _add(findings: list[dict], severity: str, rule: str, message: str, path: str
 
 def _is_asset_field(path: str) -> bool:
     parts = path.lower().split(".")
-    return bool(parts and parts[-1] in {"image", "src", "asset", "thumbnail"})
+    return bool(parts and parts[-1] in {"image", "portrait", "src", "asset", "thumbnail", "background_image"})
+
+
+def _is_structural_field(path: str) -> bool:
+    parts = path.lower().split(".")
+    if not parts:
+        return False
+    return parts[-1] in {"id", "current_node_id", "from", "to", "mode"}
 
 
 def _check_asset_path(value: str, path: str, findings: list[dict]) -> bool:
@@ -103,6 +120,9 @@ def _scan_string(value: str, path: str, findings: list[dict]) -> None:
     if _is_asset_field(path) and _check_asset_path(value.strip(), path, findings):
         return
 
+    if _is_structural_field(path):
+        return
+
     if TECHNICAL_TEXT.search(value):
         _add(findings, "error", "dashboard_technical_leakage", "Player board text contains technical language.", path)
 
@@ -122,6 +142,88 @@ def _walk_strings(value: Any, path: str, findings: list[dict]) -> None:
     elif isinstance(value, dict):
         for key, item in value.items():
             _walk_strings(item, f"{path}.{key}" if path else str(key), findings)
+
+
+def _check_v2_map(data: dict, findings: list[dict]) -> None:
+    version = data.get("dashboard_version", 1)
+    if version in ("", None):
+        version = 1
+
+    try:
+        version_number = int(version)
+    except (TypeError, ValueError):
+        _add(findings, "error", "dashboard_version_invalid", "dashboard_version should be an integer.", "dashboard_version")
+        return
+
+    if version_number < 2:
+        return
+
+    map_data = data.get("map")
+    if not isinstance(map_data, dict):
+        return
+
+    for key in sorted(V2_MAP_KEYS - map_data.keys()):
+        _add(findings, "error", "dashboard_v2_map_key_missing", f"Missing V2 map key: map.{key}", f"map.{key}")
+
+    mode = map_data.get("mode")
+    if mode != "leaflet_simple":
+        _add(findings, "error", "dashboard_v2_map_mode", "V2 map.mode should be 'leaflet_simple'.", "map.mode")
+
+    bounds = map_data.get("bounds")
+    if not isinstance(bounds, dict):
+        _add(findings, "error", "dashboard_v2_map_bounds", "V2 map.bounds must be an object.", "map.bounds")
+    else:
+        for key in ["width", "height"]:
+            value = bounds.get(key)
+            if not isinstance(value, (int, float)) or value <= 0:
+                _add(
+                    findings,
+                    "error",
+                    "dashboard_v2_map_bounds_value",
+                    f"V2 map.bounds.{key} must be a positive number.",
+                    f"map.bounds.{key}",
+                )
+
+    nodes = map_data.get("nodes")
+    if isinstance(nodes, list):
+        for index, node in enumerate(nodes):
+            if not isinstance(node, dict):
+                _add(findings, "error", "dashboard_v2_map_node", "V2 map node must be an object.", f"map.nodes[{index}]")
+                continue
+            for key in ["id", "label", "x", "y"]:
+                if key not in node:
+                    _add(
+                        findings,
+                        "warning",
+                        "dashboard_v2_map_node_key_missing",
+                        f"V2 map node should include {key}.",
+                        f"map.nodes[{index}].{key}",
+                    )
+            for key in ["x", "y"]:
+                if key in node and not isinstance(node[key], (int, float)):
+                    _add(
+                        findings,
+                        "error",
+                        "dashboard_v2_map_node_coordinate",
+                        f"V2 map node {key} must be a number.",
+                        f"map.nodes[{index}].{key}",
+                    )
+
+    edges = map_data.get("edges")
+    if isinstance(edges, list):
+        for index, edge in enumerate(edges):
+            if not isinstance(edge, dict):
+                _add(findings, "error", "dashboard_v2_map_edge", "V2 map edge must be an object.", f"map.edges[{index}]")
+                continue
+            for key in ["from", "to"]:
+                if key not in edge:
+                    _add(
+                        findings,
+                        "warning",
+                        "dashboard_v2_map_edge_key_missing",
+                        f"V2 map edge should include {key}.",
+                        f"map.edges[{index}].{key}",
+                    )
 
 
 def check_dashboard(path: Path) -> dict:
@@ -171,6 +273,7 @@ def check_dashboard(path: Path) -> dict:
     if stats is not None and not isinstance(stats, dict):
         _add(findings, "error", "dashboard_player_stats", "player.stats must be an object when present.", "player.stats")
 
+    _check_v2_map(data, findings)
     _walk_strings(data, "", findings)
     return _result(path, findings)
 

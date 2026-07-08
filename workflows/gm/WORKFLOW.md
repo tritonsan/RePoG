@@ -668,7 +668,7 @@ Update it only with:
 - the current scene title, location, time, summary, and visible pressure;
 - player character condition, goal, stats, and known capabilities;
 - companions and visible NPCs as the player can currently understand them;
-- player-known active threads, known clues, inventory, simple map links, and
+- player-known active threads, known clues, inventory, local atlas nodes/routes, and
   accepted visuals.
 
 Never add:
@@ -684,6 +684,12 @@ Never add:
 If unsure whether a fact is safe, leave it out or write the evidence instead
 of the secret. Campaign memory remains the source of truth; the dashboard is a
 read-only table surface.
+
+For Dashboard V2, update the atlas as orientation, not omniscience. Add only
+places and routes the player has discovered, currently sees, or can reasonably
+use. Use `map.current_node_id` for the current place, `status` for visible
+states such as current, known, locked, or unknown, and `assets/...` paths for
+accepted images or map backgrounds.
 
 # Single-Track Funnel Avoidance
 

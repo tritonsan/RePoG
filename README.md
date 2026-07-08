@@ -44,7 +44,7 @@ agent quietly keeps a very good notebook.
 - Use optional source or web research when canon, history, physics, culture, or
   genre logic matters.
 - Open a local auto-refresh campaign board for the current scene, known clues,
-  visible NPCs, inventory, map links, and accepted visuals.
+  visible NPCs, inventory, a pan/zoom local atlas, and accepted visuals.
 - Extend the workspace toward visual references when your agentic tool supports
   image generation or image display.
 
@@ -253,6 +253,9 @@ Open a local campaign board:
 ```bash
 python -m http.server 8787 --directory campaigns/<campaign_id>/dashboard
 ```
+
+The dashboard is read-only, player-safe, and local. Its V2 template uses
+vendored Leaflet for a no-CDN local atlas.
 
 These tools are optional guardrails. The main experience is still the agent
 reading and writing campaign notes.

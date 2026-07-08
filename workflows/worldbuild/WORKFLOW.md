@@ -453,6 +453,9 @@ When starting a new Lite campaign from scratch:
    for leakage.
 10. If the campaign uses the optional dashboard, fill
     `dashboard/dashboard_state.json` with only player-safe opening information.
+    Prefer Dashboard V2: set `dashboard_version: 2`, `map.mode` to
+    `leaflet_simple`, a conservative player-known atlas, and relative
+    `assets/...` paths only for accepted images or map backgrounds.
 11. Record the used opening in `session_log.md`.
 12. Run the Lite state check.
 13. Take a starting snapshot.

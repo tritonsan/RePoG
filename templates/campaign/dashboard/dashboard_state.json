@@ -1,5 +1,6 @@
 {
   "schema_version": "1.0",
+  "dashboard_version": 2,
   "updated_at": "",
   "refresh_interval_ms": 4000,
   "campaign": {
@@ -8,8 +9,8 @@
     "tone": "Unset"
   },
   "theme": {
-    "accent": "#c8a24a",
-    "background": "#111418",
+    "accent": "#7dd3fc",
+    "background": "#0f1115",
     "mood": "Quiet table"
   },
   "scene": {
@@ -25,6 +26,7 @@
     "concept": "Not created yet",
     "condition": "Ready",
     "goal": "",
+    "image": "",
     "stats": {
       "Power": 2,
       "Agility": 2,
@@ -43,6 +45,14 @@
   "known_clues": [],
   "inventory": [],
   "map": {
+    "mode": "leaflet_simple",
+    "summary": "Player-known space",
+    "background_image": "",
+    "bounds": {
+      "width": 1000,
+      "height": 640
+    },
+    "current_node_id": "",
     "nodes": [],
     "edges": []
   },

@@ -121,6 +121,10 @@ Check:
   scripts, YAML, Markdown, or implementation language;
 - dashboard NPCs, clues, threads, visuals, map nodes, and inventory are all
   player-known or character-perceivable;
+- Dashboard V2 atlas backgrounds, portraits, and visual references use only
+  relative `assets/...` paths and no external URLs or absolute paths;
+- Dashboard V2 map nodes and routes do not imply undiscovered locations,
+  hidden routes, secret factions, or protected names before reveal;
 - no obvious mojibake or placeholder names remain;
 - player-facing examples do not overuse cryptic, aphoristic, or market-style
   dialogue;
