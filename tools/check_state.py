@@ -15,6 +15,8 @@ REQUIRED_FILES = [
     "next_act_prep.md",
     "boundaries.md",
     "appearance_guide.md",
+    "visual_style.md",
+    "visual_gallery.md",
     "storytelling.md",
     "knowledge_boundaries.md",
     "opening_brief.md",
@@ -26,10 +28,29 @@ REQUIRED_FILES = [
     "rules.md",
 ]
 
+RECOMMENDED_FILES = [
+    "world_dynamics.md",
+    "style_state.json",
+]
+
+V2_FILES = [
+    "active_cast.md",
+    "location_graph.md",
+    "relationship_map.md",
+    "session_brief.md",
+]
+
 REQUIRED_DIRS = [
     "characters",
     "places",
     "factions",
+    "visuals",
+    "visuals/characters",
+    "visuals/places",
+    "visuals/factions",
+    "visuals/items",
+    "visuals/scenes",
+    "visuals/_drafts",
     "snapshots",
 ]
 
@@ -68,6 +89,19 @@ SCENE_KEYS = [
 STAT_COUNT = 8
 STAT_MIN = 1
 STAT_MAX = 5
+FACTION_CAPABILITY_COUNT = 7
+
+IMPORTANT_TIERS = {"t2", "t3"}
+DIFFICULTY_VALUES = {"trivial", "routine", "challenging", "hard", "extreme"}
+HIGH_POWER_WORDS = {
+    "elite",
+    "regional",
+    "legendary",
+    "endgame",
+    "major",
+    "exceptional",
+    "world",
+}
 
 LEVEL_BUDGETS = {
     "beginner": (16, 3),
@@ -204,6 +238,26 @@ def _parse_block_list(yaml_text: str, key: str) -> list[str]:
     return []
 
 
+def _parse_nested_block_list(yaml_text: str, parent: str, key: str) -> list[str]:
+    block = _block(yaml_text, parent)
+    lines = block.splitlines()
+    for index, line in enumerate(lines):
+        inline = re.match(rf"^\s{{2}}{re.escape(key)}:\s*(\[.*\])\s*$", line)
+        if inline:
+            return _parse_inline_list(inline.group(1))
+        if not re.match(rf"^\s{{2}}{re.escape(key)}:\s*$", line):
+            continue
+        items: list[str] = []
+        for child in lines[index + 1 :]:
+            if child and re.match(r"^\s{2}\S", child):
+                break
+            match = re.match(r"^\s{4}-\s+(.+?)\s*$", child)
+            if match:
+                items.append(_clean_scalar(match.group(1)))
+        return items
+    return []
+
+
 def _slug(value: str) -> str:
     value = value.strip().lower()
     value = re.sub(r"[^a-z0-9]+", "_", value)
@@ -212,6 +266,13 @@ def _slug(value: str) -> str:
 
 def _normalize_level(value: str) -> str:
     return _slug(value.replace("/", " "))
+
+
+def _campaign_recommended_max(level_band: str) -> int | None:
+    budget = LEVEL_BUDGETS.get(_normalize_level(level_band))
+    if budget is None:
+        return None
+    return budget[1]
 
 
 def _note_exists(folder: Path, value: str) -> bool:
@@ -233,42 +294,578 @@ def _note_exists(folder: Path, value: str) -> bool:
     return False
 
 
+def _markdown_files(folder: Path) -> list[Path]:
+    if not folder.is_dir():
+        return []
+    return sorted(path for path in folder.glob("*.md") if not path.name.startswith("_"))
+
+
+def _markdown_field(text: str, field_name: str) -> str:
+    match = re.search(rf"(?im)^\s*{re.escape(field_name)}:\s*(.*?)\s*$", text)
+    return _clean_scalar(match.group(1)) if match else ""
+
+
+def _markdown_section(text: str, heading: str, level: int = 2) -> str:
+    heading_marks = "#" * level
+    pattern = re.compile(rf"(?im)^{re.escape(heading_marks)}\s+{re.escape(heading)}\s*$")
+    match = pattern.search(text)
+    if not match:
+        return ""
+
+    start = match.end()
+    next_heading = re.search(rf"(?m)^#{{1,{level}}}\s+", text[start:])
+    end = start + next_heading.start() if next_heading else len(text)
+    return text[start:end].strip()
+
+
+def _markdown_key_values(section_text: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for line in section_text.splitlines():
+        match = re.match(r"^\s*-\s+([^:]+):\s*(.*?)\s*$", line)
+        if match:
+            values[match.group(1).strip()] = _clean_scalar(match.group(2))
+    return values
+
+
+def _meaningful_text(section_text: str) -> str:
+    meaningful_lines: list[str] = []
+    for line in section_text.splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#"):
+            meaningful_lines.append(stripped)
+    return " ".join(meaningful_lines).strip()
+
+
+def _markdown_table(text: str) -> list[dict[str, str]]:
+    lines = [line.strip() for line in text.splitlines() if line.strip().startswith("|")]
+    if len(lines) < 2:
+        return []
+    headers = [cell.strip() for cell in lines[0].strip("|").split("|")]
+    rows: list[dict[str, str]] = []
+    for line in lines[2:]:
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) != len(headers):
+            continue
+        row = dict(zip(headers, cells))
+        if any(value for value in row.values()):
+            rows.append(row)
+    return rows
+
+
+def _markdown_revision(text: str, label: str) -> int | None:
+    match = re.search(rf"(?im)^{re.escape(label)}:\s*(\d+)\s*$", text)
+    return int(match.group(1)) if match else None
+
+
+def _entity_tier(folder: Path, name: str) -> str:
+    slug = _slug(name)
+    for path in _markdown_files(folder):
+        text = path.read_text(encoding="utf-8")
+        title = re.search(r"(?m)^#\s+(.+?)\s*$", text)
+        if _slug(path.stem) == slug or (title and _slug(title.group(1)) == slug):
+            return _slug(_markdown_field(text, "Tier"))
+    return ""
+
+
+def _ledger_contains(campaign_path: Path, name: str) -> bool:
+    path = campaign_path / "creation_ledger.md"
+    if not path.is_file():
+        return False
+    return bool(re.search(rf"(?im)^-\s+{re.escape(name)}(?:\s|:|/)", path.read_text(encoding="utf-8")))
+
+
 def _check_dashboard(campaign_path: Path, findings: list[dict]) -> None:
     dashboard_dir = campaign_path / "dashboard"
     if not dashboard_dir.exists():
         return
-
     if not dashboard_dir.is_dir():
         _add(findings, "error", "dashboard_not_directory", "dashboard exists but is not a directory.", dashboard_dir)
         return
-
     index_path = dashboard_dir / "index.html"
     state_path = dashboard_dir / "dashboard_state.json"
     assets_path = dashboard_dir / "assets"
-
     if not index_path.is_file():
         _add(findings, "error", "dashboard_index_missing", "dashboard/index.html is missing.", index_path)
-
     if not assets_path.is_dir():
         _add(findings, "warning", "dashboard_assets_missing", "dashboard/assets directory is missing.", assets_path)
-
     if not state_path.is_file():
         _add(findings, "error", "dashboard_state_missing", "dashboard/dashboard_state.json is missing.", state_path)
         return
-
     try:
         state = json.loads(state_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         _add(findings, "error", "dashboard_state_invalid", f"Dashboard state is not valid JSON: {exc}", state_path)
         return
-
     if not isinstance(state, dict):
         _add(findings, "error", "dashboard_state_not_object", "Dashboard state should be a JSON object.", state_path)
         return
-
-    for key in ["schema_version", "campaign", "scene", "player", "map", "visuals"]:
+    for key in ("schema_version", "campaign", "scene", "player", "map", "visuals"):
         if key not in state:
             _add(findings, "warning", "dashboard_key_missing", f"Dashboard state missing key: {key}", state_path)
+
+
+def _validate_numeric_map(
+    findings: list[dict],
+    path: Path,
+    values: dict[str, str],
+    *,
+    context: str,
+    expected_count: int | None = None,
+) -> dict[str, int]:
+    if expected_count is not None and len(values) != expected_count:
+        _add(
+            findings,
+            "warning",
+            "mechanic_stat_count",
+            f"{context} should contain {expected_count} numeric entries; found {len(values)}.",
+            path,
+        )
+
+    parsed: dict[str, int] = {}
+    for name, raw_value in values.items():
+        if not raw_value:
+            _add(findings, "warning", "mechanic_stat_blank", f"{context} has blank stat/capability: {name}", path)
+            continue
+
+        try:
+            value = int(raw_value)
+        except ValueError:
+            _add(findings, "error", "mechanic_stat_not_integer", f"{context} is not an integer: {name}", path)
+            continue
+
+        parsed[name] = value
+        if value < STAT_MIN or value > STAT_MAX:
+            _add(
+                findings,
+                "error",
+                "mechanic_stat_out_of_range",
+                f"{context} {name}={value} is outside {STAT_MIN}-{STAT_MAX}.",
+                path,
+            )
+
+    return parsed
+
+
+def _check_early_stage_power(
+    findings: list[dict],
+    path: Path,
+    parsed: dict[str, int],
+    *,
+    context: str,
+    tier: str,
+    power_band: str,
+    level_band: str,
+) -> None:
+    recommended_max = _campaign_recommended_max(level_band)
+    if recommended_max is None or recommended_max >= STAT_MAX:
+        return
+
+    band_text = power_band.lower()
+    high_power_justified = any(word in band_text for word in HIGH_POWER_WORDS)
+    high_stats = sorted(name for name, value in parsed.items() if value > recommended_max)
+    elite_stats = sorted(name for name, value in parsed.items() if value >= STAT_MAX)
+
+    if tier == "t2" and high_stats and not high_power_justified:
+        _add(
+            findings,
+            "warning",
+            "early_stage_power_spike",
+            f"{context} has stats above the {level_band} recommended max without a high-power band: {', '.join(high_stats)}.",
+            path,
+        )
+
+    if elite_stats and not high_power_justified:
+        _add(
+            findings,
+            "warning",
+            "elite_stat_without_power_band",
+            f"{context} has elite stat value(s) without an elite/regional/legendary power band: {', '.join(elite_stats)}.",
+            path,
+        )
+
+    if level_band and _normalize_level(level_band) in {"beginner", "local_rookie", "local_rookie_beginner"}:
+        very_high_count = sum(1 for value in parsed.values() if value >= 4)
+        if very_high_count > 1 and not high_power_justified:
+            _add(
+                findings,
+                "warning",
+                "early_stage_power_inflation",
+                f"{context} has {very_high_count} stats at 4+ in a beginner-stage campaign without a high-power band.",
+                path,
+            )
+
+
+def _check_character_notes(campaign_path: Path, level_band: str, findings: list[dict]) -> None:
+    for path in _markdown_files(campaign_path / "characters"):
+        text = _read(path, findings)
+        tier = _slug(_markdown_field(text, "Tier"))
+        if tier not in IMPORTANT_TIERS:
+            continue
+
+        power_band = _markdown_field(text, "Power Band")
+        if not power_band:
+            _add(findings, "warning", "character_power_band_missing", "T2+ character is missing Power Band.", path)
+
+        for heading, rule in (
+            ("Routine And Availability", "character_routine_missing"),
+            ("Current Mundane Agenda", "character_agenda_missing"),
+            ("Private Motive", "character_motive_missing"),
+            ("Last Meaningful Interaction", "character_last_interaction_missing"),
+        ):
+            if not _meaningful_text(_markdown_section(text, heading)):
+                _add(findings, "warning", rule, f"T2+ character is missing {heading}.", path)
+
+        stats = _markdown_key_values(_markdown_section(text, "Stats"))
+        if not stats:
+            _add(findings, "warning", "character_stats_missing", "T2+ character is missing a numeric Stats block.", path)
+            continue
+
+        parsed = _validate_numeric_map(
+            findings,
+            path,
+            stats,
+            context=f"{path.stem} character stats",
+            expected_count=STAT_COUNT,
+        )
+        _check_early_stage_power(
+            findings,
+            path,
+            parsed,
+            context=f"{path.stem} character",
+            tier=tier,
+            power_band=power_band,
+            level_band=level_band,
+        )
+
+
+def _obstacle_blocks(section_text: str) -> list[tuple[str, str]]:
+    blocks: list[tuple[str, str]] = []
+    matches = list(re.finditer(r"(?m)^###\s+(.+?)\s*$", section_text))
+    for index, match in enumerate(matches):
+        name = match.group(1).strip()
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(section_text)
+        blocks.append((name, section_text[start:end].strip()))
+    return blocks
+
+
+def _check_place_obstacles(campaign_path: Path, findings: list[dict]) -> None:
+    for path in _markdown_files(campaign_path / "places"):
+        text = _read(path, findings)
+        obstacle_section = _markdown_section(text, "Common Obstacles And Difficulties")
+        if not obstacle_section:
+            continue
+
+        for obstacle_name, block in _obstacle_blocks(obstacle_section):
+            if _slug(obstacle_name) == "obstacle_name":
+                continue
+
+            values = _markdown_key_values(block)
+            relevant_stat = values.get("Relevant stat", "")
+            difficulty = values.get("Difficulty", "").lower().rstrip(". ;")
+
+            if not relevant_stat:
+                _add(
+                    findings,
+                    "warning",
+                    "obstacle_relevant_stat_missing",
+                    f"Obstacle '{obstacle_name}' is missing Relevant stat.",
+                    path,
+                )
+
+            if not difficulty:
+                _add(
+                    findings,
+                    "warning",
+                    "obstacle_difficulty_missing",
+                    f"Obstacle '{obstacle_name}' is missing Difficulty.",
+                    path,
+                )
+            elif not any(re.search(rf"\b{re.escape(value)}\b", difficulty) for value in DIFFICULTY_VALUES):
+                _add(
+                    findings,
+                    "error",
+                    "obstacle_difficulty_invalid",
+                    f"Obstacle '{obstacle_name}' has invalid Difficulty: {difficulty}",
+                    path,
+                )
+
+            for outcome_key in ("Clean success", "Partial success", "Failure"):
+                if not values.get(outcome_key, ""):
+                    _add(
+                        findings,
+                        "warning",
+                        "obstacle_outcome_missing",
+                        f"Obstacle '{obstacle_name}' is missing {outcome_key}.",
+                        path,
+                    )
+
+
+def _check_place_notes(campaign_path: Path, findings: list[dict]) -> None:
+    for path in _markdown_files(campaign_path / "places"):
+        text = _read(path, findings)
+        tier = _slug(_markdown_field(text, "Tier"))
+        if tier not in IMPORTANT_TIERS:
+            continue
+        for heading, rule in (
+            ("Baseline Routine", "place_routine_missing"),
+            ("Presence Logic", "place_presence_logic_missing"),
+        ):
+            if not _meaningful_text(_markdown_section(text, heading)):
+                _add(findings, "warning", rule, f"T2+ place is missing {heading}.", path)
+
+
+def _check_faction_notes(campaign_path: Path, level_band: str, findings: list[dict]) -> None:
+    for path in _markdown_files(campaign_path / "factions"):
+        text = _read(path, findings)
+        tier = _slug(_markdown_field(text, "Tier"))
+        if tier not in IMPORTANT_TIERS:
+            continue
+
+        power_band = _markdown_field(text, "Faction Power Band")
+        if not power_band:
+            _add(findings, "warning", "faction_power_band_missing", "T2+ faction is missing Faction Power Band.", path)
+
+        for heading, rule in (
+            ("Representative Face", "faction_representative_missing"),
+            ("Key Places", "faction_key_places_missing"),
+            ("Current Move", "faction_current_move_missing"),
+            ("Next Move If Ignored", "faction_next_move_missing"),
+            ("Pressure Clock Or Escalation", "faction_pressure_missing"),
+        ):
+            if not _meaningful_text(_markdown_section(text, heading)):
+                _add(findings, "warning", rule, f"T2+ faction is missing {heading}.", path)
+
+        profile = _markdown_key_values(_markdown_section(text, "Faction Capability Profile"))
+        if not profile:
+            _add(
+                findings,
+                "warning",
+                "faction_capability_profile_missing",
+                "T2+ faction is missing numeric Faction Capability Profile.",
+                path,
+            )
+        else:
+            parsed_profile = _validate_numeric_map(
+                findings,
+                path,
+                profile,
+                context=f"{path.stem} faction capability profile",
+                expected_count=FACTION_CAPABILITY_COUNT,
+            )
+            _check_early_stage_power(
+                findings,
+                path,
+                parsed_profile,
+                context=f"{path.stem} faction capability profile",
+                tier=tier,
+                power_band=power_band,
+                level_band=level_band,
+            )
+
+        typical_stats = _markdown_key_values(_markdown_section(text, "Typical Member Stats"))
+        if not typical_stats:
+            _add(
+                findings,
+                "warning",
+                "faction_typical_stats_missing",
+                "T2+ faction is missing numeric Typical Member Stats.",
+                path,
+            )
+        else:
+            parsed_stats = _validate_numeric_map(
+                findings,
+                path,
+                typical_stats,
+                context=f"{path.stem} faction typical member stats",
+                expected_count=STAT_COUNT,
+            )
+            _check_early_stage_power(
+                findings,
+                path,
+                parsed_stats,
+                context=f"{path.stem} faction typical member",
+                tier=tier,
+                power_band=power_band,
+                level_band=level_band,
+            )
+
+        for heading, rule in (
+            ("Specialist Stats", "faction_specialist_stats_missing"),
+            ("Elite / Leader Stats", "faction_elite_stats_missing"),
+        ):
+            section_text = _meaningful_text(_markdown_section(text, heading))
+            if not section_text or section_text.lower().startswith("what a "):
+                _add(findings, "warning", rule, f"T2+ faction is missing {heading}.", path)
+
+
+def _check_markdown_mechanics(campaign_path: Path, level_band: str, findings: list[dict]) -> None:
+    _check_character_notes(campaign_path, level_band, findings)
+    _check_place_notes(campaign_path, findings)
+    _check_place_obstacles(campaign_path, findings)
+    _check_faction_notes(campaign_path, level_band, findings)
+
+
+def _check_v2_memory(
+    campaign_path: Path,
+    *,
+    revision: int,
+    location: str,
+    present_npcs: list[str],
+    findings: list[dict],
+) -> None:
+    active_path = campaign_path / "active_cast.md"
+    graph_path = campaign_path / "location_graph.md"
+    relationship_path = campaign_path / "relationship_map.md"
+    brief_path = campaign_path / "session_brief.md"
+
+    active_text = _read(active_path, findings)
+    active_rows = _markdown_table(active_text)
+    active_revision = _markdown_revision(active_text, "As of revision")
+    if active_revision is None:
+        _add(findings, "warning", "active_cast_revision_missing", "Active cast has no revision.", active_path)
+    elif active_revision < revision:
+        _add(findings, "warning", "active_cast_stale", f"Active cast revision {active_revision} trails state revision {revision}.", active_path)
+
+    active_by_name = {_slug(row.get("NPC", "")): row for row in active_rows if row.get("NPC") and _slug(row.get("NPC", "")) != "example_npc"}
+    for npc in present_npcs:
+        tier = _entity_tier(campaign_path / "characters", npc)
+        if tier in IMPORTANT_TIERS:
+            row = active_by_name.get(_slug(npc))
+            if not row:
+                _add(findings, "error", "present_important_npc_untracked", f"Present {tier.upper()} NPC has no active cast row: {npc}", active_path)
+                continue
+            required = ["Current location", "Current activity", "Immediate objective", "Availability", "Reason here", "Next move if ignored"]
+            missing = [name for name in required if not row.get(name)]
+            if missing:
+                _add(findings, "error", "active_cast_presence_incomplete", f"Active cast row for {npc} is missing: {', '.join(missing)}", active_path)
+            row_location = row.get("Current location", "")
+            if location and row_location and _slug(location) != _slug(row_location):
+                _add(findings, "error", "active_cast_location_conflict", f"Present NPC {npc} is tracked at {row_location}, not current location {location}.", active_path)
+
+    graph_text = _read(graph_path, findings)
+    graph_rows = _markdown_table(graph_text)
+    graph_revision = _markdown_revision(graph_text, "As of revision")
+    if graph_revision is not None and graph_revision < revision:
+        _add(findings, "warning", "location_graph_stale", f"Location graph revision {graph_revision} trails state revision {revision}.", graph_path)
+    seen_current_location = False
+    for row in graph_rows:
+        source = row.get("From", "")
+        target = row.get("To", "")
+        if _slug(source) == "example_place":
+            continue
+        if row.get("Direction") not in {"<->", "->"}:
+            _add(findings, "error", "location_graph_direction_invalid", f"Invalid location graph direction: {row.get('Direction', '')}", graph_path)
+        for endpoint in (source, target):
+            if endpoint and not _note_exists(campaign_path / "places", endpoint):
+                _add(findings, "error", "location_graph_endpoint_missing", f"Location graph endpoint has no place note: {endpoint}", graph_path)
+        if _slug(location) in {_slug(source), _slug(target)}:
+            seen_current_location = True
+    if location and not seen_current_location:
+        _add(findings, "error", "current_location_unmapped", f"Current location has no location graph connection: {location}", graph_path)
+
+    relationship_text = _read(relationship_path, findings)
+    relationship_rows = _markdown_table(relationship_text)
+    seen_pairs: set[tuple[str, str]] = set()
+    for row in relationship_rows:
+        source = _slug(row.get("From", ""))
+        target = _slug(row.get("To", ""))
+        if source == "character_a" or not source or not target:
+            continue
+        pair = (source, target) if row.get("Direction") == "->" else tuple(sorted((source, target)))
+        if pair in seen_pairs:
+            _add(findings, "error", "relationship_current_duplicate", f"Duplicate current relationship pair: {row.get('From')} / {row.get('To')}", relationship_path)
+        seen_pairs.add(pair)
+
+    brief_text = _read(brief_path, findings)
+    brief_revision = _markdown_revision(brief_text, "Prepared from revision")
+    if brief_revision is None:
+        _add(findings, "warning", "session_brief_revision_missing", "Session brief has no source revision.", brief_path)
+    elif brief_revision < revision:
+        _add(findings, "warning", "session_brief_stale", f"Session brief revision {brief_revision} trails state revision {revision}; current state remains authoritative.", brief_path)
+
+    dynamics_path = campaign_path / "world_dynamics.md"
+    if dynamics_path.is_file():
+        dynamics_text = _read(dynamics_path, findings)
+        if re.search(r"(?im)^-\s+Due:\s+yes\s*$", dynamics_text):
+            _add(findings, "warning", "world_domain_due", "A world domain is due for triggered evaluation.", dynamics_path)
+
+    knowledge_path = campaign_path / "knowledge_boundaries.md"
+    if knowledge_path.is_file():
+        knowledge_text = _read(knowledge_path, findings)
+        if re.search(r"(?ims)^##\s+Player And Character Knowledge.*?^\s*-\s+Status:\s+superseded\s*$", knowledge_text):
+            _add(findings, "warning", "superseded_active_knowledge", "Superseded fact remains in the active player/character knowledge section.", knowledge_path)
+
+    research_path = campaign_path / "research_dossier.md"
+    session_zero_path = campaign_path / "session_zero.md"
+    if research_path.is_file() and session_zero_path.is_file():
+        research_text = _read(research_path, findings)
+        session_zero_text = _read(session_zero_path, findings)
+        if re.search(r"(?im)^-\s+Status:\s+`?needed_pending`?\s*$", research_text):
+            locked = re.search(r"(?im)^-\s+(World Truths|Factions):\s+locked\s*$", session_zero_text)
+            accepted = re.search(r"(?im)risk acceptance|risk accepted|risk kabul", research_text)
+            if locked and not accepted:
+                _add(findings, "warning", "research_gate_locked_while_pending", "World truths or factions are locked while research remains pending without explicit risk acceptance.", session_zero_path)
+
+
+def _check_optional_json_state(campaign_path: Path, findings: list[dict]) -> None:
+    for filename in ("style_state.json", "mechanics_state.json"):
+        path = campaign_path / filename
+        if not path.is_file():
+            continue
+        try:
+            state = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            _add(findings, "error", "optional_state_invalid", f"{filename} is not valid JSON: {exc}", path)
+            continue
+        if not isinstance(state, dict):
+            _add(findings, "error", "optional_state_not_object", f"{filename} should be a JSON object.", path)
+            continue
+        if filename == "style_state.json":
+            maximum = state.get("max_history", 8)
+            history = state.get("history", [])
+            if not isinstance(maximum, int) or isinstance(maximum, bool) or maximum < 1:
+                _add(findings, "error", "style_history_limit_invalid", "style_state max_history must be positive.", path)
+            if not isinstance(history, list):
+                _add(findings, "error", "style_history_invalid", "style_state history must be a list.", path)
+            elif isinstance(maximum, int) and len(history) > maximum:
+                _add(findings, "warning", "style_history_too_long", "style_state history exceeds max_history.", path)
+            elif any(isinstance(entry, dict) and any(key in entry for key in ("text", "narration", "full_text")) for entry in history):
+                _add(findings, "warning", "style_state_full_prose", "style_state should store fingerprints, not full narration.", path)
+        else:
+            if not isinstance(state.get("enabled"), bool):
+                _add(findings, "error", "mechanics_enabled_invalid", "mechanics_state enabled must be boolean.", path)
+            revision = state.get("revision")
+            if not isinstance(revision, int) or isinstance(revision, bool) or revision < 0:
+                _add(findings, "error", "mechanics_revision_invalid", "mechanics_state revision must be non-negative.", path)
+            actors = state.get("actors")
+            if not isinstance(actors, dict):
+                _add(findings, "error", "mechanics_actors_invalid", "mechanics_state actors must be an object.", path)
+                actors = {}
+            operations = state.get("applied_operations")
+            if not isinstance(operations, list):
+                _add(findings, "error", "mechanics_operations_invalid", "applied_operations must be a list.", path)
+            elif len(operations) != len(set(value for value in operations if isinstance(value, str))):
+                _add(findings, "error", "mechanics_operations_duplicate", "applied_operations contains duplicate ids.", path)
+            for actor_id, actor in actors.items():
+                if not isinstance(actor, dict):
+                    _add(findings, "error", "mechanics_actor_invalid", f"Actor {actor_id} must be an object.", path)
+                    continue
+                resources = actor.get("resources", {})
+                if not isinstance(resources, dict):
+                    _add(findings, "error", "mechanics_resources_invalid", f"Actor {actor_id} resources must be an object.", path)
+                    continue
+                for resource_id, resource in resources.items():
+                    if not isinstance(resource, dict):
+                        _add(findings, "error", "mechanics_resource_invalid", f"Resource {actor_id}.{resource_id} must be an object.", path)
+                        continue
+                    values = [resource.get(key) for key in ("minimum", "current", "maximum")]
+                    if not all(isinstance(value, int) and not isinstance(value, bool) for value in values):
+                        _add(findings, "error", "mechanics_resource_bounds_invalid", f"Resource {actor_id}.{resource_id} needs integer minimum/current/maximum.", path)
+                        continue
+                    minimum, current, maximum = values
+                    if minimum > maximum or not minimum <= current <= maximum:
+                        _add(findings, "error", "mechanics_resource_out_of_bounds", f"Resource {actor_id}.{resource_id} is outside its configured bounds.", path)
 
 
 def _check_player_state(state_text: str, state_path: Path, findings: list[dict]) -> None:
@@ -336,11 +933,18 @@ def _check_player_state(state_text: str, state_path: Path, findings: list[dict])
 
     max_total, recommended_max = budget
     total = sum(parsed_stats.values())
+    budget_policy = _clean_scalar(player_values.get("stat_budget_policy", "standard"))
+    budget_note = _clean_scalar(player_values.get("stat_budget_note", ""))
+    custom_policy = budget_policy == "custom_arc_earned" and bool(budget_note)
+    if budget_policy not in {"standard", "custom_arc_earned"}:
+        _add(findings, "error", "stat_budget_policy_invalid", f"Unknown stat_budget_policy: {budget_policy}", state_path)
+    if budget_policy == "custom_arc_earned" and not budget_note:
+        _add(findings, "error", "stat_budget_note_missing", "custom_arc_earned requires stat_budget_note.", state_path)
     if total > max_total:
         _add(
             findings,
-            "warning",
-            "stat_budget_exceeded",
+            "info" if custom_policy else "warning",
+            "stat_budget_custom" if custom_policy else "stat_budget_exceeded",
             f"Stat total {total} exceeds {level_band} budget {max_total}.",
             state_path,
         )
@@ -349,8 +953,8 @@ def _check_player_state(state_text: str, state_path: Path, findings: list[dict])
     for name in too_high:
         _add(
             findings,
-            "warning",
-            "stat_level_max_exceeded",
+            "info" if custom_policy else "warning",
+            "stat_level_custom" if custom_policy else "stat_level_max_exceeded",
             f"Stat {name} exceeds recommended max {recommended_max} for {level_band}.",
             state_path,
         )
@@ -369,12 +973,18 @@ def check_campaign(campaign_path: Path) -> dict:
         if not path.is_file():
             _add(findings, "error", "required_file_missing", f"Missing required file: {relative}", path)
 
+    for relative in RECOMMENDED_FILES:
+        path = campaign_path / relative
+        if not path.is_file():
+            _add(findings, "warning", "recommended_file_missing", f"Missing recommended file: {relative}", path)
+
     for relative in REQUIRED_DIRS:
         path = campaign_path / relative
         if not path.is_dir():
             _add(findings, "error", "required_dir_missing", f"Missing required directory: {relative}", path)
 
     _check_dashboard(campaign_path, findings)
+    _check_optional_json_state(campaign_path, findings)
 
     state_path = campaign_path / "current_state.yaml"
     state_text = _read(state_path, findings) if state_path.is_file() else ""
@@ -397,7 +1007,31 @@ def check_campaign(campaign_path: Path) -> dict:
     if not campaign_id or campaign_id == "replace_me":
         _add(findings, "warning", "campaign_id_placeholder", "Campaign id is still blank or replace_me.", state_path)
 
+    memory_version_raw = _clean_scalar(top_values.get("memory_version", ""))
+    revision_raw = _clean_scalar(top_values.get("continuity_revision", ""))
+    try:
+        memory_version = int(memory_version_raw) if memory_version_raw else 1
+    except ValueError:
+        memory_version = 0
+        _add(findings, "error", "memory_version_invalid", "memory_version must be an integer.", state_path)
+    try:
+        continuity_revision = int(revision_raw) if revision_raw else 0
+    except ValueError:
+        continuity_revision = -1
+        _add(findings, "error", "continuity_revision_invalid", "continuity_revision must be a non-negative integer.", state_path)
+    if continuity_revision < 0:
+        _add(findings, "error", "continuity_revision_invalid", "continuity_revision must be a non-negative integer.", state_path)
+    if memory_version < 2:
+        _add(findings, "warning", "memory_v2_pending", "Campaign has not been migrated to Lite memory V2.", state_path)
+    else:
+        for relative in V2_FILES:
+            path = campaign_path / relative
+            if not path.is_file():
+                _add(findings, "error", "v2_file_missing", f"Lite V2 requires: {relative}", path)
+
     _check_player_state(state_text, state_path, findings)
+    player_values = _nested_values(_block(state_text, "player"))
+    level_band = _clean_scalar(player_values.get("level_band", ""))
 
     scene_values = _nested_values(_block(state_text, "current_scene"))
     for key in SCENE_KEYS:
@@ -409,7 +1043,7 @@ def check_campaign(campaign_path: Path) -> dict:
         if not _note_exists(campaign_path / "places", location):
             _add(
                 findings,
-                "warning",
+                "error" if memory_version >= 2 else "warning",
                 "location_note_missing",
                 f"Current location has no matching place note: {location}",
                 campaign_path / "places",
@@ -417,12 +1051,12 @@ def check_campaign(campaign_path: Path) -> dict:
     else:
         _add(findings, "info", "location_blank", "Current location is blank; expected for a fresh template.", state_path)
 
-    present_npcs = _parse_inline_list(scene_values.get("present_npcs", ""))
+    present_npcs = _parse_nested_block_list(state_text, "current_scene", "present_npcs")
     for npc in present_npcs:
-        if not _note_exists(campaign_path / "characters", npc):
+        if not _note_exists(campaign_path / "characters", npc) and not _ledger_contains(campaign_path, npc):
             _add(
                 findings,
-                "warning",
+                "error" if memory_version >= 2 else "warning",
                 "npc_note_missing",
                 f"Present NPC has no matching character note: {npc}",
                 campaign_path / "characters",
@@ -432,6 +1066,17 @@ def check_campaign(campaign_path: Path) -> dict:
     duplicates = sorted({item for item in inventory if inventory.count(item) > 1})
     for item in duplicates:
         _add(findings, "warning", "duplicate_inventory_item", f"Inventory lists duplicate item: {item}", state_path)
+
+    _check_markdown_mechanics(campaign_path, level_band, findings)
+
+    if memory_version >= 2 and all((campaign_path / relative).is_file() for relative in V2_FILES):
+        _check_v2_memory(
+            campaign_path,
+            revision=continuity_revision,
+            location=location,
+            present_npcs=present_npcs,
+            findings=findings,
+        )
 
     return _result(campaign_path, findings)
 

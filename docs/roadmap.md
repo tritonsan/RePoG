@@ -16,9 +16,13 @@ agentic RPG workspace.
 - Add more audit guidance for hidden knowledge leaks.
 - Improve examples of major arc closure, rewards, and companion upgrades.
 - Add optional check helpers only when they catch real campaign problems.
+- Playtest selective context routing, on-demand world domains, deterministic
+  resource handling, and narration repetition warnings in long campaigns.
 - Improve the optional local dashboard after playtesting it in real campaigns.
 - Improve visual workflow guidance for tools that can generate or display
   images.
+- Playtest Lite V2 active-cast, location-graph, and continuity-revision
+  warnings across long campaigns.
 
 ## v0.3.x: Portability
 

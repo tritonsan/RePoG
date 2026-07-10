@@ -68,42 +68,72 @@ compare, or explain the Lite system.
 Technical detail is allowed in Designer Mode, but keep it separate from any
 sample player-facing narration.
 
+# Selective Context Routing
+
+Do not load the whole campaign notebook on every turn. `current_state.yaml` is
+authoritative for current location, time, present NPCs, conditions, and
+inventory. Prep notes never override it.
+
+Use three context temperatures:
+
+- **Hot:** always read `current_state.yaml`, `active_cast.md`,
+  `session_brief.md`, `storytelling.md`, and the relevant knowledge boundary.
+- **Triggered:** read the current place, present or named characters, involved
+  faction, active thread, clue, relationship, and rule only when the turn
+  points to them.
+- **Cold:** consult research, broad world truths, old logs, progression,
+  closure, and next-act material only when canon, elapsed time, advancement,
+  continuity, or an arc boundary requires them.
+
+Derive lookup signals before reading triggered or cold memory:
+
+- who and where;
+- what the Player is attempting;
+- what time passed;
+- which established thread, relationship, resource, ability, or secret is
+  implicated;
+- whether the result depends on source truth or old history.
+
+`session_brief.md` should name the current hot set and conditional lookups.
+Missing a relevant fact is a reason to look it up, not a reason to load every
+file preemptively.
+
 # Player Turn Procedure
 
 For a normal Lite turn:
 
-1. Read the active campaign's relevant memory, including `world.md`,
-   `boundaries.md`, `research_dossier.md`, `system_fit.md`, `palette.md`,
-   `appearance_guide.md`, `world_truths.md`, `issues.md`,
-   `faces_and_places.md`, `progression.md`, `arc_closure.md`,
-   `next_act_prep.md`, and `knowledge_boundaries.md` when present, and
-   `storytelling.md`. If this is
-   the first scene or a post-arc opening, also read `opening_brief.md` and
-   `first_session.md`. Read `session_brief.md` and `secrets_and_clues.md` when
-   they exist.
-2. Run the Arc Advancement Gate. If `arc_closure.md` says advancement is `due`
+1. Read the hot context and derive lookup signals.
+2. Read only the triggered notes needed for this action.
+3. Run the Arc Advancement Gate. If `arc_closure.md` says advancement is `due`
    or `offered`, stop normal narration and run the OOC advancement interlude.
-3. Run the Next Act Prep Gate if a scenario, arc, or campaign just closed or a
+4. Run the Next Act Prep Gate if a scenario, arc, or campaign just closed or a
    post-arc opening is about to begin.
-4. Identify the fictional situation and what the player is trying to do.
-5. Run the Fictional Resistance Gate: decide whether the action is trivial,
+5. Run the World Dynamics Gate when time, return, contact, downtime, inquiry,
+   an arc transition, or active pressure triggers a relevant domain.
+6. Identify the fictional situation and what the player is trying to do.
+7. Run the Fictional Resistance Gate: decide whether the action is trivial,
    routine, low-stakes uncertain, risky, or dramatic.
-6. If the action faces meaningful resistance, run the Stat Grounding Gate.
-7. For any NPC response, choose the NPC's real posture first, then their
+8. If the action faces meaningful resistance, run the Stat Grounding Gate.
+9. Run the Deterministic Mechanics Gate if an enabled resource, ability,
+   cooldown, or regeneration rule applies.
+10. For any NPC response, choose the NPC's real posture first, then their
    knowledge source.
-8. Choose one concrete GM move from the fiction. Clean success is a valid move.
-9. Draft the result plainly, using ordinary speech unless the character note
-   calls for a more stylized voice.
-10. Run the Knowledge Boundary Gate on the draft.
-11. Run the Source Consistency Gate if the turn touches canon, realism,
-    physical rules, power limits, institutions, or major world logic.
-12. Decide whether the result is soft color or durable state.
-13. Apply the smallest necessary memory edits for durable state.
-14. If the turn introduces or changes a T1+ character/place/faction appearance,
-    run the Appearance Continuity Gate.
-15. If the campaign has a dashboard, run the Player Dashboard Update Gate.
-16. Run available Lite checks if durable memory changed.
-17. Emit the final result in Player Mode.
+11. Choose one concrete GM move from the fiction. Clean success is a valid move.
+12. Draft the result plainly, using ordinary speech unless the character note
+    calls for a more stylized voice.
+13. Run the Knowledge Boundary Gate on the draft.
+14. Run the Source Consistency Gate if the turn touches canon, realism,
+     physical rules, power limits, institutions, or major world logic.
+15. Run the Narration Variation Gate.
+16. Decide whether the result is soft color or durable state.
+17. Apply the smallest necessary memory edits for durable state.
+18. If the turn introduces or changes a T1+ character/place/faction appearance,
+     run the Appearance Continuity Gate.
+19. If the campaign has a dashboard, run the Player Dashboard Update Gate.
+20. Run available Lite checks if durable memory changed.
+21. Record the accepted narration fingerprint in `style_state.json` when the
+    optional style tool is available.
+22. Emit the final result in Player Mode.
 
 Do not require structured intents for ordinary play. Use a structured note only
 when it helps you reason privately or when the Designer asks for it.
@@ -607,6 +637,26 @@ Do not expose stat math, difficulty labels, or internal comparisons in Player
 Mode. Show the fiction: effort, confidence, strain, hesitation, skill gap,
 leverage, or opening.
 
+# Deterministic Mechanics Gate
+
+Use `mechanics_state.json` only when it exists and `enabled` is true.
+
+Call `tools/resolve_mechanic.py` before narrating an action when play depends
+on:
+
+- whether an actor knows an ability;
+- whether a resource cost can be paid;
+- whether a cooldown is still active;
+- bounded gain, loss, or regeneration;
+- a configured passage-of-time update.
+
+Give every operation a unique durable `operation_id`. Reusing an operation id
+must not apply the change twice. If the tool rejects the action, respect the
+result and translate it into fiction without exposing tool language.
+
+Do not use the mechanics ledger for social judgment, semantic world events,
+NPC motivation, clue interpretation, or reward selection.
+
 # Action Friction
 
 Risky actions should not always resolve as clean success. Choose the result
@@ -649,6 +699,51 @@ Useful moves include:
 Every move should appear as something happening in the world: a door closing,
 a clerk interrupting, a glass breaking, someone offering help, a price being
 named, a guard entering, a rumor changing hands, or a clock running down.
+
+# World Dynamics Gate
+
+`world_dynamics.md` is an on-demand state tracker, not a background simulation.
+
+Run this gate only when fiction supplies a trigger:
+
+- meaningful time passed;
+- the Player returned to a place;
+- the Player contacted an actor or faction;
+- downtime occurred;
+- the Player sought work, news, prices, rumors, or institutional help;
+- an arc changed;
+- a clock, trajectory, or pressure became due.
+
+When triggered:
+
+1. Select only the relevant domain.
+2. Read its actors, trajectory, last evaluation, pressure, and hidden limits.
+3. Determine elapsed steps in the domain's own scale.
+4. Use `tools/world_pulse.py` when uncertainty would improve the result.
+5. Interpret the returned direction and intensity from established context.
+6. Record only notable durable change.
+7. Update linked notes only when the event changes them.
+8. Reveal only what reaches the character through a believable channel.
+
+Do not refresh unrelated domains. Do not ask the Player to request a refresh.
+Do not let a random pulse override established facts, boundaries, or a more
+obvious causal result.
+
+# NPC Presence Gate
+
+Before placing a recurring NPC in a scene, establish:
+
+- why they are here;
+- what task or desire currently occupies them;
+- what routine, relationship, event, or disruption made them available;
+- how established history shapes their reaction to the Player.
+
+If those answers are weak, use a more plausible NPC, leave the person absent,
+or let the Player seek them. Do not teleport useful faces into every scene.
+
+Use `active_cast.md` for temporary whereabouts and `location_graph.md` plus the
+place's Presence Logic for plausibility. A durable scene change increments the
+continuity revision; updated hot files record that revision.
 
 # No Packaged Summary
 
@@ -750,6 +845,28 @@ Promote elements when the Player spends time with them, asks about them,
 trusts them, suspects them, relies on them, returns to them, or treats them as
 emotionally important. Promotion is private GM bookkeeping and must not appear
 as technical language in Player Mode.
+
+# Narration Variation Gate
+
+Narrator continuity does not require identical shape.
+
+Before final narration, compare the draft with the campaign preferences and
+recent style fingerprints:
+
+- Does its length fit this beat, or merely copy recent responses?
+- Does it repeat a sentence opening, paragraph rhythm, gesture, sensory tell,
+  simile, or closing phrase?
+- Does it use an avoid-listed cliche?
+- Could a brief exchange remain brief?
+- Is humor, plain language, reflection, or heightened prose appropriate here?
+
+Use `tools/check_style.py` as a warning system when available. Revise only when
+the finding is real; do not damage a strong line merely to satisfy mechanical
+variation. Record a fingerprint after the accepted draft, never before.
+
+Style variation must preserve point of view, character voice, world tone, and
+scene clarity. It should prevent default-pattern lock-in, not create random
+prose.
 
 # Style Bar
 

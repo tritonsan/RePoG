@@ -17,10 +17,15 @@ Allowed statuses:
 - `not_needed`: the campaign can rely on player answers and ordinary genre
   assumptions.
 - `needed_pending`: research should happen before durable worldbuilding.
-- `researched`: research was performed and source notes are recorded below.
-- `user_supplied`: the Designer provided the authoritative source material.
-- `unavailable`: research was needed but not available; assumptions must be
-  explicit and conservative.
+- `partial_complete`: enough research exists for the current play scale, with
+  explicit open questions that must not be silently resolved.
+- `complete`: the selected source scope is sufficiently grounded.
+- `unavailable_risk_accepted`: research was needed but unavailable and the
+  Designer explicitly accepted conservative assumptions.
+
+World truths, factions, powers, and source-sensitive rules must not be marked
+locked while status is `needed_pending` unless the explicit risk acceptance is
+recorded here.
 
 Allowed modes:
 

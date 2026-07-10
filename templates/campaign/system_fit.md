@@ -63,6 +63,16 @@ Things that should be checked with simple tools or explicit arithmetic.
 
 - 
 
+### Optional Mechanics Ledger
+
+- Enabled: yes | no
+- Actors tracked:
+- Bounded resources:
+- Ability prerequisites and costs:
+- Cooldown units:
+- Regeneration triggers:
+- Mechanics that must remain GM judgment:
+
 ## GM Judgment Zones
 
 Things Codex should decide from fiction, campaign memory, and table feel.

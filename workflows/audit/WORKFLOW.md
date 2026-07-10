@@ -66,6 +66,21 @@ Check:
 - companion or allied NPC advancement is considered when an NPC meaningfully
   participated or changed;
 - `current_state.yaml` is readable and small;
+- V2 campaigns contain memory version and non-negative continuity revision;
+- every present T2+ NPC has one complete, plausible `active_cast.md` row;
+- `location_graph.md` endpoints resolve and directed routes are explicit;
+- `relationship_map.md` contains current truth without duplicate current pairs;
+- stale prep revision is reported and never overrides current state;
+- `session_brief.md` identifies a small active memory set and uses triggered
+  lookups rather than treating the entire campaign as hot context;
+- `world_dynamics.md`, when present, contains only campaign-relevant domains,
+  clear refresh triggers, and notable changes rather than continuous
+  simulation;
+- hidden world events remain outside Player Mode and the dashboard;
+- `mechanics_state.json`, when enabled, has bounded resources, known abilities,
+  cooldown units, and no duplicate applied operation ids;
+- `style_state.json`, when present, is valid, bounded, and stores fingerprints
+  rather than full narration;
 - `storytelling.md` exists and defines option prompting, reveal policy, and
   pacing defaults;
 - `storytelling.md` defines challenge density, routine competence, clean
@@ -78,6 +93,8 @@ Check:
 - T2+ NPC notes include table hook, default posture, mundane agenda, plain
   speech sample, compact appearance card, stat block, power band, weak
   stats/blind spots, and key info separated from personality;
+- recurring NPC notes include routine/availability logic, and useful NPCs do
+  not appear without a plausible reason, current task, and contextual reaction;
 - companion notes include stats, key capabilities, weak stats, and current
   growth ceiling;
 - major obstacles have relevant stat, difficulty, and clean/partial/failure
@@ -128,6 +145,8 @@ Check:
 - no obvious mojibake or placeholder names remain;
 - player-facing examples do not overuse cryptic, aphoristic, or market-style
   dialogue;
+- narration varies length and cadence by scene function and does not recycle
+  avoid-listed cliches, gestures, or sensory formulas;
 - ordinary NPCs have ordinary needs and speech when the scene calls for it;
 - low-risk competent actions are not routinely turned into tests,
   complications, suspicion, or hard consequences;
@@ -140,6 +159,11 @@ Use Lite tools when available:
 - `tools/check_player_facing.py` for leakage;
 - `tools/check_state.py` for state sanity;
 - `tools/check_dashboard.py` for local dashboard state;
+- `tools/check_style.py` for warning-level narration repetition checks;
+- `tools/world_pulse.py` for deterministic uncertainty when a relevant domain
+  refresh is due;
+- `tools/resolve_mechanic.py` for enabled deterministic resource and cooldown
+  operations;
 - `tools/snapshot.py` before larger repairs.
 
 If the tools are not implemented yet, perform a manual audit and report that

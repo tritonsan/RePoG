@@ -37,16 +37,30 @@ agent quietly keeps a very good notebook.
 - Play in ordinary natural language instead of commands or menus.
 - Keep NPCs, companions, factions, locations, items, secrets, and relationships
   from being forgotten.
+- Track why relevant NPCs are present, what they are doing independently, and
+  where they plausibly go next.
+- Keep gameable location connections, access, traffic, and travel facts in a
+  compact graph.
 - Separate GM-only truth from what the player, companions, NPCs, and factions
   actually know.
 - Track character growth, companion growth, rewards, and major arc closures.
 - Carry old NPCs, items, debts, threads, and consequences into the next act.
+- Let the GM select only the memory relevant to the current scene instead of
+  loading the entire campaign notebook every turn.
+- Advance relevant factions, routines, economies, or other world domains on
+  demand when the fiction triggers them.
+- Optionally enforce resources, ability costs, cooldowns, and regeneration with
+  small deterministic tools.
+- Detect repeated narration length, sentence openings, stock phrases, and
+  campaign-specific cliches.
 - Use optional source or web research when canon, history, physics, culture, or
   genre logic matters.
 - Open a local auto-refresh campaign board for the current scene, known clues,
   visible NPCs, inventory, a pan/zoom local atlas, and accepted visuals.
 - Extend the workspace toward visual references when your agentic tool supports
   image generation or image display.
+- Detect stale hot context, duplicate current relationships, broken location
+  graph references, and incomplete presence logic with Lite V2 checks.
 
 ## Quick Start
 
@@ -213,6 +227,9 @@ Important memory files include:
 - `next_act_prep.md`: what carries forward into the next major act.
 - `opening_brief.md`: the next opening scene source.
 - `current_state.yaml`: small structured state for checks.
+- `world_dynamics.md`: on-demand offscreen domains and notable changes.
+- `style_state.json`: bounded narration fingerprints for repetition checks.
+- `mechanics_state.json`: optional deterministic resources and cooldowns.
 - `dashboard/`: optional local player board.
 
 The full template lives in `templates/campaign/`.

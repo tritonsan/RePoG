@@ -58,7 +58,8 @@ acting.
 Ask what kind of play the campaign should support: combat, social pressure,
 investigation, survival, travel, intrigue, heist, horror, drama, or a mix.
 Then establish mechanics weight, stats, starting level, and which areas need
-deterministic checks versus GM judgment.
+deterministic checks versus GM judgment. Ask whether resources, ability
+prerequisites, cooldowns, or regeneration need the optional mechanics ledger.
 
 ### 5. Canon Policy
 
@@ -72,7 +73,13 @@ Ask for Yes / No / Maybe lists: what belongs, what stays out, and what needs
 permission. Include genre cliches, power types, faction styles, visual motifs,
 and storytelling habits.
 
-### 7. World Truths
+### 7. Visual Mode And Art Direction
+
+Ask whether visuals are off, manual-only, major-only, curated, or rich. Record
+quota stance, eligible targets, art direction, acceptance/canon policy, and
+whether accepted images may appear on the player dashboard.
+
+### 8. World Truths
 
 Ask playable truth categories one at a time as needed:
 
@@ -90,25 +97,26 @@ Ask playable truth categories one at a time as needed:
 Each truth should include what pressure, opportunity, or constraint it creates
 in play.
 
-### 8. Scale
+### 9. Scale
 
 Ask the initial playable scale: one building, neighborhood, settlement, island,
 region, route, faction web, or larger sandbox. Decide what is onstage for the
-first session and what stays offscreen.
+first session and what stays offscreen. Establish coarse fictional time,
+gameable location connections, access, ordinary traffic, and news travel.
 
-### 9. Current And Impending Issues
+### 10. Current And Impending Issues
 
 Ask for active problems instead of a fixed plot. For each issue, capture what
 is wrong, who benefits, who suffers, what visible sign reaches the player, what
 happens if nobody acts, and what open question makes it playable.
 
-### 10. Factions
+### 11. Factions
 
 Ask only for factions needed by the initial scale. Each faction needs a linked
 issue, public mask, true desire, methods, resources, face, key place, pressure
 tactic, player knowledge boundary, and next move if unopposed.
 
-### 11. Faces And Places
+### 12. Faces And Places
 
 Ask for NPCs and locations as playable handles for issues, factions, and player
 ties. A face/place should represent a pressure, offer a real table interaction,
@@ -116,7 +124,12 @@ want something independently, and hold back unrevealed truth until play earns
 it. Ask for first-glance visual read and stable appearance/spatial details for
 T2+ faces and places.
 
-### 12. Progression And Rewards
+For recurring NPCs also ask where they normally work or live, when they are
+available, what puts them elsewhere, and what they do if the player ignores
+them. Initialize current whereabouts in `active_cast.md` and routes in
+`location_graph.md`.
+
+### 13. Progression And Rewards
 
 Ask how often the player should receive upgrade opportunities and which
 closure levels matter: session, scenario, arc, or campaign. Establish whether
@@ -127,7 +140,7 @@ or allied NPC advancement should work.
 Record durable decisions in `progression.md`. Use `arc_closure.md` later for
 actual closure reviews and chosen upgrades.
 
-### 13. Player Character
+### 14. Player Character
 
 Ask these one by one:
 
@@ -170,25 +183,26 @@ For every special capability, capture:
 
 The model should derive capability options from the chosen setting.
 
-### 14. PC Integration
+### 15. PC Integration
 
 Ask how the player character revises the world: linked issues, linked factions,
 faces, places, personal pressure, companion, mentor, rival, enemy, family,
 debt, secret, patron, or backstory limits Codex must not invent.
 
-### 15. Starting Situation / Session 0.5
+### 16. Starting Situation / Session 0.5
 
 Ask where the character begins, when and how they arrived, what they know, what
 is visibly happening, what neutral action space exists, what pressure or hook
 is present, and what must not be revealed yet.
 
-### 16. Continuity Rules
+### 17. Continuity Rules
 
 Ask what must stay coherent: canon limits, power escalation, NPC knowledge,
 secrecy, creation capture, relationship capture, advancement cadence,
 companion advancement, protected proper nouns, player/PC knowledge, companion
 knowledge, research dossier status, open source questions,
-Designer-approval triggers, and distill expectations.
+Designer-approval triggers, selective context, on-demand world domains, and
+distill expectations.
 
 ## Storytelling Defaults
 
@@ -204,7 +218,12 @@ Default to natural GM narration:
 - flexible secrets and clues;
 - distinct NPC voices with rotated metaphor families;
 - suspicion is not the default NPC posture;
-- plain speech comes before polished or cryptic speech.
+- plain speech comes before polished or cryptic speech;
+- response length and cadence follow scene function;
+- recurring narrator cliches, gestures, and sensory formulas enter an
+  avoid-list;
+- relevant world domains update from fictional triggers rather than player
+  bookkeeping commands.
 
 ## Output Files
 
@@ -217,6 +236,8 @@ Use the interview to create:
 - `boundaries.md`
 - `system_fit.md`
 - `palette.md`
+- `visual_style.md`
+- `visual_gallery.md`
 - `world_truths.md`
 - `issues.md`
 - `faces_and_places.md`
@@ -225,12 +246,17 @@ Use the interview to create:
 - `next_act_prep.md`
 - `knowledge_boundaries.md`
 - `storytelling.md`
+- `world_dynamics.md`
+- `style_state.json`
+- optional `mechanics_state.json`
 - `appearance_guide.md`
 - `opening_brief.md`
 - `first_session.md`
 - `player.md`
 - `player_ties.md`
 - `current_state.yaml`
+- `active_cast.md`
+- `location_graph.md`
 - `creation_ledger.md`
 - `relationship_map.md`
 - `secrets_and_clues.md`

@@ -88,6 +88,12 @@ changes it. Choose something specific; suspicion is only one possible posture.
 What this character is doing or trying to finish that has nothing to do with
 the player's current objective.
 
+## Routine And Availability
+
+Where this character normally spends time, what brings them elsewhere, and
+what must be true for them to appear in a scene. Do not teleport them to the
+player merely because they are useful.
+
 ## Voice And Speech Pattern
 
 Word choice, rhythm, directness, social tactic, pressure style, and metaphor
@@ -116,6 +122,14 @@ polished.
 ## Public Face
 
 What the player can perceive or learn easily.
+
+## Visual Reference
+
+- Image file:
+- Visual status: none, draft, accepted, deprecated, or needs_regen.
+- Prompt seed:
+- Accepted visual canon:
+- Do not change:
 
 ## Key Info, If Any
 
