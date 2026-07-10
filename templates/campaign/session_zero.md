@@ -13,6 +13,7 @@ Keep each module short, current, and useful at the table.
 - System Fit: open
 - Canon Policy: open
 - Palette: open
+- Visual Mode And Art Direction: open
 - World Truths: open
 - Scale: open
 - Current And Impending Issues: open
@@ -30,6 +31,8 @@ Status terms:
 - `open`: still needs a Designer answer.
 - `defaulted`: Codex chose a coherent default because the Designer allowed it.
 - `defer`: intentionally left for play to discover.
+- `locked_with_open_questions`: safe at the current scale, with named limits
+  that remain unresolved.
 
 ## 1. Campaign Pitch
 
@@ -64,6 +67,7 @@ See `research_dossier.md`.
 - Stat model:
 - Starting level:
 - Deterministic checks:
+- Deterministic resources/cooldowns/regeneration:
 - GM judgment zones:
 
 ## 5. Canon Policy
@@ -78,60 +82,76 @@ See `research_dossier.md`.
 
 See `palette.md`.
 
-## Appearance Detail
+## 7. Visual Mode And Art Direction
 
-See `appearance_guide.md`.
+See `visual_style.md` and `visual_gallery.md`.
 
+- Visual mode:
+- Quota stance:
+- Generation targets:
 - Appearance detail level:
-- Image-readiness:
-- Stable detail policy:
-- Changeable detail policy:
+- Art direction:
+- Visual canon policy:
+- Display policy:
 
-## 7. World Truths
+## 8. World Truths
 
 See `world_truths.md`.
 
-## 8. Scale
+## 9. Scale
 
 - Initial playable scale:
 - First-session onstage area:
 - Offscreen until later:
 - Power/travel implications:
+- Coarse fictional time model:
+- Starting location connections and access boundaries:
+- Ordinary traffic and news-travel assumptions:
 
-## 9. Current And Impending Issues
+## 10. Current And Impending Issues
 
 See `issues.md`.
 
-## 10. Factions
+## 11. Factions
 
 - Initial faction scope:
 - Factions created:
 - Factions deferred:
+- Independent next moves and evaluation triggers:
 
-## 11. Faces And Places
+## 12. Faces And Places
 
 See `faces_and_places.md`.
 
-## 12. Progression And Rewards
+- NPC ecology and ordinary work:
+- Routine and availability expectations:
+- Relationship asymmetries:
+
+## 13. Progression And Rewards
 
 See `progression.md`, `arc_closure.md`, and `next_act_prep.md`.
 
-## 13. Player Character
+- Arc dramatic question and closure signals:
+- Crew or group social contract:
+
+## 14. Player Character
 
 See `player.md`.
 
-## 14. PC Integration
+## 15. PC Integration
 
 See `player_ties.md`.
 
-## 15. Starting Situation / Session 0.5
+## 16. Starting Situation / Session 0.5
 
 See `opening_brief.md` and `first_session.md`.
 
-## 16. Continuity Rules
+## 17. Continuity Rules
 
 - Creation capture:
 - Relationship capture:
+- Active cast ownership:
+- Location graph ownership:
 - Secret and clue handling:
 - Knowledge boundaries:
 - Research/source boundaries:
@@ -139,6 +159,12 @@ See `opening_brief.md` and `first_session.md`.
 - Power escalation limits:
 - Progression and reward cadence:
 - Companion advancement:
+- Selective hot context:
+- Triggered lookups:
+- On-demand world domains:
+- Context revision and source-of-truth precedence:
+- Visual generation:
+- Visual canon:
 - Designer approval triggers:
 - Distill expectations:
 

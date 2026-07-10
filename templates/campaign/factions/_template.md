@@ -60,6 +60,14 @@ revealing hidden symbols or secret structure too early.
 - Visual tells outsiders can notice:
 - Hidden visual facts:
 
+## Visual Reference
+
+- Image file:
+- Visual status: none, draft, accepted, deprecated, or needs_regen.
+- Prompt seed:
+- Accepted visual canon:
+- Do not change:
+
 ## Related Issues
 
 Current or impending issues this faction represents, worsens, hides, profits
@@ -115,6 +123,11 @@ Who opposes, funds, fears, needs, or manipulates this faction.
 ## Current Move
 
 What the faction is doing now.
+
+## Next Move If Ignored
+
+What the faction is likely to attempt without player involvement, and which
+fictional trigger should cause the GM to evaluate that move.
 
 ## Pressure Clock Or Escalation
 

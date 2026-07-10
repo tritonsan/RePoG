@@ -119,6 +119,8 @@ Decide what kind of play the campaign engine should support:
 - how special capabilities, expertises, powers, technology, social influence,
   or resources should be treated;
 - what needs deterministic checks versus GM judgment.
+- whether resources, cooldowns, regeneration, or ability prerequisites need the
+  optional deterministic mechanics ledger.
 
 Record the durable version in `system_fit.md` and summarize it in `rules.md`.
 
@@ -149,7 +151,15 @@ Record the durable version in `palette.md`. Use `research_dossier.md` to keep
 source-breaking assumptions, realism errors, and genre mismatches out of the
 Yes list.
 
-## 7. World Truths
+## 7. Visual Mode And Art Direction
+
+Decide whether generated visuals are off, manual-only, major-only, curated, or
+rich. Record quota stance, eligible targets, art direction, visual canon, and
+dashboard display policy. Generated images remain drafts until accepted.
+
+Record the durable version in `visual_style.md` and `visual_gallery.md`.
+
+## 8. World Truths
 
 Build the setting from playable truths, not encyclopedia entries.
 
@@ -173,7 +183,7 @@ Record the durable version in `world_truths.md` and summarize key items in
 `world.md`. Do not lock a truth that conflicts with `research_dossier.md`
 unless the Designer explicitly changes the campaign's source or realism policy.
 
-## 8. Scale
+## 9. Scale
 
 Decide the initial playable scale:
 
@@ -187,7 +197,10 @@ Decide the initial playable scale:
 Record the durable version in `world.md`, `first_session.md`, and
 `current_state.yaml`.
 
-## 9. Current And Impending Issues
+Also define a coarse time model, starting-area connections, ordinary traffic,
+access boundaries, and how quickly news normally travels.
+
+## 10. Current And Impending Issues
 
 Create active problems instead of a fixed plot.
 
@@ -204,7 +217,7 @@ player ignores them. For each issue, record:
 Record the durable version in `issues.md`, `threads.md`, and
 `secrets_and_clues.md` when discoveries are involved.
 
-## 10. Factions
+## 11. Factions
 
 Create only the factions needed for the first playable scale.
 
@@ -226,7 +239,7 @@ For each faction, ask:
 Record factions in `factions/*.md`, `creation_ledger.md`, and
 `relationship_map.md`.
 
-## 11. Faces And Places
+## 12. Faces And Places
 
 Give issues and factions playable handles.
 
@@ -249,7 +262,11 @@ important face/place, ask:
 Record the index in `faces_and_places.md`, and use `characters/*.md` and
 `places/*.md` for durable notes.
 
-## 12. Progression And Rewards
+For recurring NPCs, establish baseline routine, availability, ordinary work,
+and what could place them elsewhere. Initialize temporary current rows in
+`active_cast.md` and gameable routes in `location_graph.md`.
+
+## 13. Progression And Rewards
 
 Decide how the campaign keeps growth alive.
 
@@ -271,7 +288,7 @@ Record the durable version in `progression.md`. Use `arc_closure.md` later to
 log actual closure reviews, upgrade offers, chosen upgrades, companion
 advancement, GM-awarded perks, reward calibration, and world advancement.
 
-## 13. Player Character
+## 14. Player Character
 
 Ask these one by one:
 
@@ -318,7 +335,7 @@ For every special capability, record:
 
 Do not force setting-specific examples. Derive choices from the world.
 
-## 14. PC Integration
+## 15. PC Integration
 
 Revise the world after the player character exists.
 
@@ -339,7 +356,7 @@ risk, and likely trouble.
 Record the durable version in `player_ties.md`, `relationship_map.md`, and
 `threads.md`.
 
-## 15. Starting Situation / Session 0.5
+## 16. Starting Situation / Session 0.5
 
 Build the first playable situation, not a railroad.
 
@@ -359,7 +376,7 @@ antagonist plan, faction map, or hidden truth.
 
 Record the durable version in `opening_brief.md` and `first_session.md`.
 
-## 16. Continuity Rules
+## 17. Continuity Rules
 
 Decide what must stay coherent during play:
 
@@ -402,6 +419,12 @@ group contract, system fit, and continuity modules:
 - how much local noise, unrelated activity, or false leads the campaign wants;
 - how varied or stylized important NPC voices should be;
 - which metaphor families, stock phrases, or narrator habits should be avoided;
+- how response length should vary between routine exchanges, active scenes,
+  action, emotional turns, and arc transitions;
+- how much humor, plain language, sensory detail, and prose density fit the
+  campaign;
+- which gestures, sentence structures, similes, or cliches should enter the
+  campaign avoid-list;
 - how dense challenges should be, and when routine competence should simply
   pass;
 - how often clean success, quiet passage, or breather scenes should appear;
@@ -428,7 +451,28 @@ Default storytelling stance:
   friction;
 - reserve hard complications for real resistance, meaningful uncertainty, or
   irreversible stakes;
-- vary pacing and dramatic beat instead of repeating the same rhythm.
+- vary pacing and dramatic beat instead of repeating the same rhythm;
+- vary message length and sentence cadence according to scene function.
+
+# On-Demand World Dynamics
+
+During Session 0, decide whether any offscreen domain matters at the initial
+play scale. Examples include faction pressure, local economy, travel, NPC
+routines, politics, resource flow, or a setting-specific process.
+
+For each selected domain, record in `world_dynamics.md`:
+
+- its limited scope;
+- current actors and trajectory;
+- volatility and pressure;
+- which fictional events trigger reevaluation;
+- how consequences can reach the character;
+- what remains hidden.
+
+Do not create a domain merely because it exists in the setting. Do not run
+continuous background simulation. The GM should refresh a domain only when
+elapsed time, return to a place, contact with an actor, downtime, inquiry, an
+arc transition, or an active pressure makes the result relevant.
 
 # From-Scratch Campaign Procedure
 
@@ -442,9 +486,12 @@ When starting a new Lite campaign from scratch:
    `system_fit.md`, `palette.md`, `world_truths.md`, `issues.md`,
    `faces_and_places.md`, `progression.md`, `arc_closure.md`,
    `next_act_prep.md`, `knowledge_boundaries.md`, `world.md`, `boundaries.md`,
-   `storytelling.md`, `appearance_guide.md`, and `rules.md`.
+   `storytelling.md`, `appearance_guide.md`, `world_dynamics.md`, and
+   `rules.md`.
 6. Create the player files: `player.md`, `player_ties.md`, and
-   `current_state.yaml`.
+   `current_state.yaml`. Initialize `active_cast.md`, `location_graph.md`, and
+   `style_state.json`; configure
+   `mechanics_state.json` only when deterministic mechanics are enabled.
 7. Create only enough NPCs, places, factions, threads, and flexible clues to
    make the first session playable.
 8. Fill `opening_brief.md` as `first_campaign_opening` and `first_session.md`
@@ -482,12 +529,17 @@ Create or revise these files:
 - `next_act_prep.md`
 - `knowledge_boundaries.md`
 - `storytelling.md`
+- `world_dynamics.md`
+- `style_state.json`
+- `mechanics_state.json` when deterministic mechanics are enabled
 - `appearance_guide.md`
 - `opening_brief.md`
 - `first_session.md`
 - `player.md`
 - `player_ties.md`
 - `current_state.yaml`
+- `active_cast.md`
+- `location_graph.md`
 - `creation_ledger.md`
 - `relationship_map.md`
 - `secrets_and_clues.md`

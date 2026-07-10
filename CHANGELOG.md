@@ -6,6 +6,16 @@ All notable changes to RePoG will be documented here.
 
 ### Added
 
+- Lite memory V2 with continuity revisions and coarse fictional time.
+- `active_cast.md` for relevant NPC whereabouts, activity, availability,
+  presence reason, and independent next moves.
+- `location_graph.md` for travel, access, visibility, traffic, and route
+  knowledge.
+- Current-only relationship graph semantics and semantic continuity checks for
+  stale prep, graph references, duplicate relationship pairs, research gates,
+  NPC presence, and documented arc-earned stat exceptions.
+- Optional visual mode, gallery, and organized campaign visual folders.
+
 - Optional local auto-refresh campaign dashboard template.
 - `check_dashboard.py` helper for dashboard state validation.
 - Dashboard usage documentation and demo-script notes.
@@ -13,6 +23,14 @@ All notable changes to RePoG will be documented here.
   characters, NPCs, factions, and locations.
 - Appearance continuity guidance for GM, worldbuild, distill, and audit
   workflows.
+- Selective hot/triggered/cold context routing for GM turns.
+- On-demand `world_dynamics.md` domains and deterministic `world_pulse.py`
+  uncertainty envelopes.
+- Optional deterministic `mechanics_state.json` with resource, ability,
+  cooldown, regeneration, idempotency, and revision checks.
+- Narration cadence preferences, bounded style fingerprints, and
+  warning-oriented `check_style.py`.
+- NPC routine, availability, presence logic, and faction next-move guidance.
 
 ## v0.1.0 - Public Starter Release
 

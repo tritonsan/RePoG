@@ -2,28 +2,15 @@
 
 Campaign id: `replace_me`
 
-Use this file as a compact edge-list. It is not a vector store and not an
-encyclopedia. Keep entries short so the GM can load the relationship web
-without spending many tokens.
+As of revision: 0
 
-Format:
+Use this file for current relationship truth only. Historical changes belong
+in `session_log.md`. Keep at most one current row for the same directed pair;
+use a bidirectional row when the relationship is genuinely shared.
 
-`A -> B: relation / status / player-known? / last change`
+| From | Direction | To | Relation | Status | Trust / debt / tension | Knowledge asymmetry | Player-known | Last changed | Revision |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: |
+| Character A | <-> | Character B | working partners | active | cautious trust | A knows more | yes | setup | 0 |
 
-## Character Links
-
-- `Character A -> Character B: relation / status / player-known? / last change`
-
-## Location Links
-
-- `Location A -> Location B: route, proximity, access, or contrast / status / player-known? / last change`
-
-## Faction Links
-
-- `Faction A -> Faction B: alliance, rivalry, dependency, fear, debt, or manipulation / status / player-known? / last change`
-
-## Cross-Type Links
-
-- `NPC -> Location: presence, ownership, access, captivity, rumor, or habit / status / player-known? / last change`
-- `NPC -> Faction: member, enemy, target, patron, debtor, asset, or threat / status / player-known? / last change`
-- `Faction -> Location: control, influence, hidden access, resource, or threat / status / player-known? / last change`
+Remove the example row before play. Location topology belongs in
+`location_graph.md`, not here.

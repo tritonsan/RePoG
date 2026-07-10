@@ -15,6 +15,8 @@ Read:
 
 - `session_log.md`;
 - `current_state.yaml`;
+- `active_cast.md`;
+- `location_graph.md` when movement, access, or discovery changed;
 - `world.md`;
 - `research_dossier.md`, when source scope, canon, realism, or world logic was
   tested;
@@ -86,6 +88,10 @@ Update the smallest necessary files:
 - update faction notes for visible moves, hidden pressure, or changed faction
   capability or visual identity;
 - update `current_state.yaml` for immediate next-session state;
+- update `active_cast.md` for relevant NPC whereabouts, activity, objective,
+  availability, presence reason, and next independent move;
+- update `location_graph.md` only when route, access, travel, traffic, or
+  player-known connection truth changed;
 - update `opening_brief.md` as `post_arc_opening` when the next session needs a
   fresh opening bridge.
 - update `dashboard/dashboard_state.json` when player-known scene, thread,
@@ -198,6 +204,11 @@ Keep old facts only if they still matter. Mark resolved threads clearly. Do not
 delete meaningful history from `session_log.md`; append corrections or
 clarifications instead.
 
+For each durable distill, increment `current_state.yaml.continuity_revision`
+once. Record the revision in `active_cast.md`, `relationship_map.md`, and each
+hot or offscreen domain actually reviewed. Current state wins every conflict;
+relationship history stays in `session_log.md`.
+
 When a note becomes too long, compress it into:
 
 - current truth;
@@ -289,6 +300,35 @@ next session would benefit from a light prep page. Keep it short:
 - secrets/clues that might surface;
 - useful NPCs with posture and mundane agenda;
 - live locations.
+
+Also rebuild the selective context fields:
+
+- keep the active memory set small;
+- add triggered lookups instead of loading broad campaign history;
+- list due world checks only when their fictional trigger may occur.
+
+# World Dynamics Review
+
+Review only domains touched by elapsed time or play:
+
+- record durable notable changes in `world_dynamics.md`;
+- update last-evaluated time and the next likely pressure;
+- preserve hidden events as GM-only until a believable channel exposes them;
+- do not advance unrelated domains for completeness;
+- move consequences into faction, character, place, thread, or knowledge notes
+  only when they became durable.
+
+# Narration Variety Review
+
+Review recent style findings and table feel:
+
+- add genuinely overused phrases, gestures, sensory tells, or similes to the
+  campaign avoid-list;
+- note whether response length has become mechanically uniform;
+- preserve effective NPC voices while separating narrator habits from
+  character speech;
+- remove stale avoid-list entries only when the Designer deliberately wants
+  them available again.
 
 # Dashboard Distill
 

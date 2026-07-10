@@ -109,6 +109,8 @@ campaigns/<campaign_id>/
   world_truths.md
   issues.md
   faces_and_places.md
+  visual_style.md
+  visual_gallery.md
   progression.md
   arc_closure.md
   next_act_prep.md
@@ -119,6 +121,11 @@ campaigns/<campaign_id>/
   player.md
   player_ties.md
   current_state.yaml
+  active_cast.md
+  location_graph.md
+  world_dynamics.md
+  style_state.json
+  mechanics_state.json
   creation_ledger.md
   relationship_map.md
   secrets_and_clues.md
@@ -130,6 +137,7 @@ campaigns/<campaign_id>/
   places/
   factions/
   snapshots/
+  visuals/
   dashboard/
 ```
 
@@ -150,6 +158,10 @@ The memory model is intentionally small:
 - `issues.md` stores current and impending problems instead of a fixed plot.
 - `faces_and_places.md` links issues and factions to usable NPC/location
   handles.
+- `visual_style.md` records opt-in visual mode, quota, targets, art direction,
+  canon policy, and dashboard display policy.
+- `visual_gallery.md` indexes generated and accepted visuals without becoming
+  a second art bible.
 - `progression.md` defines closure levels, reward cadence, upgrade types,
   OOC upgrade check-ins, player motivation, balance checks, and companion
   advancement.
@@ -175,10 +187,20 @@ The memory model is intentionally small:
   because this player character exists.
 - `current_state.yaml` stores the small set of mechanical facts that benefit
   from structured checks.
+- `active_cast.md` stores temporary whereabouts, activity, availability,
+  presence reason, and next moves only for NPCs relevant to the current chain.
+- `location_graph.md` stores compact travel, access, visibility, traffic, and
+  player knowledge between gameable places.
+- `world_dynamics.md` tracks only campaign-relevant offscreen domains and
+  notable on-demand changes. It is not a continuous simulation.
+- `style_state.json` stores a short rolling fingerprint history for narration
+  variation checks, not full prose.
+- `mechanics_state.json` is an optional deterministic ledger for resources,
+  abilities, cooldowns, and regeneration when Session 0 enables it.
 - `creation_ledger.md` is the compact production memory for every T1+ named
   NPC, location, or faction introduced during worldbuilding or play.
-- `relationship_map.md` is a compact edge-list relationship web. It is not a
-  vector store and not an encyclopedia.
+- `relationship_map.md` stores current relationship truth only. Historical
+  changes belong in `session_log.md`; duplicate event edges do not belong here.
 - `secrets_and_clues.md` stores short, flexible discoveries without locking
   them to one NPC or delivery method.
 - `session_brief.md` is optional light GM prep for player focus, strong start,
@@ -203,16 +225,17 @@ modular Session 0 interview:
 4. System Fit.
 5. Canon Policy.
 6. Palette.
-7. World Truths.
-8. Scale.
-9. Current And Impending Issues.
-10. Factions.
-11. Faces And Places.
-12. Progression And Rewards.
-13. Player Character.
-14. PC Integration.
-15. Starting Situation / Session 0.5.
-16. Continuity Rules.
+7. Visual Mode And Art Direction.
+8. World Truths.
+9. Scale.
+10. Current And Impending Issues.
+11. Factions.
+12. Faces And Places.
+13. Progression And Rewards.
+14. Player Character.
+15. PC Integration.
+16. Starting Situation / Session 0.5.
+17. Continuity Rules.
 
 The interview is setting-neutral. Codex must first understand the chosen
 universe, genre, storytelling preferences, power and expertise model, and canon
@@ -279,23 +302,28 @@ raise the tier and update the ledger/map.
 For a play turn:
 
 1. Identify the active campaign.
-2. Read `current_state.yaml`, `world.md`, `boundaries.md`, `system_fit.md`,
-   `research_dossier.md`, `palette.md`, `appearance_guide.md`,
-   `world_truths.md`, `issues.md`, `faces_and_places.md`, `progression.md`, `arc_closure.md`,
-   `next_act_prep.md`, `knowledge_boundaries.md`,
-   `storytelling.md`, `opening_brief.md` when opening or bridging a scene,
-   `creation_ledger.md`, `relationship_map.md`, `secrets_and_clues.md`,
-   `session_brief.md` and `first_session.md` when present, `threads.md`,
-   `rules.md`, relevant character/place/faction notes, and recent entries in
-   `session_log.md`.
-3. Interpret the player action directly.
-4. Decide whether the result is purely narrative or durable.
-5. If durable, update the smallest necessary memory files before final
-   narration.
-6. If the campaign has `dashboard/dashboard_state.json`, update it with only
+2. Read the hot set: authoritative `current_state.yaml`, `active_cast.md`,
+   `session_brief.md`, `storytelling.md`, and the relevant portion of
+   `knowledge_boundaries.md`.
+3. Derive lookup signals from the current place, present characters, elapsed
+   time, player action, active thread, mechanic, and knowledge boundary.
+4. Read only the triggered character/place/faction/thread/rule notes. Consult
+   cold campaign references such as research, world truths, progression, arc
+   files, and older logs only when a signal requires them.
+5. Check whether the fiction triggers an on-demand domain refresh in
+   `world_dynamics.md`.
+6. Interpret the player action directly.
+7. Use `resolve_mechanic.py` when an enabled deterministic resource, ability,
+   cooldown, or regeneration rule applies.
+8. Decide whether the result is purely narrative or durable.
+9. If durable, update the smallest necessary memory files before final
+   narration and increment one shared continuity revision. Prep never overrides
+   current state.
+10. If the campaign has `dashboard/dashboard_state.json`, update it with only
    player-safe current information.
-7. Run available checks when durable memory changed.
-8. Reply in Player Mode with no technical leakage.
+11. Run player-facing and optional style checks. Record the accepted narration
+    fingerprint only after the final draft is chosen.
+12. Reply in Player Mode with no technical leakage.
 
 # Player Dashboard
 
@@ -332,6 +360,10 @@ campaign.
 The tools should remain small. A tool that starts to perform full intent
 routing, act scaffolding, or narrative generation is probably becoming a second
 engine and should be challenged.
+
+`world_pulse.py` may supply deterministic uncertainty, `resolve_mechanic.py`
+may enforce explicitly configured mechanical state, and `check_style.py` may
+report repetition. None of them may invent semantic world events or narration.
 
 # Quality Bar
 

@@ -34,6 +34,14 @@ architectural encyclopedia.
 - Hidden visual facts:
 - Changeable details:
 
+## Visual Reference
+
+- Image file:
+- Visual status: none, draft, accepted, deprecated, or needs_regen.
+- Prompt seed:
+- Accepted visual canon:
+- Do not change:
+
 ## Reaction Point
 
 The pressure, opportunity, visible change, or NPC action the scene should land
@@ -85,6 +93,12 @@ What local people are doing that is not primarily about the player's goal.
 ## People Usually Present
 
 Who belongs here, who visits, and who watches.
+
+## Presence Logic
+
+For recurring people, record why they would be here, what task or desire
+occupies them, and which time, event, relationship, or disruption changes their
+availability.
 
 ## Dangers
 

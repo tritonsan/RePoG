@@ -168,6 +168,35 @@ down for discovery, aftermath, emotional turns, social tension, and meaningful
 inspection. Compress low-risk travel, routine shopping, repeated setup, and
 other actions that should simply work.
 
+## Response Length And Cadence
+
+Length follows the dramatic function of the moment, not the model's previous
+answer.
+
+- Routine passage or simple exchange: brief.
+- Active scene with a meaningful reaction point: medium.
+- Major reveal, emotional turn, or arc transition: long only when earned.
+- Preferred variation:
+- Maximum comfortable length:
+- When deliberate brevity matters:
+
+Do not let the first few responses lock the campaign into one permanent
+message length, paragraph count, or sentence rhythm.
+
+## Narrator Variety
+
+- Prose density:
+- Humor level and suitable contexts:
+- Plain-language preference:
+- Sensory detail frequency:
+- Gesture repetition tolerance:
+- Sentence structures to avoid:
+- Campaign-specific cliches to avoid:
+
+Use humor, reflection, tension, or heightened prose only when the world,
+character perspective, and current beat support them. Variety must not become
+random tonal drift.
+
 ## Beat Rotation
 
 Choose one primary dramatic beat for each turn:
@@ -267,6 +296,8 @@ restricted spaces, and irreversible choices.
 
 - menu-like prompts unless guided choices are requested;
 - repeated closing phrases;
+- repeating the same message-length bucket for every kind of scene;
+- recycling stock gestures, sensory tells, or emotional similes;
 - long lore dumps;
 - explaining hidden motives as fact before discovery;
 - front-loading every prepared detail;
