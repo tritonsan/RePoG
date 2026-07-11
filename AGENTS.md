@@ -95,10 +95,13 @@ In Designer Mode:
 
 # Campaign Memory
 
-A campaign should use this shape:
+A standalone workspace uses `campaign/`. The main development repository and
+legacy multi-campaign workspaces may use `campaigns/<campaign_id>/`; tools and
+workflows support both shapes.
 
 ```text
-campaigns/<campaign_id>/
+campaign/ (or campaigns/<campaign_id>/)
+  setup_profile.yaml
   session_zero.md
   campaign_one_pager.md
   research_dossier.md
@@ -143,6 +146,8 @@ campaigns/<campaign_id>/
 
 The memory model is intentionally small:
 
+- `setup_profile.yaml` owns Session 0 depth, adaptive-pack progress, visible
+  defaults, deferred decisions, checkpoints, and the play-readiness gate.
 - `session_zero.md` is the module index and decision log for campaign
   creation.
 - `campaign_one_pager.md` is the compact player-facing campaign promise and
@@ -215,9 +220,12 @@ The memory model is intentionally small:
 
 # Campaign Creation Interview
 
-When starting a campaign from scratch, do not rely on a compact brief by
-default. Read `workflows/worldbuild/WORKFLOW.md` and run the repo-local
-modular Session 0 interview:
+When `setup_profile.yaml` has `status: pending`, read
+`workflows/worldbuild/WORKFLOW.md` and ask only which Session 0 depth the
+Designer wants: Quick, Standard, or Deep. Do not ask the pitch in the same
+message. Persist the choice, then run the matching interview.
+
+Standard uses the repo-local 17-module interview:
 
 1. Campaign Pitch.
 2. Research Need Gate.
@@ -252,12 +260,13 @@ the Designer when new world rules cannot be resolved from the pitch.
 During Session 0, also record the campaign's appearance detail expectations in
 `appearance_guide.md`; use middle-detail cards by default.
 
-During campaign creation, ask exactly one interview question per assistant
+During campaign creation, ask exactly one decision question per assistant
 message and wait for the Designer's answer. Do not list all worldbuilding
 questions at once.
 
-Only use quick mode if the Designer explicitly asks for a short setup or says
-to use defaults.
+Quick uses 6–8 decisions and records every filled assumption as a visible
+default. Deep completes the Standard core and activates only relevant adaptive
+packs. Never enter play while `ready_for_play` is false.
 
 # Bounded Improvisation
 

@@ -5,6 +5,18 @@ Campaign id: `replace_me`
 Use this file as the campaign creation decision log. It is not a transcript.
 Keep each module short, current, and useful at the table.
 
+## Session 0 Profile
+
+- Depth: pending
+- Activated Deep packs: none
+- Decisions completed: 0
+- Question target: pending
+- Last checkpoint: 0
+- Locked decisions: none
+- Defaulted decisions: none
+- Deferred decisions: none
+- Final player confirmation: pending
+
 ## Module Status
 
 - Campaign Pitch: open

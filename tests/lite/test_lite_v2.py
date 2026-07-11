@@ -175,3 +175,49 @@ def test_documented_arc_stat_policy_downgrades_budget_exceptions(campaign: Path)
     assert "stat_level_max_exceeded" not in rules
     assert "stat_level_custom" in rules
 
+
+def test_pending_setup_profile_is_valid_but_not_ready(campaign: Path) -> None:
+    result = check_state.check_campaign(campaign)
+    assert "setup_ready_mismatch" not in _rules(result)
+
+
+def test_incomplete_deep_pack_blocks_readiness(campaign: Path) -> None:
+    path = campaign / "setup_profile.yaml"
+    path.write_text(
+        """schema_version: 1
+workspace_mode: standalone
+status: complete
+session_zero_mode: deep
+question_target: 40
+questions_completed: 35
+activated_packs: [character_foundation, group]
+completed_packs: [character_foundation]
+defaulted_packs: []
+deferred_decisions: []
+last_checkpoint: 32
+ready_for_play: true
+""",
+        encoding="utf-8",
+    )
+    assert "deep_pack_incomplete" in _rules(check_state.check_campaign(campaign))
+
+
+def test_quick_completion_requires_visible_defaults(campaign: Path) -> None:
+    path = campaign / "setup_profile.yaml"
+    path.write_text(
+        """schema_version: 1
+workspace_mode: repository
+status: complete
+session_zero_mode: quick
+question_target: 8
+questions_completed: 8
+activated_packs: []
+completed_packs: []
+defaulted_packs: []
+deferred_decisions: []
+last_checkpoint: 0
+ready_for_play: true
+""",
+        encoding="utf-8",
+    )
+    assert "quick_defaults_missing" in _rules(check_state.check_campaign(campaign))

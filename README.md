@@ -71,24 +71,22 @@ agent quietly keeps a very good notebook.
    cd RePoG
    ```
 
-2. Open the `RePoG` folder in your agentic coding tool.
+2. Create a clean campaign workspace.
 
-3. Start a new thread or session in that folder.
+   ```bash
+   python tools/create_campaign_workspace.py --target "../My Campaign" --campaign-id my_campaign --git ask
+   ```
+
+3. Open the new `My Campaign` folder and start a new thread or session.
 
 4. Paste this prompt:
 
    ```text
-   Create a new RePoG campaign from scratch.
-   Guide me through Session 0 one question at a time.
-   Keep the setting open until I choose a universe, genre, and tone.
-   If the world needs canon, historical, real-world, scientific, or genre
-   research, make a short research dossier before locking the world rules.
-   When the campaign is ready, create the campaign folder, check it, take a
-   starting snapshot, and begin with a natural opening scene.
+   Start this RePoG campaign and guide me through Session 0.
    ```
 
-5. Answer the questions naturally. When setup is finished, play by writing what
-   your character does.
+5. Choose Quick, Standard, or Deep, then answer naturally. When setup is
+   finished, play by writing what your character does.
 
 For a shorter first step, open [`START_HERE.md`](START_HERE.md).
 
@@ -206,7 +204,8 @@ Recommended startup files:
 <details>
 <summary>Campaign Folder Shape</summary>
 
-A campaign folder is created under `campaigns/<campaign_id>/`.
+New users get a standalone `campaign/` folder. Advanced multi-campaign
+workspaces may continue using `campaigns/<campaign_id>/`.
 
 Important memory files include:
 
@@ -282,7 +281,8 @@ reading and writing campaign notes.
 <details>
 <summary>Session 0 Modules</summary>
 
-RePoG creates campaigns through a guided Session 0:
+RePoG offers Quick (6–8 decisions), Standard (the 17 modules below), and
+adaptive Deep (the Standard core plus relevant detail packs):
 
 1. Campaign Pitch
 2. Research Need Gate
@@ -290,16 +290,17 @@ RePoG creates campaigns through a guided Session 0:
 4. System Fit
 5. Canon Policy
 6. Palette
-7. World Truths
-8. Scale
-9. Current And Impending Issues
-10. Factions
-11. Faces And Places
-12. Progression And Rewards
-13. Player Character
-14. PC Integration
-15. Starting Situation / Session 0.5
-16. Continuity Rules
+7. Visual Mode And Art Direction
+8. World Truths
+9. Scale
+10. Current And Impending Issues
+11. Factions
+12. Faces And Places
+13. Progression And Rewards
+14. Player Character
+15. PC Integration
+16. Starting Situation / Session 0.5
+17. Continuity Rules
 
 The agent should ask one question at a time. The world should begin as a
 playable core, not a complete encyclopedia.

@@ -1,0 +1,12 @@
+schema_version: 1
+workspace_mode: standalone
+status: pending
+session_zero_mode: ""
+question_target: ""
+questions_completed: 0
+activated_packs: []
+completed_packs: []
+defaulted_packs: []
+deferred_decisions: []
+last_checkpoint: 0
+ready_for_play: false

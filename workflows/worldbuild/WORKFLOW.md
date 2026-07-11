@@ -39,14 +39,76 @@ next missing module.
 If the Designer says "use defaults", choose coherent defaults, show the
 assumptions in Designer Mode, and then create files.
 
-# First Question
+# First Question: Session 0 Depth Gate
 
-When no campaign exists yet, the first worldbuilding response should ask only:
+When `setup_profile.yaml.status` is `pending`, the first response asks only:
 
-> What is the campaign pitch: the universe, tone, and player fantasy you want?
+> Which Session 0 depth do you want: Quick (10–15 minutes), Standard (30–60
+> minutes), or Deep (60–120 minutes, normally 30–45 decisions)?
 
-Explain that this controls genre, emotional texture, danger level, and what
-kind of scenes Codex will build. Give a few neutral examples, then wait.
+Persist the selection before asking the campaign pitch. Do not reopen this gate
+for an active or completed campaign.
+
+# Shared Interview Rules
+
+- Ask exactly one decision per message and write the answer immediately.
+- Never repeat a locked, defaulted, skipped, or deferred decision.
+- Accept "use the default", "skip this", "go deeper", and "that is enough".
+- At completion, summarize locked, defaulted, and deferred decisions for final
+  confirmation.
+- Do not begin play until `setup_profile.yaml.ready_for_play` is true.
+
+# Quick Session 0
+
+Use 6–8 decisions: pitch; boundaries/agency/consequence; character concept,
+defining competence and weakness; starting world/problem/place; mechanics,
+progression and failure; narration/options/visuals; research if needed; and
+final confirmation. Fill the full V2 template with a small playable core and
+record every inferred answer in `defaulted_packs` or the defaulted decisions
+section of `session_zero.md`.
+
+# Standard Session 0
+
+Use the 17-module pipeline below, normally 17–25 decisions. Short follow-ups
+are allowed when a module contains more than one real decision. Do not open
+Deep packs.
+
+# Deep Session 0
+
+Complete the Standard core, then activate only relevant packs:
+
+- `character_foundation`: identity, inner life, daily life, voice, resources,
+  personal places, relationships, and change line. Create
+  `character_foundation.md` when activated.
+- `group`: persistent crew, party, company, cult, team, or organization. Create
+  `group.md` when activated.
+- `world_fabric`: original or locally altered society, law, economy, powers,
+  daily life, belief, history, geography, and ecology.
+- `location_network`: travel, exploration, sandbox routes, access, routines,
+  danger, and news flow.
+- `faction_information`: political dependencies, representatives, moves,
+  sources, verification, and pressure chains.
+- `campaign_architecture`: themes, dramatic question, arc promises,
+  setup/payoff, climax, closure, pacing, and possible endings.
+- `mechanics_progression`: stats, costs, counterplay, resources, downtime,
+  injury, growth, and companion advancement.
+- `source_grounding`: canon or real-world scope, uncertainty, and immutable
+  boundaries.
+
+Checkpoint after every 8–10 completed decisions. Show locked decisions, open
+packs, defaults, and an approximate remainder; offer continue, deepen one pack,
+or default the rest. At 30–45 decisions, ask permission before opening another
+branch. Route world detail into existing files; do not create separate society,
+history, economy, or geography notebooks.
+
+# Completion Gate
+
+Before setting `status: complete` and `ready_for_play: true`, ensure every core
+module is locked, defaulted, or deliberately deferred; every activated Deep
+pack is completed or defaulted; the research gate permits durable truth; and
+the character, starting place, one pressure, actionable opening, V2 state,
+active cast, location graph, knowledge boundaries, dashboard, and starting
+snapshot are ready and checked.
 
 # Session 0 Module Pipeline
 
@@ -476,11 +538,12 @@ arc transition, or an active pressure makes the result relevant.
 
 # From-Scratch Campaign Procedure
 
-When starting a new Lite campaign from scratch:
+When starting a new Lite campaign from scratch inside the development repo:
 
 1. Choose a short, readable `campaign_id`.
-2. Copy `templates/campaign/` to `campaigns/<campaign_id>/`.
-3. Run the Session 0 module pipeline, or state chosen defaults.
+2. Prefer `tools/create_campaign_workspace.py` for a standalone `campaign/`;
+   retain `campaigns/<campaign_id>/` for advanced multi-campaign use.
+3. Ask the depth gate, then run Quick, Standard, or adaptive Deep.
 4. Fill `session_zero.md` as the module index and decision log.
 5. Fill the module files: `campaign_one_pager.md`, `research_dossier.md`,
    `system_fit.md`, `palette.md`, `world_truths.md`, `issues.md`,
