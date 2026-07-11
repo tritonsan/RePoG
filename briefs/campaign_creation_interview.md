@@ -1,5 +1,27 @@
 # Campaign Creation Interview
 
+## Depth Gate
+
+If `setup_profile.yaml.status` is `pending`, ask only which setup depth the
+Designer wants and wait:
+
+- Quick: 6–8 decisions, about 10–15 minutes.
+- Standard: the 17 core modules, about 30–60 minutes.
+- Deep: the core plus relevant adaptive packs, about 60–120 minutes and
+  normally 30–45 decisions.
+
+After persisting the choice, ask the campaign pitch. Ask one decision per
+message in every mode. A skipped, defaulted, deferred, or answered decision is
+never asked again.
+
+Quick combines related modules into a playable core and records its visible
+assumptions. Standard follows all modules below. Deep activates only the packs
+whose trigger appears in the answers: Character Foundation, Group / Company,
+World Fabric, Location Network, Faction And Information, Campaign
+Architecture, Mechanics And Progression, and Source Grounding. Deep checkpoints
+after every 8–10 decisions and asks permission before exceeding its 30–45
+decision target.
+
 Use this interview when starting a Lite campaign from scratch.
 
 Do not ask every question at once. Ask exactly one question per assistant

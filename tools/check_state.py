@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 REQUIRED_FILES = [
+    "setup_profile.yaml",
     "world.md",
     "research_dossier.md",
     "next_act_prep.md",
@@ -92,6 +93,16 @@ STAT_MAX = 5
 FACTION_CAPABILITY_COUNT = 7
 
 IMPORTANT_TIERS = {"t2", "t3"}
+SETUP_PACKS = {
+    "character_foundation",
+    "group",
+    "world_fabric",
+    "location_network",
+    "faction_information",
+    "campaign_architecture",
+    "mechanics_progression",
+    "source_grounding",
+}
 DIFFICULTY_VALUES = {"trivial", "routine", "challenging", "hard", "extreme"}
 HIGH_POWER_WORDS = {
     "elite",
@@ -142,6 +153,67 @@ def _read(path: Path, findings: list[dict]) -> str:
 
 def _clean_scalar(value: str) -> str:
     return value.strip().strip("'\"")
+
+
+def _yaml_list(value: str) -> list[str]:
+    value = value.strip()
+    if value == "[]" or not value:
+        return []
+    if not (value.startswith("[") and value.endswith("]")):
+        return []
+    return [_clean_scalar(item) for item in value[1:-1].split(",") if _clean_scalar(item)]
+
+
+def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
+    path = campaign_path / "setup_profile.yaml"
+    if not path.is_file():
+        return
+    text = _read(path, findings)
+    values = _top_level_values(text)
+    status = _clean_scalar(values.get("status", ""))
+    mode = _clean_scalar(values.get("session_zero_mode", ""))
+    ready = _clean_scalar(values.get("ready_for_play", "false")).lower() == "true"
+    workspace_mode = _clean_scalar(values.get("workspace_mode", ""))
+    activated = set(_yaml_list(values.get("activated_packs", "[]")))
+    completed = set(_yaml_list(values.get("completed_packs", "[]")))
+    defaulted = set(_yaml_list(values.get("defaulted_packs", "[]")))
+
+    try:
+        schema_version = int(_clean_scalar(values.get("schema_version", "0")))
+        questions_completed = int(_clean_scalar(values.get("questions_completed", "-1")))
+        last_checkpoint = int(_clean_scalar(values.get("last_checkpoint", "-1")))
+    except ValueError:
+        schema_version = questions_completed = last_checkpoint = -1
+        _add(findings, "error", "setup_number_invalid", "Setup numeric fields must be integers.", path)
+
+    if schema_version != 1:
+        _add(findings, "error", "setup_schema_invalid", "setup_profile schema_version must be 1.", path)
+    if questions_completed < 0 or last_checkpoint < 0 or last_checkpoint > questions_completed:
+        _add(findings, "error", "setup_progress_invalid", "Question and checkpoint progress is inconsistent.", path)
+    unknown_packs = (activated | completed) - SETUP_PACKS
+    if unknown_packs:
+        _add(findings, "error", "setup_pack_invalid", f"Unknown setup packs: {', '.join(sorted(unknown_packs))}", path)
+
+    if workspace_mode not in {"standalone", "repository"}:
+        _add(findings, "error", "setup_workspace_mode_invalid", "workspace_mode must be standalone or repository.", path)
+    if status not in {"pending", "in_progress", "complete"}:
+        _add(findings, "error", "setup_status_invalid", "status must be pending, in_progress, or complete.", path)
+    if status == "pending" and mode:
+        _add(findings, "error", "setup_pending_has_mode", "A pending profile must not preselect Session 0 depth.", path)
+    if status != "pending" and mode not in {"quick", "standard", "deep"}:
+        _add(findings, "error", "setup_mode_invalid", "Choose quick, standard, or deep before setup continues.", path)
+    if ready and status != "complete":
+        _add(findings, "error", "setup_ready_mismatch", "ready_for_play requires status: complete.", path)
+    if status == "complete" and not ready:
+        _add(findings, "error", "setup_ready_mismatch", "Completed Session 0 must set ready_for_play: true.", path)
+    session_zero = campaign_path / "session_zero.md"
+    if ready and session_zero.is_file() and re.search(r"(?im)^- .+: open\s*$", _read(session_zero, findings)):
+        _add(findings, "error", "setup_modules_open", "ready_for_play cannot be true while Session 0 modules remain open.", session_zero)
+    if mode == "deep" and not activated <= (completed | defaulted):
+        missing = ", ".join(sorted(activated - completed - defaulted))
+        _add(findings, "error", "deep_pack_incomplete", f"Activated Deep packs remain unresolved: {missing}", path)
+    if mode == "quick" and status == "complete" and not defaulted:
+        _add(findings, "error", "quick_defaults_missing", "Completed Quick setup must record visible defaults.", path)
 
 
 def _top_level_values(yaml_text: str) -> dict[str, str]:
@@ -982,6 +1054,8 @@ def check_campaign(campaign_path: Path) -> dict:
         path = campaign_path / relative
         if not path.is_dir():
             _add(findings, "error", "required_dir_missing", f"Missing required directory: {relative}", path)
+
+    _check_setup_profile(campaign_path, findings)
 
     _check_dashboard(campaign_path, findings)
     _check_optional_json_state(campaign_path, findings)

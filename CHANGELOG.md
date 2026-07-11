@@ -6,6 +6,12 @@ All notable changes to RePoG will be documented here.
 
 ### Added
 
+- Standalone campaign workspace creation with an explicit runtime allowlist,
+  optional local Git initialization, dry-run inspection, and safe refusal to
+  overwrite non-empty targets.
+- Quick, Standard, and adaptive Deep Session 0 paths with persistent setup
+  progress, visible defaults, checkpoints, and a play-readiness gate.
+- Optional Deep Character Foundation and Group / Company notes.
 - Lite memory V2 with continuity revisions and coarse fictional time.
 - `active_cast.md` for relevant NPC whereabouts, activity, availability,
   presence reason, and independent next moves.

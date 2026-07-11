@@ -2,6 +2,7 @@
 
 Phase 3 includes these small deterministic helpers:
 
+- `create_campaign_workspace.py`
 - `snapshot.py`
 - `check_player_facing.py`
 - `check_state.py`
@@ -14,6 +15,15 @@ These tools should remain guardrails. They should not become a narrative
 engine.
 
 ## Usage
+
+Create a standalone campaign workspace (use `--dry-run` to inspect first):
+
+```bash
+python tools/create_campaign_workspace.py --target "../My Campaign" --campaign-id my_campaign --git ask
+```
+
+The creator copies only the runtime allowlist, refuses non-empty targets, does
+not contact a remote, and leaves Git optional.
 
 Create a campaign snapshot:
 
