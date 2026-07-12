@@ -1,85 +1,35 @@
 # Lite Tools
 
-Phase 3 includes these small deterministic helpers:
+These small deterministic helpers guard campaign continuity. They do not create
+narration or act as a second game engine.
 
-- `create_campaign_workspace.py`
-- `snapshot.py`
-- `check_player_facing.py`
-- `check_state.py`
-- `check_dashboard.py`
-- `check_style.py`
-- `world_pulse.py`
-- `resolve_mechanic.py`
-
-These tools should remain guardrails. They should not become a narrative
-engine.
-
-## Usage
-
-Create a standalone campaign workspace (use `--dry-run` to inspect first):
+## Campaign Checks
 
 ```bash
-python tools/create_campaign_workspace.py --target "../My Campaign" --campaign-id my_campaign --git ask
+python tools/check_state.py campaign
+python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
 ```
 
-The creator copies only the runtime allowlist, refuses non-empty targets, does
-not contact a remote, and leaves Git optional.
-
-Create a campaign snapshot:
+## Snapshot
 
 ```bash
-python tools/snapshot.py campaigns/<campaign_id> --label before_scene
+python tools/snapshot.py campaign --label before_scene
 ```
 
-Scan proposed player-facing text:
+## Player-Facing And Style Checks
 
 ```bash
-python tools/check_player_facing.py --text "You step into the alley."
+python tools/check_player_facing.py --text "You step into the rain."
+python tools/check_style.py campaign/style_state.json --text "Rain ticks against the glass."
+python tools/check_style.py campaign/style_state.json --text "Rain ticks against the glass." --record
 ```
 
-Check a campaign folder:
-
-```bash
-python tools/check_state.py campaigns/<campaign_id>
-```
-
-Check a player dashboard state file:
-
-```bash
-python tools/check_dashboard.py campaigns/<campaign_id>/dashboard/dashboard_state.json
-```
-
-Check a narration draft and optionally record its accepted fingerprint:
-
-```bash
-python tools/check_style.py campaigns/<campaign_id>/style_state.json --text "Rain ticks against the glass."
-python tools/check_style.py campaigns/<campaign_id>/style_state.json --text "Rain ticks against the glass." --record
-```
-
-Generate a deterministic uncertainty envelope for a due world domain:
+## Optional World And Mechanics Helpers
 
 ```bash
 python tools/world_pulse.py --input-json "{\"domain\":\"harbor_trade\",\"elapsed_steps\":3,\"volatility\":2,\"pressure\":1,\"seed\":42}"
-```
-
-Apply an enabled deterministic mechanic:
-
-```bash
-python tools/resolve_mechanic.py campaigns/<campaign_id>/mechanics_state.json --input-json "{\"operation_id\":\"turn-12-fire\",\"operation\":\"use\",\"actor_id\":\"player\",\"action_id\":\"fire_spell\"}"
+python tools/resolve_mechanic.py campaign/mechanics_state.json --input-json "{\"operation_id\":\"turn-12-fire\",\"operation\":\"use\",\"actor_id\":\"player\",\"action_id\":\"fire_spell\"}"
 ```
 
 `world_pulse.py` never invents semantic events. `resolve_mechanic.py` handles
-only mechanics explicitly configured by the campaign. `check_style.py` emits
-warnings, not prose decisions.
-
-For Lite memory V2, `check_state.py` also validates continuity revisions,
-block-list present NPCs, active-cast presence reasons, location graph endpoints,
-current relationship uniqueness, research gates, and documented arc-earned
-stat exceptions. Pre-V2 campaigns receive migration warnings rather than
-automatic rewrites.
-
-## Deferred
-
-- `check_links.py`: only split out if link checking grows beyond the small
-  checks in `check_state.py`.
-- `roll.py`: only add if a campaign explicitly wants dice procedures.
+only mechanics explicitly configured by the campaign.

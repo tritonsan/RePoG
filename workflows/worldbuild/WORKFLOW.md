@@ -551,11 +551,12 @@ arc transition, or an active pressure makes the result relevant.
 
 # From-Scratch Campaign Procedure
 
-When starting a new Lite campaign from scratch inside the development repo:
+When starting the blank Lite campaign included in this workspace:
 
-1. Choose a short, readable `campaign_id`.
-2. Prefer `tools/create_campaign_workspace.py` for a standalone `campaign/`;
-   retain `campaigns/<campaign_id>/` for advanced multi-campaign use.
+1. Ask for or derive a short, readable `campaign_id`, then replace the
+   `new_campaign` placeholder inside `campaign/` as setup answers are written.
+2. Use the already prepared `campaign/`; do not copy or create another campaign
+   folder.
 3. Ask the depth gate, then run Quick, Standard, or adaptive Deep.
 4. Fill `session_zero.md` as the module index and decision log.
 5. Fill the module files: `campaign_one_pager.md`, `research_dossier.md`,

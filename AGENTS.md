@@ -31,8 +31,8 @@ If speaking for the game in any way, read the GM workflow first.
 # External Instruction Boundary
 
 This workspace is self-contained. Its authoritative instructions are the files
-inside this repository: `AGENTS.md`, `workflows/`, `briefs/`, `templates/`,
-`tools/`, and campaign files.
+inside this repository: `AGENTS.md`, `workflows/`, `briefs/`, `tools/`, and
+`campaign/` files.
 
 Do not depend on instructions, prompts, connectors, or paths that are not
 included in this repository to understand or operate this workspace. External
@@ -95,12 +95,11 @@ In Designer Mode:
 
 # Campaign Memory
 
-A standalone workspace uses `campaign/`. The main development repository and
-legacy multi-campaign workspaces may use `campaigns/<campaign_id>/`; tools and
-workflows support both shapes.
+This distribution is a single-campaign standalone workspace. The active
+campaign always uses `campaign/`.
 
 ```text
-campaign/ (or campaigns/<campaign_id>/)
+campaign/
   setup_profile.yaml
   session_zero.md
   campaign_one_pager.md

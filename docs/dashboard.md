@@ -76,15 +76,6 @@ Then open this in Codex's in-app browser or a normal browser:
 http://localhost:8787/
 ```
 
-Advanced multi-campaign repositories may instead use
-`campaigns/<campaign_id>/dashboard`.
-
-For the template dashboard:
-
-```bash
-python -m http.server 8787 --directory templates/campaign/dashboard
-```
-
 ## Player-Safe Rule
 
 The dashboard must never show:
@@ -125,17 +116,14 @@ For V2, map backgrounds also count as dashboard assets and must use
 Validate the dashboard state:
 
 ```bash
-python tools/check_dashboard.py campaigns/<campaign_id>/dashboard/dashboard_state.json
+python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
 ```
 
 Validate the campaign folder:
 
 ```bash
-python tools/check_state.py campaigns/<campaign_id>
+python tools/check_state.py campaign
 ```
-
-For a standalone workspace, use `campaign/dashboard/dashboard_state.json` and
-`campaign` in those two commands.
 
 ## Visual Acceptance And Return
 
