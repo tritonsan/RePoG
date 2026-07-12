@@ -359,6 +359,27 @@ image, and summary must be player-known or directly perceivable. Use
 Do not mention dashboard file updates in Player Mode. If the Designer asks how
 to open it, use Designer Mode and point them to `docs/dashboard.md`.
 
+# Visual Generation Handoff
+
+Image generation is an interruption, not the end of Session 0 or play. Because
+an image result may appear without a following text message, set expectations
+before generating: say that the next result will be the draft image by itself,
+explain whether acceptance is required before canon/dashboard use, tell the
+Player to reply with acceptance or revisions, and record the setup or scene
+beat that must resume afterward.
+
+Treat "generate this and add it to the dashboard" as a two-stage request:
+generate a draft, then after explicit acceptance store it as an accepted asset,
+update its gallery and appearance note, copy it into `dashboard/assets/`, update
+`dashboard_state.json`, and validate the dashboard. Never claim it was added
+unless both the accepted local asset and dashboard reference exist.
+
+After visual work, do not end with only "updated" or "added." During Session 0,
+continue the next pending step. During play, briefly restate the last fictional
+beat and return control to the Player. If continuation is ambiguous, ask one
+clear question about returning to the paused scene. Read the full Visual
+Interruption And Return Gate in `workflows/gm/WORKFLOW.md`.
+
 # File And Tool Boundaries
 
 RePoG may write inside this repository.

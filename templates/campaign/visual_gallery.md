@@ -13,6 +13,11 @@ Status values:
 - `deprecated`: no longer current, but kept as history.
 - `needs_regen`: useful concept, but should be remade.
 
+Generation alone does not mean acceptance. A request to generate and add an
+image to the dashboard remains incomplete until the Player accepts the draft,
+the accepted asset exists under `dashboard/assets/`, and the dashboard state
+references that asset.
+
 ## Visual Index
 
 `Name | Type | Status | Image File | Linked Element | Prompt Used | Canon Notes | Last Shown`

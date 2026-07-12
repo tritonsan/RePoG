@@ -81,6 +81,20 @@ Generated images are drafts until accepted.
 - If a generated image contradicts campaign memory, campaign memory wins.
 - If the Player likes the image but not a detail, record the corrected canon.
 
+## Visual Interaction State
+
+Use this checkpoint so image generation cannot strand Session 0 or play. Clear
+it after acceptance, rejection, or an explicit decision to continue without
+the draft.
+
+- Pending visual review: no
+- Draft target:
+- Interrupted context: none
+- Return anchor:
+- Next step after review:
+- Dashboard placement requested: no
+- Dashboard placement completed: no
+
 ## Display Policy
 
 - Show accepted visuals in Player Mode:
@@ -90,6 +104,11 @@ Generated images are drafts until accepted.
 
 Player-facing display should be brief and natural. Do not expose file paths,
 tool names, prompts, quota language, or implementation notes in Player Mode.
+
+Before generating a draft, tell the Player that the next result may contain
+only the image and that they should reply with acceptance or revisions. After
+the visual task, resume the stored return anchor instead of ending with a bare
+update confirmation.
 
 ## Visual Continuity Rules
 

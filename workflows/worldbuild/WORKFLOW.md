@@ -110,6 +110,11 @@ the character, starting place, one pressure, actionable opening, V2 state,
 active cast, location graph, knowledge boundaries, dashboard, and starting
 snapshot are ready and checked.
 
+Do not complete Session 0 while `visual_style.md` contains a pending visual
+review. A generated but unaccepted opening image may remain a draft only if the
+Player explicitly chooses to proceed without it; clear the return anchor and
+keep the draft out of the dashboard.
+
 # Session 0 Module Pipeline
 
 Use these modules as the default campaign-architect path.
@@ -220,6 +225,14 @@ rich. Record quota stance, eligible targets, art direction, visual canon, and
 dashboard display policy. Generated images remain drafts until accepted.
 
 Record the durable version in `visual_style.md` and `visual_gallery.md`.
+
+If Session 0 generates a visual, do not let generation end the setup flow.
+Before generating, explain that the next result may be only the draft image and
+ask the Designer to accept or revise it afterward. Record the pending review
+and Session 0 return anchor in `visual_style.md`. After acceptance, finish any
+requested gallery/dashboard update and continue the next pending module. If it
+was the final setup task, complete validation and move into the prepared opening
+or explicitly ask whether to begin play.
 
 ## 8. World Truths
 

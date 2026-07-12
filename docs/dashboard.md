@@ -9,10 +9,10 @@ inventory, a pan/zoom local atlas, and accepted visuals.
 
 ## How It Works
 
-Each campaign may contain:
+Each standalone campaign may contain:
 
 ```text
-campaigns/<campaign_id>/dashboard/
+campaign/dashboard/
   index.html
   dashboard_state.json
   assets/
@@ -67,7 +67,7 @@ neutral abstract map surface with player-known nodes and routes.
 From the repository root:
 
 ```bash
-python -m http.server 8787 --directory campaigns/<campaign_id>/dashboard
+python -m http.server 8787 --directory campaign/dashboard
 ```
 
 Then open this in Codex's in-app browser or a normal browser:
@@ -75,6 +75,9 @@ Then open this in Codex's in-app browser or a normal browser:
 ```text
 http://localhost:8787/
 ```
+
+Advanced multi-campaign repositories may instead use
+`campaigns/<campaign_id>/dashboard`.
 
 For the template dashboard:
 
@@ -130,6 +133,19 @@ Validate the campaign folder:
 ```bash
 python tools/check_state.py campaigns/<campaign_id>
 ```
+
+For a standalone workspace, use `campaign/dashboard/dashboard_state.json` and
+`campaign` in those two commands.
+
+## Visual Acceptance And Return
+
+Generated images are drafts until accepted. When the Player asks to create an
+image and add it to the dashboard, the agent previews the draft first, explains
+before generation that acceptance will be needed, and completes the asset copy
+plus dashboard reference only after acceptance.
+
+Afterward, the agent returns to the interrupted Session 0 step or play scene. A
+bare "dashboard updated" message is not a complete player experience.
 
 ## Known Limits
 

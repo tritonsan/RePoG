@@ -221,3 +221,44 @@ ready_for_play: true
         encoding="utf-8",
     )
     assert "quick_defaults_missing" in _rules(check_state.check_campaign(campaign))
+
+
+def test_pending_visual_review_blocks_ready_for_play(campaign: Path) -> None:
+    setup = campaign / "setup_profile.yaml"
+    setup.write_text(
+        """schema_version: 1
+workspace_mode: repository
+status: complete
+session_zero_mode: standard
+question_target: 17
+questions_completed: 17
+activated_packs: []
+completed_packs: []
+defaulted_packs: []
+deferred_decisions: []
+last_checkpoint: 0
+ready_for_play: true
+""",
+        encoding="utf-8",
+    )
+    session_zero = campaign / "session_zero.md"
+    session_zero.write_text(
+        session_zero.read_text(encoding="utf-8").replace(": open", ": locked"),
+        encoding="utf-8",
+    )
+    visual = campaign / "visual_style.md"
+    visual.write_text(
+        visual.read_text(encoding="utf-8").replace(
+            "- Pending visual review: no", "- Pending visual review: yes"
+        ),
+        encoding="utf-8",
+    )
+    assert "visual_review_pending_at_play" in _rules(check_state.check_campaign(campaign))
+
+
+def test_completed_review_warns_when_requested_dashboard_handoff_is_missing(campaign: Path) -> None:
+    visual = campaign / "visual_style.md"
+    text = visual.read_text(encoding="utf-8")
+    text = text.replace("- Dashboard placement requested: no", "- Dashboard placement requested: yes")
+    visual.write_text(text, encoding="utf-8")
+    assert "visual_dashboard_handoff_incomplete" in _rules(check_state.check_campaign(campaign))

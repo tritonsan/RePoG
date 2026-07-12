@@ -786,6 +786,71 @@ use. Use `map.current_node_id` for the current place, `status` for visible
 states such as current, known, locked, or unknown, and `assets/...` paths for
 accepted images or map backgrounds.
 
+# Visual Interruption And Return Gate
+
+Treat every generated image as a temporary branch from Session 0 or play. A
+visual task is not complete merely because an image is visible.
+
+## Before Generation
+
+Before invoking image generation, write a short handoff the Player can follow
+even if the image arrives with no text after it:
+
+1. State that the next output will be the draft image alone.
+2. State that it remains non-canon and outside the dashboard until accepted,
+   unless an already accepted visual is merely being reproduced.
+3. Ask the Player to answer with acceptance or concrete revisions.
+4. Capture a return anchor in `visual_style.md`: interrupted context, last
+   meaningful setup/scene beat, next step, and requested dashboard placement.
+
+Example:
+
+> I’ll generate the draft now. The next result may contain only the image. It
+> will not become canon or enter the dashboard until you approve it; reply
+> “accept” or tell me what to change. After approval, I’ll finish the dashboard
+> update and return us to the quay.
+
+Do not ask the Player to accept a new image before they have seen it.
+
+## Compound Requests
+
+Interpret "create the portrait and add it to the dashboard" as one goal with
+two required stages, not permission to skip acceptance:
+
+1. Generate and register the result as `draft`.
+2. On explicit acceptance, store it under the appropriate accepted visual
+   folder and mark it accepted.
+3. Update the linked appearance note and `visual_gallery.md`.
+4. Copy the player-visible file under `dashboard/assets/` and reference it with
+   an `assets/...` path in `dashboard_state.json`.
+5. Run the dashboard check. If the file cannot be accessed or copied, report
+   the incomplete step honestly and do not claim success.
+
+A disposable, explicitly non-canon image does not need acceptance or dashboard
+placement, but it still needs the return bridge.
+
+## After Acceptance Or Revision
+
+Clear the pending review and use the return anchor. Never finish with a bare
+technical confirmation.
+
+- Session 0: confirm the accepted visual briefly, then continue the next setup
+  decision or, if setup is complete, transition into the prepared opening.
+- Active play: keep the OOC confirmation brief, restate the last fictional beat
+  in one to three sentences, and return control naturally. Do not replay or
+  advance the scene without a Player action.
+- Between scenes: offer one explicit next step, such as returning to the paused
+  scene or beginning the prepared opening.
+
+Example play return:
+
+> Mara’s accepted portrait is now on the player board. Back at Lantern Quay,
+> the echo in the shard is fading while the collectors move closer through the
+> rain. Your hand is still closed around the glass.
+
+Dashboard maintenance is Designer Mode work, but the return anchor restores
+Player Mode without making the Player reconstruct where the game stopped.
+
 # Single-Track Funnel Avoidance
 
 Do not make every NPC, clue, and environmental detail point to the same next
