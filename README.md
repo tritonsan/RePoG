@@ -6,17 +6,48 @@ the extracted folder, and start a new conversation.
 
 ## Start
 
-1. Select **Code → Download ZIP** on GitHub.
-2. Extract the ZIP and optionally rename the folder for your campaign.
-3. Open that extracted folder in Codex, Claude Code, or another agentic coding
-   tool.
-4. Start a new conversation and send:
+<details>
+<summary><strong>Show the four-step installation guide</strong></summary>
 
-   ```text
-   Start this RePoG campaign and guide me through Session 0.
-   ```
+The interface language and exact layout may differ from the recordings, but the
+four steps are the same.
 
-5. Choose Quick, Standard, or Deep Session 0 and answer naturally.
+### 1. Download the workspace
+
+On GitHub, select **Code → Download ZIP**.
+
+![Select Code and Download ZIP on GitHub](assets/getting-started/01-download-zip.gif)
+
+The current repository file list may look simpler than the recording because
+the public download has since been reduced to the clean player workspace.
+
+### 2. Extract the ZIP
+
+Extract the archive into a new folder. You may rename that folder for your
+campaign.
+
+![Extract the downloaded RePoG ZIP](assets/getting-started/02-extract-workspace.gif)
+
+### 3. Open the folder
+
+In Codex, select **Open Folder** and choose the extracted workspace. The same
+folder can also be opened in Claude Code or another agentic coding tool.
+
+![Open the extracted RePoG folder in Codex](assets/getting-started/03-open-in-codex.gif)
+
+### 4. Start Session 0
+
+Start a new conversation in the opened workspace and send:
+
+```text
+Start this RePoG campaign and guide me through Session 0.
+```
+
+![Start a new conversation in the RePoG workspace](assets/getting-started/04-start-conversation.gif)
+
+Choose Quick, Standard, or Deep Session 0 and answer naturally.
+
+</details>
 
 The included `campaign/` folder is blank campaign memory. The agent fills and
 maintains it while you focus on the character, world, and choices. You do not
