@@ -1,45 +1,28 @@
 # Start Here
 
-Create a clean folder for each new campaign from this repository:
+This ZIP is already a clean RePoG campaign workspace.
 
-```powershell
-python tools/create_campaign_workspace.py `
-  --target "D:\Games\My Campaign" `
-  --campaign-id my_campaign `
-  --git ask
-```
-
-The command never creates a remote or pushes to GitHub. It refuses to
-overwrite a non-empty folder. Open the created folder in your agentic coding
-tool and start a new thread or session.
-
-Paste this:
+1. Extract it into a new folder.
+2. Rename the folder if you want.
+3. Open the extracted folder in Codex, Claude Code, or another agentic coding
+   tool.
+4. Start a new conversation.
+5. Send:
 
 ```text
 Start this RePoG campaign and guide me through Session 0.
 ```
 
-Then answer the questions naturally.
+The first question asks whether you want Quick, Standard, or Deep setup. The
+agent then maintains `campaign/` privately while you answer and play.
 
-You do not need to understand the folder structure before playing. RePoG is
-designed so the agent handles the notebook while you focus on the character,
-the world, and the choices.
+Do not open the ZIP archive itself; open the extracted folder. No installation,
+repository clone, template copy, or campaign-creation command is required.
 
-The first question lets you choose Quick, Standard, or Deep setup. Optional:
-standalone campaigns include a local player board under `campaign/dashboard/`.
-After Session 0, run:
+Optional dashboard after setup:
 
 ```bash
 python -m http.server 8787 --directory campaign/dashboard
 ```
 
-Then open `http://localhost:8787/` in Codex's in-app browser or a normal
-browser. See `docs/dashboard.md`.
-
-For OpenAI Codex, the agent should read:
-
-1. `AGENTS.md`
-2. `workflows/worldbuild/WORKFLOW.md`
-3. `briefs/campaign_creation_interview.md`
-
-After setup, play in natural language.
+Then open `http://localhost:8787/`.

@@ -1,0 +1,48 @@
+campaign_id: new_campaign
+mode: lite
+memory_version: 2
+continuity_revision: 0
+status: draft
+last_updated: ""
+
+fictional_time:
+  day: 0
+  phase: setup
+  elapsed_index: 0
+
+player:
+  name: ""
+  concept: ""
+  level_band: beginner
+  stat_budget_policy: standard
+  stat_budget_note: ""
+  condition: ready
+  current_goal: ""
+  stats:
+    Power: 2
+    Agility: 2
+    Endurance: 2
+    Technique: 2
+    Perception: 2
+    Wits: 2
+    Presence: 2
+    Will: 2
+  capabilities: []
+
+current_scene:
+  title: ""
+  location: ""
+  summary: ""
+  present_npcs: []
+  immediate_pressure: ""
+  open_choices: []
+
+inventory: []
+
+conditions: []
+
+active_clocks: []
+
+active_threats: []
+
+notes_for_next_turn: []

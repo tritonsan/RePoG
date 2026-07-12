@@ -25,6 +25,14 @@ Thumbs.db
 tmp/
 temp/
 
+# Unaccepted generated visual drafts
+campaign/visuals/_drafts/*
+!campaign/visuals/_drafts/README.md
+
+# Local dashboard/runtime noise
+campaign/dashboard/*.log
+campaign/dashboard/.cache/
+
 # Optional local secrets
 .env
 .env.*

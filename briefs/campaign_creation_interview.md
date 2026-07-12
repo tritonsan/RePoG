@@ -43,7 +43,8 @@ Every interview question should include:
 
 Then stop.
 
-The first question should be only:
+After the depth gate has been answered and persisted, the first campaign-design
+question should be only:
 
 > What is the campaign pitch: the universe, tone, and player fantasy you want?
 

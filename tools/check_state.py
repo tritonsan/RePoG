@@ -216,6 +216,39 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
         _add(findings, "error", "quick_defaults_missing", "Completed Quick setup must record visible defaults.", path)
 
 
+def _check_visual_handoff(campaign_path: Path, findings: list[dict]) -> None:
+    visual_path = campaign_path / "visual_style.md"
+    if not visual_path.is_file():
+        return
+    visual_text = _read(visual_path, findings)
+    pending = bool(re.search(r"(?im)^- Pending visual review:\s*(yes|true)\s*$", visual_text))
+    dashboard_requested = bool(
+        re.search(r"(?im)^- Dashboard placement requested:\s*(yes|true)\s*$", visual_text)
+    )
+    dashboard_completed = bool(
+        re.search(r"(?im)^- Dashboard placement completed:\s*(yes|true)\s*$", visual_text)
+    )
+    setup_path = campaign_path / "setup_profile.yaml"
+    setup_text = _read(setup_path, findings) if setup_path.is_file() else ""
+    ready = _clean_scalar(_top_level_values(setup_text).get("ready_for_play", "false")).lower() == "true"
+    if pending and ready:
+        _add(
+            findings,
+            "error",
+            "visual_review_pending_at_play",
+            "Session 0 cannot be ready for play while a visual review is pending.",
+            visual_path,
+        )
+    if dashboard_requested and not dashboard_completed and not pending:
+        _add(
+            findings,
+            "warning",
+            "visual_dashboard_handoff_incomplete",
+            "Accepted visual placement was requested but is not recorded as complete.",
+            visual_path,
+        )
+
+
 def _top_level_values(yaml_text: str) -> dict[str, str]:
     values: dict[str, str] = {}
     for line in yaml_text.splitlines():
@@ -1056,6 +1089,7 @@ def check_campaign(campaign_path: Path) -> dict:
             _add(findings, "error", "required_dir_missing", f"Missing required directory: {relative}", path)
 
     _check_setup_profile(campaign_path, findings)
+    _check_visual_handoff(campaign_path, findings)
 
     _check_dashboard(campaign_path, findings)
     _check_optional_json_state(campaign_path, findings)

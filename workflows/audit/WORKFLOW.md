@@ -142,6 +142,12 @@ Check:
   relative `assets/...` paths and no external URLs or absolute paths;
 - Dashboard V2 map nodes and routes do not imply undiscovered locations,
   hidden routes, secret factions, or protected names before reveal;
+- no campaign marked ready for play has a pending visual review;
+- every accepted visual requested for dashboard placement exists under
+  `dashboard/assets/`, is referenced by an `assets/...` path, and has passed
+  the dashboard check;
+- visual generation return anchors are cleared after acceptance, rejection,
+  or an explicit choice to proceed without the draft;
 - no obvious mojibake or placeholder names remain;
 - player-facing examples do not overuse cryptic, aphoristic, or market-style
   dialogue;

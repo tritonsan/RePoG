@@ -110,6 +110,11 @@ the character, starting place, one pressure, actionable opening, V2 state,
 active cast, location graph, knowledge boundaries, dashboard, and starting
 snapshot are ready and checked.
 
+Do not complete Session 0 while `visual_style.md` contains a pending visual
+review. A generated but unaccepted opening image may remain a draft only if the
+Player explicitly chooses to proceed without it; clear the return anchor and
+keep the draft out of the dashboard.
+
 # Session 0 Module Pipeline
 
 Use these modules as the default campaign-architect path.
@@ -220,6 +225,14 @@ rich. Record quota stance, eligible targets, art direction, visual canon, and
 dashboard display policy. Generated images remain drafts until accepted.
 
 Record the durable version in `visual_style.md` and `visual_gallery.md`.
+
+If Session 0 generates a visual, do not let generation end the setup flow.
+Before generating, explain that the next result may be only the draft image and
+ask the Designer to accept or revise it afterward. Record the pending review
+and Session 0 return anchor in `visual_style.md`. After acceptance, finish any
+requested gallery/dashboard update and continue the next pending module. If it
+was the final setup task, complete validation and move into the prepared opening
+or explicitly ask whether to begin play.
 
 ## 8. World Truths
 
@@ -538,11 +551,12 @@ arc transition, or an active pressure makes the result relevant.
 
 # From-Scratch Campaign Procedure
 
-When starting a new Lite campaign from scratch inside the development repo:
+When starting the blank Lite campaign included in this workspace:
 
-1. Choose a short, readable `campaign_id`.
-2. Prefer `tools/create_campaign_workspace.py` for a standalone `campaign/`;
-   retain `campaigns/<campaign_id>/` for advanced multi-campaign use.
+1. Ask for or derive a short, readable `campaign_id`, then replace the
+   `new_campaign` placeholder inside `campaign/` as setup answers are written.
+2. Use the already prepared `campaign/`; do not copy or create another campaign
+   folder.
 3. Ask the depth gate, then run Quick, Standard, or adaptive Deep.
 4. Fill `session_zero.md` as the module index and decision log.
 5. Fill the module files: `campaign_one_pager.md`, `research_dossier.md`,

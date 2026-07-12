@@ -31,8 +31,8 @@ If speaking for the game in any way, read the GM workflow first.
 # External Instruction Boundary
 
 This workspace is self-contained. Its authoritative instructions are the files
-inside this repository: `AGENTS.md`, `workflows/`, `briefs/`, `templates/`,
-`tools/`, and campaign files.
+inside this repository: `AGENTS.md`, `workflows/`, `briefs/`, `tools/`, and
+`campaign/` files.
 
 Do not depend on instructions, prompts, connectors, or paths that are not
 included in this repository to understand or operate this workspace. External
@@ -95,12 +95,11 @@ In Designer Mode:
 
 # Campaign Memory
 
-A standalone workspace uses `campaign/`. The main development repository and
-legacy multi-campaign workspaces may use `campaigns/<campaign_id>/`; tools and
-workflows support both shapes.
+This distribution is a single-campaign standalone workspace. The active
+campaign always uses `campaign/`.
 
 ```text
-campaign/ (or campaigns/<campaign_id>/)
+campaign/
   setup_profile.yaml
   session_zero.md
   campaign_one_pager.md
@@ -358,6 +357,27 @@ image, and summary must be player-known or directly perceivable. Use
 
 Do not mention dashboard file updates in Player Mode. If the Designer asks how
 to open it, use Designer Mode and point them to `docs/dashboard.md`.
+
+# Visual Generation Handoff
+
+Image generation is an interruption, not the end of Session 0 or play. Because
+an image result may appear without a following text message, set expectations
+before generating: say that the next result will be the draft image by itself,
+explain whether acceptance is required before canon/dashboard use, tell the
+Player to reply with acceptance or revisions, and record the setup or scene
+beat that must resume afterward.
+
+Treat "generate this and add it to the dashboard" as a two-stage request:
+generate a draft, then after explicit acceptance store it as an accepted asset,
+update its gallery and appearance note, copy it into `dashboard/assets/`, update
+`dashboard_state.json`, and validate the dashboard. Never claim it was added
+unless both the accepted local asset and dashboard reference exist.
+
+After visual work, do not end with only "updated" or "added." During Session 0,
+continue the next pending step. During play, briefly restate the last fictional
+beat and return control to the Player. If continuation is ambiguous, ask one
+clear question about returning to the paused scene. Read the full Visual
+Interruption And Return Gate in `workflows/gm/WORKFLOW.md`.
 
 # File And Tool Boundaries
 
