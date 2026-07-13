@@ -22,6 +22,11 @@ Architecture, Mechanics And Progression, and Source Grounding. Deep checkpoints
 after every 8–10 decisions and asks permission before exceeding its 30–45
 decision target.
 
+Every depth includes one explicit Turn Protocol choice. `fast` is the
+recommended default, but do not select it silently: show the timing/freshness
+tradeoffs and record the answer. Quick keeps its 6–8 target by treating
+research as conditional and combining related mechanics decisions.
+
 Use this interview when starting a Lite campaign from scratch.
 
 Do not ask every question at once. Ask exactly one question per assistant
@@ -84,6 +89,23 @@ Then establish mechanics weight, stats, starting level, and which areas need
 deterministic checks versus GM judgment. Ask whether resources, ability
 prerequisites, cooldowns, or regeneration need the optional mechanics ledger.
 
+Then ask one Turn Protocol decision:
+
+- Fast (recommended): routine 30–90 seconds, local durable 45–120 seconds,
+  structural/boundary 2–4 minutes; current truth is immediate and secondary
+  notes distill at a scene boundary or after five durable turns.
+- Balanced: light 1–2 minutes, durable 1.5–3 minutes; secondary notes distill
+  at a meaningful beat or after three durable turns.
+- Maximum Continuity: durable 2–4 minutes, structural 3–6 minutes; every
+  affected note and full check runs each durable turn.
+- Custom: tune cadence without disabling current truth, knowledge boundaries,
+  durable revision events, or hot validation.
+
+State that these are estimates rather than guarantees. Record the selected
+profile and materialized policies in `setup_profile.yaml`, `system_fit.md`, and
+`session_zero.md`. Do not complete setup until the estimate caveat is
+acknowledged.
+
 ### 5. Canon Policy
 
 For original settings, confirm `original`. For existing settings, ask canon
@@ -101,6 +123,11 @@ and storytelling habits.
 Ask whether visuals are off, manual-only, major-only, curated, or rich. Record
 quota stance, eligible targets, art direction, acceptance/canon policy, and
 whether accepted images may appear on the player dashboard.
+
+Disclose approximate added time before the choice: +1–2 minutes when a
+dashboard refresh runs, +1–3+ minutes for each image draft or revision, and
++1–2 minutes to place accepted art into the gallery/dashboard. Fast defaults
+to dashboard updates only at scenes and major player-visible changes.
 
 ### 8. World Truths
 
@@ -225,7 +252,10 @@ secrecy, creation capture, relationship capture, advancement cadence,
 companion advancement, protected proper nouns, player/PC knowledge, companion
 knowledge, research dossier status, open source questions,
 Designer-approval triggers, selective context, on-demand world domains, and
-distill expectations.
+distill expectations. Confirm the chosen Turn Protocol cadence and that
+current state, immediately relevant active-cast truth, knowledge changes,
+mechanical results, inventory/conditions, durable events, and arc/reward gates
+are never deferred.
 
 ## Storytelling Defaults
 

@@ -13,6 +13,7 @@ Distill is not a technical changelog. It is the GM's memory becoming sharper.
 
 Read:
 
+- the selected Turn Protocol fields in `setup_profile.yaml`;
 - `session_log.md`;
 - `current_state.yaml`;
 - `active_cast.md`;
@@ -49,6 +50,8 @@ Read:
 Update the smallest necessary files:
 
 - append a concise session or arc summary to `session_log.md`;
+- append `### Distilled Through Revision N` after every pending durable event
+  through N has been propagated;
 - update `issues.md` when current or impending pressures changed, resolved, or
   became visible;
 - update `faces_and_places.md` when an issue gained or lost a useful NPC/place
@@ -114,6 +117,42 @@ A good Lite distill captures:
 
 Avoid summaries that read like command logs. Prefer dramatic consequence over
 mechanical bookkeeping.
+
+# Turn Protocol Distill
+
+Read `current_state.yaml.persistence` and all `### Durable Revision N` entries
+after the most recent `### Distilled Through Revision N` marker. The durable
+event is recovery evidence, not a substitute for current truth; when they
+conflict, `current_state.yaml` wins and the correction is appended rather than
+rewriting history.
+
+Distill is mandatory at the first applicable boundary:
+
+- any scene end;
+- five durable turns for Fast;
+- three durable turns for Balanced;
+- every durable turn for Maximum Continuity;
+- a session pause/end, scenario/arc/campaign closure, advancement/reward gate,
+  T2/T3 or location-graph creation, canon/research lock, continuity conflict,
+  manual full-save request, or profile change.
+
+For each pending event:
+
+1. Reconcile every listed cold target against authoritative current state and
+   the event summary.
+2. Update only affected secondary notes; do not touch unrelated campaign
+   files merely because a distill is running.
+3. Apply the dashboard refresh policy using player-safe information.
+4. Append the distilled-through marker with trigger and reconciled files.
+5. Set `persistence.last_distilled_revision` to the marker revision, reset
+   `durable_turns_since_distill` to 0, and clear `pending_cold_targets`.
+6. Run `python tools/check_state.py campaign --scope full`; run the dashboard
+   checker only if dashboard state changed.
+
+If this pass only propagates an already recorded durable event, do not create a
+second continuity revision. If the distill itself establishes a new closure,
+reward, world reaction, or other durable fiction, first create one matching
+durable revision event, then distill through that revision.
 
 # Appearance Continuity Review
 
@@ -204,8 +243,10 @@ Keep old facts only if they still matter. Mark resolved threads clearly. Do not
 delete meaningful history from `session_log.md`; append corrections or
 clarifications instead.
 
-For each durable distill, increment `current_state.yaml.continuity_revision`
-once. Record the revision in `active_cast.md`, `relationship_map.md`, and each
+Every new durable fictional result increments
+`current_state.yaml.continuity_revision` once and receives a matching durable
+event. Pure propagation of an existing event does not increment it again.
+Record the current revision in `active_cast.md`, `relationship_map.md`, and each
 hot or offscreen domain actually reviewed. Current state wins every conflict;
 relationship history stays in `session_log.md`.
 
@@ -332,7 +373,10 @@ Review recent style findings and table feel:
 
 # Dashboard Distill
 
-If the campaign uses a local dashboard, refresh it after distillation.
+If the campaign uses a local dashboard, refresh it after distillation only
+when the selected policy calls for a scene/major/visible change or the Designer
+explicitly requested it. Maximum Continuity still does not rewrite an
+unchanged dashboard merely to perform work.
 
 The dashboard should show only stable, player-known information that remains
 useful for the next scene or session. Remove stale visible NPCs, resolved

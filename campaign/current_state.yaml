@@ -5,6 +5,11 @@ continuity_revision: 0
 status: draft
 last_updated: ""
 
+persistence:
+  last_distilled_revision: 0
+  durable_turns_since_distill: 0
+  pending_cold_targets: []
+
 fictional_time:
   day: 0
   phase: setup

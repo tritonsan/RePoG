@@ -6,9 +6,14 @@ narration or act as a second game engine.
 ## Campaign Checks
 
 ```bash
-python tools/check_state.py campaign
+python tools/check_state.py campaign --scope hot
+python tools/check_state.py campaign --scope full
 python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
 ```
+
+`hot` is the bounded per-durable-turn check used by Fast and Balanced. `full`
+is the default when `--scope` is omitted and is required at distill, scene,
+session, closure, advancement, migration, and audit boundaries.
 
 ## Snapshot
 

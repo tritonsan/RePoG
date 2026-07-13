@@ -26,6 +26,10 @@ Check:
 - `campaign_one_pager.md` is player-safe and does not reveal GM-only secrets;
 - `system_fit.md` explains the expected play activity mix and mechanics
   weight;
+- `setup_profile.yaml` selects a valid Turn Protocol before play, materializes
+  its policies, and records acknowledgement of the displayed time estimates;
+- Custom protocols keep authoritative state, knowledge boundaries, durable
+  revision events, and hot validation mandatory;
 - `palette.md` has Yes / No / Maybe boundaries that do not conflict with
   `boundaries.md`;
 - `appearance_guide.md` exists and defines middle-detail appearance rules,
@@ -67,6 +71,14 @@ Check:
   participated or changed;
 - `current_state.yaml` is readable and small;
 - V2 campaigns contain memory version and non-negative continuity revision;
+- `current_state.yaml.persistence` has a valid last-distilled revision, bounded
+  durable-turn counter, and deduplicated pending cold targets;
+- every schema-v2 durable revision has a matching append-only event, and each
+  recorded distilled revision has a matching distilled-through marker;
+- Fast never exceeds five undistilled durable turns and Balanced never exceeds
+  three; Maximum Continuity leaves no durable turn pending;
+- session/scene/arc closure and advancement gates have no unresolved cold
+  targets;
 - every present T2+ NPC has one complete, plausible `active_cast.md` row;
 - `location_graph.md` endpoints resolve and directed routes are explicit;
 - `relationship_map.md` contains current truth without duplicate current pairs;
@@ -163,7 +175,8 @@ Check:
 Use Lite tools when available:
 
 - `tools/check_player_facing.py` for leakage;
-- `tools/check_state.py` for state sanity;
+- `tools/check_state.py campaign --scope hot` for per-durable-turn current
+  sanity and `--scope full` at the selected distill boundary;
 - `tools/check_dashboard.py` for local dashboard state;
 - `tools/check_style.py` for warning-level narration repetition checks;
 - `tools/world_pulse.py` for deterministic uncertainty when a relevant domain

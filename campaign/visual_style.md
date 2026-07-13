@@ -6,6 +6,22 @@ Use this file only if the campaign wants optional generated visuals. Visual
 generation can consume Codex usage limits, so it is off by default and should
 be enabled only by an explicit Session 0 choice.
 
+## Expected Time Cost
+
+Present these as typical planning ranges, not guarantees:
+
+- a dashboard refresh and validation can add about 1–2 minutes to an affected
+  turn;
+- one generated image draft can add about 1–3+ minutes;
+- each image revision repeats the generation cost;
+- placing an accepted visual into the gallery and dashboard can add about
+  1–2 minutes after approval.
+
+The Fast profile should default to dashboard refreshes at scene changes and
+major player-visible changes, not ordinary dialogue turns. Before image
+generation, state the expected extra wait together with the existing draft,
+acceptance, and return instructions.
+
 ## Visual Mode
 
 - Mode: off
@@ -97,6 +113,7 @@ the draft.
 
 ## Display Policy
 
+- Dashboard refresh policy:
 - Show accepted visuals in Player Mode:
 - Show draft visuals in Player Mode:
 - Repeat existing visuals when an element returns:

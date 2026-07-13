@@ -64,6 +64,23 @@ All modes use the same continuity model. Quick records visible defaults;
 Standard gives a balanced setup; Deep opens only the detail packages relevant
 to the chosen campaign.
 
+## Turn Speed And Continuity
+
+Session 0 also asks how much maintenance each turn should perform:
+
+- **Fast (recommended):** saves current truth immediately and batches
+  secondary notes at scene boundaries or after five durable turns.
+- **Balanced:** reconciles secondary notes at important beats or after three
+  durable turns.
+- **Maximum Continuity:** updates every affected note and runs full checks on
+  every durable turn.
+- **Custom:** lets you tune the cadence without disabling core continuity
+  safeguards.
+
+The setup interview shows typical wait ranges and separately explains the
+extra time for dashboard refreshes and generated images. These are planning
+estimates rather than guarantees.
+
 ## What RePoG Keeps Coherent
 
 - current scene, fictional time, character state, inventory, and pressure;
@@ -93,7 +110,8 @@ only player-known information. See [`docs/dashboard.md`](docs/dashboard.md).
 ## Optional Checks
 
 ```bash
-python tools/check_state.py campaign
+python tools/check_state.py campaign --scope hot
+python tools/check_state.py campaign --scope full
 python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
 python tools/snapshot.py campaign --label before_scene
 ```

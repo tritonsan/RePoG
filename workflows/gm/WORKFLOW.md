@@ -76,6 +76,7 @@ inventory. Prep notes never override it.
 
 Use three context temperatures:
 
+- **Protocol:** read the small `setup_profile.yaml` Turn Protocol fields first.
 - **Hot:** always read `current_state.yaml`, `active_cast.md`,
   `session_brief.md`, `storytelling.md`, and the relevant knowledge boundary.
 - **Triggered:** read the current place, present or named characters, involved
@@ -125,18 +126,84 @@ For a normal Lite turn:
 14. Run the Source Consistency Gate if the turn touches canon, realism,
      physical rules, power limits, institutions, or major world logic.
 15. Run the Narration Variation Gate.
-16. Decide whether the result is soft color or durable state.
-17. Apply the smallest necessary memory edits for durable state.
+16. Classify the result as `soft`, `local_durable`, or
+    `structural_boundary` using the Turn Persistence Protocol below.
+17. Apply only the writes required by that class. Durable results increment one
+    shared continuity revision and receive a matching append-only event before
+    final narration.
 18. If the turn introduces or changes a T1+ character/place/faction appearance,
-     run the Appearance Continuity Gate.
-19. If the campaign has a dashboard, run the Player Dashboard Update Gate.
-20. Run available Lite checks if durable memory changed.
-21. Record the accepted narration fingerprint in `style_state.json` when the
-    optional style tool is available.
+    run the Appearance Continuity Gate.
+19. Run the Player Dashboard Update Gate only when the selected policy and an
+    actual player-visible change require it.
+20. Run the selected hot or full Lite check. Run the dashboard checker only if
+    dashboard state changed.
+21. Apply the selected style-review cadence and record a fingerprint only after
+    the final draft is accepted.
 22. Emit the final result in Player Mode.
 
 Do not require structured intents for ordinary play. Use a structured note only
 when it helps you reason privately or when the Designer asks for it.
+
+# Turn Persistence Protocol
+
+The selected profile changes when duplicate memory propagation and broad checks
+happen. It never changes fictional resolution quality or the authority of
+current truth.
+
+## Soft
+
+Use `soft` when the turn adds color or completes a non-consequential exchange
+without a fact that should matter later. Make no campaign write, dashboard
+refresh, state check, or style-state write. Knowledge, source, resistance, NPC
+posture, and arc gates still apply.
+
+## Local Durable
+
+Before final narration:
+
+1. Increment `current_state.yaml.continuity_revision` once and update its
+   immediate truth.
+2. Append `### Durable Revision N` to `session_log.md` with the event,
+   immediately updated files, and pending cold targets.
+3. Update an authority in the same turn when its current truth changed:
+   `active_cast.md`, `knowledge_boundaries.md`, `relationship_map.md`,
+   inventory/conditions, or deterministic mechanics state. These are not cold
+   propagation.
+4. Increment `persistence.durable_turns_since_distill` and keep
+   `pending_cold_targets` short and deduplicated.
+5. Run `python tools/check_state.py campaign --scope hot`.
+
+If either the state write or event append is interrupted, `current_state.yaml`
+wins. At the next turn, repair the missing matching event before continuing.
+
+## Structural Boundary
+
+Run a full distill when any of these occurs:
+
+- a scene ends;
+- Fast reaches five durable turns or Balanced reaches three;
+- the Player pauses or ends the session;
+- a scenario, arc, or campaign closes;
+- advancement or rewards become due, offered, chosen, or applied;
+- a new T2/T3 NPC, place, faction, or location-graph edge is created;
+- canon/research truth is locked;
+- a continuity conflict appears;
+- the Designer requests a full save or audit.
+
+Reconcile all pending cold targets, append `### Distilled Through Revision N`,
+set `last_distilled_revision` to N, reset the durable counter and pending list,
+apply the dashboard policy, then run the full state check. Maximum Continuity
+treats every durable turn as this boundary.
+
+Fast and Balanced may defer only secondary copies or elaboration such as
+detailed notes, issues/threads, prep, dashboard mirrors, and style history.
+They may never defer current state, immediately relevant active-cast truth,
+knowledge changes, mechanical results, inventory/conditions, current
+relationship truth, or arc/advancement gates.
+
+Legacy campaigns without a profile retain the previous full-update behavior.
+Offer migration only at a safe Designer/OOC break. Flush pending work before a
+profile switch.
 
 # Appearance Continuity Gate
 
@@ -758,6 +825,21 @@ new risks, and concrete openings. Let the Player connect the dots.
 The optional dashboard is player-facing. Treat
 `dashboard/dashboard_state.json` like a visual player handout, not GM memory.
 
+Apply `dashboard_refresh_policy` before doing dashboard work:
+
+- `scene_and_major_visible_change` (Fast default): update for scene/location,
+  visible condition, important inventory, companion, known map, or accepted
+  visual changes; skip ordinary dialogue-only turns;
+- `every_visible_change` (Balanced and Maximum defaults): update whenever
+  durable player-visible information changes;
+- `scene_only`: update at scene and structural boundaries;
+- `manual`: update only when the Designer asks or at required visual handoff.
+
+Dashboard state is secondary. Never delay authoritative campaign truth merely
+to keep the dashboard current. When `latency_notice_policy` is
+`exceptional_only` or `always`, give a brief OOC estimate before a requested
+dashboard operation expected to add roughly 1–2 minutes.
+
 Update it only with:
 
 - the current scene title, location, time, summary, and visible pressure;
@@ -799,8 +881,12 @@ even if the image arrives with no text after it:
 1. State that the next output will be the draft image alone.
 2. State that it remains non-canon and outside the dashboard until accepted,
    unless an already accepted visual is merely being reproduced.
-3. Ask the Player to answer with acceptance or concrete revisions.
-4. Capture a return anchor in `visual_style.md`: interrupted context, last
+3. State that generation commonly adds about 1–3+ minutes and that each
+   revision repeats the generation cost; label this an estimate.
+4. If gallery/dashboard placement is requested, state that the accepted-asset
+   handoff may add about 1–2 minutes after approval.
+5. Ask the Player to answer with acceptance or concrete revisions.
+6. Capture a return anchor in `visual_style.md`: interrupted context, last
    meaningful setup/scene beat, next step, and requested dashboard placement.
 
 Example:
@@ -928,6 +1014,11 @@ recent style fingerprints:
 Use `tools/check_style.py` as a warning system when available. Revise only when
 the finding is real; do not damage a strong line merely to satisfy mechanical
 variation. Record a fingerprint after the accepted draft, never before.
+
+Apply `style_review_policy`: `sampled_and_distill` checks representative scene
+beats and distill outputs; `every_2_durable_and_distill` checks every second
+durable turn and every distill; `every_durable` checks each durable turn. Soft
+turns do not write style state merely to maintain a counter.
 
 Style variation must preserve point of view, character voice, world tone, and
 scene clarity. It should prevent default-pattern lock-in, not create random

@@ -1,4 +1,4 @@
-"""Run a small sanity check over a RePoG Lite campaign folder."""
+"""Run hot-turn or full-boundary sanity checks over a RePoG Lite campaign."""
 
 from __future__ import annotations
 
@@ -34,6 +34,17 @@ RECOMMENDED_FILES = [
     "style_state.json",
 ]
 
+HOT_REQUIRED_FILES = [
+    "setup_profile.yaml",
+    "current_state.yaml",
+    "active_cast.md",
+    "location_graph.md",
+    "relationship_map.md",
+    "session_brief.md",
+    "knowledge_boundaries.md",
+    "session_log.md",
+]
+
 V2_FILES = [
     "active_cast.md",
     "location_graph.md",
@@ -59,6 +70,7 @@ TOP_LEVEL_KEYS = [
     "campaign_id",
     "mode",
     "status",
+    "persistence",
     "player",
     "current_scene",
     "inventory",
@@ -103,6 +115,49 @@ SETUP_PACKS = {
     "mechanics_progression",
     "source_grounding",
 }
+TURN_PROTOCOL_PRESETS = {
+    "fast": {
+        "cold_distill_policy": "scene_or_5_durable",
+        "validation_policy": "hot_each_durable_full_on_distill",
+        "dashboard_refresh_policy": "scene_and_major_visible_change",
+        "style_review_policy": "sampled_and_distill",
+    },
+    "balanced": {
+        "cold_distill_policy": "scene_or_3_durable",
+        "validation_policy": "hot_each_durable_full_on_distill",
+        "dashboard_refresh_policy": "every_visible_change",
+        "style_review_policy": "every_2_durable_and_distill",
+    },
+    "maximum_continuity": {
+        "cold_distill_policy": "every_durable",
+        "validation_policy": "full_each_durable",
+        "dashboard_refresh_policy": "every_visible_change",
+        "style_review_policy": "every_durable",
+    },
+}
+TURN_PROTOCOLS = set(TURN_PROTOCOL_PRESETS) | {"custom"}
+COLD_DISTILL_POLICIES = {
+    "every_durable",
+    "scene_or_3_durable",
+    "scene_or_5_durable",
+    "scene_only",
+}
+VALIDATION_POLICIES = {
+    "hot_each_durable_full_on_distill",
+    "full_each_durable",
+}
+DASHBOARD_REFRESH_POLICIES = {
+    "scene_and_major_visible_change",
+    "every_visible_change",
+    "scene_only",
+    "manual",
+}
+STYLE_REVIEW_POLICIES = {
+    "sampled_and_distill",
+    "every_2_durable_and_distill",
+    "every_durable",
+}
+LATENCY_NOTICE_POLICIES = {"exceptional_only", "always", "off"}
 DIFFICULTY_VALUES = {"trivial", "routine", "challenging", "hard", "extreme"}
 HIGH_POWER_WORDS = {
     "elite",
@@ -177,6 +232,14 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
     activated = set(_yaml_list(values.get("activated_packs", "[]")))
     completed = set(_yaml_list(values.get("completed_packs", "[]")))
     defaulted = set(_yaml_list(values.get("defaulted_packs", "[]")))
+    turn_protocol = _clean_scalar(values.get("turn_protocol", ""))
+    cold_policy = _clean_scalar(values.get("cold_distill_policy", ""))
+    validation_policy = _clean_scalar(values.get("validation_policy", ""))
+    dashboard_policy = _clean_scalar(values.get("dashboard_refresh_policy", ""))
+    style_policy = _clean_scalar(values.get("style_review_policy", ""))
+    latency_policy = _clean_scalar(values.get("latency_notice_policy", ""))
+    estimate_value = _clean_scalar(values.get("performance_estimate_acknowledged", "false")).lower()
+    estimate_acknowledged = estimate_value == "true"
 
     try:
         schema_version = int(_clean_scalar(values.get("schema_version", "0")))
@@ -186,8 +249,8 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
         schema_version = questions_completed = last_checkpoint = -1
         _add(findings, "error", "setup_number_invalid", "Setup numeric fields must be integers.", path)
 
-    if schema_version != 1:
-        _add(findings, "error", "setup_schema_invalid", "setup_profile schema_version must be 1.", path)
+    if schema_version not in {1, 2}:
+        _add(findings, "error", "setup_schema_invalid", "setup_profile schema_version must be 1 or 2.", path)
     if questions_completed < 0 or last_checkpoint < 0 or last_checkpoint > questions_completed:
         _add(findings, "error", "setup_progress_invalid", "Question and checkpoint progress is inconsistent.", path)
     unknown_packs = (activated | completed) - SETUP_PACKS
@@ -214,6 +277,98 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
         _add(findings, "error", "deep_pack_incomplete", f"Activated Deep packs remain unresolved: {missing}", path)
     if mode == "quick" and status == "complete" and not defaulted:
         _add(findings, "error", "quick_defaults_missing", "Completed Quick setup must record visible defaults.", path)
+
+    if schema_version == 1:
+        _add(
+            findings,
+            "info",
+            "turn_protocol_legacy",
+            "Legacy setup has no Turn Protocol; preserve its existing full-update behavior until a safe OOC migration.",
+            path,
+        )
+        return
+
+    if estimate_value not in {"true", "false"}:
+        _add(
+            findings,
+            "error",
+            "performance_ack_invalid",
+            "performance_estimate_acknowledged must be true or false.",
+            path,
+        )
+    if latency_policy not in LATENCY_NOTICE_POLICIES:
+        _add(
+            findings,
+            "error",
+            "latency_notice_policy_invalid",
+            "latency_notice_policy must be exceptional_only, always, or off.",
+            path,
+        )
+    if turn_protocol and turn_protocol not in TURN_PROTOCOLS:
+        _add(
+            findings,
+            "error",
+            "turn_protocol_invalid",
+            "turn_protocol must be fast, balanced, maximum_continuity, or custom.",
+            path,
+        )
+    if ready and not turn_protocol:
+        _add(findings, "error", "turn_protocol_missing", "Ready campaigns must select a Turn Protocol.", path)
+    if ready and not estimate_acknowledged:
+        _add(
+            findings,
+            "error",
+            "performance_estimate_unacknowledged",
+            "Ready campaigns must acknowledge the displayed timing estimates and caveat.",
+            path,
+        )
+
+    policy_values = {
+        "cold_distill_policy": (cold_policy, COLD_DISTILL_POLICIES),
+        "validation_policy": (validation_policy, VALIDATION_POLICIES),
+        "dashboard_refresh_policy": (dashboard_policy, DASHBOARD_REFRESH_POLICIES),
+        "style_review_policy": (style_policy, STYLE_REVIEW_POLICIES),
+    }
+    if turn_protocol:
+        for field, (value, allowed) in policy_values.items():
+            if not value:
+                _add(findings, "error", "turn_policy_missing", f"{field} must be materialized after profile selection.", path)
+            elif value not in allowed:
+                _add(findings, "error", "turn_policy_invalid", f"Invalid {field}: {value}", path)
+
+    expected = TURN_PROTOCOL_PRESETS.get(turn_protocol)
+    if expected:
+        actual = {
+            "cold_distill_policy": cold_policy,
+            "validation_policy": validation_policy,
+            "dashboard_refresh_policy": dashboard_policy,
+            "style_review_policy": style_policy,
+        }
+        for field, expected_value in expected.items():
+            if actual[field] and actual[field] != expected_value:
+                _add(
+                    findings,
+                    "error",
+                    "turn_preset_mismatch",
+                    f"{turn_protocol} requires {field}: {expected_value}.",
+                    path,
+                )
+
+    if ready:
+        system_fit_path = campaign_path / "system_fit.md"
+        session_zero_path = campaign_path / "session_zero.md"
+        system_fit = _read(system_fit_path, findings) if system_fit_path.is_file() else ""
+        session_zero = _read(session_zero_path, findings) if session_zero_path.is_file() else ""
+        profile_pattern = rf"(?im)^-\s+Profile:\s*`?{re.escape(turn_protocol)}`?\s*$"
+        summary_pattern = rf"(?im)^-\s+Turn protocol:\s*`?{re.escape(turn_protocol)}`?\s*$"
+        if not re.search(profile_pattern, system_fit):
+            _add(findings, "error", "turn_profile_summary_missing", "system_fit.md does not mirror the selected Turn Protocol.", system_fit_path)
+        if not re.search(summary_pattern, session_zero):
+            _add(findings, "error", "turn_profile_summary_missing", "session_zero.md does not mirror the selected Turn Protocol.", session_zero_path)
+        if not re.search(r"(?im)^-\s+Estimate caveat acknowledged:\s*(yes|true)\s*$", system_fit):
+            _add(findings, "error", "performance_ack_summary_missing", "system_fit.md does not record the timing-estimate acknowledgement.", system_fit_path)
+        if not re.search(r"(?im)^-\s+Performance estimate acknowledged:\s*(yes|true)\s*$", session_zero):
+            _add(findings, "error", "performance_ack_summary_missing", "session_zero.md does not record the timing-estimate acknowledgement.", session_zero_path)
 
 
 def _check_visual_handoff(campaign_path: Path, findings: list[dict]) -> None:
@@ -361,6 +516,141 @@ def _parse_nested_block_list(yaml_text: str, parent: str, key: str) -> list[str]
                 items.append(_clean_scalar(match.group(1)))
         return items
     return []
+
+
+def _check_persistence(
+    campaign_path: Path,
+    state_text: str,
+    *,
+    revision: int,
+    scope: str,
+    findings: list[dict],
+) -> None:
+    setup_path = campaign_path / "setup_profile.yaml"
+    setup_text = _read(setup_path, findings) if setup_path.is_file() else ""
+    setup_values = _top_level_values(setup_text)
+    try:
+        setup_schema = int(_clean_scalar(setup_values.get("schema_version", "1")))
+    except ValueError:
+        setup_schema = 0
+    protocol = _clean_scalar(setup_values.get("turn_protocol", ""))
+    cold_policy = _clean_scalar(setup_values.get("cold_distill_policy", ""))
+
+    block = _block(state_text, "persistence")
+    state_path = campaign_path / "current_state.yaml"
+    if not block:
+        _add(
+            findings,
+            "error" if setup_schema >= 2 else "warning",
+            "persistence_status_missing",
+            "current_state.yaml has no persistence status block.",
+            state_path,
+        )
+        return
+
+    values = _nested_values(block)
+    try:
+        last_distilled = int(_clean_scalar(values.get("last_distilled_revision", "-1")))
+        durable_turns = int(_clean_scalar(values.get("durable_turns_since_distill", "-1")))
+    except ValueError:
+        _add(findings, "error", "persistence_number_invalid", "Persistence revision and turn fields must be integers.", state_path)
+        return
+
+    pending = _parse_nested_block_list(state_text, "persistence", "pending_cold_targets")
+    if last_distilled < 0 or last_distilled > revision:
+        _add(
+            findings,
+            "error",
+            "persistence_revision_invalid",
+            "last_distilled_revision must be between zero and continuity_revision.",
+            state_path,
+        )
+    if durable_turns < 0:
+        _add(findings, "error", "persistence_turn_count_invalid", "durable_turns_since_distill cannot be negative.", state_path)
+    if len({_slug(item) for item in pending}) != len(pending):
+        _add(findings, "error", "persistence_pending_duplicate", "pending_cold_targets must be deduplicated.", state_path)
+    if pending and durable_turns == 0:
+        _add(findings, "warning", "persistence_pending_without_turn", "Pending cold targets exist while the durable-turn counter is zero.", state_path)
+
+    if protocol and last_distilled >= 0 and durable_turns >= 0:
+        expected_turns = revision - last_distilled
+        if durable_turns != expected_turns:
+            _add(
+                findings,
+                "error",
+                "persistence_counter_mismatch",
+                f"durable_turns_since_distill is {durable_turns}, expected {expected_turns} from revisions.",
+                state_path,
+            )
+
+    threshold = {
+        "every_durable": 0,
+        "scene_or_3_durable": 3,
+        "scene_or_5_durable": 5,
+    }.get(cold_policy)
+    if threshold is not None and durable_turns > threshold:
+        _add(
+            findings,
+            "error",
+            "persistence_distill_overdue",
+            f"{cold_policy} allows at most {threshold} undistilled durable turns; found {durable_turns}.",
+            state_path,
+        )
+
+    log_path = campaign_path / "session_log.md"
+    log_text = _read(log_path, findings) if log_path.is_file() else ""
+    durable_revision_list = [
+        int(value) for value in re.findall(r"(?im)^###\s+Durable Revision\s+(\d+)\s*$", log_text)
+    ]
+    distilled_revision_list = [
+        int(value) for value in re.findall(r"(?im)^###\s+Distilled Through Revision\s+(\d+)\s*$", log_text)
+    ]
+    durable_revisions = set(durable_revision_list)
+    distilled_revisions = set(distilled_revision_list)
+    duplicate_events = sorted(
+        value for value in durable_revisions if durable_revision_list.count(value) > 1
+    )
+    if duplicate_events:
+        _add(
+            findings,
+            "error",
+            "durable_event_duplicate",
+            f"Duplicate durable revision event(s): {', '.join(str(value) for value in duplicate_events)}.",
+            log_path,
+        )
+    future = sorted(value for value in durable_revisions | distilled_revisions if value > revision)
+    if future:
+        _add(findings, "error", "persistence_log_ahead", f"Session log contains revisions ahead of current state: {future}", log_path)
+    if protocol and last_distilled > 0 and last_distilled not in distilled_revisions:
+        _add(
+            findings,
+            "error",
+            "distill_marker_missing",
+            f"No distilled-through marker records last_distilled_revision {last_distilled}.",
+            log_path,
+        )
+    if protocol and revision > last_distilled:
+        missing = sorted(set(range(last_distilled + 1, revision + 1)) - durable_revisions)
+        if missing:
+            _add(
+                findings,
+                "error",
+                "durable_event_missing",
+                f"Missing durable revision event(s): {', '.join(str(value) for value in missing)}.",
+                log_path,
+            )
+
+    if scope == "full" and (pending or durable_turns > 0):
+        arc_path = campaign_path / "arc_closure.md"
+        arc_text = _read(arc_path, findings) if arc_path.is_file() else ""
+        if re.search(r"(?im)^-\s+Fiction continuation locked until advancement:\s*yes\s*$", arc_text):
+            _add(
+                findings,
+                "error",
+                "pending_cold_at_advancement",
+                "Pending cold work must be distilled before an advancement-locked continuation.",
+                state_path,
+            )
 
 
 def _slug(value: str) -> str:
@@ -817,6 +1107,7 @@ def _check_v2_memory(
     revision: int,
     location: str,
     present_npcs: list[str],
+    scope: str,
     findings: list[dict],
 ) -> None:
     active_path = campaign_path / "active_cast.md"
@@ -829,7 +1120,7 @@ def _check_v2_memory(
     active_revision = _markdown_revision(active_text, "As of revision")
     if active_revision is None:
         _add(findings, "warning", "active_cast_revision_missing", "Active cast has no revision.", active_path)
-    elif active_revision < revision:
+    elif scope == "full" and active_revision < revision:
         _add(findings, "warning", "active_cast_stale", f"Active cast revision {active_revision} trails state revision {revision}.", active_path)
 
     active_by_name = {_slug(row.get("NPC", "")): row for row in active_rows if row.get("NPC") and _slug(row.get("NPC", "")) != "example_npc"}
@@ -851,7 +1142,7 @@ def _check_v2_memory(
     graph_text = _read(graph_path, findings)
     graph_rows = _markdown_table(graph_text)
     graph_revision = _markdown_revision(graph_text, "As of revision")
-    if graph_revision is not None and graph_revision < revision:
+    if scope == "full" and graph_revision is not None and graph_revision < revision:
         _add(findings, "warning", "location_graph_stale", f"Location graph revision {graph_revision} trails state revision {revision}.", graph_path)
     seen_current_location = False
     for row in graph_rows:
@@ -882,18 +1173,19 @@ def _check_v2_memory(
             _add(findings, "error", "relationship_current_duplicate", f"Duplicate current relationship pair: {row.get('From')} / {row.get('To')}", relationship_path)
         seen_pairs.add(pair)
 
-    brief_text = _read(brief_path, findings)
-    brief_revision = _markdown_revision(brief_text, "Prepared from revision")
-    if brief_revision is None:
-        _add(findings, "warning", "session_brief_revision_missing", "Session brief has no source revision.", brief_path)
-    elif brief_revision < revision:
-        _add(findings, "warning", "session_brief_stale", f"Session brief revision {brief_revision} trails state revision {revision}; current state remains authoritative.", brief_path)
+    if scope == "full":
+        brief_text = _read(brief_path, findings)
+        brief_revision = _markdown_revision(brief_text, "Prepared from revision")
+        if brief_revision is None:
+            _add(findings, "warning", "session_brief_revision_missing", "Session brief has no source revision.", brief_path)
+        elif brief_revision < revision:
+            _add(findings, "warning", "session_brief_stale", f"Session brief revision {brief_revision} trails state revision {revision}; current state remains authoritative.", brief_path)
 
-    dynamics_path = campaign_path / "world_dynamics.md"
-    if dynamics_path.is_file():
-        dynamics_text = _read(dynamics_path, findings)
-        if re.search(r"(?im)^-\s+Due:\s+yes\s*$", dynamics_text):
-            _add(findings, "warning", "world_domain_due", "A world domain is due for triggered evaluation.", dynamics_path)
+        dynamics_path = campaign_path / "world_dynamics.md"
+        if dynamics_path.is_file():
+            dynamics_text = _read(dynamics_path, findings)
+            if re.search(r"(?im)^-\s+Due:\s+yes\s*$", dynamics_text):
+                _add(findings, "warning", "world_domain_due", "A world domain is due for triggered evaluation.", dynamics_path)
 
     knowledge_path = campaign_path / "knowledge_boundaries.md"
     if knowledge_path.is_file():
@@ -903,7 +1195,7 @@ def _check_v2_memory(
 
     research_path = campaign_path / "research_dossier.md"
     session_zero_path = campaign_path / "session_zero.md"
-    if research_path.is_file() and session_zero_path.is_file():
+    if scope == "full" and research_path.is_file() and session_zero_path.is_file():
         research_text = _read(research_path, findings)
         session_zero_text = _read(session_zero_path, findings)
         if re.search(r"(?im)^-\s+Status:\s+`?needed_pending`?\s*$", research_text):
@@ -1065,39 +1357,47 @@ def _check_player_state(state_text: str, state_path: Path, findings: list[dict])
         )
 
 
-def check_campaign(campaign_path: Path) -> dict:
+def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
     campaign_path = campaign_path.resolve()
     findings: list[dict] = []
 
+    if scope not in {"hot", "full"}:
+        _add(findings, "error", "check_scope_invalid", "scope must be hot or full.", campaign_path)
+        return _result(campaign_path, findings, scope=scope)
+
     if not campaign_path.exists() or not campaign_path.is_dir():
         _add(findings, "error", "campaign_path_not_found", "Campaign path is missing.", campaign_path)
-        return _result(campaign_path, findings)
+        return _result(campaign_path, findings, scope=scope)
 
-    for relative in REQUIRED_FILES:
+    required_files = REQUIRED_FILES if scope == "full" else HOT_REQUIRED_FILES
+    for relative in required_files:
         path = campaign_path / relative
         if not path.is_file():
             _add(findings, "error", "required_file_missing", f"Missing required file: {relative}", path)
 
-    for relative in RECOMMENDED_FILES:
-        path = campaign_path / relative
-        if not path.is_file():
-            _add(findings, "warning", "recommended_file_missing", f"Missing recommended file: {relative}", path)
+    if scope == "full":
+        for relative in RECOMMENDED_FILES:
+            path = campaign_path / relative
+            if not path.is_file():
+                _add(findings, "warning", "recommended_file_missing", f"Missing recommended file: {relative}", path)
 
-    for relative in REQUIRED_DIRS:
+    required_dirs = REQUIRED_DIRS if scope == "full" else ["characters", "places"]
+    for relative in required_dirs:
         path = campaign_path / relative
         if not path.is_dir():
             _add(findings, "error", "required_dir_missing", f"Missing required directory: {relative}", path)
 
     _check_setup_profile(campaign_path, findings)
-    _check_visual_handoff(campaign_path, findings)
+    if scope == "full":
+        _check_visual_handoff(campaign_path, findings)
 
-    _check_dashboard(campaign_path, findings)
-    _check_optional_json_state(campaign_path, findings)
+        _check_dashboard(campaign_path, findings)
+        _check_optional_json_state(campaign_path, findings)
 
     state_path = campaign_path / "current_state.yaml"
     state_text = _read(state_path, findings) if state_path.is_file() else ""
     if not state_text:
-        return _result(campaign_path, findings)
+        return _result(campaign_path, findings, scope=scope)
 
     if re.search("[\\u00c3\\u00c4\\u00c5]", state_text):
         _add(findings, "error", "mojibake", "current_state.yaml contains likely encoding corruption.", state_path)
@@ -1137,6 +1437,15 @@ def check_campaign(campaign_path: Path) -> dict:
             if not path.is_file():
                 _add(findings, "error", "v2_file_missing", f"Lite V2 requires: {relative}", path)
 
+    if continuity_revision >= 0:
+        _check_persistence(
+            campaign_path,
+            state_text,
+            revision=continuity_revision,
+            scope=scope,
+            findings=findings,
+        )
+
     _check_player_state(state_text, state_path, findings)
     player_values = _nested_values(_block(state_text, "player"))
     level_band = _clean_scalar(player_values.get("level_band", ""))
@@ -1175,7 +1484,8 @@ def check_campaign(campaign_path: Path) -> dict:
     for item in duplicates:
         _add(findings, "warning", "duplicate_inventory_item", f"Inventory lists duplicate item: {item}", state_path)
 
-    _check_markdown_mechanics(campaign_path, level_band, findings)
+    if scope == "full":
+        _check_markdown_mechanics(campaign_path, level_band, findings)
 
     if memory_version >= 2 and all((campaign_path / relative).is_file() for relative in V2_FILES):
         _check_v2_memory(
@@ -1183,19 +1493,21 @@ def check_campaign(campaign_path: Path) -> dict:
             revision=continuity_revision,
             location=location,
             present_npcs=present_npcs,
+            scope=scope,
             findings=findings,
         )
 
-    return _result(campaign_path, findings)
+    return _result(campaign_path, findings, scope=scope)
 
 
-def _result(campaign_path: Path, findings: list[dict]) -> dict:
+def _result(campaign_path: Path, findings: list[dict], *, scope: str = "full") -> dict:
     error_count = sum(1 for finding in findings if finding["severity"] == "error")
     warning_count = sum(1 for finding in findings if finding["severity"] == "warning")
     info_count = sum(1 for finding in findings if finding["severity"] == "info")
     return {
         "ok": error_count == 0,
         "campaign_path": str(campaign_path),
+        "scope": scope,
         "error_count": error_count,
         "warning_count": warning_count,
         "info_count": info_count,
@@ -1206,9 +1518,15 @@ def _result(campaign_path: Path, findings: list[dict]) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("campaign_path", help="Path to a Lite campaign folder.")
+    parser.add_argument(
+        "--scope",
+        choices=("hot", "full"),
+        default="full",
+        help="Use hot for per-durable-turn checks or full at distill/audit boundaries.",
+    )
     args = parser.parse_args(argv)
 
-    result = check_campaign(Path(args.campaign_path))
+    result = check_campaign(Path(args.campaign_path), scope=args.scope)
     print(json.dumps(result, indent=2, ensure_ascii=True))
     return 0 if result["ok"] else 2
 

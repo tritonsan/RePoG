@@ -58,14 +58,73 @@ for an active or completed campaign.
   confirmation.
 - Do not begin play until `setup_profile.yaml.ready_for_play` is true.
 
+# Turn Protocol Gate
+
+Every depth must make one explicit Turn Protocol decision inside System Fit.
+Ask it as one decision and wait:
+
+> Which turn protocol do you want?
+>
+> - **Fast — Recommended:** routine turns usually target 30–90 seconds, local
+>   durable turns 45–120 seconds, and scene/arc boundary work 2–4 minutes.
+>   Current truth is saved immediately; secondary notes are reconciled at a
+>   scene boundary or after at most five durable turns. No narrative-quality
+>   or current-continuity loss is expected, though secondary notes may briefly
+>   trail the authoritative state.
+> - **Balanced:** light turns usually target 1–2 minutes, durable turns
+>   1.5–3 minutes, and boundary work 2–4 minutes. Secondary notes reconcile at
+>   meaningful beats or after at most three durable turns.
+> - **Maximum Continuity:** durable turns usually target 2–4 minutes and
+>   structural turns 3–6 minutes. Every affected note and full check is
+>   completed each durable turn. This maximizes immediate auditability but is
+>   not expected to improve narration quality over Fast.
+> - **Custom:** choose reconciliation, validation, dashboard, and style cadence
+>   separately; core continuity safeguards remain mandatory.
+>
+> These are planning estimates, not guarantees. Model load and campaign size
+> can change them. A dashboard refresh can add about 1–2 minutes, an image
+> draft about 1–3+ minutes, each image revision repeats that cost, and placing
+> accepted art into the gallery/dashboard can add about 1–2 minutes.
+
+Persist the chosen preset and its materialized policies in
+`setup_profile.yaml` and mirror the readable summary in `system_fit.md` and
+`session_zero.md`:
+
+| Profile | Cold distill | Validation | Dashboard | Style review |
+| --- | --- | --- | --- | --- |
+| `fast` | `scene_or_5_durable` | `hot_each_durable_full_on_distill` | `scene_and_major_visible_change` | `sampled_and_distill` |
+| `balanced` | `scene_or_3_durable` | `hot_each_durable_full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
+| `maximum_continuity` | `every_durable` | `full_each_durable` | `every_visible_change` | `every_durable` |
+
+Use `exceptional_only` latency notices by default. This gives a brief OOC time
+expectation only before visual generation, requested dashboard placement,
+closure/distill work, or another operation expected to exceed the chosen
+routine band. `always` and `off` are Custom options.
+
+For Custom, ask only the fields the Designer wants to override, one decision
+per message. Allowed cold policies are `every_durable`,
+`scene_or_3_durable`, `scene_or_5_durable`, and `scene_only`. Allowed
+validation policies are `hot_each_durable_full_on_distill` and
+`full_each_durable`; hot validation cannot be disabled. Dashboard may be
+`scene_and_major_visible_change`, `every_visible_change`, `scene_only`, or
+`manual`. Style review may be `sampled_and_distill`,
+`every_2_durable_and_distill`, or `every_durable`.
+
+Set `performance_estimate_acknowledged: true` only after the Designer chooses
+a displayed option or confirms the final setup summary containing these
+estimates. If they say "use defaults," select Fast but still show its estimate
+and caveat in the final confirmation.
+
 # Quick Session 0
 
 Use 6–8 decisions: pitch; boundaries/agency/consequence; character concept,
 defining competence and weakness; starting world/problem/place; mechanics,
-progression and failure; narration/options/visuals; research if needed; and
-final confirmation. Fill the full V2 template with a small playable core and
+progression and failure; the explicit Turn Protocol choice;
+narration/options/visuals; research if needed; and final confirmation. Keep the
+6–8 target by treating research as conditional and combining closely related
+mechanics decisions. Fill the full V2 template with a small playable core and
 record every inferred answer in `defaulted_packs` or the defaulted decisions
-section of `session_zero.md`.
+section of `session_zero.md`. "Use defaults" selects Fast.
 
 # Standard Session 0
 
@@ -109,6 +168,10 @@ pack is completed or defaulted; the research gate permits durable truth; and
 the character, starting place, one pressure, actionable opening, V2 state,
 active cast, location graph, knowledge boundaries, dashboard, and starting
 snapshot are ready and checked.
+
+Also require a valid Turn Protocol, all preset policies materialized (or a
+safe complete Custom policy), `performance_estimate_acknowledged: true`, and a
+matching readable summary in `system_fit.md` and `session_zero.md`.
 
 Do not complete Session 0 while `visual_style.md` contains a pending visual
 review. A generated but unaccepted opening image may remain a draft only if the
@@ -189,6 +252,11 @@ Decide what kind of play the campaign engine should support:
 - whether resources, cooldowns, regeneration, or ability prerequisites need the
   optional deterministic mechanics ledger.
 
+Run the Turn Protocol Gate in this module after the campaign's mechanics
+weight is understood. This is required for Quick, Standard, and Deep. Do not
+turn it into a list of file operations; present the player-facing time,
+freshness, dashboard, and visual tradeoffs.
+
 Record the durable version in `system_fit.md` and summarize it in `rules.md`.
 
 ## 5. Canon Policy
@@ -223,6 +291,13 @@ Yes list.
 Decide whether generated visuals are off, manual-only, major-only, curated, or
 rich. Record quota stance, eligible targets, art direction, visual canon, and
 dashboard display policy. Generated images remain drafts until accepted.
+
+Before the choice, repeat the relevant performance costs: dashboard refresh
+and validation approximately +1–2 minutes when performed, an image draft
+approximately +1–3+ minutes, each revision another generation pass, and
+accepted gallery/dashboard placement approximately +1–2 minutes. Treat these
+as estimates. Record the selected dashboard cadence and the acknowledgement in
+`visual_style.md`.
 
 Record the durable version in `visual_style.md` and `visual_gallery.md`.
 
@@ -467,6 +542,13 @@ Decide what must stay coherent during play:
   closure.
 - how GM-only facts, protected proper nouns, player/PC knowledge, companion
   knowledge, and NPC/faction knowledge are tracked.
+- which selected Turn Protocol controls secondary-note distill, validation,
+  dashboard refresh, style review, and exceptional latency notices;
+- that authoritative current truth, immediately relevant active-cast truth,
+  knowledge boundaries, mechanical results, inventory/conditions, durable
+  revision events, and arc/reward gates can never be deferred;
+- that pending secondary targets must reconcile at the selected cadence and
+  always before a session stop, structural transition, or advancement gate.
 
 Record the durable version in `rules.md`, `storytelling.md`,
 `research_dossier.md`, `creation_ledger.md`
@@ -566,8 +648,8 @@ When starting the blank Lite campaign included in this workspace:
    `storytelling.md`, `appearance_guide.md`, `world_dynamics.md`, and
    `rules.md`.
 6. Create the player files: `player.md`, `player_ties.md`, and
-   `current_state.yaml`. Initialize `active_cast.md`, `location_graph.md`, and
-   `style_state.json`; configure
+   `current_state.yaml`. Initialize its persistence block,
+   `active_cast.md`, `location_graph.md`, and `style_state.json`; configure
    `mechanics_state.json` only when deterministic mechanics are enabled.
 7. Create only enough NPCs, places, factions, threads, and flexible clues to
    make the first session playable.
@@ -580,8 +662,10 @@ When starting the blank Lite campaign included in this workspace:
     Prefer Dashboard V2: set `dashboard_version: 2`, `map.mode` to
     `leaflet_simple`, a conservative player-known atlas, and relative
     `assets/...` paths only for accepted images or map backgrounds.
-11. Record the used opening in `session_log.md`.
-12. Run the Lite state check.
+11. Record the used opening as the matching durable revision entry in
+    `session_log.md`; if setup fully reconciled it, append the matching
+    distilled-through marker and reset persistence counters.
+12. Run the full Lite state check.
 13. Take a starting snapshot.
 
 Do not require an existing campaign. A port from another project is an optional

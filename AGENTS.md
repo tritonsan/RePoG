@@ -146,7 +146,8 @@ campaign/
 The memory model is intentionally small:
 
 - `setup_profile.yaml` owns Session 0 depth, adaptive-pack progress, visible
-  defaults, deferred decisions, checkpoints, and the play-readiness gate.
+  defaults, deferred decisions, checkpoints, the play-readiness gate, and the
+  selected turn-performance protocol.
 - `session_zero.md` is the module index and decision log for campaign
   creation.
 - `campaign_one_pager.md` is the compact player-facing campaign promise and
@@ -189,8 +190,9 @@ The memory model is intentionally small:
 - `player.md` defines the player character in depth.
 - `player_ties.md` defines PC integration: the part of the world that changes
   because this player character exists.
-- `current_state.yaml` stores the small set of mechanical facts that benefit
-  from structured checks.
+- `current_state.yaml` stores the small set of immediate facts that benefit
+  from structured checks. Its bounded `persistence` block records the last
+  distilled revision, durable turns since distill, and pending cold targets.
 - `active_cast.md` stores temporary whereabouts, activity, availability,
   presence reason, and next moves only for NPCs relevant to the current chain.
 - `location_graph.md` stores compact travel, access, visibility, traffic, and
@@ -210,7 +212,9 @@ The memory model is intentionally small:
 - `session_brief.md` is optional light GM prep for player focus, strong start,
   likely scenes, useful NPCs, and live locations.
 - `threads.md` tracks open dramatic questions and consequences.
-- `session_log.md` is append-only dramatic memory.
+- `session_log.md` is append-only dramatic memory. Each durable turn receives
+  a compact revision entry before secondary notes may be deferred; distill
+  markers record how far those entries have been reconciled.
 - `rules.md` stores table rulings, optional dice rules, and recurring
   mechanics.
 - `characters/`, `places/`, and `factions/` hold readable GM notes.
@@ -267,6 +271,28 @@ Quick uses 6–8 decisions and records every filled assumption as a visible
 default. Deep completes the Standard core and activates only relevant adaptive
 packs. Never enter play while `ready_for_play` is false.
 
+Every Session 0 depth must explicitly choose a turn protocol during System
+Fit. Offer:
+
+- `fast` (recommended): current truth is immediate; secondary propagation is
+  batched at a scene boundary or after at most five durable turns;
+- `balanced`: secondary propagation happens at a meaningful beat or after at
+  most three durable turns;
+- `maximum_continuity`: every affected note and full check is completed on
+  each durable turn;
+- `custom`: individual policies may change, but authoritative state, knowledge
+  boundaries, durable revision events, and hot validation cannot be disabled.
+
+Before the choice, explain typical planning ranges based on ordinary Codex
+workspace use: Fast routine turns about 30–90 seconds, Fast local durable turns
+about 45–120 seconds, and structural/boundary turns about 2–4 minutes;
+Balanced light turns about 1–2 minutes and durable turns about 1.5–3 minutes;
+Maximum Continuity durable turns about 2–4 minutes and structural turns about
+3–6 minutes. These are estimates, not guarantees. Also disclose that an actual
+dashboard refresh may add about 1–2 minutes, an image draft about 1–3+ minutes,
+and accepted-image gallery/dashboard placement about 1–2 minutes. Do not mark
+Session 0 complete until the estimate caveat is acknowledged.
+
 # Bounded Improvisation
 
 Codex may freely add color, sensory texture, NPC phrasing, body language, minor
@@ -310,7 +336,8 @@ raise the tier and update the ledger/map.
 For a play turn:
 
 1. Identify the active campaign.
-2. Read the hot set: authoritative `current_state.yaml`, `active_cast.md`,
+2. Read the selected turn protocol from `setup_profile.yaml`, then read the hot
+   set: authoritative `current_state.yaml`, `active_cast.md`,
    `session_brief.md`, `storytelling.md`, and the relevant portion of
    `knowledge_boundaries.md`.
 3. Derive lookup signals from the current place, present characters, elapsed
@@ -323,15 +350,39 @@ For a play turn:
 6. Interpret the player action directly.
 7. Use `resolve_mechanic.py` when an enabled deterministic resource, ability,
    cooldown, or regeneration rule applies.
-8. Decide whether the result is purely narrative or durable.
-9. If durable, update the smallest necessary memory files before final
-   narration and increment one shared continuity revision. Prep never overrides
-   current state.
-10. If the campaign has `dashboard/dashboard_state.json`, update it with only
-   player-safe current information.
-11. Run player-facing and optional style checks. Record the accepted narration
-    fingerprint only after the final draft is chosen.
-12. Reply in Player Mode with no technical leakage.
+8. Classify the result as `soft`, `local_durable`, or `structural_boundary`.
+9. For `soft`, do not write campaign memory, refresh the dashboard, or run
+   state/style tools. The knowledge, source, resistance, and arc gates still
+   apply before narration.
+10. For `local_durable`, immediately update authoritative current truth,
+    increment one shared continuity revision, and append the matching
+    `### Durable Revision N` entry to `session_log.md`. Also update any
+    authority that changed now: active NPC state, knowledge boundaries,
+    current relationship truth, inventory, condition, or mechanics state.
+    Secondary character/faction/place detail, threads, issues, prep, dashboard,
+    and style history may wait for the selected distill boundary.
+11. For `structural_boundary`, reconcile every pending cold target, append a
+    `### Distilled Through Revision N` marker, reset the bounded persistence
+    counters, refresh the dashboard according to policy, and run the required
+    full checks. Scene ends, cadence limits, session stops, scenario/arc/
+    campaign closures, advancement/rewards, new T2/T3 entities or graph edges,
+    canon/research locks, and continuity conflicts are structural boundaries.
+12. Run `check_state.py campaign --scope hot` after a local durable turn.
+    Fast and Balanced run the full check at distill; Maximum Continuity runs it
+    after every durable turn. Run the dashboard checker only when the dashboard
+    was changed.
+13. Apply the selected style cadence only after the final draft is chosen.
+14. Reply in Player Mode with no technical leakage.
+
+`current_state.yaml`, immediately relevant active-cast truth, knowledge
+boundaries, mechanical results, inventory/conditions, and the arc/advancement
+gates are never cold work. Fast gains time by delaying duplicate propagation,
+not by delaying current truth.
+
+If a schema-v1 or otherwise legacy campaign has no turn protocol, preserve its
+existing full-update behavior. Offer the profile choice once at the next safe
+Designer/OOC break, never in the middle of a scene. Before switching away from
+a batching profile, distill all pending cold targets.
 
 # Player Dashboard
 
@@ -350,6 +401,13 @@ confirmed knowledge and what the character can currently perceive. If a
 dashboard fact conflicts with campaign memory, campaign memory wins and the
 dashboard should be corrected.
 
+Follow `dashboard_refresh_policy`. The Fast default is
+`scene_and_major_visible_change`: refresh for a scene/location change, visible
+condition, important inventory, companion, known map, or accepted visual
+change, but not for an ordinary dialogue-only turn. Balanced and Maximum
+Continuity default to `every_visible_change`. `manual` and `scene_only` are
+available only through an explicit Custom choice.
+
 For Dashboard V2, use `dashboard_version: 2` and set `map.mode` to
 `leaflet_simple`. The atlas is not a secret map; every node, route, label,
 image, and summary must be player-known or directly perceivable. Use
@@ -366,6 +424,11 @@ before generating: say that the next result will be the draft image by itself,
 explain whether acceptance is required before canon/dashboard use, tell the
 Player to reply with acceptance or revisions, and record the setup or scene
 beat that must resume afterward.
+
+The same pre-generation message must state that a draft commonly adds about
+1–3+ minutes and that each revision repeats the generation cost. If accepted
+gallery/dashboard placement was requested, disclose its typical additional
+1–2 minute cost. Keep these as estimates, not guarantees.
 
 Treat "generate this and add it to the dashboard" as a two-stage request:
 generate a draft, then after explicit acceptance store it as an accepted asset,

@@ -15,6 +15,13 @@ Keep each module short, current, and useful at the table.
 - Locked decisions: none
 - Defaulted decisions: none
 - Deferred decisions: none
+- Turn protocol: pending
+- Expected routine turn: pending
+- Expected durable turn: pending
+- Expected structural / boundary turn: pending
+- Dashboard refresh cost: approximately +1–2 minutes when run
+- Image generation cost: approximately +1–3+ minutes per draft
+- Performance estimate acknowledged: no
 - Final player confirmation: pending
 
 ## Module Status
@@ -81,6 +88,16 @@ See `research_dossier.md`.
 - Deterministic checks:
 - Deterministic resources/cooldowns/regeneration:
 - GM judgment zones:
+- Turn protocol: fast | balanced | maximum_continuity | custom
+- Routine-turn estimate:
+- Durable-turn estimate:
+- Structural / boundary-turn estimate:
+- Cold distill policy:
+- Validation policy:
+- Dashboard refresh policy:
+- Style review policy:
+- Latency notice policy:
+- Performance estimate acknowledged:
 
 ## 5. Canon Policy
 
@@ -105,6 +122,8 @@ See `visual_style.md` and `visual_gallery.md`.
 - Art direction:
 - Visual canon policy:
 - Display policy:
+- Dashboard refresh cost acknowledged:
+- Image generation and revision cost acknowledged:
 
 ## 8. World Truths
 
@@ -179,6 +198,9 @@ See `opening_brief.md` and `first_session.md`.
 - Visual canon:
 - Designer approval triggers:
 - Distill expectations:
+- Maximum durable turns before cold distill:
+- Mandatory structural/boundary triggers:
+- Durable event log and recovery policy:
 
 ## Open Questions For Play
 
