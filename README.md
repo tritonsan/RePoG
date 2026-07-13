@@ -4,6 +4,12 @@ RePoG turns an agentic coding workspace into a long-form solo tabletop RPG Game
 Master. This repository is the ready-to-play workspace: download the ZIP, open
 the extracted folder, and start a new conversation.
 
+## Watch the Demo
+
+[![Watch the RePoG demo](https://img.youtube.com/vi/jpXtyfrd5k0/maxresdefault.jpg)](https://youtu.be/jpXtyfrd5k0)
+
+▶ **[Watch the full RePoG demo on YouTube](https://youtu.be/jpXtyfrd5k0)**
+
 ## Start
 
 <details>
