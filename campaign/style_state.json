@@ -1,9 +1,11 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "max_history": 8,
+  "max_categorical_history": 8,
   "avoid_phrases": [],
   "last_beat_id": null,
   "last_scene_id": null,
   "last_speaker": null,
-  "history": []
+  "history": [],
+  "categorical_history": []
 }

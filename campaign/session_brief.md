@@ -11,6 +11,11 @@ not a plot script.
 conditions, inventory, and time. This file must not copy those facts as if it
 were a second state file.
 
+`opening_brief.md` owns the next finalized opening; `active_cast.md` owns
+temporary NPC whereabouts and objectives; character/place/faction notes own
+stable identity; and `world_dynamics.md` owns current offscreen domain motion.
+Use references below rather than parallel summaries of those facts.
+
 ## Triggered Lookups
 
 Open these only if the listed fictional signal occurs:
@@ -36,9 +41,11 @@ The smallest triggered set likely to matter next:
 - Knowledge boundaries:
 - Rules or resources:
 
-## Strong Start
+## Opening Or Scene-Entry Reference
 
-A concrete opening situation or reaction point:
+- Source: `opening_brief.md` or `current_state.yaml.scene_frame`
+- Relevant heading, scene id, or revision:
+- Why this reference is likely to matter:
 
 ## Potential Scenes
 
@@ -54,18 +61,22 @@ Reference `secrets_and_clues.md`; do not bind every clue to one delivery path.
 
 ## Useful NPCs
 
-NPCs likely to matter, with posture and mundane agenda:
+Reference NPCs likely to matter; do not copy current activity or location from
+the active cast.
 
 - NPC:
-  - Reason they may be here:
-  - Current task or desire:
-  - Contextual reaction to the player:
+  - Character note:
+  - Active-cast row or presence trigger:
+  - Knowledge-boundary entry:
 
 ## Live Locations
 
-Places that should feel active even when not serving the main thread:
+Reference places that may matter; baseline routine stays in the place note and
+live disruption stays in `current_state.yaml.scene_frame` or its owning world
+domain.
 
-- Location:
+- Location note:
+- Current-state or domain reference:
 
 ## GM Reminders
 

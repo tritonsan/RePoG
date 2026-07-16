@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 profile_status: pending
 source_setup_revision: 0
 # profile_status: pending | locked
@@ -18,6 +18,7 @@ lens_conflicts_resolved: []
 
 mechanics:
   modules: []
+  resolution_grounding: fictional
   inventory_tracking: abstract
   time_tracking: coarse
   travel_tracking: abstract
@@ -35,6 +36,16 @@ narration:
   clue_density: balanced
   dialogue_style: plain
   pacing: dynamic
+  narrative_signature:
+    anchors: []
+    avoid_habits: []
+    interiority_policy: player_owned
+    sensory_focus: []
+    dialogue_balance: balanced
+    humor: situational
+    emotional_distance: close
+  breather_frequency: balanced
+  breather_exit_policy: player_led_with_established_triggers
 
 advancement:
   cadence: ""
@@ -55,6 +66,7 @@ visuals:
 # mechanics.modules: bounded_resources | abilities_costs |
 #   strict_consumables | wounds | clocks | dice_resolution |
 #   structured_travel
+# mechanics.resolution_grounding: fictional | bands | numeric
 # inventory_tracking: abstract | quantified | encumbrance
 # time_tracking: coarse | scene | step
 # travel_tracking: abstract | route_time
@@ -71,6 +83,18 @@ visuals:
 # clue_density: low | balanced | high
 # dialogue_style: plain | balanced | heightened
 # pacing: dynamic | deliberate | urgent
+# narrative_signature.anchors: up to 3 short positive voice anchors
+# narrative_signature.avoid_habits: up to 3 recurring habits to avoid
+# narrative_signature.interiority_policy: player_owned |
+#   shared_when_invited | guided
+# narrative_signature.sensory_focus: up to 2 preferred sensory channels
+# narrative_signature.dialogue_balance: dialogue_forward | balanced |
+#   narration_forward
+# narrative_signature.humor: minimal | situational | frequent
+# narrative_signature.emotional_distance: close | moderate | detached
+# breather_frequency: sparse | balanced | generous
+# breather_exit_policy: player_led | player_led_with_established_triggers |
+#   world_led
 # advancement.cadence: none | session | scenario | arc | campaign
 # advancement.presentation: none | explicit_ooc | automatic_fictional
 # dashboard.mode: off | on
@@ -81,3 +105,6 @@ visuals:
 #   map | gallery
 # visuals.mode: off | manual_only | major_only | curated | rich
 # visuals.dashboard_placement: gallery_only | dashboard_after_approval
+# performance.cold_distill_policy: every_durable |
+#   scene_checkpoint_or_3_durable | scene_checkpoint_or_5_durable |
+#   scene_checkpoint_only

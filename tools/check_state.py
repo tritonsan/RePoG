@@ -78,7 +78,6 @@ TOP_LEVEL_KEYS = [
     "conditions",
     "active_clocks",
     "active_threats",
-    "notes_for_next_turn",
 ]
 
 PLAYER_KEYS = [
@@ -118,13 +117,13 @@ SETUP_PACKS = {
 }
 TURN_PROTOCOL_PRESETS = {
     "fast": {
-        "cold_distill_policy": "scene_or_5_durable",
+        "cold_distill_policy": "scene_checkpoint_or_5_durable",
         "validation_policy": "hot_each_durable_full_on_distill",
         "dashboard_refresh_policy": "scene_and_major_visible_change",
         "style_review_policy": "sampled_and_distill",
     },
     "balanced": {
-        "cold_distill_policy": "scene_or_3_durable",
+        "cold_distill_policy": "scene_checkpoint_or_3_durable",
         "validation_policy": "hot_each_durable_full_on_distill",
         "dashboard_refresh_policy": "every_visible_change",
         "style_review_policy": "every_2_durable_and_distill",
@@ -136,9 +135,17 @@ TURN_PROTOCOL_PRESETS = {
         "style_review_policy": "every_durable",
     },
 }
+LEGACY_TURN_PROTOCOL_PRESETS = {
+    "fast": {**TURN_PROTOCOL_PRESETS["fast"], "cold_distill_policy": "scene_or_5_durable"},
+    "balanced": {**TURN_PROTOCOL_PRESETS["balanced"], "cold_distill_policy": "scene_or_3_durable"},
+    "maximum_continuity": TURN_PROTOCOL_PRESETS["maximum_continuity"],
+}
 TURN_PROTOCOLS = set(TURN_PROTOCOL_PRESETS) | {"custom"}
 COLD_DISTILL_POLICIES = {
     "every_durable",
+    "scene_checkpoint_or_3_durable",
+    "scene_checkpoint_or_5_durable",
+    "scene_checkpoint_only",
     "scene_or_3_durable",
     "scene_or_5_durable",
     "scene_only",
@@ -171,6 +178,7 @@ MECHANIC_MODULES = {
     "structured_travel",
 }
 DICE_MODES = {"judgment_only", "player_rolls", "open_gm_rolls", "hidden_gm_rolls", "hybrid"}
+RESOLUTION_GROUNDINGS = {"fictional", "bands", "numeric"}
 INVENTORY_TRACKING = {"abstract", "quantified", "encumbrance"}
 TIME_TRACKING = {"scene", "coarse", "step"}
 TRAVEL_TRACKING = {"abstract", "route_time"}
@@ -184,6 +192,17 @@ OPTION_PROMPTING = {"natural", "gentle_choices", "tactical_menu"}
 DIALOGUE_STYLES = {"plain", "balanced", "heightened"}
 DENSITY_VALUES = {"low", "balanced", "high"}
 PACING_VALUES = {"dynamic", "deliberate", "urgent"}
+INTERIORITY_POLICIES = {"player_owned", "shared_when_invited", "guided"}
+DIALOGUE_BALANCES = {"dialogue_forward", "balanced", "narration_forward"}
+HUMOR_VALUES = {"minimal", "situational", "frequent"}
+EMOTIONAL_DISTANCES = {"close", "moderate", "detached"}
+BREATHER_FREQUENCIES = {"sparse", "balanced", "generous"}
+BREATHER_EXIT_POLICIES = {
+    "player_led",
+    "player_led_with_established_triggers",
+    "world_led",
+}
+SCENE_MODES = {"ambient", "focused", "crisis", "aftermath", "transition", "breather"}
 ADVANCEMENT_CADENCES = {"none", "session", "scenario", "arc", "campaign"}
 ADVANCEMENT_PRESENTATIONS = {"none", "explicit_ooc", "automatic_fictional"}
 DASHBOARD_MODES = {"off", "on"}
@@ -223,6 +242,41 @@ HIGH_POWER_WORDS = {
     "exceptional",
     "world",
 }
+
+AGENCY_CARD_FIELDS = (
+    "Local role",
+    "Independent project",
+    "Current mundane task",
+    "Pressure decision rule",
+    "Misbelief or recurring mistake",
+    "Hard boundary",
+    "Non-player obligation",
+    "Voice rhythm",
+    "Social tactic",
+    "Routine and availability",
+    "Next move if ignored",
+    "Evaluation trigger",
+    "Visible consequence channel",
+    "Offscreen trajectory status",
+)
+OFFSCREEN_TRAJECTORY_STATUSES = {"inactive", "active", "needs_review"}
+OFFSCREEN_TRAJECTORY_FIELDS = (
+    "Goal and method",
+    "Obstacle or resource",
+    "Time horizon",
+    "Result shape",
+    "Visible channel",
+    "Last evaluation id",
+)
+STYLE_CATEGORICAL_FIELDS = (
+    "dramatic_beat",
+    "gm_move",
+    "ending_form",
+    "sensory_channel",
+    "complication_type",
+    "npc_social_tactic",
+    "metaphor_family",
+)
 
 LEVEL_BUDGETS = {
     "beginner": (16, 3),
@@ -452,7 +506,7 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
             elif value not in allowed:
                 _add(findings, "error", "turn_policy_invalid", f"Invalid {field}: {value}", path)
 
-    expected = TURN_PROTOCOL_PRESETS.get(turn_protocol)
+    expected = LEGACY_TURN_PROTOCOL_PRESETS.get(turn_protocol)
     if expected:
         actual = {
             "cold_distill_policy": cold_policy,
@@ -511,8 +565,16 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
         schema_version = int(_clean_scalar(top.get("schema_version", "0")))
     except ValueError:
         schema_version = 0
-    if schema_version != 1:
-        _add(findings, "error", "play_profile_schema_invalid", "play_profile schema_version must be 1.", path)
+    if schema_version not in {1, 2}:
+        _add(findings, "error", "play_profile_schema_invalid", "play_profile schema_version must be 1 or 2.", path)
+    elif schema_version == 1:
+        _add(
+            findings,
+            "warning",
+            "play_profile_v2_pending",
+            "Legacy play_profile schema v1 remains playable; migrate when a snapshot is available.",
+            path,
+        )
 
     profile_status = _clean_scalar(top.get("profile_status", ""))
     if profile_status not in {"pending", "locked"}:
@@ -560,6 +622,10 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
         _add(findings, "error", "mechanic_module_duplicate", "Mechanic modules must be deduplicated.", path)
 
     mechanic_fields = {
+        "mechanics.resolution_grounding": (
+            _clean_scalar(mechanics.get("resolution_grounding", "")),
+            RESOLUTION_GROUNDINGS,
+        ),
         "mechanics.inventory_tracking": (_clean_scalar(mechanics.get("inventory_tracking", "")), INVENTORY_TRACKING),
         "mechanics.time_tracking": (_clean_scalar(mechanics.get("time_tracking", "")), TIME_TRACKING),
         "mechanics.travel_tracking": (_clean_scalar(mechanics.get("travel_tracking", "")), TRAVEL_TRACKING),
@@ -567,7 +633,15 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
         "mechanics.dice_mode": (_clean_scalar(mechanics.get("dice_mode", "")), DICE_MODES),
     }
     for context, (value, allowed) in mechanic_fields.items():
-        _enum_field(findings, path, context=context, value=value, allowed=allowed, required=required)
+        field_required = schema_version >= 2 if context == "mechanics.resolution_grounding" else required
+        _enum_field(
+            findings,
+            path,
+            context=context,
+            value=value,
+            allowed=allowed,
+            required=field_required,
+        )
 
     if "strict_consumables" in modules and mechanic_fields["mechanics.inventory_tracking"][0] not in {"quantified", "encumbrance"}:
         _add(findings, "error", "strict_consumables_tracking", "strict_consumables requires quantified or encumbrance inventory tracking.", path)
@@ -594,6 +668,68 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
     }
     for context, (value, allowed) in narration_fields.items():
         _enum_field(findings, path, context=context, value=value, allowed=allowed, required=required)
+
+    signature = _child_block(_block(text, "narration"), "narrative_signature", indent=2)
+    signature_values = _values_at_indent(signature, indent=4)
+    anchors = _list_at_indent(signature, "anchors", indent=4)
+    avoid_habits = _list_at_indent(signature, "avoid_habits", indent=4)
+    sensory_focus = _list_at_indent(signature, "sensory_focus", indent=4)
+    if schema_version >= 2:
+        if not signature:
+            _add(findings, "error", "narrative_signature_missing", "Schema v2 requires narration.narrative_signature.", path)
+        for context, values, maximum in (
+            ("narrative_signature.anchors", anchors, 3),
+            ("narrative_signature.avoid_habits", avoid_habits, 3),
+            ("narrative_signature.sensory_focus", sensory_focus, 2),
+        ):
+            if len(values) > maximum:
+                _add(findings, "error", "narrative_signature_list_too_long", f"{context} allows at most {maximum} entries.", path)
+            if any(not value.strip() for value in values):
+                _add(findings, "error", "narrative_signature_entry_blank", f"{context} contains a blank entry.", path)
+        if ready and (
+            len(anchors) != 3
+            or any(not _meaningful_contract_value(value) for value in anchors)
+        ):
+            _add(
+                findings,
+                "error",
+                "ready_narrative_signature_incomplete",
+                "Ready profile v2 requires exactly three meaningful Narrative Signature anchors.",
+                path,
+            )
+        for context, value, allowed in (
+            (
+                "narrative_signature.interiority_policy",
+                _clean_scalar(signature_values.get("interiority_policy", "")),
+                INTERIORITY_POLICIES,
+            ),
+            (
+                "narrative_signature.dialogue_balance",
+                _clean_scalar(signature_values.get("dialogue_balance", "")),
+                DIALOGUE_BALANCES,
+            ),
+            (
+                "narrative_signature.humor",
+                _clean_scalar(signature_values.get("humor", "")),
+                HUMOR_VALUES,
+            ),
+            (
+                "narrative_signature.emotional_distance",
+                _clean_scalar(signature_values.get("emotional_distance", "")),
+                EMOTIONAL_DISTANCES,
+            ),
+            (
+                "narration.breather_frequency",
+                _clean_scalar(narration.get("breather_frequency", "")),
+                BREATHER_FREQUENCIES,
+            ),
+            (
+                "narration.breather_exit_policy",
+                _clean_scalar(narration.get("breather_exit_policy", "")),
+                BREATHER_EXIT_POLICIES,
+            ),
+        ):
+            _enum_field(findings, path, context=context, value=value, allowed=allowed, required=True)
 
     advancement = _nested_values(_block(text, "advancement"))
     _enum_field(
@@ -659,7 +795,16 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
         _enum_field(findings, path, context=context, value=value, allowed=allowed, required=required)
     if required and estimate_ack is not True:
         _add(findings, "error", "performance_estimate_unacknowledged", "Ready campaigns must acknowledge the timing-estimate caveat.", path)
-    expected = TURN_PROTOCOL_PRESETS.get(turn_protocol)
+    legacy_cold = cold_policy in {"scene_or_3_durable", "scene_or_5_durable"}
+    if schema_version >= 2 and legacy_cold:
+        _add(
+            findings,
+            "error",
+            "legacy_scene_distill_policy",
+            "Schema v2 uses scene_checkpoint_or_3_durable or scene_checkpoint_or_5_durable; a scene checkpoint is not a full distill.",
+            path,
+        )
+    expected = (TURN_PROTOCOL_PRESETS if schema_version >= 2 else LEGACY_TURN_PROTOCOL_PRESETS).get(turn_protocol)
     if expected:
         actual = {
             "cold_distill_policy": cold_policy,
@@ -692,9 +837,14 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
 
     return {
         "ready": ready,
+        "schema_version": schema_version,
         "setting_lenses": setting_lenses,
         "play_lenses": play_lenses,
         "modules": modules,
+        "resolution_grounding": (
+            _clean_scalar(mechanics.get("resolution_grounding", ""))
+            or ("numeric" if schema_version == 1 else "")
+        ),
         "dashboard_mode": dashboard_mode,
         "dashboard_refresh_policy": refresh_policy,
         "visual_mode": visual_mode,
@@ -703,6 +853,8 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
         "cold_distill_policy": cold_policy,
         "validation_policy": validation_policy,
         "style_review_policy": style_policy,
+        "advancement_cadence": _clean_scalar(advancement.get("cadence", "")),
+        "advancement_presentation": _clean_scalar(advancement.get("presentation", "")),
     }
 
 
@@ -766,6 +918,13 @@ def _section_is_template(text: str, heading: str) -> bool:
     return content.startswith(prefixes.get(heading.lower(), "\0"))
 
 
+def _section_enum_value(text: str, heading: str, allowed: set[str]) -> str:
+    section = _markdown_section(text, heading)
+    pattern = "|".join(re.escape(value) for value in sorted(allowed, key=len, reverse=True))
+    match = re.search(rf"(?im)^\s*`?({pattern})`?\s*$", section)
+    return match.group(1).lower() if match else ""
+
+
 def _check_ready_for_play(
     campaign_path: Path,
     state_text: str,
@@ -785,24 +944,47 @@ def _check_ready_for_play(
     for field in ("name", "concept"):
         if not _clean_scalar(player.get(field, "")):
             _add(findings, "error", "ready_player_missing", f"Ready campaign is missing player {field}.", state_path)
-    for field in ("title", "location", "summary", "immediate_pressure"):
+    for field in ("title", "location", "summary"):
         if not _clean_scalar(scene.get(field, "")):
             _add(findings, "error", "ready_scene_missing", f"Ready campaign is missing current_scene.{field}.", state_path)
+    scene_mode = _clean_scalar(_nested_values(_block(state_text, "scene_frame")).get("mode", ""))
+    if scene_mode == "crisis" and not _clean_scalar(scene.get("immediate_pressure", "")):
+        _add(
+            findings,
+            "error",
+            "ready_scene_missing",
+            "A crisis scene needs current_scene.immediate_pressure; other scene modes may be calm when campaign-level pressure is established elsewhere.",
+            state_path,
+        )
+    if not _campaign_pressure_materialized(campaign_path, state_text):
+        _add(
+            findings,
+            "error",
+            "ready_campaign_pressure_missing",
+            "Ready play needs at least one campaign-level issue, thread pressure, threat, clock, or active world domain even when the live scene is calm.",
+            campaign_path / "issues.md",
+        )
 
     opening_path = campaign_path / "opening_brief.md"
     opening = _read(opening_path, findings) if opening_path.is_file() else ""
-    for heading in (
-        "Where",
-        "What Kind Of Place",
-        "When And How The Character Arrived",
-        "Player-Known Context",
-        "Immediate Visible Situation",
-        "Neutral Action Space",
-        "Pressure Or Hook",
-        "Player-Facing Opening Draft",
-    ):
-        if _section_is_template(opening, heading):
-            _add(findings, "error", "ready_opening_incomplete", f"Opening section is incomplete: {heading}", opening_path)
+    opening_status = _markdown_field(opening, "Opening status").lower()
+    opening_is_live = opening_status == "active" or not opening_status
+    if opening_is_live:
+        opening_mode = _section_enum_value(opening, "Scene Mode", SCENE_MODES)
+        for heading in (
+            "Where",
+            "What Kind Of Place",
+            "When And How The Character Arrived",
+            "Player-Known Context",
+            "Immediate Visible Situation",
+            "Neutral Action Space",
+            "Pressure Or Hook",
+            "Player-Facing Opening Draft",
+        ):
+            if heading == "Pressure Or Hook" and opening_mode == "breather":
+                continue
+            if _section_is_template(opening, heading):
+                _add(findings, "error", "ready_opening_incomplete", f"Opening section is incomplete: {heading}", opening_path)
 
     snapshot_root = campaign_path / "snapshots"
     manifests = list(snapshot_root.glob("*/snapshot_manifest.json")) if snapshot_root.is_dir() else []
@@ -817,6 +999,157 @@ def _check_ready_for_play(
 
     if dashboard_mode == "on" and not (campaign_path / "dashboard" / "dashboard_state.json").is_file():
         _add(findings, "error", "ready_dashboard_missing", "Enabled dashboard is not prepared.", campaign_path / "dashboard")
+
+
+def _campaign_pressure_materialized(campaign_path: Path, state_text: str) -> bool:
+    if _parse_block_list(state_text, "active_threats") or _parse_block_list(state_text, "active_clocks"):
+        return True
+
+    opening_path = campaign_path / "opening_brief.md"
+    if opening_path.is_file():
+        opening = _read(opening_path, [])
+        opening_status = _markdown_field(opening, "Opening status").lower()
+        if opening_status in {"", "active"} and not _section_is_template(opening, "Pressure Or Hook"):
+            return True
+
+    threads_path = campaign_path / "threads.md"
+    if threads_path.is_file():
+        compass = _markdown_section(_read(threads_path, []), "Arc Compass")
+        if _meaningful_contract_value(_markdown_field(compass, "Active pressures")):
+            return True
+        active_threads = _markdown_section(_read(threads_path, []), "Active Threads")
+        if any(
+            _slug(name) != "thread_title" and _meaningful_contract_value(_markdown_field(body, "Pressure"))
+            for name, body in _markdown_subsections(active_threads)
+        ):
+            return True
+
+    issues_path = campaign_path / "issues.md"
+    if issues_path.is_file():
+        issues_text = _read(issues_path, [])
+        for section_name, pressure_field in (
+            ("Current Issues", "What is wrong"),
+            ("Impending Issues", "What is about to get worse"),
+        ):
+            if any(
+                _slug(name) != "issue_name" and _meaningful_contract_value(_markdown_field(body, pressure_field))
+                for name, body in _markdown_subsections(_markdown_section(issues_text, section_name))
+            ):
+                return True
+
+    dynamics_path = campaign_path / "world_dynamics.md"
+    if dynamics_path.is_file():
+        active = _markdown_section(_read(dynamics_path, []), "Active Domains")
+        if any(
+            _slug(name) != "domain_name"
+            and _markdown_field(body, "Status").lower() in {"shifting", "volatile"}
+            for name, body in _markdown_subsections(active)
+        ):
+            return True
+    return False
+
+
+def _check_opening_coherence(
+    campaign_path: Path,
+    *,
+    current_location: str,
+    present_npcs: list[str],
+    findings: list[dict],
+) -> None:
+    path = campaign_path / "opening_brief.md"
+    if not path.is_file():
+        return
+    text = _read(path, findings)
+    opening_status = _markdown_field(text, "Opening status").lower()
+    if not opening_status:
+        _add(
+            findings,
+            "warning",
+            "opening_status_legacy",
+            "Legacy opening brief has no lifecycle status; treating it as live for compatibility.",
+            path,
+        )
+    elif opening_status not in {"pending", "active", "consumed"}:
+        _add(findings, "error", "opening_status_invalid", f"Invalid Opening status: {opening_status}", path)
+        return
+    elif opening_status in {"pending", "consumed"}:
+        return
+    where = _markdown_section(text, "Where")
+    opening_location = _markdown_field(where, "Location")
+    if not opening_location:
+        lines = [_clean_scalar(line) for line in where.splitlines() if line.strip()]
+        if len(lines) == 1 and len(lines[0]) <= 100 and not lines[0].lower().startswith("the place where"):
+            opening_location = lines[0]
+    if current_location and opening_location:
+        current_slug = _slug(current_location)
+        opening_slug = _slug(opening_location)
+        if current_slug not in opening_slug and opening_slug not in current_slug:
+            _add(findings, "error", "opening_location_conflict", f"Opening location {opening_location!r} conflicts with current location {current_location!r}.", path)
+
+    raw_npcs = _markdown_field(text, "Present NPCs")
+    if not raw_npcs:
+        return
+    opening_npcs = _parse_inline_list(raw_npcs) if raw_npcs.startswith("[") else [
+        _clean_scalar(value) for value in raw_npcs.split(",") if _clean_scalar(value)
+    ]
+    for npc in opening_npcs:
+        if not _note_exists(campaign_path / "characters", npc) and not _ledger_contains(campaign_path, npc):
+            _add(findings, "error", "opening_npc_reference_missing", f"Opening NPC has no character reference: {npc}", path)
+    if present_npcs and {_slug(value) for value in opening_npcs} != {_slug(value) for value in present_npcs}:
+        _add(findings, "error", "opening_present_npc_conflict", "Structurally listed opening NPCs conflict with current_scene.present_npcs.", path)
+
+
+def _check_first_session_lifecycle(
+    campaign_path: Path,
+    *,
+    ready: bool,
+    contract_v2: bool,
+    findings: list[dict],
+) -> None:
+    path = campaign_path / "first_session.md"
+    if not path.is_file():
+        return
+    status = _markdown_field(_read(path, findings), "Prep status").lower()
+    if not status and not contract_v2:
+        _add(findings, "warning", "first_session_status_legacy", "Legacy first-session prep has no lifecycle status.", path)
+    elif status not in {"drafting", "materialized", "consumed"}:
+        _add(findings, "error", "first_session_status_invalid", f"Invalid first-session Prep status: {status or '(blank)'}", path)
+    elif ready and status == "drafting":
+        _add(findings, "error", "first_session_not_materialized", "Ready play requires first-session prep to be materialized into opening_brief.md.", path)
+
+    opening_path = campaign_path / "opening_brief.md"
+    if not contract_v2 or not opening_path.is_file() or status not in {"drafting", "materialized", "consumed"}:
+        return
+    opening_status = _markdown_field(_read(opening_path, findings), "Opening status").lower()
+    opening_text = _read(opening_path, findings)
+    opening_type = _section_enum_value(
+        opening_text,
+        "Opening Type",
+        {"first_campaign_opening", "post_arc_opening"},
+    )
+    if opening_type == "post_arc_opening":
+        return
+    if not opening_type:
+        _add(
+            findings,
+            "warning",
+            "opening_type_legacy",
+            "Opening Type is missing; assuming first_campaign_opening for legacy lifecycle compatibility.",
+            opening_path,
+        )
+    expected = {
+        "drafting": "pending",
+        "materialized": "active",
+        "consumed": "consumed",
+    }[status]
+    if opening_status and opening_status != expected:
+        _add(
+            findings,
+            "error",
+            "opening_lifecycle_conflict",
+            f"first_session Prep status {status} requires opening_brief Opening status {expected}, not {opening_status}.",
+            opening_path,
+        )
 
 
 def _check_visual_state(campaign_path: Path, findings: list[dict]) -> None:
@@ -1074,6 +1407,60 @@ def _parse_nested_block_list(yaml_text: str, parent: str, key: str) -> list[str]
     return []
 
 
+def _child_block(block_text: str, key: str, *, indent: int = 2) -> str:
+    """Return one direct YAML-like mapping child without requiring PyYAML."""
+
+    lines = block_text.splitlines()
+    start: int | None = None
+    prefix = " " * indent
+    for index, line in enumerate(lines):
+        if re.match(rf"^{re.escape(prefix)}{re.escape(key)}:\s*$", line):
+            start = index + 1
+            break
+    if start is None:
+        return ""
+    children: list[str] = []
+    for line in lines[start:]:
+        if line.strip() and len(line) - len(line.lstrip(" ")) <= indent:
+            break
+        children.append(line)
+    return "\n".join(children)
+
+
+def _values_at_indent(block_text: str, *, indent: int) -> dict[str, str]:
+    values: dict[str, str] = {}
+    prefix = " " * indent
+    for line in block_text.splitlines():
+        match = re.match(
+            rf"^{re.escape(prefix)}([A-Za-z_][A-Za-z0-9_-]*):\s*(.*)$",
+            line,
+        )
+        if match:
+            values[match.group(1)] = match.group(2).strip()
+    return values
+
+
+def _list_at_indent(block_text: str, key: str, *, indent: int) -> list[str]:
+    lines = block_text.splitlines()
+    prefix = " " * indent
+    for index, line in enumerate(lines):
+        inline = re.match(rf"^{re.escape(prefix)}{re.escape(key)}:\s*(\[.*\])\s*$", line)
+        if inline:
+            return _parse_inline_list(inline.group(1))
+        if not re.match(rf"^{re.escape(prefix)}{re.escape(key)}:\s*$", line):
+            continue
+        items: list[str] = []
+        for child in lines[index + 1 :]:
+            child_indent = len(child) - len(child.lstrip(" "))
+            if child.strip() and child_indent <= indent:
+                break
+            match = re.match(rf"^\s{{{indent + 2}}}-\s*(.*?)\s*$", child)
+            if match:
+                items.append(_clean_scalar(match.group(1)))
+        return items
+    return []
+
+
 def _boolean(value: str) -> bool | None:
     cleaned = _clean_scalar(value).lower()
     if cleaned in {"true", "yes"}:
@@ -1178,15 +1565,20 @@ def _check_persistence(
 
     threshold = {
         "every_durable": 0,
+        "scene_checkpoint_or_3_durable": 3,
+        "scene_checkpoint_or_5_durable": 5,
         "scene_or_3_durable": 3,
         "scene_or_5_durable": 5,
     }.get(cold_policy)
-    if threshold is not None and durable_turns > threshold:
+    overdue = threshold is not None and (
+        durable_turns > 0 if threshold == 0 else durable_turns >= threshold
+    )
+    if overdue:
         _add(
             findings,
             "error",
             "persistence_distill_overdue",
-            f"{cold_policy} allows at most {threshold} undistilled durable turns; found {durable_turns}.",
+            f"{cold_policy} requires a full distill on durable turn {threshold}; found {durable_turns} undistilled.",
             state_path,
         )
 
@@ -1232,6 +1624,40 @@ def _check_persistence(
                 f"Missing durable revision event(s): {', '.join(str(value) for value in missing)}.",
                 log_path,
             )
+
+    # A scene checkpoint is a resumability write, not a propagation boundary
+    # in the v2 Fast/Balanced contract.  Only flag logs that explicitly record
+    # both operations for the same revision and name the scene/checkpoint as
+    # the distill trigger; other legitimate full-distill triggers remain valid.
+    if cold_policy.startswith("scene_checkpoint_or_"):
+        checkpoint_revisions = {
+            int(value)
+            for value in re.findall(
+                r"(?im)^###\s+Scene Checkpoint(?:\s+Revision)?\s+(\d+)\s*$",
+                log_text,
+            )
+        }
+        for match in re.finditer(
+            r"(?ims)^###\s+Distilled Through Revision\s+(\d+)\s*$\s*(.*?)(?=^###\s+|\Z)",
+            log_text,
+        ):
+            marker_revision = int(match.group(1))
+            trigger = _markdown_field(match.group(2), "Trigger").lower()
+            if (
+                marker_revision in checkpoint_revisions
+                and ("scene" in trigger or "checkpoint" in trigger)
+                and not any(
+                    reason in trigger
+                    for reason in ("session", "arc", "advancement", "research", "conflict", "manual")
+                )
+            ):
+                _add(
+                    findings,
+                    "error",
+                    "scene_checkpoint_forced_full_distill",
+                    f"Scene checkpoint {marker_revision} was also full-distilled only because of the scene boundary.",
+                    log_path,
+                )
 
     if scope == "full" and (pending or durable_turns > 0):
         arc_path = campaign_path / "arc_closure.md"
@@ -1343,6 +1769,151 @@ def _markdown_table(text: str) -> list[dict[str, str]]:
 def _markdown_revision(text: str, label: str) -> int | None:
     match = re.search(rf"(?im)^{re.escape(label)}:\s*(\d+)\s*$", text)
     return int(match.group(1)) if match else None
+
+
+def _markdown_subsections(section_text: str, *, level: int = 3) -> list[tuple[str, str]]:
+    marks = "#" * level
+    matches = list(re.finditer(rf"(?m)^{re.escape(marks)}\s+(.+?)\s*$", section_text))
+    result: list[tuple[str, str]] = []
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(section_text)
+        result.append((match.group(1).strip(), section_text[match.end() : end].strip()))
+    return result
+
+
+def _check_knowledge_authority(campaign_path: Path, findings: list[dict]) -> None:
+    path = campaign_path / "knowledge_boundaries.md"
+    if not path.is_file():
+        return
+    text = _read(path, findings)
+    player_section = _markdown_section(text, "Player And Character Knowledge")
+    protected = _markdown_section(text, "Protected Proper Nouns")
+    for name, body in _markdown_subsections(protected):
+        if _slug(name) == "protected_name":
+            continue
+        status = _markdown_field(body, "Status").lower()
+        if status in {"gm-only", "foreshadowable"} and re.search(rf"(?i)\b{re.escape(name)}\b", player_section):
+            _add(findings, "error", "knowledge_authority_conflict", f"Protected {status} name also appears as active player/character knowledge: {name}", path)
+
+    for section_name, folder in (
+        ("Companion Knowledge", "characters"),
+        ("NPC And Faction Knowledge", "both"),
+    ):
+        section = _markdown_section(text, section_name)
+        for name, _ in _markdown_subsections(section):
+            if _slug(name) in {"companion_name", "npc_or_faction_name"}:
+                continue
+            exists = _note_exists(campaign_path / "characters", name)
+            if folder == "both":
+                exists = exists or _note_exists(campaign_path / "factions", name)
+            if not exists and not _ledger_contains(campaign_path, name):
+                _add(findings, "error", "knowledge_actor_reference_missing", f"Knowledge authority names an unknown actor: {name}", path)
+
+
+def _check_world_evaluation_identity(campaign_path: Path, findings: list[dict]) -> None:
+    path = campaign_path / "world_dynamics.md"
+    if not path.is_file():
+        return
+    text = _read(path, findings)
+    active = _markdown_section(text, "Active Domains")
+    trigger_ids: dict[str, str] = {}
+    for name, body in _markdown_subsections(active):
+        if _slug(name) == "domain_name":
+            continue
+        due = _markdown_field(body, "Due").lower() in {"yes", "true"}
+        pending_id = _markdown_field(body, "Pending evaluation id")
+        last_id = _markdown_field(body, "Last evaluation id")
+        trigger = _markdown_field(body, "Trigger")
+        if due and not pending_id:
+            _add(findings, "error", "world_evaluation_id_missing", f"Due domain {name} needs a stable Pending evaluation id.", path)
+        if last_id and not _markdown_field(body, "Causal result before uncertainty"):
+            _add(findings, "error", "world_evaluation_result_missing", f"Evaluated domain {name} lacks its causal result.", path)
+        if trigger and (last_id or pending_id):
+            evaluation_id = last_id or pending_id
+            trigger_key = f"{_slug(name)}:{_slug(trigger)}"
+            previous = trigger_ids.setdefault(trigger_key, evaluation_id)
+            if previous != evaluation_id:
+                _add(findings, "error", "world_evaluation_identity_conflict", f"Trigger {trigger!r} maps to both {previous!r} and {evaluation_id!r}.", path)
+
+    events = _markdown_section(text, "Notable World Events")
+    event_results: dict[str, str] = {}
+    for name, body in _markdown_subsections(events):
+        if _slug(name) == "event_title":
+            continue
+        evaluation_id = _markdown_field(body, "Evaluation id")
+        if not evaluation_id:
+            _add(findings, "error", "world_event_evaluation_id_missing", f"World event {name} lacks Evaluation id.", path)
+            continue
+        normalized = " ".join(body.split())
+        previous = event_results.setdefault(evaluation_id, normalized)
+        if previous != normalized:
+            _add(findings, "error", "world_evaluation_identity_conflict", f"Evaluation id {evaluation_id!r} has conflicting persisted event results.", path)
+
+
+def _check_advancement_contract(campaign_path: Path, profile: dict[str, object], findings: list[dict]) -> None:
+    cadence = str(profile.get("advancement_cadence", ""))
+    presentation = str(profile.get("advancement_presentation", ""))
+    if not cadence and not presentation:
+        return
+    if cadence == "none" and presentation != "none":
+        _add(findings, "error", "advancement_presentation_conflict", "advancement.cadence none requires presentation none.", campaign_path / "play_profile.yaml")
+    if cadence and cadence != "none" and presentation == "none":
+        _add(findings, "error", "advancement_presentation_conflict", "An enabled advancement cadence requires explicit_ooc or automatic_fictional presentation.", campaign_path / "play_profile.yaml")
+
+    path = campaign_path / "arc_closure.md"
+    if not path.is_file():
+        return
+    text = _read(path, findings)
+    live = _markdown_section(text, "Current Progression State") or text
+    status = (_markdown_field(live, "Advancement status") or _markdown_field(live, "Status")).lower()
+    allowed_statuses = {"not_due", "due", "offered", "chosen", "deferred", "applied"}
+    if status and status not in allowed_statuses:
+        _add(findings, "error", "advancement_status_invalid", f"Invalid live Advancement status: {status}", path)
+
+    arc_presentation = _markdown_field(live, "Advancement presentation").lower()
+    if arc_presentation:
+        if arc_presentation not in ADVANCEMENT_PRESENTATIONS:
+            _add(findings, "error", "advancement_presentation_invalid", f"Invalid live Advancement presentation: {arc_presentation}", path)
+        elif presentation and arc_presentation != presentation:
+            _add(findings, "error", "advancement_presentation_conflict", "arc_closure live presentation must match play_profile advancement.presentation.", path)
+
+    lock_value = _boolean(_markdown_field(live, "Fiction continuation locked until advancement"))
+    if lock_value is None:
+        legacy_continue = _boolean(_markdown_field(live, "Fiction may continue"))
+        locked = legacy_continue is False
+    else:
+        locked = lock_value is True
+
+    ooc_status = _markdown_field(live, "OOC interlude status").lower()
+    legacy_interlude = _boolean(_markdown_field(live, "OOC interlude offered"))
+    if not ooc_status and legacy_interlude is not None:
+        ooc_status = (
+            "offered"
+            if legacy_interlude
+            else ("not_applicable" if presentation in {"none", "automatic_fictional"} else "not_offered")
+        )
+    allowed_ooc = {"not_applicable", "not_offered", "offered", "deferred", "resolved"}
+    if ooc_status and ooc_status not in allowed_ooc:
+        _add(findings, "error", "advancement_ooc_status_invalid", f"Invalid OOC interlude status: {ooc_status}", path)
+
+    unresolved_choice = status in {"due", "offered"}
+    if cadence == "none":
+        if status in {"due", "offered"}:
+            _add(findings, "error", "advancement_gate_forbidden", "cadence none cannot leave advancement due or offered.", path)
+        if ooc_status in {"offered", "deferred", "resolved"} or legacy_interlude is True:
+            _add(findings, "error", "advancement_gate_forbidden", "cadence none cannot open an OOC advancement interlude.", path)
+        if locked:
+            _add(findings, "error", "advancement_gate_forbidden", "cadence none cannot lock normal fiction for advancement.", path)
+    if presentation in {"automatic_fictional", "none"}:
+        if ooc_status and ooc_status != "not_applicable":
+            _add(findings, "error", "advancement_presentation_conflict", f"{presentation} requires OOC interlude status not_applicable.", path)
+        if locked:
+            _add(findings, "error", "advancement_presentation_conflict", f"{presentation} cannot lock fiction for an OOC interlude.", path)
+    if presentation == "explicit_ooc":
+        if locked and not (unresolved_choice and ooc_status == "offered"):
+            _add(findings, "error", "advancement_gate_without_choice", "explicit_ooc may lock only while a due/offered choice has OOC status offered.", path)
+        if ooc_status == "deferred" and locked:
+            _add(findings, "error", "advancement_deferred_still_locked", "Deferring the OOC choice must clear the fiction lock.", path)
 
 
 def _entity_tier(folder: Path, name: str) -> str:
@@ -1483,7 +2054,22 @@ def _check_early_stage_power(
             )
 
 
-def _check_character_notes(campaign_path: Path, level_band: str, findings: list[dict]) -> None:
+def _check_character_notes(
+    campaign_path: Path,
+    level_band: str,
+    findings: list[dict],
+    *,
+    resolution_grounding: str,
+    ready: bool,
+    contract_v3: bool,
+) -> None:
+    active_path = campaign_path / "active_cast.md"
+    active_rows = _markdown_table(_read(active_path, findings)) if active_path.is_file() else []
+    active_names = {
+        _slug(row.get("NPC", ""))
+        for row in active_rows
+        if row.get("NPC") and _slug(row.get("NPC", "")) != "example_npc"
+    }
     for path in _markdown_files(campaign_path / "characters"):
         text = _read(path, findings)
         tier = _slug(_markdown_field(text, "Tier"))
@@ -1494,16 +2080,73 @@ def _check_character_notes(campaign_path: Path, level_band: str, findings: list[
         if not power_band:
             _add(findings, "warning", "character_power_band_missing", "T2+ character is missing Power Band.", path)
 
-        for heading, rule in (
-            ("Routine And Availability", "character_routine_missing"),
-            ("Current Mundane Agenda", "character_agenda_missing"),
-            ("Private Motive", "character_motive_missing"),
-            ("Last Meaningful Interaction", "character_last_interaction_missing"),
-        ):
-            if not _meaningful_text(_markdown_section(text, heading)):
-                _add(findings, "warning", rule, f"T2+ character is missing {heading}.", path)
+        card = _markdown_key_values(_markdown_section(text, "At-The-Table Agency Card"))
+        card_missing = [
+            field
+            for field in AGENCY_CARD_FIELDS
+            if field not in card
+            or (
+                field != "Offscreen trajectory status"
+                and not _meaningful_contract_value(card.get(field, ""))
+            )
+            or (
+                field == "Offscreen trajectory status"
+                and _clean_scalar(card.get(field, "")) not in OFFSCREEN_TRAJECTORY_STATUSES
+            )
+        ]
+        status = _clean_scalar(card.get("Offscreen trajectory status", ""))
+        if status and status not in OFFSCREEN_TRAJECTORY_STATUSES:
+            _add(
+                findings,
+                "error",
+                "offscreen_trajectory_status_invalid",
+                f"Invalid Offscreen trajectory status: {status}",
+                path,
+            )
+        if status == "active":
+            trajectory = _markdown_key_values(_markdown_section(text, "Offscreen Trajectory"))
+            trajectory_missing = [
+                field
+                for field in OFFSCREEN_TRAJECTORY_FIELDS
+                if not _meaningful_contract_value(trajectory.get(field, ""))
+            ]
+            if trajectory_missing:
+                _add(
+                    findings,
+                    "error" if contract_v3 else "warning",
+                    "active_offscreen_trajectory_incomplete",
+                    f"Active offscreen trajectory needs: {', '.join(trajectory_missing)}",
+                    path,
+                )
+        title_match = re.search(r"(?m)^#\s+(.+?)\s*$", text)
+        entity_slug = _slug(title_match.group(1)) if title_match else _slug(path.stem)
+        is_active = entity_slug in active_names or _slug(path.stem) in active_names
+        if card_missing:
+            strict = contract_v3 and (ready or is_active)
+            _add(
+                findings,
+                "error" if strict else "warning",
+                "character_agency_card_incomplete",
+                f"T2/T3 Agency Card needs meaningful values for: {', '.join(card_missing)}",
+                path,
+            )
 
-        stats = _markdown_key_values(_markdown_section(text, "Stats"))
+        if not card:
+            for heading, rule in (
+                ("Routine And Availability", "character_routine_missing"),
+                ("Current Mundane Agenda", "character_agenda_missing"),
+                ("Private Motive", "character_motive_missing"),
+                ("Last Meaningful Interaction", "character_last_interaction_missing"),
+            ):
+                if not _meaningful_text(_markdown_section(text, heading)):
+                    _add(findings, "warning", rule, f"T2+ character is missing {heading}.", path)
+
+        if resolution_grounding != "numeric":
+            continue
+        stats = _markdown_key_values(
+            _markdown_section(text, "Stats (Numeric Grounding Only)")
+            or _markdown_section(text, "Stats")
+        )
         if not stats:
             _add(findings, "warning", "character_stats_missing", "T2+ character is missing a numeric Stats block.", path)
             continue
@@ -1603,7 +2246,13 @@ def _check_place_notes(campaign_path: Path, findings: list[dict]) -> None:
                 _add(findings, "warning", rule, f"T2+ place is missing {heading}.", path)
 
 
-def _check_faction_notes(campaign_path: Path, level_band: str, findings: list[dict]) -> None:
+def _check_faction_notes(
+    campaign_path: Path,
+    level_band: str,
+    findings: list[dict],
+    *,
+    resolution_grounding: str,
+) -> None:
     for path in _markdown_files(campaign_path / "factions"):
         text = _read(path, findings)
         tier = _slug(_markdown_field(text, "Tier"))
@@ -1617,20 +2266,53 @@ def _check_faction_notes(campaign_path: Path, level_band: str, findings: list[di
         for heading, rule in (
             ("Representative Face", "faction_representative_missing"),
             ("Key Places", "faction_key_places_missing"),
-            ("Current Move", "faction_current_move_missing"),
-            ("Next Move If Ignored", "faction_next_move_missing"),
-            ("Pressure Clock Or Escalation", "faction_pressure_missing"),
         ):
             if not _meaningful_text(_markdown_section(text, heading)):
                 _add(findings, "warning", rule, f"T2+ faction is missing {heading}.", path)
 
-        profile = _markdown_key_values(_markdown_section(text, "Faction Capability Profile"))
+        for heading, rule, placeholder in (
+            ("Stable Capability", "faction_stable_capability_missing", "describe the faction's durable"),
+            ("Stable Desire", "faction_stable_desire_missing", "what the faction really wants"),
+            ("Stable Methods", "faction_stable_methods_missing", "how it usually gets"),
+        ):
+            section_text = _meaningful_text(_markdown_section(text, heading))
+            if heading == "Stable Capability" and resolution_grounding == "numeric":
+                continue
+            if not section_text or section_text.casefold().startswith(placeholder):
+                _add(findings, "warning", rule, f"T2+ faction is missing authored {heading}.", path)
+
+        domain_values = _markdown_key_values(_markdown_section(text, "Current World Domain Reference"))
+        domain_id = _clean_scalar(domain_values.get("Domain id", ""))
+        if not _meaningful_contract_value(domain_id):
+            _add(
+                findings,
+                "warning",
+                "faction_world_domain_reference_missing",
+                "T2+ faction needs a Current World Domain Reference instead of a duplicated current move.",
+                path,
+            )
+        else:
+            dynamics_path = campaign_path / "world_dynamics.md"
+            dynamics = _read(dynamics_path, findings) if dynamics_path.is_file() else ""
+            if not re.search(rf"(?im)^-\s+Domain id:\s*`?{re.escape(domain_id)}`?\s*$", dynamics):
+                _add(
+                    findings,
+                    "error",
+                    "faction_world_domain_reference_missing",
+                    f"Faction references unknown world domain id: {domain_id}",
+                    path,
+                )
+
+        if resolution_grounding != "numeric":
+            continue
+
+        profile = _markdown_key_values(_markdown_section(text, "Stable Capability"))
         if not profile:
             _add(
                 findings,
                 "warning",
                 "faction_capability_profile_missing",
-                "T2+ faction is missing numeric Faction Capability Profile.",
+                "T2+ faction is missing numeric Stable Capability values.",
                 path,
             )
         else:
@@ -1651,7 +2333,10 @@ def _check_faction_notes(campaign_path: Path, level_band: str, findings: list[di
                 level_band=level_band,
             )
 
-        typical_stats = _markdown_key_values(_markdown_section(text, "Typical Member Stats"))
+        typical_stats = _markdown_key_values(
+            _markdown_section(text, "Typical Member Stats (Numeric Grounding Only)")
+            or _markdown_section(text, "Typical Member Stats")
+        )
         if not typical_stats:
             _add(
                 findings,
@@ -1687,11 +2372,31 @@ def _check_faction_notes(campaign_path: Path, level_band: str, findings: list[di
                 _add(findings, "warning", rule, f"T2+ faction is missing {heading}.", path)
 
 
-def _check_markdown_mechanics(campaign_path: Path, level_band: str, findings: list[dict]) -> None:
-    _check_character_notes(campaign_path, level_band, findings)
+def _check_markdown_mechanics(
+    campaign_path: Path,
+    level_band: str,
+    findings: list[dict],
+    *,
+    resolution_grounding: str,
+    ready: bool,
+    contract_v3: bool,
+) -> None:
+    _check_character_notes(
+        campaign_path,
+        level_band,
+        findings,
+        resolution_grounding=resolution_grounding,
+        ready=ready,
+        contract_v3=contract_v3,
+    )
     _check_place_notes(campaign_path, findings)
     _check_place_obstacles(campaign_path, findings)
-    _check_faction_notes(campaign_path, level_band, findings)
+    _check_faction_notes(
+        campaign_path,
+        level_band,
+        findings,
+        resolution_grounding=resolution_grounding,
+    )
 
 
 def _check_v2_memory(
@@ -1775,12 +2480,59 @@ def _check_v2_memory(
 
     relationship_text = _read(relationship_path, findings)
     relationship_rows = _markdown_table(relationship_text)
+    relationship_revision = _markdown_revision(relationship_text, "As of revision")
+    if relationship_revision is None:
+        _add(findings, "warning", "relationship_revision_missing", "Relationship map has no revision.", relationship_path)
+    elif scope == "full" and relationship_revision < revision:
+        _add(findings, "warning", "relationship_map_stale", f"Relationship map revision {relationship_revision} trails state revision {revision}.", relationship_path)
+    state_text = _read(campaign_path / "current_state.yaml", findings)
+    player_name = _clean_scalar(_nested_values(_block(state_text, "player")).get("name", ""))
+    required_relationship_fields = (
+        "From",
+        "Direction",
+        "To",
+        "Relation",
+        "Status",
+        "Trust / debt / tension",
+        "Knowledge asymmetry",
+        "Player-known",
+        "Last changed",
+        "Revision",
+    )
+
+    def endpoint_exists(name: str) -> bool:
+        if player_name and _slug(name) == _slug(player_name):
+            return True
+        if _slug(name) in {"player", "player_character", "pc"}:
+            return True
+        return (
+            _note_exists(campaign_path / "characters", name)
+            or _note_exists(campaign_path / "factions", name)
+            or _ledger_contains(campaign_path, name)
+        )
+
     seen_pairs: set[tuple[str, str]] = set()
     for row in relationship_rows:
         source = _slug(row.get("From", ""))
         target = _slug(row.get("To", ""))
         if source == "character_a" or not source or not target:
             continue
+        missing_cells = [field for field in required_relationship_fields if not row.get(field)]
+        if missing_cells:
+            _add(findings, "error", "relationship_row_incomplete", f"Relationship row is missing: {', '.join(missing_cells)}", relationship_path)
+        if row.get("Direction") not in {"->", "<->"}:
+            _add(findings, "error", "relationship_direction_invalid", f"Invalid relationship direction: {row.get('Direction', '')}", relationship_path)
+        for endpoint in (row.get("From", ""), row.get("To", "")):
+            if endpoint and not endpoint_exists(endpoint):
+                _add(findings, "error", "relationship_endpoint_missing", f"Relationship endpoint has no authoritative entity: {endpoint}", relationship_path)
+        raw_row_revision = row.get("Revision", "")
+        try:
+            row_revision = int(raw_row_revision)
+        except ValueError:
+            _add(findings, "error", "relationship_row_revision_invalid", f"Relationship revision is not an integer: {raw_row_revision}", relationship_path)
+        else:
+            if row_revision < 0 or row_revision > revision:
+                _add(findings, "error", "relationship_row_revision_invalid", f"Relationship revision {row_revision} is outside 0-{revision}.", relationship_path)
         pair = (source, target) if row.get("Direction") == "->" else tuple(sorted((source, target)))
         if pair in seen_pairs:
             _add(findings, "error", "relationship_current_duplicate", f"Duplicate current relationship pair: {row.get('From')} / {row.get('To')}", relationship_path)
@@ -1812,8 +2564,10 @@ def _strict_int(value: object, *, minimum: int | None = None) -> bool:
 
 def _check_style_state(state: dict, path: Path, findings: list[dict]) -> None:
     schema = state.get("schema_version", 1)
-    if not _strict_int(schema, minimum=1) or schema not in {1, 2}:
-        _add(findings, "error", "style_schema_invalid", "style_state schema_version must be 1 or 2.", path)
+    if not _strict_int(schema, minimum=1) or schema not in {1, 2, 3}:
+        _add(findings, "error", "style_schema_invalid", "style_state schema_version must be 1, 2, or 3.", path)
+    elif schema < 3:
+        _add(findings, "warning", "style_schema_legacy", "Legacy style state remains readable; schema v3 adds sampled categorical history.", path)
     maximum = state.get("max_history", 8)
     history = state.get("history", [])
     if not _strict_int(maximum, minimum=1):
@@ -1828,7 +2582,7 @@ def _check_style_state(state: dict, path: Path, findings: list[dict]) -> None:
     avoid_phrases = state.get("avoid_phrases", [])
     if not isinstance(avoid_phrases, list) or any(not isinstance(value, str) for value in avoid_phrases):
         _add(findings, "error", "style_avoid_phrases_invalid", "avoid_phrases must be a list of strings.", path)
-    if schema != 2:
+    if schema == 1:
         return
     for field in ("last_beat_id", "last_scene_id"):
         value = state.get(field)
@@ -1864,6 +2618,37 @@ def _check_style_state(state: dict, path: Path, findings: list[dict]) -> None:
                 not isinstance(entry[field], list) or any(not isinstance(value, str) for value in entry[field])
             ):
                 _add(findings, "error", "style_fingerprint_invalid", f"history[{index}].{field} must be a string list.", path)
+
+    if schema != 3:
+        return
+    categorical_maximum = state.get("max_categorical_history", 8)
+    categorical_history = state.get("categorical_history", [])
+    if not _strict_int(categorical_maximum, minimum=1) or categorical_maximum > 8:
+        _add(findings, "error", "style_categorical_limit_invalid", "max_categorical_history must be an integer from 1 through 8.", path)
+    if not isinstance(categorical_history, list):
+        _add(findings, "error", "style_categorical_history_invalid", "categorical_history must be a list.", path)
+        return
+    if len(categorical_history) > 8 or (
+        _strict_int(categorical_maximum, minimum=1) and len(categorical_history) > categorical_maximum
+    ):
+        _add(findings, "warning", "style_categorical_history_too_long", "categorical_history exceeds its bounded limit.", path)
+    for index, entry in enumerate(categorical_history):
+        if not isinstance(entry, dict):
+            _add(findings, "error", "style_categorical_entry_invalid", f"categorical_history[{index}] must be an object.", path)
+            continue
+        present = 0
+        for field in STYLE_CATEGORICAL_FIELDS:
+            value = entry.get(field)
+            if value is None:
+                continue
+            present += 1
+            if not isinstance(value, str) or not value.strip():
+                _add(findings, "error", "style_categorical_entry_invalid", f"categorical_history[{index}].{field} must be a non-empty string.", path)
+        if present == 0:
+            _add(findings, "error", "style_categorical_entry_invalid", f"categorical_history[{index}] has no categorical fingerprint.", path)
+        speaker_type = entry.get("speaker_type", "narrator")
+        if speaker_type not in {"narrator", "npc", "companion", "mixed", "other"}:
+            _add(findings, "error", "style_categorical_entry_invalid", f"categorical_history[{index}].speaker_type is invalid.", path)
 
 
 def _check_mechanics_state(state: dict, path: Path, findings: list[dict]) -> None:
@@ -2045,7 +2830,108 @@ def _check_optional_json_state(campaign_path: Path, findings: list[dict]) -> Non
             _check_mechanics_state(state, path, findings)
 
 
-def _check_player_state(state_text: str, state_path: Path, findings: list[dict]) -> None:
+def _meaningful_contract_value(value: str) -> bool:
+    cleaned = _clean_scalar(value).strip()
+    if not cleaned:
+        return False
+    folded = cleaned.casefold()
+    return folded not in {
+        "needs_review",
+        "todo",
+        "tbd",
+        "unknown",
+        "replace_me",
+        "none yet",
+        "n/a",
+    } and not bool(re.fullmatch(r"[<\[].+?[>\]]", cleaned))
+
+
+def _check_scene_frame(
+    state_text: str,
+    state_path: Path,
+    *,
+    memory_version: int,
+    ready: bool,
+    findings: list[dict],
+) -> None:
+    if memory_version < 3:
+        if memory_version == 2:
+            _add(
+                findings,
+                "warning",
+                "memory_v3_pending",
+                "Legacy memory v2 remains playable; migrate when a snapshot is available.",
+                state_path,
+            )
+        return
+
+    if not re.search(r"(?m)^scene_frame:\s*$", state_text):
+        _add(findings, "error", "scene_frame_missing", "Memory v3 requires a top-level scene_frame.", state_path)
+        return
+    block = _block(state_text, "scene_frame")
+    values = _nested_values(block)
+    required_keys = {
+        "scene_id",
+        "mode",
+        "ongoing_process",
+        "disruption",
+        "last_causal_beat",
+        "pending_consequences",
+        "resume_anchor",
+    }
+    missing = sorted(required_keys - set(values))
+    if missing:
+        _add(findings, "error", "scene_frame_shape_invalid", f"scene_frame is missing: {', '.join(missing)}", state_path)
+
+    mode = _clean_scalar(values.get("mode", ""))
+    if mode and mode not in SCENE_MODES:
+        _add(findings, "error", "scene_mode_invalid", f"Invalid scene_frame.mode: {mode}", state_path)
+
+    causal = _nested_mapping(block, "last_causal_beat")
+    causal_fields = {"player_intent", "world_response", "changed_fact", "returned_control_at"}
+    missing_causal = sorted(causal_fields - set(causal))
+    if missing_causal:
+        _add(
+            findings,
+            "error",
+            "causal_beat_shape_invalid",
+            f"last_causal_beat is missing: {', '.join(missing_causal)}",
+            state_path,
+        )
+
+    pending = _parse_nested_block_list(state_text, "scene_frame", "pending_consequences")
+    if len(pending) > 3:
+        _add(findings, "error", "pending_consequence_limit", "scene_frame permits at most three pending consequences.", state_path)
+    if any(not _meaningful_contract_value(item) for item in pending):
+        _add(findings, "error", "pending_consequence_invalid", "Pending consequences must be meaningful non-blank strings.", state_path)
+
+    if ready:
+        required_values = {
+            "scene_id": values.get("scene_id", ""),
+            "ongoing_process": values.get("ongoing_process", ""),
+            "resume_anchor": values.get("resume_anchor", ""),
+            "last_causal_beat.returned_control_at": causal.get("returned_control_at", ""),
+        }
+        incomplete = [name for name, value in required_values.items() if not _meaningful_contract_value(value)]
+        if incomplete:
+            _add(
+                findings,
+                "error",
+                "ready_scene_frame_incomplete",
+                f"Ready scene frame is not resumable; fill: {', '.join(incomplete)}",
+                state_path,
+            )
+        if not mode:
+            _add(findings, "error", "ready_scene_frame_incomplete", "Ready scene frame requires a scene mode.", state_path)
+
+
+def _check_player_state(
+    state_text: str,
+    state_path: Path,
+    findings: list[dict],
+    *,
+    resolution_grounding: str,
+) -> None:
     player_block = _block(state_text, "player")
     if not player_block:
         _add(findings, "error", "player_block_missing", "current_state.yaml is missing player block.", state_path)
@@ -2057,6 +2943,8 @@ def _check_player_state(state_text: str, state_path: Path, findings: list[dict])
             _add(findings, "warning", "player_key_missing", f"Missing player key: {key}", state_path)
 
     stats = _nested_mapping(player_block, "stats")
+    if resolution_grounding != "numeric":
+        return
     if not stats:
         _add(findings, "error", "player_stats_missing", "player.stats is missing or empty.", state_path)
         return
@@ -2181,7 +3069,14 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
 
     _check_setup_profile(campaign_path, findings)
     profile = _check_play_profile(campaign_path, findings)
+    _check_advancement_contract(campaign_path, profile, findings)
     ready = bool(profile.get("ready"))
+    _check_first_session_lifecycle(
+        campaign_path,
+        ready=ready,
+        contract_v2=int(profile.get("schema_version", 0) or 0) >= 2,
+        findings=findings,
+    )
     _check_research_gate(campaign_path, findings, ready=ready)
     if scope == "full":
         _check_visual_handoff(campaign_path, findings)
@@ -2230,6 +3125,8 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
             path = campaign_path / relative
             if not path.is_file():
                 _add(findings, "error", "v2_file_missing", f"Lite V2 requires: {relative}", path)
+    if memory_version < 3 and "notes_for_next_turn" not in top_values:
+        _add(findings, "warning", "top_level_key_missing", "Missing legacy top-level key: notes_for_next_turn", state_path)
 
     if continuity_revision >= 0:
         _check_persistence(
@@ -2247,7 +3144,13 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
                 findings=findings,
             )
 
-    _check_player_state(state_text, state_path, findings)
+    resolution_grounding = str(profile.get("resolution_grounding", "numeric"))
+    _check_player_state(
+        state_text,
+        state_path,
+        findings,
+        resolution_grounding=resolution_grounding,
+    )
     player_values = _nested_values(_block(state_text, "player"))
     level_band = _clean_scalar(player_values.get("level_band", ""))
 
@@ -2285,8 +3188,25 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
     for item in duplicates:
         _add(findings, "warning", "duplicate_inventory_item", f"Inventory lists duplicate item: {item}", state_path)
 
+    _check_scene_frame(
+        state_text,
+        state_path,
+        memory_version=memory_version,
+        ready=ready,
+        findings=findings,
+    )
+
     if scope == "full":
-        _check_markdown_mechanics(campaign_path, level_band, findings)
+        _check_markdown_mechanics(
+            campaign_path,
+            level_band,
+            findings,
+            resolution_grounding=resolution_grounding,
+            ready=ready,
+            contract_v3=memory_version >= 3 and int(profile.get("schema_version", 0) or 0) >= 2,
+        )
+        _check_knowledge_authority(campaign_path, findings)
+        _check_world_evaluation_identity(campaign_path, findings)
 
     if memory_version >= 2 and all((campaign_path / relative).is_file() for relative in V2_FILES):
         _check_v2_memory(
@@ -2297,6 +3217,13 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
             scope=scope,
             findings=findings,
         )
+
+    _check_opening_coherence(
+        campaign_path,
+        current_location=location,
+        present_npcs=present_npcs,
+        findings=findings,
+    )
 
     _check_ready_for_play(
         campaign_path,

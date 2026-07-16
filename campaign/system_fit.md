@@ -20,6 +20,16 @@ choices fit the campaign; it must not silently enable a mechanic.
 - Expected speed effect:
 - Why this fit was accepted:
 - Lens conflicts and resolution:
+- Resolution grounding: fictional | bands | numeric
+- Narrative Signature anchors, maximum 3:
+- Narrative habits to avoid, maximum 3:
+- Interiority policy: player_owned | shared_when_invited | guided
+- Sensory priorities, maximum 2:
+- Dialogue balance: dialogue_forward | balanced | narration_forward
+- Humor: minimal | situational | frequent
+- Emotional distance: close | moderate | detached
+- Breather frequency: sparse | balanced | generous
+- Breather exit: player_led | player_led_with_established_triggers | world_led
 
 Lens briefs propose questions and defaults only. A resource, inventory,
 condition, clock, time, ability, or dice mechanic becomes active only when the
@@ -58,7 +68,9 @@ secondary-note propagation.
 - Typical routine-turn estimate: pending
 - Typical durable-turn estimate: pending
 - Structural / boundary-turn estimate: pending
-- Cold distill policy: pending
+- Cold distill policy: pending (`every_durable` |
+  `scene_checkpoint_or_3_durable` | `scene_checkpoint_or_5_durable` |
+  `scene_checkpoint_only`)
 - Validation policy: pending
 - Dashboard refresh policy: pending
 - Style review policy: pending
@@ -67,10 +79,12 @@ secondary-note propagation.
 
 Profiles:
 
-- `fast`: distill at a scene boundary or after at most five durable turns;
-  targeted hot checks during play and a full check at distill.
-- `balanced`: distill at a meaningful beat or after at most three durable
-  turns; refresh the dashboard for player-visible changes.
+- `fast`: write a compact scene checkpoint at boundaries and full-distill
+  after at most five durable turns or another full trigger; use targeted hot
+  checks during play.
+- `balanced`: write a compact scene checkpoint at boundaries and full-distill
+  at a meaningful full trigger or after at most three durable turns; refresh
+  the dashboard for player-visible changes.
 - `maximum_continuity`: propagate affected notes and run full checks on every
   durable turn.
 - `custom`: choose individual policies without disabling authoritative state,
@@ -78,9 +92,10 @@ Profiles:
 
 ## Stat And Skill Model
 
-- Stats used:
-- Scale:
-- Starting budget:
+- Resolution grounding: fictional | bands | numeric
+- Fictional competencies and limits, when fictional:
+- Broad bands, when bands:
+- Stats, scale, and starting budget, when numeric:
 - Custom terms:
 
 ## Special Capabilities / Extras

@@ -15,14 +15,28 @@ secondary notes wait for their selected distill boundary.
 - Immediate files:
 - Pending cold targets: none
 
-After the pending targets have been propagated, append:
+At a scene end, interruption, or handoff, append the compact continuation
+checkpoint below after any durable entry that was actually needed. A scene
+checkpoint does not increment continuity by itself and does not imply that
+cold notes were reconciled.
+
+### Scene Checkpoint Revision N
+
+- Scene id:
+- Scene mode:
+- Resume anchor:
+- Active-cast handoff:
+
+After the pending cold targets have actually been propagated, append:
 
 ### Distilled Through Revision N
 
-- Trigger: scene boundary, cadence limit, session stop, closure, or manual
+- Trigger: cadence limit, session stop, arc/advancement, research lock,
+  continuity conflict, or explicit request
 - Files reconciled:
 
-Do not rewrite or delete earlier durable entries after distillation.
+Do not full-distill merely because a scene ended. Do not rewrite or delete
+earlier durable or checkpoint entries after distillation.
 
 ## Opening State
 

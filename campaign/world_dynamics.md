@@ -6,6 +6,11 @@ background simulation and should not attempt to model the whole world.
 Only add a domain when it can produce meaningful fictional consequences for
 the current campaign scale.
 
+This file owns current offscreen movement for its domains, including a
+faction's current move when that move matters beyond the immediate scene.
+Faction notes own stable desire, method, and capability and reference the
+relevant domain instead of copying its current trajectory.
+
 ## Update Policy
 
 - The GM detects refresh needs from fiction; the Player does not request system
@@ -13,6 +18,11 @@ the current campaign scale.
 - Refresh only relevant domains.
 - Use elapsed fictional time, prior events, active pressures, and involved
   actors as context.
+- Establish the causal result from those inputs before applying any optional
+  bounded uncertainty. Uncertainty may select among plausible causal outcomes;
+  it may not replace cause and effect.
+- Give each due evaluation a stable id. Reusing the same id with the same
+  inputs must not generate a different persisted result.
 - Surface only consequences the character can perceive or learn from a
   believable source.
 - Record notable changes, not routine noise.
@@ -28,6 +38,16 @@ the current campaign scale.
 - Current pressure: 0-4
 - Relevant actors:
 - Current trajectory:
+- Pending evaluation id:
+- Last evaluation id:
+- Last evaluation inputs:
+  - Trigger:
+  - Fictional time or elapsed index:
+  - Relevant prior events:
+  - Involved actors and available resources:
+  - Active pressure:
+- Causal result before uncertainty:
+- Bounded uncertainty result, if used:
 - Last evaluated fictional time:
 - Last evaluated time index:
 - Last evaluated revision:
@@ -49,6 +69,7 @@ Append compact durable changes here.
 
 ### Event Title
 
+- Evaluation id:
 - Fictional time:
 - Domain:
 - Direction: advance | setback | opportunity | complication | stasis

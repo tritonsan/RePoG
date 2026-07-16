@@ -22,6 +22,27 @@ post-arc openings.
 - Emotional distance:
 - Things the prose should avoid:
 
+### Narrative Signature
+
+The always-hot signature is materialized under
+`play_profile.yaml.narration.narrative_signature`; this page may hold examples
+and nuance without replacing that contract.
+
+- Positive anchors, maximum 3:
+- Avoided habits, maximum 3:
+- Interiority policy: player_owned | shared_when_invited | guided
+- Preferred sensory channels, maximum 2:
+- Dialogue balance: dialogue_forward | balanced | narration_forward
+- Humor: minimal | situational | frequent
+- Emotional distance: close | moderate | detached
+
+Default interiority is `player_owned`. The GM may state unavoidable physical
+sensation and perceivable external evidence, but must not decide the player
+character's dialogue, feelings, beliefs, conclusions, choices, or acceptance
+of an unstated risk. `shared_when_invited` permits interior material only when
+the player asks for or establishes it. `guided` permits agreed prompts and
+suggestions, not irreversible decisions made for the player.
+
 ## Option Prompting Policy
 
 Default: no menu prompts.
@@ -62,8 +83,9 @@ player asks for a slower explanation or inspection.
 Do not use the first scene to explain the whole premise, history, faction map,
 antagonist plan, or hidden twist.
 
-Default clue budget: one hard clue and one soft clue per scene. Do not make one
-NPC speech reveal a prepared major secret.
+Default clue ceiling at balanced density: at most one hard clue and one soft
+clue in a scene that naturally exposes them. Zero is valid. Do not add clues to
+meet a quota or make one NPC speech reveal a prepared major secret.
 
 Avoid packaged summaries such as "you now know three things" unless the player
 asks for a recap. Leave conclusions in the fiction as evidence, reactions,
@@ -178,6 +200,24 @@ down for discovery, aftermath, emotional turns, social tension, and meaningful
 inspection. Compress low-risk travel, routine shopping, repeated setup, and
 other actions that should simply work.
 
+### Breather Policy
+
+- Runtime frequency: sparse | balanced | generous
+- Runtime exit policy: player_led | player_led_with_established_triggers |
+  world_led
+
+Open a breather when the fiction creates room: after major pressure resolves,
+on reaching safety, during travel or downtime, while tending wounds/equipment
+or a base, at a meaningful relationship beat, or when the player deliberately
+secures time. Offer ordinary affordances through the scene—food, sleep, repair,
+conversation, a personal project, training, small exploration, companion time,
+or solitude—without presenting a mandatory menu.
+
+The player may remain in the breather. Do not invent a threat only to force
+movement. Exit when the player chooses a new goal, follows an affordance into
+another scene, or the selected policy permits a previously established trigger
+that is genuinely due and arrives through a believable channel.
+
 ## Response Length And Cadence
 
 Length follows the dramatic function of the moment, not the model's previous
@@ -249,6 +289,13 @@ but should not make every person, prop, and reaction point to the same answer.
 Hard clues usually require observation, questioning, risk, payment, leverage,
 time, stealth, or a consequence. Use local noise, false leads, unrelated
 tensions, and ordinary business to keep scenes alive.
+
+Compose a place from
+`baseline routine + scene mode + current disruption + naturally present people + player arrival or action`.
+Use `ambient`, `focused`, `crisis`, `aftermath`, `transition`, or `breather`
+according to the fiction. Local noise, false leads, and clues are ceilings, not
+required ingredients; a quiet, empty, closed, or recovering place can still
+feel independent.
 
 - Scene independence level:
 - Clue visibility speed:

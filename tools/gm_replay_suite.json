@@ -1,0 +1,515 @@
+{
+  "schema_version": 2,
+  "suite_id": "gm_quality_pacing_v1",
+  "purpose": "A reproducible, non-API manual/model replay fixture for sampled GM-quality review. It is data and a scoring form, not an engine.",
+  "execution": {
+    "mode": "manual_or_local_model_review",
+    "api_required": false,
+    "instructions": [
+      "Run one scenario at a time in a fresh context and keep the scenario id in the transcript header.",
+      "Give the acting GM only that scenario's initial_state, setup, and turn_sequence. Do not reveal expected_observations, critical_failures, or the blank scoring_record before the replay ends.",
+      "Apply each fixture_update_before_turn before presenting that turn's player_input. If player_input is null, perform only the runner action and request no GM narration.",
+      "Present player turns in order and preserve every GM response verbatim. Do not repair an earlier response during the run.",
+      "After the final turn, give the transcript and full scenario to a human or separate model evaluator. Score only dimensions present in expected_observations.",
+      "For every score, cite a short transcript observation in evidence_by_dimension. Record every matched critical failure by id.",
+      "Copy the scenario scoring_record before filling it so this fixture remains reusable. No file write is required for an ordinary sampled review."
+    ],
+    "reproducibility_rules": [
+      "Use the stated facts as the complete relevant fiction; do not add hidden setup.",
+      "Treat all unstated mechanics as disabled and resolve fictionally unless the scenario says otherwise.",
+      "Do not browse, call an API, roll random dice, or advance unrelated offscreen domains.",
+      "A repeated stable evaluation_id refers to the same persisted evaluation and cannot be resolved twice."
+    ]
+  },
+  "rubric": {
+    "scale": {
+      "0": "Miss: the response contradicts or substantially fails the expected observation.",
+      "1": "Partial: the response respects the core constraint but is incomplete, unclear, or inconsistent.",
+      "2": "Clear pass: the response demonstrates the expected behavior with concrete, traceable evidence."
+    },
+    "dimensions": {
+      "intent_fidelity": "Preserves the Player's goal, method, and accepted risk without substitution.",
+      "causality": "Shows the nearest logical world response and a traceable changed fact or affordance.",
+      "player_authorship": "Leaves voluntary speech, action, emotion, belief, conclusion, trust, and commitment to the Player.",
+      "npc_agency": "NPC behavior follows an independent task, desire, obligation, limit, or next move.",
+      "presence_logic": "NPC presence, absence, travel, timing, and communication follow established logistics.",
+      "voice_contrast": "Relevant NPCs differ in speech rhythm, social tactic, and decisions rather than cosmetic wording alone.",
+      "knowledge_boundary": "Statements and reactions use only witnessed, credibly transmitted, inferred, or already revealed information.",
+      "pacing": "Pressure, compression, relief, and scene duration fit the established situation without manufactured escalation.",
+      "continuation": "The response restores or returns control at a concrete, usable moment without skipping the Player's next choice."
+    }
+  },
+  "scoring": {
+    "scored_dimensions": "The keys present in a scenario's expected_observations.",
+    "scenario_mean_formula": "sum(dimension_scores for scored_dimensions) / count(scored_dimensions)",
+    "scenario_pass_formula": "critical_failures_observed is empty AND scenario_mean >= 1.5",
+    "hard_gate": "Any observed critical failure in player_authorship or knowledge_boundary fails the scenario and suite regardless of mean.",
+    "suite_mean_formula": "sum(all scored dimension values across all scenarios) / count(all scored dimension values)",
+    "suite_pass_formula": "all scenarios pass AND suite_mean >= 1.5 AND no player_authorship or knowledge_boundary critical failure occurs",
+    "rounding": "Retain full precision for pass/fail; display means rounded to two decimal places.",
+    "unscored_policy": "Do not invent scores for dimensions absent from expected_observations."
+  },
+  "suite_scoring_record": {
+    "run_id": null,
+    "evaluator": null,
+    "date": null,
+    "scenario_results": {},
+    "suite_mean": null,
+    "hard_gate_failures": [],
+    "status": "unscored",
+    "notes": []
+  },
+  "scenarios": [
+    {
+      "id": "routine_competence",
+      "title": "Routine competence stays clean",
+      "initial_state": {
+        "scene_mode": "focused",
+        "location": "A rented workshop at midday",
+        "player_capabilities": ["Experienced locksmith", "Owns ordinary lock tools"],
+        "facts": ["The interior cabinet has a common, undamaged lock", "The character has permission to open it", "No one is opposing the action", "No deadline, trap, alarm, or hidden danger is established"]
+      },
+      "setup": [
+        "Resolve fictionally with no roll.",
+        "The cabinet contains the character's previously stored winter coat and ledger; neither is a surprise clue."
+      ],
+      "turn_sequence": [
+        {
+          "turn": 1,
+          "fixture_update_before_turn": [],
+          "player_input": "Dolabın kilidini takımlarımla açıyorum, sonra takımlarımı toplayıp defteri alıyorum."
+        }
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The GM opens the cabinet by the stated lockpicking method and lets the character take the ledger."],
+        "causality": ["The direct result is an opened cabinet and accessible stored belongings; any detail follows from the stated setup."],
+        "player_authorship": ["The GM does not add a voluntary decision, reaction, or spoken line for the character."],
+        "pacing": ["The routine action is resolved briefly and cleanly without a roll, jam, alarm, guard, injury, or surprise hook."],
+        "continuation": ["Control returns with the cabinet open and the character free to choose what to do next."]
+      },
+      "critical_failures": [
+        {"id": "rc_method_replaced", "category": "intent_fidelity", "description": "The GM changes the declared method or refuses an ordinary achievable action without established cause."},
+        {"id": "rc_authored_choice", "category": "player_authorship", "description": "The GM makes the character inspect, read, feel, say, or decide something not declared."},
+        {"id": "rc_invented_friction", "category": "pacing", "description": "The GM invents a test, trap, alarm, hostile arrival, damage, or complication solely to add drama."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "player_authorship": null, "pacing": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "hook_refusal",
+      "title": "The world survives a refused hook",
+      "initial_state": {
+        "scene_mode": "ambient",
+        "location": "A river ferry quay during the breakfast rush",
+        "facts": ["Ferries depart every half hour", "Dock crews unload flour and lamp oil", "A courier offers the character paid escort work", "The courier must catch the next ferry if refused", "A baker sells breakfast nearby", "No emergency requires the character's help"]
+      },
+      "setup": [
+        "The escort offer is optional, not the only prepared content.",
+        "The baker's independent task is feeding workers before the flour delivery is inventoried."
+      ],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Kuryeye teşekkür edip işi reddediyorum. Fırıncıdan kahvaltı alıp iskelede oturacağım."},
+        {"turn": 2, "fixture_update_before_turn": ["The courier's scheduled ferry is now boarding."], "player_input": "Kuryenin peşinden gitmiyorum. Fırıncıya gününün nasıl gittiğini sorup tekneleri izliyorum."},
+        {"turn": 3, "fixture_update_before_turn": ["The flour crew is short one worker for an ordinary unload; they have not asked the character for help."], "player_input": "Kahvaltımı bitirince isterlerse bir çuval taşımaya yardım edebileceğimi söylüyorum."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The refusal stands; the GM follows the chosen breakfast, conversation, observation, and optional help."],
+        "causality": ["The courier boards or leaves on schedule, the quay continues its routine, and the crew reacts naturally to the offered help."],
+        "npc_agency": ["Courier, baker, and crew pursue their own time-bound work instead of orbiting the rejected job."],
+        "pacing": ["The scene may remain ordinary and low pressure; the escort hook is not repackaged as an alarm, chase, guilt appeal, or compulsory crisis."],
+        "continuation": ["Each turn ends with concrete local activity and room for another Player-led action."]
+      },
+      "critical_failures": [
+        {"id": "hr_refusal_ignored", "category": "intent_fidelity", "description": "The courier or GM treats the clear refusal as acceptance or forces pursuit."},
+        {"id": "hr_hook_repackaged", "category": "pacing", "description": "The same escort hook immediately returns as danger, coercion, or the only actionable event without prior cause."},
+        {"id": "hr_world_waits", "category": "npc_agency", "description": "The courier and quay freeze until the Player accepts the prepared plot."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "npc_agency": null, "pacing": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "npc_voice_contrast",
+      "title": "Similar jobs, distinct people",
+      "initial_state": {
+        "scene_mode": "focused",
+        "location": "A relief warehouse",
+        "npcs": {
+          "Sera": {"role": "Day quartermaster", "project": "Get medicine onto today's carts", "risk_response": "Acts quickly and accepts documented small losses", "social_tactic": "Direct delegation", "speech_rhythm": "Short verbs and concrete nouns", "moral_boundary": "Will not delay medicine to protect inventory totals"},
+          "Orun": {"role": "Night quartermaster", "project": "Make the warehouse survive next month's audit", "risk_response": "Slows down and verifies custody", "social_tactic": "Procedural questions", "speech_rhythm": "Measured condition-then-decision sentences", "moral_boundary": "Will not falsify a signature even for a sympathetic cause"}
+        },
+        "facts": ["Both can release blankets", "Only Sera controls today's medicine carts", "A signed requisition is missing one witness mark"]
+      },
+      "setup": ["Play both NPCs without caricature or cryptic aphorisms.", "Their disagreement is about method and boundary, not good versus evil."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Sera'ya, eksik tanık imzasına rağmen ilacı bugün çıkarıp çıkaramayacağını soruyorum."},
+        {"turn": 2, "fixture_update_before_turn": ["Sera has made her own decision and Orun has heard only the procedural facts stated in the room."], "player_input": "Aynı durumu Orun'a anlatıp onun ne yapacağını soruyorum."},
+        {"turn": 3, "fixture_update_before_turn": [], "player_input": "İkinize de aynı şeyi soruyorum: Battaniyeleri şimdi verin, evrakı akşam tamamlayalım mı?"}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["Each NPC answers the specific request rather than redirecting to unrelated exposition."],
+        "npc_agency": ["Sera prioritizes today's delivery while Orun protects verifiable custody; both decisions follow independent projects and moral lines."],
+        "voice_contrast": ["Sera and Orun differ in rhythm and social tactic across multiple turns, not merely by catchphrase or accent."],
+        "knowledge_boundary": ["Orun knows only what was stated or perceivable and does not quote Sera's private reasoning."],
+        "continuation": ["Their differing terms create usable choices without deciding which one the character supports."]
+      },
+      "critical_failures": [
+        {"id": "nv_same_voice", "category": "voice_contrast", "description": "Both NPCs use substantially the same polished rhythm, metaphor family, and social tactic."},
+        {"id": "nv_same_decision_logic", "category": "npc_agency", "description": "Both make interchangeable decisions that ignore their established projects and boundaries."},
+        {"id": "nv_knowledge_leak", "category": "knowledge_boundary", "description": "Orun states Sera's unspoken motive, decision, or private information as known fact."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "npc_agency": null, "voice_contrast": null, "knowledge_boundary": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "presence_no_teleport",
+      "title": "Useful NPCs obey distance",
+      "initial_state": {
+        "scene_mode": "ambient",
+        "location": "South Quay tavern",
+        "fictional_time": "Day 4, afternoon",
+        "npc": {"name": "Mara", "last_location": "North Clinic", "travel_time": "Two days each way", "availability": "On clinic duty through Day 6", "communication": "A daily northbound post cart leaves at dawn", "current_task": "Treating fever patients"},
+        "facts": ["Mara has no duplicate, teleportation, fast travel, phone, or messenger already en route", "The tavern keeper knows only that Mara works in the north"]
+      },
+      "setup": ["Mara is useful to the Player but cannot plausibly be present or answer immediately."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Mara burada mı? Onunla hemen konuşmam gerekiyor."},
+        {"turn": 2, "fixture_update_before_turn": [], "player_input": "O zaman ona bir mesaj göndermenin en hızlı yolunu soruyorum."},
+        {"turn": 3, "fixture_update_before_turn": ["It is still Day 4 afternoon; the next post cart remains tomorrow at dawn."], "player_input": "Mesajı yazıp teslim ediyorum. Bu akşam cevap gelir mi?"}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The GM acknowledges the need to contact Mara and offers only established plausible channels."],
+        "causality": ["A written message can be queued for the dawn cart; delivery and reply respect travel time."],
+        "npc_agency": ["Mara remains on clinic duty rather than abandoning patients because she is useful to the Player."],
+        "presence_logic": ["Mara is absent, cannot arrive, and cannot answer that evening; the keeper or post process may help."],
+        "knowledge_boundary": ["The keeper does not know Mara's current thoughts, cases, or response."],
+        "continuation": ["Control returns with a concrete message option and honest timing."]
+      },
+      "critical_failures": [
+        {"id": "pn_teleport", "category": "presence_logic", "description": "Mara appears at or near South Quay without a new credible cause and elapsed travel time."},
+        {"id": "pn_instant_reply", "category": "presence_logic", "description": "Mara receives or answers before the established channel could reach her."},
+        {"id": "pn_keeper_omniscient", "category": "knowledge_boundary", "description": "The keeper states Mara's current private activity, knowledge, or intended answer without a source."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "npc_agency": null, "presence_logic": null, "knowledge_boundary": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "player_authorship",
+      "title": "The Player owns the character",
+      "initial_state": {
+        "scene_mode": "focused",
+        "interiority_policy": "player_owned",
+        "location": "A quiet archive booth",
+        "facts": ["The character opens a letter in their late mentor's handwriting", "The ink is fresh enough to be surprising", "No magical emotional effect exists", "The letter asks for a meeting but does not prove who wrote it"]
+      },
+      "setup": ["Describe evidence and unavoidable sensory facts only.", "Do not decide whether the character trusts the letter or how they feel about the mentor."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Mektubu açıyorum. Bana gördüğüm şeyi anlat; ne hissedeceğime ve ne sonuç çıkaracağıma ben karar vereceğim."},
+        {"turn": 2, "fixture_update_before_turn": [], "player_input": "Hiçbir şey söylemeden kapının altındaki gölgeyi ve odadaki sesleri izliyorum."},
+        {"turn": 3, "fixture_update_before_turn": [], "player_input": "Mektubu katlayıp cebime koyuyorum. Başka bir karar vermiyorum."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The GM describes the letter, observation, and pocketing exactly at the requested scope."],
+        "causality": ["The fresh ink and meeting request remain evidence, not proof; observation yields only perceivable environmental facts."],
+        "player_authorship": ["No authored fear, grief, hope, trust, suspicion, conclusion, dialogue, commitment, or next action appears."],
+        "knowledge_boundary": ["The writer's identity and motive remain unknown unless established by visible evidence."],
+        "continuation": ["The GM returns control after each external result and does not choose whether to attend the meeting."]
+      },
+      "critical_failures": [
+        {"id": "pa_inner_fact", "category": "player_authorship", "description": "The GM declares the character's emotion, belief, memory interpretation, trust, suspicion, or conclusion."},
+        {"id": "pa_extra_action", "category": "player_authorship", "description": "The GM makes the character speak, decide to attend, investigate further, or accept risk not declared."},
+        {"id": "pa_hidden_identity", "category": "knowledge_boundary", "description": "The GM confirms the writer or motive without established evidence."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "player_authorship": null, "knowledge_boundary": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "breather_persists",
+      "title": "Four calm turns remain calm",
+      "initial_state": {
+        "scene_mode": "breather",
+        "location": "A trusted hill inn after a completed rescue",
+        "breather_frequency": "balanced",
+        "breather_exit_policy": "player_led_with_established_triggers",
+        "facts": ["Immediate danger is over", "The inn is paid and secure for the night", "No deadline or world trigger is due before morning", "Companion Lio is repairing a torn sleeve and wants ordinary company", "Rain makes the common room quiet but not dangerous"]
+      },
+      "setup": ["Allow four Player-led low-pressure turns.", "Do not invent a visitor, alarm, suspicious stranger, nightmare, theft, clue, or sudden deadline."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Sıcak yemek söylüyor, ateşin yanına oturuyorum."},
+        {"turn": 2, "fixture_update_before_turn": [], "player_input": "Lio'ya kolunu nasıl diktiğini sorup biraz sohbet ediyorum."},
+        {"turn": 3, "fixture_update_before_turn": [], "player_input": "Ekipmanımı temizliyorum; acelem yok."},
+        {"turn": 4, "fixture_update_before_turn": ["It is still evening; no established trigger has become due."], "player_input": "Bir süre daha yağmuru dinleyip burada kalıyorum."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["All four calm actions occur without being redirected toward a new objective."],
+        "causality": ["Food, conversation, mending, cleaning, rain, and elapsed evening produce only proportionate local results."],
+        "player_authorship": ["The GM does not declare emotional healing, confession, trust, or a decision to leave."],
+        "npc_agency": ["Lio continues the mundane repair and may converse from their own ordinary concerns without becoming an exposition device."],
+        "pacing": ["No manufactured escalation occurs; the fourth turn remains a valid breather beat."],
+        "continuation": ["Each response leaves the Player free to stay or choose a new goal."]
+      },
+      "critical_failures": [
+        {"id": "bp_forced_escalation", "category": "pacing", "description": "A fresh threat, alarm, stranger, theft, clue, nightmare, or deadline is invented to end the calm scene."},
+        {"id": "bp_forced_exit", "category": "player_authorship", "description": "The GM decides the character is done resting or moves them into another scene without their choice or a due trigger."},
+        {"id": "bp_companion_exposition", "category": "npc_agency", "description": "Lio abandons the established mundane task solely to deliver a plot hook or hidden truth."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "player_authorship": null, "npc_agency": null, "pacing": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "breather_player_exit",
+      "title": "A small affordance enables a Player-led exit",
+      "initial_state": {
+        "scene_mode": "breather",
+        "location": "A courtyard guesthouse in the morning",
+        "breather_exit_policy": "player_led",
+        "facts": ["Breakfast is available", "Musicians are warming up for the ordinary market two streets away", "No pressure requires departure", "The character knows the route to the market"]
+      },
+      "setup": ["Present the music as environmental life, not a quest prompt or menu.", "Remain in the breather until the Player chooses to follow it."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Kahvaltımı yavaşça bitirip avluda biraz daha oturuyorum."},
+        {"turn": 2, "fixture_update_before_turn": ["The market musicians continue their ordinary warm-up."], "player_input": "Müziği merak edip sesin geldiği pazara yürüyorum."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The GM sustains the first rest choice and then follows the declared walk toward the music."],
+        "causality": ["The established market sound provides a credible route from courtyard to market."],
+        "player_authorship": ["Curiosity and departure come from the Player's second input, not GM narration."],
+        "pacing": ["The scene does not force departure before turn 2 and transitions cleanly once chosen."],
+        "continuation": ["The new market scene opens at an observable reaction point without prescribing what the character does there."]
+      },
+      "critical_failures": [
+        {"id": "be_music_hook", "category": "pacing", "description": "The music is converted into an urgent mystery, threat, or compulsory summons without setup."},
+        {"id": "be_early_exit", "category": "player_authorship", "description": "The GM moves the character to the market during turn 1 or authors their curiosity."},
+        {"id": "be_ignored_exit", "category": "intent_fidelity", "description": "The GM keeps the character in the courtyard after the clear decision to walk to the market."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "player_authorship": null, "pacing": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "breather_established_trigger",
+      "title": "A due trigger arrives through its established channel",
+      "initial_state": {
+        "scene_mode": "breather",
+        "location": "The character's rented room above a tea shop",
+        "fictional_time": "Day 8, noon",
+        "breather_exit_policy": "player_led_with_established_triggers",
+        "established_trigger": {"id": "permit_answer_day8_sunset", "due": "Day 8 at sunset", "channel": "Clerk Nemi delivers sealed permit decisions on her evening route", "content_boundary": "Nemi knows the permit result but not the council's private debate"},
+        "facts": ["No other trigger is due", "The room is safe", "The tea shop closes shortly before sunset"]
+      },
+      "setup": ["Do not deliver the permit early.", "At sunset, use Nemi and the sealed decision; do not add danger to make the message dramatic."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Öğleden sonrayı çay içip notlarımı düzenleyerek geçiriyorum."},
+        {"turn": 2, "fixture_update_before_turn": ["Advance fictional time to late afternoon, still before sunset."], "player_input": "Biraz kestirip gün batımına doğru uyanıyorum."},
+        {"turn": 3, "fixture_update_before_turn": ["Advance fictional time to sunset. Mark permit_answer_day8_sunset due; Nemi has reached the tea shop on her established route."], "player_input": "Aşağıdan biri geldiyse kapıyı açıp kim olduğuna bakıyorum."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The Player's quiet activities occur; opening the door only happens on the declared third turn."],
+        "causality": ["The permit arrives because sunset and Nemi's route are established, not because calm narration needs a twist."],
+        "presence_logic": ["Nemi appears no earlier than sunset and through the tea-shop route."],
+        "knowledge_boundary": ["Nemi can convey the sealed result but cannot reveal unestablished private council reasoning."],
+        "pacing": ["The first two turns remain calm; the third changes the situation without manufactured danger."],
+        "continuation": ["Control returns with Nemi/the sealed decision present and the Player choosing whether/how to engage."]
+      },
+      "critical_failures": [
+        {"id": "bt_early_trigger", "category": "pacing", "description": "The permit or another interruption arrives before the established sunset trigger."},
+        {"id": "bt_wrong_channel", "category": "presence_logic", "description": "The result appears through an unestablished or impossible channel without cause."},
+        {"id": "bt_private_debate_leak", "category": "knowledge_boundary", "description": "Nemi states the council's private reasoning without an established source."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "presence_logic": null, "knowledge_boundary": null, "pacing": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "resume_anchor",
+      "title": "Resume from the returned-control moment",
+      "initial_state": {
+        "scene_mode": "focused",
+        "location": "A records office after closing",
+        "resume_anchor": {"last_player_action": "The character slid a brass token beneath the locked archive door.", "direct_result": "The token stopped against a wooden object on the far side.", "last_world_move": "A chair leg scraped once beyond the door, then became still.", "returned_control_at": "The character is kneeling outside the locked door with the token still visible under its edge."},
+        "facts": ["The identity of anyone beyond the door is unknown", "No time has advanced since the anchor", "The door remains locked"]
+      },
+      "setup": ["Simulate a long interruption by giving the GM no earlier transcript, only this fixture.", "Resume orientation without advancing the chair, token, door, or hidden person's identity."],
+      "turn_sequence": [
+        {"turn": 0, "fixture_update_before_turn": ["Start a fresh context and provide initial_state plus setup only."], "player_input": null, "runner_action": "Simulate returning after a long interruption."},
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Devam edelim. Önce kapının ötesini dinliyorum; başka bir şey yapmıyorum."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The GM resolves listening only and does not open the door, retrieve the token, or enter."],
+        "causality": ["Any audible result follows the current stillness and established office environment."],
+        "player_authorship": ["The GM does not decide to confront, flee, speak, or feel fear."],
+        "knowledge_boundary": ["The unknown person/object beyond the door is not identified without new audible evidence."],
+        "continuation": ["The response briefly restores the exact kneeling/locked-door/token state, resolves listening, and returns control there without replaying or skipping the anchor."]
+      },
+      "critical_failures": [
+        {"id": "ra_anchor_advanced", "category": "continuation", "description": "The GM advances the door, chair, token, time, or unseen actor before resolving the new listening action."},
+        {"id": "ra_extra_action", "category": "player_authorship", "description": "The character is made to enter, speak, retrieve the token, flee, or decide something unstated."},
+        {"id": "ra_identity_revealed", "category": "knowledge_boundary", "description": "The unseen actor or object is identified without new perceivable evidence."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "player_authorship": null, "knowledge_boundary": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "offscreen_once",
+      "title": "One trigger produces one offscreen evaluation",
+      "initial_state": {
+        "scene_mode": "transition",
+        "fictional_time": "Day 1",
+        "offscreen_trajectory": {"subject": "Captain Ilya", "goal": "Secure a berth for the refugee ship", "method": "Negotiate with harbor clerk", "obstacle": "Only one berth remains", "evaluation_trigger": "Player returns after Day 5 or seeks harbor news", "visible_channel": "Posted harbor allocation list", "last_evaluated": null},
+        "world_evaluation": {"evaluation_id": "harbor_return_day5", "persisted_result": null},
+        "facts": ["No other trigger affects Ilya", "The same evaluation_id must reuse its first result", "The GM may choose a plausible success, setback, or mixed result once and then keep it stable"]
+      },
+      "setup": ["This is model judgment, not a request to call world_pulse or randomize.", "Record the first evaluation in the transcript as the persisted result, then reuse it verbatim in substance."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": ["Advance to Day 6 and mark harbor_return_day5 triggered with evaluation_id harbor_return_day5."], "player_input": "Limana dönüp tahsis listesinden Ilya'nın gemisine ne olduğunu kontrol ediyorum."},
+        {"turn": 2, "fixture_update_before_turn": ["It is still Day 6. Present the same evaluation_id harbor_return_day5; no new time, news, relationship, or domain trigger occurred."], "player_input": "Listeyi tekrar okuyup liman görevlisine aynı tahsisi doğrulatıyorum."},
+        {"turn": 3, "fixture_update_before_turn": ["It is still Day 6 and no new trigger occurred."], "player_input": "Ilya'yı görmeden önce bu bilginin değişip değişmediğini soruyorum."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The list is checked, then verified, then reported without redirecting the Player to unrelated harbor events."],
+        "causality": ["One plausible berth outcome follows Ilya's method/obstacle and remains stable across all three turns."],
+        "npc_agency": ["The result reflects Ilya's independent negotiation rather than waiting for or centering the Player."],
+        "knowledge_boundary": ["The posted list/clerk reveals allocation outcome only, not Ilya's unobserved private thoughts or exact negotiation dialogue."],
+        "continuation": ["Verification clarifies the same state and leaves the next contact with Ilya to the Player."]
+      },
+      "critical_failures": [
+        {"id": "oo_double_advance", "category": "causality", "description": "Ilya's trajectory advances, rerolls, or changes outcome again under the same evaluation_id without a new trigger."},
+        {"id": "oo_player_centered", "category": "npc_agency", "description": "Ilya's five days of activity are deferred until the Player arrives or attributed to an unstated Player action."},
+        {"id": "oo_private_leak", "category": "knowledge_boundary", "description": "The list or clerk reveals Ilya's private thoughts or unseen conversation as known fact."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "npc_agency": null, "knowledge_boundary": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "arc_style_continuity",
+      "title": "Closure, fictional reward, and opening keep the voice",
+      "initial_state": {
+        "scene_mode": "aftermath",
+        "narration": {"point_of_view": "second", "tense": "present", "camera": "close", "advancement_cadence": "arc", "advancement_presentation": "automatic_fictional"},
+        "facts": ["The character recovered the town seal and returns it to Captain Vey", "The earned reward is appointment as a licensed road warden with a brass badge", "No upgrade choice is required", "The next opening is the character arriving home the following morning", "Captain Vey may know the recovery outcome but not unreported private choices made during the mission"]
+      },
+      "setup": ["Keep second-person present tense through all turns.", "Present the badge fictionally without an OOC advancement menu or mandatory pause."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Mührü Vey'e teslim edip görevin bittiğini söylüyorum."},
+        {"turn": 2, "fixture_update_before_turn": ["Captain Vey offers the established warden badge as the earned automatic fictional reward."], "player_input": "Rozeti kabul edip Vey'e teşekkür ediyorum."},
+        {"turn": 3, "fixture_update_before_turn": ["Advance to the next morning. The character has arrived outside their home; no new threat is established."], "player_input": "Eve dönüyorum. Yeni sabahı açalım."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["Seal delivery, badge acceptance, thanks, and return home occur as declared."],
+        "causality": ["The badge follows the completed arc and the next morning follows the declared journey home."],
+        "player_authorship": ["The GM does not add pride, relief, loyalty, a speech, or a future commitment beyond the Player's words."],
+        "knowledge_boundary": ["Vey does not narrate private mission facts the character never reported."],
+        "pacing": ["The automatic fictional reward does not force an OOC menu; the next opening is calm unless established facts say otherwise."],
+        "continuation": ["All three responses preserve second-person present tense and the final opening returns control outside/at home on the new morning."]
+      },
+      "critical_failures": [
+        {"id": "as_forced_ooc", "category": "pacing", "description": "The GM stops for an OOC advancement choice despite automatic_fictional presentation and no unresolved choice."},
+        {"id": "as_authored_reaction", "category": "player_authorship", "description": "The GM declares the character proud, relieved, loyal, committed, or otherwise authors an inner/voluntary response."},
+        {"id": "as_private_recap", "category": "knowledge_boundary", "description": "Vey states unreported private mission events as known fact."},
+        {"id": "as_style_drift", "category": "continuation", "description": "Narration shifts away from second-person present tense during closure, reward, or opening."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "player_authorship": null, "knowledge_boundary": null, "pacing": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "causal_ancestor",
+      "title": "Important consequences have visible ancestors",
+      "initial_state": {
+        "scene_mode": "crisis",
+        "location": "A floodgate bridge during a storm",
+        "established_world_motion": ["Three hours of rain have swollen the canal", "The bridge winch holds the west gate shut", "Earlier sabotage frayed the visible winch rope", "Opening the west gate will divert water into an empty spill field but strand the bridge until repaired"],
+        "facts": ["The character can reach the rope", "Cutting it will release the gate", "No assassin, monster, hidden explosive, or unrelated faction move is established"]
+      },
+      "setup": ["Make each major result traceable to rain, sabotage, bridge mechanics, or the Player's action.", "Do not add an unrelated twist after the direct consequence."],
+      "turn_sequence": [
+        {"turn": 1, "fixture_update_before_turn": [], "player_input": "Batı kapısını açmak için yıpranmış vinç halatını kesiyorum ve hemen sağlam korkuluğa çekiliyorum."},
+        {"turn": 2, "fixture_update_before_turn": ["If turn 1 followed setup, the west gate has released and water is diverting toward the empty spill field."], "player_input": "Korkulukta kalıp suyun ve köprünün ne yaptığını izliyorum; başka bir risk almıyorum."},
+        {"turn": 3, "fixture_update_before_turn": ["Rain continues at the established intensity; no new actor or trigger has entered."], "player_input": "Geçiş hâlâ mümkün değilse zorlamayacağım. Güvenli taraftan geri çekiliyorum."}
+      ],
+      "expected_observations": {
+        "intent_fidelity": ["The rope is cut by the stated method, the character uses the railing, observes without extra risk, and retreats if passage is unsafe."],
+        "causality": ["Gate release, diverted water, bridge condition, and access changes trace explicitly to established rain, rope sabotage, mechanics, and the cut."],
+        "player_authorship": ["The GM does not make the character cross, rescue someone, panic, celebrate, or accept another risk."],
+        "knowledge_boundary": ["The saboteur's identity or motive is not revealed merely because the frayed rope breaks."],
+        "pacing": ["The direct physical consequence is shown before any secondary detail; no unrelated threat is appended to sustain crisis."],
+        "continuation": ["Each turn ends with a concrete bridge/water/access state from which the Player's next choice remains available."]
+      },
+      "critical_failures": [
+        {"id": "ca_unrelated_twist", "category": "causality", "description": "An important assassin, monster, explosion, betrayal, or faction move appears without a causal ancestor in setup or Player action."},
+        {"id": "ca_forced_risk", "category": "player_authorship", "description": "The GM makes the character cross, fall, rescue, or accept danger beyond the declared action and stated conditional retreat."},
+        {"id": "ca_saboteur_reveal", "category": "knowledge_boundary", "description": "The saboteur's identity or motive is confirmed without a credible reveal channel."}
+      ],
+      "scoring_record": {
+        "dimension_scores": {"intent_fidelity": null, "causality": null, "player_authorship": null, "knowledge_boundary": null, "pacing": null, "continuation": null},
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    }
+  ]
+}

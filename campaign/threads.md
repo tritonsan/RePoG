@@ -3,6 +3,12 @@
 Use this file for open dramatic questions, consequences, debts, mysteries,
 threats, promises, and opportunities.
 
+Threads are player-facing dramatic continuity: what question, promise, debt,
+or consequence remains meaningful because of the player's choices and
+interests. `issues.md` owns systemic problems, `world_dynamics.md` owns current
+offscreen evaluation, and `current_state.yaml.scene_frame` owns the live causal
+beat. Reference those authorities instead of copying their state here.
+
 As of revision: 0
 
 ## Arc Compass
@@ -23,7 +29,8 @@ As of revision: 0
 - Who cares:
 - What the player knows:
 - What is hidden:
-- Next likely move:
+- Related issue or world-domain reference:
+- Next player-relevant question or consequence:
 - Last changed revision: 0
 
 ## Resolved Threads

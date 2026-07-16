@@ -66,7 +66,10 @@ Check:
   arbitrary gifts;
 - only the closure selected by `play_profile.yaml.advancement.cadence` opens an
   advancement gate; `none` does not stop normal play;
-- normal fiction does not continue past a `due` or `offered` advancement gate;
+- `automatic_fictional` does not force an OOC interruption and pauses only for
+  an unresolved Player choice;
+- `explicit_ooc` blocks applying a required choice or opening a dependent next
+  act, but a Player who defers may remain in aftermath/breather play;
 - reward budget is driven by achievement quality first and play volume second;
 - GM-awarded perks are fiction-derived, limited, and not exchangeable for a
   different reward;
@@ -78,15 +81,22 @@ Check:
 - no campaign is `ready_for_play` with a placeholder campaign id, blank player
   identity/concept, blank scene location/pressure, unfinished opening brief,
   missing World Operating Model, or missing starting snapshot;
-- V2 campaigns contain memory version and non-negative continuity revision;
+- V2 campaigns remain readable; new or migrated campaigns contain memory
+  version 3, a non-negative continuity revision, and a valid scene frame;
 - `current_state.yaml.persistence` has a valid last-distilled revision, bounded
   durable-turn counter, and deduplicated pending cold targets;
 - every schema-v2 durable revision has a matching append-only event, and each
   recorded distilled revision has a matching distilled-through marker;
 - Fast never exceeds five undistilled durable turns and Balanced never exceeds
   three; Maximum Continuity leaves no durable turn pending;
-- session/scene/arc closure and advancement gates have no unresolved cold
-  targets;
+- new Fast/Balanced profiles use `scene_checkpoint_or_5_durable` or
+  `scene_checkpoint_or_3_durable`; legacy `scene_or_*` values are accepted only
+  through the V1/V2 compatibility path;
+- a scene checkpoint updates scene frame, active cast, and resume anchor without
+  resetting the durable counter, appending a distilled marker, or forcing a
+  full check;
+- session/scenario/arc/campaign closure, applicable advancement, research lock,
+  continuity conflict, and explicit full-save have no unresolved cold targets;
 - every active T2/T3 NPC has one complete, plausible `active_cast.md` row with
   location, activity, objective, availability, reason-here, and next move;
 - `location_graph.md` endpoints resolve and directed routes are explicit;
@@ -102,23 +112,33 @@ Check:
   ability costs/cooldowns, quantified inventory, conditions, clocks, elapsed
   time, continuity revision, monotonic operation sequence, and its unbounded
   operation-id registry;
-- `style_state.json`, when present, is valid, bounded, stores fingerprints
-  rather than full narration, and separates narrator repetition from named
-  NPC/companion speech habits;
+- `style_state.json`, when present, is valid, bounded, stores categorical
+  fingerprints rather than full narration, separates narrator repetition from
+  named NPC/companion speech habits, and is not written on soft turns;
 - `storytelling.md` exists and defines option prompting, reveal policy, and
   pacing defaults;
 - `storytelling.md` defines challenge density, routine competence, clean
   success, consequence severity, and breather scene preferences;
 - `opening_brief.md` exists and gives location, arrival context, player-known
   context, neutral action space, and hidden information boundaries;
+- `first_session.md` is preparation rather than a duplicate current opening,
+  becomes `materialized` after transfer to `opening_brief.md`, and becomes
+  `consumed` only after that opening is used in play;
 - `creation_ledger.md` contains every T1+ named NPC, location, and faction;
 - T2+ ledger entries have matching notes under `characters/`, `places/`, or
   `factions/`;
+- T2/T3 NPC notes begin with a complete Agency Card: local role, independent
+  project, mundane task, pressure decision principle, mistaken belief/error,
+  line not crossed, non-Player obligation, speech rhythm/social tactic,
+  routine/availability, next move if ignored, and evaluation trigger/channel;
 - T2+ NPC notes include table hook, default posture, mundane agenda, plain
-  speech sample, compact appearance card, stat block, power band, weak
-  stats/blind spots, and key info separated from personality;
+  speech sample, compact appearance card, power/capability grounding, weak
+  points, and key info separated from personality;
+- eight numeric NPC stats are required only when
+  `play_profile.yaml.mechanics.resolution_grounding` is `numeric`;
 - recurring NPC notes include routine/availability logic, and useful NPCs do
-  not appear without a plausible reason, current task, and contextual reaction;
+  not appear without plausible travel from last location, elapsed time, a
+  current task, reason-here, and contextual reaction;
 - companion notes include stats, key capabilities, weak stats, and current
   growth ceiling;
 - major obstacles have relevant stat, difficulty, and clean/partial/failure
@@ -129,7 +149,7 @@ Check:
 - player outcomes generally respect player stat strengths, weak stats,
   capabilities, and known opposition;
 - T2+ NPCs are not all suspicious, cryptic, testing, or polished in the same
-  way;
+  way; new/promoted T2/T3 NPCs pass the model-only six-axis Contrast Pass;
 - character notes do not hide important clues only inside personality prose;
 - T2+ place notes include baseline routine, reaction point, ordinary NPC
   activity, spatial/visual description, and clue exposure gates;
@@ -186,7 +206,32 @@ Check:
 - ordinary NPCs have ordinary needs and speech when the scene calls for it;
 - low-risk competent actions are not routinely turned into tests,
   complications, suspicion, or hard consequences;
+- scene modes match function, clue/local-noise elements are treated as ceilings
+  rather than quotas, and quiet/empty places may still count as living scenes;
+- natural breather scenes can persist without a fixed turn limit or fabricated
+  escalation and exit according to the selected breather policy;
 - the opening or next scene gives the player something actionable.
+
+# Triggered Semantic Review
+
+Do not run semantic narration review on every turn and do not implement it as a
+Python checker. At an explicit GM-quality audit, a scheduled representative
+sample, or a full-distill sample selected by policy, review the transcript with
+the GM Spine and triggered playbooks.
+
+Score 0–2 for intent fidelity, causality, Player authorship, NPC agency,
+presence/travel logic, voice contrast, knowledge boundaries, pacing, and
+continuation. A sample passes at an average of at least 1.5 with no critical
+Player-authorship or knowledge-boundary breach. Report concrete evidence and a
+small prompt/note correction; do not auto-rewrite established fiction.
+
+For a reproducible replay, use `tools/gm_replay_suite.json` without an API or
+runner engine. Start each scenario in a fresh context; give the acting GM only
+its `initial_state`, `setup`, and ordered `turn_sequence`. After the last turn,
+give the untouched transcript plus the full scenario to a separate human/model
+evaluator, copy and fill its `scoring_record`, and apply the top-level formulas.
+Do not expose expected observations during play, mutate campaign state, or turn
+this sampled audit into an ordinary per-turn gate.
 
 # When Tools Exist
 
@@ -198,7 +243,8 @@ Use Lite tools when available:
   sanity and `--scope full` at the selected distill boundary;
 - `tools/check_dashboard.py` for local dashboard state, asset, revision, tile,
   map, and player-facing safety;
-- `tools/check_style.py` for warning-level narration repetition checks;
+- `tools/check_style.py` for policy-triggered, warning-level categorical
+  narration repetition checks, never soft-turn or semantic gating;
 - `tools/world_pulse.py` with a stable evaluation id for deterministic
   uncertainty when a relevant domain refresh is due;
 - `tools/roll_dice.py` for bounded, reproducible approved dice rolls;

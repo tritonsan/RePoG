@@ -8,7 +8,64 @@ Linked elements:
 
 Power Band:
 
-## Stats
+## At-The-Table Agency Card
+
+Fill every field for T2/T3 characters. T1 characters may begin with only the
+fields needed for their scene, then complete the card if player attention
+promotes them. This compact card is the hot contract; longer notes below may
+explain it but must not establish a competing current agenda or routine.
+
+- Local role:
+- Independent project:
+- Current mundane task:
+- Pressure decision rule:
+- Misbelief or recurring mistake:
+- Hard boundary:
+- Non-player obligation:
+- Voice rhythm:
+- Social tactic:
+- Routine and availability:
+- Next move if ignored:
+- Evaluation trigger:
+- Visible consequence channel:
+- Offscreen trajectory status: inactive
+
+`Offscreen trajectory status` must be `inactive`, `active`, or `needs_review`.
+Use `active` for a T3 or player-important T2 whose independent movement matters
+after leaving the active cast. Evaluate it only when its recorded trigger
+occurs; do not continuously simulate the character.
+
+## Offscreen Trajectory
+
+Required only when `Offscreen trajectory status` is `active`. An `inactive`
+trajectory may remain blank. When legacy material cannot establish these
+fields safely, use `needs_review` rather than inventing them during migration.
+
+- Goal and method:
+- Obstacle or resource:
+- Time horizon:
+- Result shape:
+- Visible channel:
+- Last evaluation id:
+
+`Result shape` describes the bounded kind of change that could follow from the
+recorded cause; it is not a predetermined outcome. Reevaluate only when the
+Agency Card's Evaluation trigger occurs, and preserve the last evaluation id
+for idempotent continuation.
+
+Before finalizing a new T2/T3, perform a model-only Contrast Pass against the
+two most similar active NPCs. Compare local role, desire, risk response, social
+tactic, voice rhythm, and hard boundary. If four or more axes substantially
+match, redesign at least two axes. Persist the differentiated character, not a
+scorecard, and do not add a semantic checker for this pass.
+
+## Stats (Numeric Grounding Only)
+
+Fill the eight numeric stats only when
+`play_profile.yaml.mechanics.resolution_grounding` is `numeric`. Under
+`fictional`, describe competence, limits, leverage, and counterplay in prose.
+Under `bands`, record only setting-appropriate broad bands; do not backfill
+numbers merely because this template offers them.
 
 - Power:
 - Agility:
@@ -83,22 +140,6 @@ T2+ characters, fill the compact card.
 The character's ordinary social stance toward the player before new evidence
 changes it. Choose something specific; suspicion is only one possible posture.
 
-## Current Mundane Agenda
-
-What this character is doing or trying to finish that has nothing to do with
-the player's current objective.
-
-## Routine And Availability
-
-Where this character normally spends time, what brings them elsewhere, and
-what must be true for them to appear in a scene. Do not teleport them to the
-player merely because they are useful.
-
-## Voice And Speech Pattern
-
-Word choice, rhythm, directness, social tactic, pressure style, and metaphor
-family. Keep this distinct from other important NPCs.
-
 ## Distinctive Lexicon
 
 Words, images, class markers, jokes, silences, or habits that make this
@@ -136,19 +177,17 @@ What the player can perceive or learn easily.
 Important clue, offer, warning, or fact this character can provide. Keep it
 separate from personality; not every NPC has key info.
 
-## What They Know About The Player
+## Knowledge References
 
-Facts this character can state directly because they saw, heard, learned, or
-verified them.
+`knowledge_boundaries.md` owns current known, suspected, unknown, and protected
+facts. This character note owns only stable epistemic habits and references to
+that ledger; do not copy the fact text here.
 
-## What They Suspect
-
-Things this character may imply, test, or pressure around, but should not state
-as confirmed truth.
-
-## Evidence They Have
-
-The source of their knowledge or suspicion.
+- Knowledge-boundary entry:
+- Confirmed fact ids:
+- Suspicion fact ids:
+- Protected-name or reveal-ledger ids:
+- Typical source types they trust:
 
 ## How They Read People
 
@@ -181,13 +220,24 @@ What they can offer, threaten, hide, lose, or be pressured by.
 How this character handles social status: raising their own, lowering someone
 else's, protecting dignity, avoiding attention, or refusing the game.
 
-## Current Attitude
+## Relationship Behavior And References
 
-How they currently feel about the player and why.
+This note owns the character's stable relationship behavior, not their current
+attitude toward the player. `relationship_map.md` owns current relationship
+truth and `session_log.md` owns historical changes.
 
-## Secrets
+- Baseline relationship behavior:
+- Relationship-map edge ids:
 
-What is hidden, who knows it, and what would change if revealed.
+## Secret-Keeping Behavior And References
+
+This note owns stable concealment, disclosure, and reaction habits. Current
+secret truth and who knows it belong in `knowledge_boundaries.md`; current
+relationship consequences belong in `relationship_map.md`.
+
+- Concealment or disclosure habit:
+- Knowledge/reveal fact ids:
+- Relationship-map edge ids affected by revelation:
 
 ## Last Meaningful Interaction
 

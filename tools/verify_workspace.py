@@ -32,6 +32,9 @@ REQUIRED_FILES = (
     "tools/check_state.py",
     "tools/check_dashboard.py",
     "tools/resolve_mechanic.py",
+    "tools/check_style.py",
+    "tools/migrate_gm_contract.py",
+    "tools/gm_replay_suite.json",
     "tools/roll_dice.py",
     "tools/serve_dashboard.py",
     "tools/update_dashboard.py",
@@ -39,6 +42,14 @@ REQUIRED_FILES = (
     "workflows/audit/WORKFLOW.md",
     "workflows/distill/WORKFLOW.md",
     "workflows/gm/WORKFLOW.md",
+    "workflows/gm/playbooks/action_conflict.md",
+    "workflows/gm/playbooks/breather_aftermath.md",
+    "workflows/gm/playbooks/dialogue_social.md",
+    "workflows/gm/playbooks/exploration_investigation.md",
+    "workflows/gm/playbooks/scene_arc_transition.md",
+    "workflows/gm/playbooks/scene_entry_opening.md",
+    "workflows/gm/playbooks/travel_downtime.md",
+    "workflows/gm/playbooks/visual_handoff.md",
     "workflows/worldbuild/WORKFLOW.md",
 )
 
@@ -50,9 +61,21 @@ REQUIRED_DIRS = (
     "docs",
     "tools",
     "workflows",
+    "workflows/gm/playbooks",
 )
 
 REQUIRED_LENSES = ("INDEX.md", "fantasy.md", "realistic.md", "cyberpunk.md", "survival.md")
+GM_REPLAY_DIMENSIONS = {
+    "intent_fidelity",
+    "causality",
+    "player_authorship",
+    "npc_agency",
+    "presence_logic",
+    "voice_contrast",
+    "knowledge_boundary",
+    "pacing",
+    "continuation",
+}
 
 
 def _finding(
@@ -135,6 +158,63 @@ def _check_layout(workspace: Path) -> list[dict[str, Any]]:
             findings.append(
                 _finding("error", "lens_brief_missing", f"Missing bundled lens brief: {filename}", path, check="layout")
             )
+    findings.extend(_check_gm_replay_fixture(workspace / "tools" / "gm_replay_suite.json"))
+    return findings
+
+
+def _check_gm_replay_fixture(path: Path) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    if not path.is_file():
+        return findings
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [_finding("error", "gm_replay_invalid", str(exc), path, check="layout")]
+    if not isinstance(data, dict) or data.get("schema_version") != 2:
+        findings.append(_finding("error", "gm_replay_schema_invalid", "GM replay fixture must use schema_version 2.", path, check="layout"))
+        return findings
+
+    rubric = data.get("rubric")
+    dimensions = rubric.get("dimensions") if isinstance(rubric, dict) else None
+    if not isinstance(dimensions, dict) or set(dimensions) != GM_REPLAY_DIMENSIONS:
+        findings.append(_finding("error", "gm_replay_rubric_invalid", "GM replay rubric must define the nine approved dimensions.", path, check="layout"))
+    scoring = data.get("scoring")
+    required_formulas = {"scenario_mean_formula", "scenario_pass_formula", "suite_mean_formula", "suite_pass_formula"}
+    if not isinstance(scoring, dict) or any(not str(scoring.get(key, "")).strip() for key in required_formulas):
+        findings.append(_finding("error", "gm_replay_scoring_invalid", "GM replay scoring formulas are incomplete.", path, check="layout"))
+
+    scenarios = data.get("scenarios")
+    if not isinstance(scenarios, list) or len(scenarios) != 12:
+        findings.append(_finding("error", "gm_replay_scenarios_invalid", "GM replay fixture must contain exactly 12 scenarios.", path, check="layout"))
+        return findings
+    ids: list[str] = []
+    required = {"id", "initial_state", "setup", "turn_sequence", "expected_observations", "critical_failures", "scoring_record"}
+    for index, scenario in enumerate(scenarios):
+        if not isinstance(scenario, dict):
+            findings.append(_finding("error", "gm_replay_scenario_invalid", f"Scenario {index} must be an object.", path, check="layout"))
+            continue
+        missing = sorted(required - set(scenario))
+        if missing:
+            findings.append(_finding("error", "gm_replay_scenario_invalid", f"Scenario {index} is missing: {', '.join(missing)}.", path, check="layout"))
+        scenario_id = scenario.get("id")
+        if not isinstance(scenario_id, str) or not scenario_id.strip():
+            findings.append(_finding("error", "gm_replay_scenario_invalid", f"Scenario {index} has no stable id.", path, check="layout"))
+        else:
+            ids.append(scenario_id)
+        turns = scenario.get("turn_sequence")
+        if not isinstance(turns, list) or not turns or any(not isinstance(turn, dict) or "turn" not in turn for turn in turns):
+            findings.append(_finding("error", "gm_replay_turns_invalid", f"Scenario {scenario_id or index} needs numbered turn fixtures.", path, check="layout"))
+        expected = scenario.get("expected_observations")
+        if not isinstance(expected, dict) or not expected or not set(expected) <= GM_REPLAY_DIMENSIONS:
+            findings.append(_finding("error", "gm_replay_expected_invalid", f"Scenario {scenario_id or index} has invalid expected observations.", path, check="layout"))
+        critical = scenario.get("critical_failures")
+        if not isinstance(critical, list) or any(not isinstance(item, dict) or not {"id", "category", "description"} <= set(item) for item in critical):
+            findings.append(_finding("error", "gm_replay_critical_invalid", f"Scenario {scenario_id or index} has invalid critical failures.", path, check="layout"))
+        record = scenario.get("scoring_record")
+        if not isinstance(record, dict) or not {"dimension_scores", "critical_failures_observed", "scenario_mean", "status"} <= set(record):
+            findings.append(_finding("error", "gm_replay_record_invalid", f"Scenario {scenario_id or index} has an incomplete scoring record.", path, check="layout"))
+    if len(ids) != len(set(ids)):
+        findings.append(_finding("error", "gm_replay_id_duplicate", "GM replay scenario ids must be unique.", path, check="layout"))
     return findings
 
 

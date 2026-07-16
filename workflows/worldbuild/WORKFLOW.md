@@ -43,6 +43,28 @@ Accept `accept`, `mix`, `change`, `default`, `defer`, or a free-form answer.
 Materialize the accepted result in `play_profile.yaml`; lens briefs are setup
 inputs and are not hot play context.
 
+Every Starter Bundle also materializes the runtime GM contract without opening
+extra Quick questions:
+
+- resolution grounding: `fictional`, `bands`, or `numeric`;
+- three short campaign-specific Narrative Signature anchors and no more than
+  three avoid habits;
+- interiority policy, up to two sensory priorities, dialogue balance, humor,
+  and emotional distance;
+- breather frequency and exit policy.
+
+When a Quick Designer accepts defaults, use `fictional`, `player_owned`,
+`balanced` breather frequency, and
+`player_led_with_established_triggers`. Use `balanced` dialogue,
+`situational` humor, and `close` emotional distance unless the pitch clearly
+calls for another value. Derive signature anchors and sensory priorities from
+the pitch; if it supplies no signal, use concrete sensory evidence, plain
+character-specific dialogue, and causal consequences before exposition as the
+three anchors. Avoid default cryptic aphorisms, recycled stock
+gestures/metaphors, and manufactured tension after clean success. Do not ask a
+separate question for any of these Quick defaults; show them in the Starter
+Bundle and final summary.
+
 If the Designer says "use defaults", choose coherent defaults, show the
 assumptions in Designer Mode, and then create files.
 
@@ -75,12 +97,14 @@ Ask it as one decision and wait:
 > - **Fast — Recommended:** routine turns usually target 30–90 seconds, local
 >   durable turns 45–120 seconds, and scene/arc boundary work 2–4 minutes.
 >   Current truth is saved immediately; secondary notes are reconciled at a
->   scene boundary or after at most five durable turns. No narrative-quality
->   or current-continuity loss is expected, though secondary notes may briefly
->   trail the authoritative state.
+>   full distill after at most five durable turns. A scene boundary writes only
+>   the compact scene checkpoint unless another full-distill trigger is due.
+>   No narrative-quality or current-continuity loss is expected, though
+>   secondary notes may briefly trail the authoritative state.
 > - **Balanced:** light turns usually target 1–2 minutes, durable turns
->   1.5–3 minutes, and boundary work 2–4 minutes. Secondary notes reconcile at
->   meaningful beats or after at most three durable turns.
+>   1.5–3 minutes, and boundary work 2–4 minutes. Scene boundaries write a
+>   compact checkpoint; secondary notes fully reconcile at a meaningful
+>   full-distill trigger or after at most three durable turns.
 > - **Maximum Continuity:** durable turns usually target 2–4 minutes and
 >   structural turns 3–6 minutes. Every affected note and full check is
 >   completed each durable turn. This maximizes immediate auditability but is
@@ -100,8 +124,8 @@ progress only:
 
 | Profile | Cold distill | Validation | Dashboard | Style review |
 | --- | --- | --- | --- | --- |
-| `fast` | `scene_or_5_durable` | `hot_each_durable_full_on_distill` | `scene_and_major_visible_change` | `sampled_and_distill` |
-| `balanced` | `scene_or_3_durable` | `hot_each_durable_full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
+| `fast` | `scene_checkpoint_or_5_durable` | `hot_each_durable_full_on_distill` | `scene_and_major_visible_change` | `sampled_and_distill` |
+| `balanced` | `scene_checkpoint_or_3_durable` | `hot_each_durable_full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
 | `maximum_continuity` | `every_durable` | `full_each_durable` | `every_visible_change` | `every_durable` |
 
 Use `exceptional_only` latency notices by default. This gives a brief OOC time
@@ -111,7 +135,10 @@ routine band. `always` and `off` are Custom options.
 
 For Custom, ask only the fields the Designer wants to override, one decision
 per message. Allowed cold policies are `every_durable`,
-`scene_or_3_durable`, `scene_or_5_durable`, and `scene_only`. Allowed
+`scene_checkpoint_or_3_durable`, `scene_checkpoint_or_5_durable`, and
+`scene_checkpoint_only`. The legacy values `scene_or_3_durable` and
+`scene_or_5_durable` are migration inputs only and must not be written by a
+new Session 0. Allowed
 validation policies are `hot_each_durable_full_on_distill` and
 `full_each_durable`; hot validation cannot be disabled. Dashboard may be
 `scene_and_major_visible_change`, `every_visible_change`, `scene_only`, or
@@ -129,9 +156,12 @@ Use 6–8 decisions: pitch plus contextual Starter Bundle;
 boundaries/agency/consequence; character concept,
 defining competence and weakness; starting world/problem/place; mechanics,
 progression and failure; the explicit Turn Protocol choice;
-narration/options/visuals; research if needed; and final confirmation. Keep the
+narration/options/visuals; research if needed; and final confirmation. The
+Starter Bundle already carries resolution grounding, Narrative Signature,
+interiority, and breather defaults; do not create extra Quick questions for
+them. Keep the
 6–8 target by treating research as conditional and combining closely related
-mechanics decisions. Fill the full V2 template with a small playable core and
+mechanics decisions. Fill the current templates with a small playable core and
 record every inferred answer in `defaulted_packs` or the defaulted decisions
 section of `session_zero.md`. "Use defaults" selects Fast.
 
@@ -190,18 +220,31 @@ before adding any of: `bounded_resources`, `abilities_costs`,
 `structured_travel`. Explicit player choice outranks lens suggestions, while
 safety/canon/research limits still outrank unsupported choices.
 
-Materialize inventory, time, travel, wound, dice, narration, advancement,
-dashboard, visual, and performance choices in `play_profile.yaml`. Do not read
-the lens briefs during normal play.
+Materialize resolution grounding, inventory, time, travel, wound, dice,
+Narrative Signature, interiority, breather, advancement, dashboard, visual,
+and performance choices in `play_profile.yaml`. Do not read the lens briefs
+during normal play.
 
 # Completion Gate
 
 Before setting `status: complete` and `ready_for_play: true`, ensure every core
 module is locked, defaulted, or deliberately deferred; every activated Deep
 pack is completed or defaulted; the research gate permits durable truth; and
-the character, starting place, one pressure, actionable opening, V2 state,
-active cast, location graph, knowledge boundaries, dashboard, and starting
-snapshot are ready and checked.
+the character, starting place, one pressure or mode-appropriate affordance,
+actionable opening, memory-v3 state with a resumable `scene_frame`, active cast,
+location graph, knowledge boundaries, dashboard, and starting snapshot are
+ready and checked.
+
+A ready profile must have three meaningful Narrative Signature anchors, no
+more than three avoid habits, no more than two sensory priorities, and valid
+interiority/breather policies. A ready scene frame needs a stable scene id,
+ongoing local process, returned-control point, and resume anchor; blank values
+remain valid only while setup is still draft.
+
+Immediately before first play, `first_session.md` must be `materialized` and
+`opening_brief.md` must be `active`. After that opening is narrated, mark both
+`consumed`; consumed opening/prep text is historical and no longer participates
+in live scene-coherence comparison.
 
 Also require a valid Turn Protocol in `play_profile.yaml`, all preset policies materialized (or a
 safe complete Custom policy), `performance_estimate_acknowledged: true`, and a
@@ -275,6 +318,13 @@ Set table expectations before lore:
 - how much failure, loss, and irreversible consequence are welcome;
 - how often the GM should ask clarifying questions.
 
+Lock one coherent narration card rather than opening a separate question for
+each field. It must materialize three positive Narrative Signature anchors,
+up to three avoid habits, the player-character interiority policy, up to two
+sensory priorities, dialogue balance, humor, emotional distance, and breather
+frequency/exit policy. Standard and Deep may refine the card when the Designer
+wants to; Quick receives it through the Starter Bundle.
+
 Record the durable version in `boundaries.md` and `session_zero.md`.
 
 ## 4. System Fit
@@ -284,7 +334,9 @@ Decide what kind of play the campaign engine should support:
 - conflict modes: combat, social pressure, investigation, survival, travel,
   intrigue, heist, horror, drama, or another mode;
 - mechanics weight: loose, moderate, tactical, or mostly narrative;
-- stat model and starting level;
+- resolution grounding: `fictional`, `bands`, or `numeric`, plus starting
+  level;
+- a stat model and numeric budget only when grounding is `numeric`;
 - campaign stage and current power band;
 - how special capabilities, expertises, powers, technology, social influence,
   or resources should be treated;
@@ -434,19 +486,21 @@ For each faction, ask:
 
 - what issue it is tied to;
 - public mask;
-- true desire;
-- methods;
-- resources;
+- stable desire;
+- stable methods;
+- stable capability and resources;
 - faction power band;
 - typical member, specialist, and leader stat ranges;
 - face or representative;
 - key place;
 - pressure tactic;
 - what it knows or suspects about the player;
-- what it will do next if unopposed.
+- which `world_dynamics.md` domain owns its current move and next evaluation,
+  if offscreen movement matters at the initial scale.
 
 Record factions in `factions/*.md`, `creation_ledger.md`, and
-`relationship_map.md`.
+`relationship_map.md`. Do not duplicate a current faction move in the faction
+note; reference its world domain.
 
 ## 12. Faces And Places
 
@@ -475,6 +529,25 @@ For recurring NPCs, establish baseline routine, availability, ordinary work,
 and what could place them elsewhere. Initialize temporary current rows in
 `active_cast.md` and gameable routes in `location_graph.md`.
 
+Every T2/T3 begins with the compact At-The-Table Agency Card: local role,
+independent project, mundane task, pressure decision rule, misbelief, hard
+boundary, non-player obligation, voice rhythm, social tactic, routine and
+availability, next move if ignored, evaluation trigger, visible consequence
+channel, and offscreen trajectory status. Current knowledge facts live only in
+`knowledge_boundaries.md`; the character note stores fact-id references and
+stable epistemic habits.
+
+When offscreen trajectory status is `active`, also fill its compact Offscreen
+Trajectory: goal and method, obstacle or resource, time horizon, bounded result
+shape, visible channel, and last evaluation id. `inactive` may remain blank.
+Use `needs_review` for an uncertain legacy handoff or migration; do not invent
+missing intent to make the card look complete.
+
+Before finalizing a new T2/T3, run a model-only Contrast Pass against the two
+most similar active NPCs across role, desire, risk response, social tactic,
+voice rhythm, and hard boundary. If four or more axes substantially match,
+redesign at least two. Do not persist the scorecard or add a semantic checker.
+
 ## 13. Progression And Rewards
 
 Decide how the campaign keeps growth alive.
@@ -489,13 +562,20 @@ Ask:
 - what counts as success in this genre or setting;
 - what kind of rewards fit the setting;
 - whether GM-awarded perks should recognize repeated play behavior;
-- how OOC upgrade check-ins should be phrased;
+- advancement presentation: `explicit_ooc`, `automatic_fictional`, or `none`;
+- for `explicit_ooc`, how the optional table-facing check-in should be phrased;
 - how companion and allied NPC advancement should work;
 - what should prevent power creep.
 
 Record the durable version in `progression.md`. Use `arc_closure.md` later to
 log actual closure reviews, upgrade offers, chosen upgrades, companion
 advancement, GM-awarded perks, reward calibration, and world advancement.
+
+`explicit_ooc` may pause only for an unresolved player choice and the player
+may defer it. `automatic_fictional` applies only permitted, fiction-bound
+growth without a mandatory OOC interlude or lock. `none` creates no
+advancement interlude or gate. Materialize the policy under
+`play_profile.yaml.advancement.presentation`.
 
 ## 14. Player Character
 
@@ -506,10 +586,16 @@ Ask these one by one:
 - personality;
 - background;
 - starting level;
-- numeric stats;
+- fictional competencies/limits, broad bands, or numeric stats according to
+  the accepted resolution grounding;
 - setting-appropriate capabilities, expertises, or power sources.
 
-Default stats:
+When grounding is `fictional`, capture reliable permissions, competencies,
+limits, leverage, and counterplay in prose. When it is `bands`, capture only
+the broad setting-appropriate bands the campaign uses. Only `numeric` requires
+the following eight stats and a budget.
+
+Numeric stats:
 
 - Power
 - Agility
@@ -529,9 +615,10 @@ Starting budgets:
 - Advanced: 24 points, recommended max 4.
 - Elite: 28 points, recommended max 5.
 
-The setting may rename stats, but the campaign state should still contain eight
-numeric stats on a 1 to 5 scale unless the Designer explicitly chooses a custom
-stat model.
+The setting may rename stats under numeric grounding, but the campaign state
+should still contain eight numeric stats on a 1 to 5 scale unless the Designer
+explicitly chooses a custom numeric stat model. Fictional and banded campaigns
+must not backfill eight numbers merely to satisfy a template.
 
 For every special capability, record:
 
@@ -579,11 +666,22 @@ Ask:
 - what pressure or hook is present;
 - what should not be revealed yet.
 
+Also choose the initial scene mode: `ambient`, `focused`, `crisis`,
+`aftermath`, `transition`, or `breather`. Compose the opening from
+`baseline routine + scene mode + current disruption + naturally present people + player arrival`.
+Local noise and clues are optional ceilings rather than required beats.
+
 The opening should give the player a place, time, arrival context, visible
 situation, and freedom to choose direction. It should not reveal the main plot,
 antagonist plan, faction map, or hidden truth.
 
-Record the durable version in `opening_brief.md` and `first_session.md`.
+Draft inputs in `first_session.md` with prep status `drafting` and
+`opening_brief.md` status `pending`. Materialize the final opening by changing
+the first status to `materialized` and the second to `active`.
+`opening_brief.md` is then the sole owner of the next finalized opening. After
+the first player-facing use, mark both `consumed` in the same durable
+checkpoint. A consumed opening is historical and must not be compared with the
+live state; session prep may reference it but must not copy it.
 
 ## 17. Continuity Rules
 
@@ -614,6 +712,25 @@ Record the durable version in `rules.md`, `storytelling.md`,
 rules, `relationship_map.md` format notes, `progression.md`,
 `knowledge_boundaries.md`, and `session_zero.md`.
 
+Lock this ownership map during continuity setup:
+
+- live scene, causal beat, pending consequence, and resume anchor ->
+  `current_state.yaml.scene_frame`;
+- next finalized opening -> `opening_brief.md`;
+- stable NPC identity, agency, routine, decision logic, and epistemic habits ->
+  character note;
+- temporary NPC whereabouts/activity/objective -> `active_cast.md`;
+- current knowledge facts and holders -> `knowledge_boundaries.md`;
+- current offscreen domain/faction movement -> `world_dynamics.md`;
+- systemic problem -> `issues.md`;
+- player-linked dramatic question or consequence -> `threads.md`;
+- stable faction desire, method, and capability -> faction note.
+- current NPC/faction relationship truth -> `relationship_map.md`; character
+  and faction notes keep only baseline behavior/posture and edge ids.
+
+`session_brief.md` references these authorities. It must not copy a strong
+start, current NPC task/location, or live disruption into parallel prose.
+
 # Storytelling Preferences
 
 During Session 0, establish storytelling preferences as part of the pitch,
@@ -622,6 +739,10 @@ group contract, system fit, and continuity modules:
 - point of view (`first`, `second`, or `third`) and tense (`present` or `past`);
 - camera distance, prose density, response-length range, dialogue style, and
   pacing;
+- exactly three short positive Narrative Signature anchors and no more than
+  three recurring habits to avoid;
+- interiority policy (`player_owned`, `shared_when_invited`, or `guided`), up
+  to two sensory priorities, dialogue balance, humor, and emotional distance;
 - whether the campaign wants natural openings, occasional guided choices, or
   tactical menu-style choices;
 - how lore should be revealed;
@@ -646,6 +767,8 @@ group contract, system fit, and continuity modules:
 - how dense challenges should be, and when routine competence should simply
   pass;
 - how often clean success, quiet passage, or breather scenes should appear;
+- breather frequency (`sparse`, `balanced`, or `generous`) and exit policy
+  (`player_led`, `player_led_with_established_triggers`, or `world_led`);
 - how severe consequences should be when real resistance exists;
 - pacing preference: fast, slow, dynamic, action-heavy, social-heavy, or mixed;
 - what information must stay hidden until the player discovers it.
@@ -658,6 +781,8 @@ Default storytelling stance when the Player accepts defaults:
 - no menu prompts;
 - no routine "What do you do?" endings;
 - no lore dump in the opening scene;
+- player-character dialogue, feelings, conclusions, decisions, and unstated
+  risk acceptance remain player-owned;
 - reveal secrets only through perception, clues, consequences, or discovery;
 - bind NPC inferences to visible evidence, local knowledge, or recorded memory;
 - let weak evidence produce tests, partial guesses, or wrong assumptions;
@@ -672,6 +797,11 @@ Default storytelling stance when the Player accepts defaults:
   friction;
 - reserve hard complications for real resistance, meaningful uncertainty, or
   irreversible stakes;
+- open breathers at natural relief, safety, travel/downtime, care/maintenance,
+  relationship, or player-created-rest thresholds;
+- let the player remain in a breather and leave through a chosen goal, a small
+  affordance, or a previously established trigger genuinely coming due; never
+  manufacture a threat solely to force movement;
 - vary pacing and dramatic beat instead of repeating the same rhythm;
 - vary message length and sentence cadence according to scene function.
 
@@ -688,12 +818,18 @@ For each selected domain, record in `world_dynamics.md`:
 - volatility and pressure;
 - which fictional events trigger reevaluation;
 - how consequences can reach the character;
-- what remains hidden.
+- what remains hidden;
+- stable pending/last evaluation ids and the inputs to the last evaluation;
+- the causal result established before any bounded uncertainty is applied.
 
 Do not create a domain merely because it exists in the setting. Do not run
 continuous background simulation. The GM should refresh a domain only when
 elapsed time, return to a place, contact with an actor, downtime, inquiry, an
 arc transition, or an active pressure makes the result relevant.
+
+The same evaluation id with the same inputs must preserve the same persisted
+result. Optional uncertainty may choose among causally plausible results; it
+must not invent the cause, motive, or meaning of an event.
 
 # From-Scratch Campaign Procedure
 
@@ -714,14 +850,16 @@ When starting the blank Lite campaign included in this workspace:
    `storytelling.md`, `appearance_guide.md`, `world_dynamics.md`, and
    `rules.md`.
 6. Create the player files: `player.md`, `player_ties.md`, and
-   `current_state.yaml`. Initialize its persistence block,
-   `active_cast.md`, `location_graph.md`, `style_state.json`, and
+   `current_state.yaml`. Initialize its memory-v3 persistence block and
+   `scene_frame`, `active_cast.md`, `location_graph.md`, schema-v3
+   `style_state.json`, and
    `visual_state.json`; enable `mechanics_state.json` only when the player
    approves a stateful deterministic module.
 7. Create only enough NPCs, places, factions, threads, and flexible clues to
    make the first session playable.
-8. Fill `opening_brief.md` as `first_campaign_opening` and `first_session.md`
-   as the Session 0.5 prep page.
+8. Fill `first_session.md` as `drafting` and `opening_brief.md` as `pending`;
+   materialize `first_campaign_opening` by changing them to `materialized` and
+   `active`, then mark both `consumed` after the first player-facing use.
 9. Draft the first player-facing scene from `opening_brief.md`, then check it
    for leakage.
 10. If the campaign uses the optional dashboard, create a Dashboard V3 state
@@ -805,7 +943,9 @@ answered through player action.
 Every important NPC should have:
 
 - a tier in `creation_ledger.md`;
-- a power band and stats calibrated to campaign stage;
+- a power/capability position calibrated to campaign stage and the selected
+  resolution grounding;
+- a compact At-The-Table Agency Card and an offscreen trajectory status;
 - clear key capabilities and weak stats or blind spots;
 - a table hook;
 - a compact appearance card;
@@ -819,10 +959,14 @@ Every important NPC should have:
 - clear inference limits;
 - a private motive;
 - leverage or vulnerability;
-- a current attitude toward the player;
+- stable relationship behavior plus ids for any current edges owned by
+  `relationship_map.md`;
 - a status play note;
 - at least one issue, faction, place, or player tie they represent;
 - at least one way they can complicate play.
+
+Numeric stats are required only under numeric resolution grounding. Under
+fictional or banded grounding, use prose competence/limits or broad bands.
 
 Every important location should have:
 
@@ -852,14 +996,18 @@ Every faction should have:
 - a visual identity;
 - typical member, specialist, and elite/leader stat guidance;
 - a linked issue;
-- a desire;
-- a method;
+- a stable desire;
+- a stable method;
+- a stable capability;
 - a public mask;
 - a resource;
 - a representative face;
 - a key place;
 - a pressure tactic;
 - a conflict with at least one other force.
+
+Reference current offscreen movement through `world_dynamics.md`; do not copy
+a current move into the stable faction note.
 
 After creating the initial NPCs, locations, and factions, write compact
 relationship edges in `relationship_map.md`. Use short lines, not long
@@ -877,7 +1025,8 @@ experience. Soft guidance is useful. Hard numeric scaffolding should be rare.
 
 Good:
 
-- "The opening needs two immediate pressures and one tempting opportunity."
+- "A crisis opening needs a visible pressure and an actionable affordance; a
+  breather may remain calm."
 - "Each named NPC should want something from the player or from the scene."
 - "Every special capability needs a limit, risk, and counterplay."
 
@@ -897,10 +1046,18 @@ The opening scene is ready when:
   arrived;
 - the opening is neutral enough for the player to choose their own direction;
 - the player can act immediately;
-- at least one NPC wants something now;
+- naturally present people follow the place, time, route, and availability;
 - the location has sensory identity;
-- the situation implies risk;
+- the situation offers mode-appropriate pressure, opportunity, routine, or
+  rest;
 - there are multiple plausible player approaches;
 - at least one issue, face, place, or personal thread can connect to the player
   without becoming a railroad;
 - no technical explanation is needed to begin.
+
+For `breather`, do not require immediate risk, a demanding NPC, or a hook.
+Ordinary care, conversation, a small project, exploration, or solitude can be
+the actionable space, and the player may choose to remain there.
+`current_state.yaml.current_scene.immediate_pressure` and the opening's
+Pressure Or Hook may be blank in this mode even while campaign-level pressure
+remains active in `issues.md` or `threads.md`.

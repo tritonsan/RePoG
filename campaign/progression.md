@@ -13,17 +13,37 @@ upgrade is the table-visible consequence of what the player actually did.
   what resource was gained, who noticed, and what future pressure answers it.
 - Prefer new choices, access, identity, and world reaction over simple number
   inflation.
-- Use OOC upgrade check-ins at clean closure points. Keep them table-facing,
-  not technical.
-- Scenario, arc, and campaign closures require an OOC advancement interlude
-  before normal narration continues, unless the player explicitly defers it.
+- Follow `play_profile.yaml.advancement.presentation`; closure never implies a
+  mandatory OOC interlude by itself.
 - Allied or companion NPCs can advance too, but their growth should follow
   their own participation, wounds, loyalties, training, and choices.
 - Reward size is based on achievement quality first and play volume second.
 - GM-awarded perks can recognize repeated play behavior, but they are not
   player-selected upgrades and cannot be exchanged for a different reward.
 
+## Advancement Presentation Contract
+
+`play_profile.yaml.advancement.presentation` is authoritative:
+
+- `explicit_ooc`: when an earned advancement requires a player choice, offer a
+  short table-facing interlude. Fiction may lock only while that choice is
+  unresolved; the player may defer it and immediately resume play.
+- `automatic_fictional`: express earned, already permitted advancement through
+  fictional change without a mandatory OOC interlude, menu, or fiction lock.
+  If consent or a player-authored choice is still needed, defer the upgrade
+  without blocking narration rather than silently choosing for the player.
+- `none`: create no advancement offer, OOC interlude, or advancement gate.
+  Closure and its world/relationship consequences still occur normally.
+
+The live interlude status and any temporary fiction lock exist only in
+`arc_closure.md` Current Progression State. Historical closure entries record
+what happened but do not create a second live gate.
+
 ## Closure Levels
+
+A closure level establishes what changed and what could be earned; it never
+creates an interlude or lock by itself. Treat each `Default reward` below as a
+candidate only when cadence and presentation allow it.
 
 ### Beat
 
@@ -36,8 +56,9 @@ upgrade is the table-visible consequence of what the player actually did.
 
 - Trigger: a play session or coherent scene chain ends.
 - Default reward: minor milestone.
-- Player-facing OOC: quick review and one small adjustment or short-term
-  advantage when earned.
+- Presentation-aware handling: under `explicit_ooc`, offer a quick review when
+  a choice is due; under `automatic_fictional`, express an earned adjustment
+  through play; under `none`, create no advancement gate.
 - Good rewards: temporary edge, small resource, contact warmth, relationship
   shift, trait/aspect wording tweak, clue consolidation, or recovery space.
 
@@ -46,8 +67,9 @@ upgrade is the table-visible consequence of what the player actually did.
 - Trigger: a mission, job, local problem, important threat, or clear objective
   closes.
 - Default reward: significant milestone.
-- Player-facing OOC: offer 2 to 3 upgrade directions and ask the player to
-  choose.
+- Presentation-aware handling: offer 2 to 3 directions only under
+  `explicit_ooc`; under `automatic_fictional`, apply only an already permitted,
+  fiction-bound change without stopping play; under `none`, skip the offer.
 - Good rewards: stat/skill improvement within budget, new or improved special
   capability, reputation tag, faction access, useful item, contact, companion
   bond, base access, map/lore unlock, or durable resource.
@@ -57,9 +79,10 @@ upgrade is the table-visible consequence of what the player actually did.
 - Trigger: a major antagonist, faction issue, personal conflict, island, route,
   or long dramatic question changes state.
 - Default reward: major milestone.
-- Player-facing OOC: run a full closure review and choose a character upgrade,
-  at least one world/faction/access change, and any companion advancement that
-  was earned.
+- Presentation-aware handling: `explicit_ooc` may run a full choice review;
+  `automatic_fictional` applies permitted growth and world response inside the
+  fiction without a mandatory pause; `none` records closure/world response but
+  opens no advancement gate.
 - Good rewards: level band increase, stat cap/budget increase, signature
   capability growth, faction status, base/crew upgrade, companion promotion,
   world-state change, new route, public title, feared reputation, or major
@@ -69,12 +92,17 @@ upgrade is the table-visible consequence of what the player actually did.
 
 - Trigger: the whole campaign premise resolves or transforms.
 - Default reward: legacy/epilogue advancement.
-- Player-facing OOC: decide endings, legacies, permanent world changes, and
-  what the next campaign inherits.
+- Presentation-aware handling: ask explicit legacy choices only under
+  `explicit_ooc` or by player request. `automatic_fictional` narrates permitted
+  legacy changes without a forced interlude; `none` closes without an
+  advancement gate.
 
 ## End-Of-Closure Review Questions
 
-Ask these in Designer/OOC table language at session, scenario, and arc closure:
+Review these privately at session, scenario, and arc closure. Ask them in
+Designer/OOC table language only under `explicit_ooc` or when the player
+requests a review. Under `automatic_fictional`, answer from established play;
+under `none`, use only the questions needed to record world consequences.
 
 - What did the player choose that changed the situation?
 - What did the character learn about the world, themself, or another person?
@@ -157,8 +185,9 @@ Use the player's visible preferences to make upgrades feel alive:
 - collection: unique item, recipe, artifact, identity, ship/base feature;
 - mastery: training, refinement, reliability, reduced cost, better counterplay.
 
-Do not assume the motivation forever. Infer it from repeated player choices and
-ask during OOC upgrade check-ins when uncertain.
+Do not assume the motivation forever. Infer it from repeated player choices.
+Ask during an OOC upgrade check-in only when presentation is `explicit_ooc`;
+otherwise defer uncertain player-authored advancement without blocking play.
 
 ## Reward Pool
 
@@ -186,7 +215,8 @@ Pick rewards from the fiction first, then fit the category.
 
 ## Reward Package Structure
 
-At scenario, arc, and campaign closure, separate the package into:
+When the selected presentation permits an advancement package at scenario,
+arc, or campaign closure, separate it into:
 
 - Chosen upgrade: 2 to 3 options the player chooses between.
 - World / access consequence: a fiction result the GM applies because the world
@@ -195,8 +225,11 @@ At scenario, arc, and campaign closure, separate the package into:
   participated or changed.
 - GM-awarded perk: optional, based on repeated player behavior.
 
-Do not replace the chosen upgrade with a world consequence or GM-awarded perk.
-They answer different parts of the closure.
+Under `explicit_ooc`, do not replace the chosen upgrade with a world
+consequence or GM-awarded perk; they answer different parts of the closure.
+Under `automatic_fictional`, omit the option menu and apply only a permitted,
+fiction-bound upgrade. Under `none`, omit the advancement package while still
+recording earned world and relationship consequences.
 
 ## Fiction Binding
 
@@ -251,6 +284,10 @@ A GM-awarded perk is a small durable recognition of how the player actually
 played. It is not selected from the upgrade menu and is not exchangeable for a
 different reward.
 
+Under `automatic_fictional`, introduce a permitted perk through its fiction
+source without pausing for an OOC interlude. Under `none`, do not propose or
+grant a progression perk.
+
 Use a GM-awarded perk when the player repeatedly:
 
 - solves problems through a consistent method;
@@ -271,7 +308,10 @@ The player may reject a perk for tone, consent, or character-concept reasons.
 If rejected, do not convert it into another reward unless the GM decides the
 fiction demands a different expression of the same behavior.
 
-## OOC Upgrade Check-In Script
+## Explicit-OOC Upgrade Check-In Script
+
+Use this only when advancement presentation is `explicit_ooc` and a choice is
+due. `automatic_fictional` and `none` must not invoke it automatically.
 
 Use table-facing language:
 
@@ -285,6 +325,7 @@ technical file language.
 
 ## Current Cadence
 
+- Advancement presentation: explicit_ooc | automatic_fictional | none
 - Beat rewards:
 - Session rewards:
 - Scenario rewards:

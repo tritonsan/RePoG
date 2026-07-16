@@ -4,14 +4,17 @@ RePoG Lite Distill
 
 # Purpose
 
-Use this workflow when condensing a Lite session, scene chain, or story arc into
-durable campaign memory.
+Use this workflow only at a full-distill trigger to reconcile pending durable
+events into compact campaign memory. A scene checkpoint is defined below but
+does not by itself invoke full distillation.
 
 Distill is not a technical changelog. It is the GM's memory becoming sharper.
 
 # Inputs
 
-Read:
+Start with `play_profile.yaml`, `current_state.yaml.persistence`, and pending
+durable events in `session_log.md`. Then read only authorities and cold targets
+named by those events or required by the trigger. Relevant inputs may include:
 
 - `play_profile.yaml`, which owns runtime performance, narration, mechanics,
   advancement, dashboard, and visual policy;
@@ -84,22 +87,26 @@ Update the smallest necessary files:
 - update `session_brief.md` when preparing the next session, scene chain, or
   arc;
 - update `threads.md` for resolved, escalated, or newly opened threads;
-- update character notes for attitude, posture, mundane agenda, ordinary speech
-  sample, useful voice, appearance changes, stable visual details, stats,
-  capabilities, blind spots, secrets, injuries, debts, promises, or changed
-  leverage;
+- update character notes for stable Agency Card logic, ordinary speech, useful
+  voice, appearance changes, capabilities, blind spots, and durable leverage;
+  write current relationship edges to `relationship_map.md`, current knowledge
+  truth to `knowledge_boundaries.md`, and history to `session_log.md` instead
+  of copying those facts into the character note;
 - update place notes for damage, rumors, new dangers, changed access, local
   routine, disruption, reaction point, spatial/visual changes, or obstacle
   difficulty;
-- update faction notes for visible moves, hidden pressure, or changed faction
-  capability or visual identity;
+- update faction notes only for stable desire, methods, capability, dependencies,
+  representative, or visual identity; write current offscreen motion/pressure
+  to `world_dynamics.md` and current player relationships to
+  `relationship_map.md`;
 - update `current_state.yaml` for immediate next-session state;
 - update `active_cast.md` for relevant NPC whereabouts, activity, objective,
   availability, presence reason, and next independent move;
 - update `location_graph.md` only when route, access, travel, traffic, or
   player-known connection truth changed;
-- update `opening_brief.md` as `post_arc_opening` when the next session needs a
-  fresh opening bridge.
+- update `opening_brief.md` as `post_arc_opening` with Opening status `pending`
+  while drafting and `active` only after the next opening is complete; the
+  historical `first_session.md` remains `consumed`.
 - patch Dashboard V3 through `tools/update_dashboard.py` when an approved tile
   has player-known scene, thread, clue, inventory, NPC, map, visual, or
   character information to refresh.
@@ -122,7 +129,7 @@ A good Lite distill captures:
 Avoid summaries that read like command logs. Prefer dramatic consequence over
 mechanical bookkeeping.
 
-# Turn Protocol Distill
+# Persistence Boundaries
 
 Read `current_state.yaml.persistence` and all `### Durable Revision N` entries
 after the most recent `### Distilled Through Revision N` marker. The durable
@@ -130,15 +137,34 @@ event is recovery evidence, not a substitute for current truth; when they
 conflict, `current_state.yaml` wins and the correction is appended rather than
 rewriting history.
 
-Distill is mandatory at the first applicable boundary:
+Soft turns write nothing and run no check. Local-durable turns update immediate
+authorities, append their single revision event, increment the durable counter,
+and run only the bounded hot structural check. Neither invokes this workflow.
 
-- any scene end;
-- five durable turns for Fast;
-- three durable turns for Balanced;
+## Scene Checkpoint
+
+At a scene end, interruption, or handoff, persist only:
+
+- `current_state.yaml.scene_frame`, including the last causal beat, no more
+  than three pending consequences, and the concrete resume anchor;
+- relevant current whereabouts/activity in `active_cast.md`;
+- any immediate authority and durable event already required by what changed.
+
+Do not reconcile queued cold targets, reset the durable counter, append a
+distilled-through marker, or run the full check merely because a scene ended.
+Pure checkpoint propagation creates no new continuity revision.
+
+## Full Distill
+
+Full distill is mandatory at the first applicable trigger:
+
+- five durable turns for Fast (`scene_checkpoint_or_5_durable`);
+- three durable turns for Balanced (`scene_checkpoint_or_3_durable`);
 - every durable turn for Maximum Continuity;
-- a session pause/end, scenario/arc/campaign closure, advancement/reward gate,
-  canon/research lock, continuity conflict, manual full-save request, or
-  profile change.
+- a session pause/end or scenario/arc/campaign closure;
+- an advancement/reward reconciliation, canon/research lock, continuity
+  conflict, explicit full-save request, or a change away from a batching
+  profile.
 
 For each pending event:
 
@@ -162,15 +188,16 @@ durable revision event, then distill through that revision.
 # Deferred Note Enrichment
 
 A T2/T3 element created during play may begin as a small playable card rather
-than forcing an immediate full distill. At the next safe structural boundary,
-enrich only promoted elements that remain relevant:
+than forcing an immediate full distill. At the next full distill, enrich only
+promoted elements that remain relevant:
 
 - recurring NPCs gain baseline routine, availability logic, independent aim,
-  knowledge limits, voice, appearance, and current relationships;
+  knowledge limits, voice, appearance, and relationship/knowledge references;
 - recurring places gain traffic, ordinary population, access, presence logic,
   routes, and current disruption;
-- recurring factions gain capability, method, representative, current move,
-  visibility channel, and next move if ignored.
+- recurring factions gain stable capability, method, representative, and a
+  `world_dynamics.md` domain reference; current move, visibility channel, and
+  next evaluation remain in the referenced domain.
 
 Do not expand an incidental element merely to fill a template. Clear the
 pending cold target once the smallest complete note is validated.
@@ -225,9 +252,20 @@ finalizing memory:
 Major arc closure should usually change both character capability and world
 state. Do not reduce every reward to a stat increase.
 
-Set `Advancement status` to `due` only at the selected cadence and use the
-profile's presentation policy. A post-arc opening may be drafted, but the GM
-must not play it while advancement is `due` or `offered`.
+Set `Advancement status` to `due` only at the selected cadence and follow the
+profile's presentation policy:
+
+- `none` opens no automatic gate;
+- `automatic_fictional` applies or presents earned change through an
+  established fictional channel without a mandatory OOC interruption; pause
+  only if an unresolved Player choice is necessary;
+- `explicit_ooc` opens a hard table-facing gate only when a choice is required.
+  If the Player defers, record it as deferred, apply nothing, and do not open a
+  next act that depends on the choice; a calm aftermath or breather may
+  continue.
+
+A post-arc opening may be drafted while a choice waits, but dependent next-act
+play must not begin.
 
 # Carry-Forward Review
 
@@ -256,9 +294,12 @@ remember or that the world should remember.
 If the next act requires Designer decisions, write concise questions in
 `next_act_prep.md` instead of silently choosing the whole new frame.
 
-Use `next_act_prep.md` to update `opening_brief.md` as `post_arc_opening` only
-after the advancement gate is cleared and the required next-act questions are
-answered or defaulted.
+Use `next_act_prep.md` to draft `opening_brief.md` as `post_arc_opening` with
+Opening status `pending`. Move it to `active` only after required next-act
+questions are answered/defaulted and any advancement choice on which the next
+act depends is cleared. Automatic fictional advancement does not require a
+separate OOC clearance. After narration uses the opening, mark it `consumed`;
+do not change the already historical `first_session.md` lifecycle.
 
 # Memory Hygiene
 
@@ -325,7 +366,7 @@ important.
 When an element is no longer active, move or mark it as dormant/resolved in
 `creation_ledger.md` while preserving the continuity consequence.
 
-# NPC Naturalism Check
+# NPC Agency And Naturalism Review
 
 At the end of a session or arc, review recurring NPCs:
 
@@ -337,21 +378,28 @@ At the end of a session or arc, review recurring NPCs:
   busy, warm, indifferent, practical, afraid, greedy, official, or helpful.
 - If a key clue was buried inside personality prose, move it into
   `secrets_and_clues.md` or the NPC's `Key Info, If Any`.
+- Fill missing Agency Card decisions for promoted T2/T3 NPCs and run the
+  model-only six-axis Contrast Pass against the two closest active NPCs.
+- When a T3 or player-important T2 leaves active cast, preserve its goal,
+  method, next decision, evaluation trigger/time horizon, and visible result
+  channel without evaluating it until a relevant trigger occurs.
 
 # Stat And Difficulty Review
 
-At the end of a session or arc, review stat grounding:
+At the end of a session or arc, review capability grounding according to
+`play_profile.yaml.mechanics.resolution_grounding`:
 
-- If a T1 NPC became T2, add a stat block, power band, key capabilities, and
-  weak stats or blind spots.
+- If a T1 NPC became T2, add a power band or fictional capability grounding,
+  key capabilities, and limits/blind spots. Add the eight-stat block only for
+  `numeric` grounding.
 - If a companion meaningfully participated, verify their stats and current
   growth ceiling still fit the campaign stage.
-- If an obstacle became important, add relevant stat, difficulty, and outcome
-  meanings to the place note or rules.
+- If an obstacle became important, add the relevant fictional position, band,
+  or numeric difficulty and outcome meanings to the place note or rules.
 - If fiction showed an NPC or faction to be stronger or weaker than written,
   update the note instead of letting future play drift.
-- If too many early-stage NPCs have 4 or 5 stats, lower ordinary characters or
-  explain why they are exceptional.
+- Under `numeric`, if too many early-stage NPCs have 4 or 5 stats, lower
+  ordinary characters or explain why they are exceptional.
 
 # Next Session Brief
 
@@ -384,7 +432,10 @@ Review only domains touched by elapsed time or play:
 
 # Narration Variety Review
 
-Review recent style findings and table feel:
+Run this review only when `style_review_policy` selects the distill output or a
+representative sample. Keep fingerprints short and categorical: dramatic beat,
+GM move, ending form, sensory channel, complication type, NPC social tactic,
+and metaphor family. Review recent findings and table feel:
 
 - add genuinely overused phrases, gestures, sensory tells, or similes to the
   campaign avoid-list;
@@ -393,6 +444,12 @@ Review recent style findings and table feel:
   character speech;
 - remove stale avoid-list entries only when the Designer deliberately wants
   them available again.
+
+`tools/check_style.py` is warning-only and never rewrites prose. Causality,
+Player authorship, NPC agency/presence, knowledge limits, voice contrast,
+pacing, and continuation are model-reviewed with the GM Spine rubric only when
+sampled or explicitly audited; do not add a semantic Python checker or run one
+per turn.
 
 # Dashboard Distill
 
@@ -416,7 +473,9 @@ campaign memory and knowledge boundaries until play reveals them.
 # Post-Arc Opening Brief
 
 When a session, arc, or scene chain closes and the next session should start in
-a new situation, update `opening_brief.md` to `post_arc_opening`.
+a new situation, update `opening_brief.md` to `post_arc_opening`. Keep Opening
+status `pending` during preparation, set it to `active` at the playable
+transition gate, and set it to `consumed` after its narration is used.
 
 The bridge should be 2 to 5 player-facing sentences before close scene
 narration. It should state:

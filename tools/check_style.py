@@ -16,6 +16,16 @@ from typing import Any
 WORD_RE = re.compile(r"\b[\w']+\b", re.UNICODE)
 SENTENCE_RE = re.compile(r"(?<=[.!?])\s+|\n+")
 SPEAKER_TYPES = {"narrator", "npc", "companion", "mixed", "other"}
+CATEGORICAL_FIELDS = (
+    "dramatic_beat",
+    "gm_move",
+    "ending_form",
+    "sensory_channel",
+    "complication_type",
+    "npc_social_tactic",
+    "metaphor_family",
+)
+CATEGORICAL_HISTORY_LIMIT = 8
 
 
 def _words(text: str) -> list[str]:
@@ -37,6 +47,7 @@ def _fingerprint(
     scene_id: str | None = None,
     speaker_type: str = "narrator",
     speaker_id: str | None = None,
+    categories: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     words = _words(text)
     sentences = [part.strip() for part in SENTENCE_RE.split(text) if part.strip()]
@@ -53,7 +64,7 @@ def _fingerprint(
             if len(set(words[index : index + 4])) > 1
         }
     )
-    return {
+    fingerprint = {
         "recorded_at": datetime.now(timezone.utc).isoformat(),
         "beat_id": beat_id,
         "scene_id": scene_id,
@@ -66,6 +77,9 @@ def _fingerprint(
         "sentence_starters": starters[:20],
         "four_grams": ngrams[:300],
     }
+    if categories:
+        fingerprint.update(categories)
+    return fingerprint
 
 
 def _load_state(path: Path) -> dict[str, Any]:
@@ -74,6 +88,8 @@ def _load_state(path: Path) -> dict[str, Any]:
         raise ValueError("style state must be a JSON object")
     if not isinstance(data.get("history", []), list):
         raise ValueError("style state history must be a list")
+    if not isinstance(data.get("categorical_history", []), list):
+        raise ValueError("style state categorical_history must be a list")
     return data
 
 
@@ -112,6 +128,13 @@ def check_style(
     scene_id: str | None = None,
     speaker_type: str = "narrator",
     speaker_id: str | None = None,
+    dramatic_beat: str | None = None,
+    gm_move: str | None = None,
+    ending_form: str | None = None,
+    sensory_channel: str | None = None,
+    complication_type: str | None = None,
+    npc_social_tactic: str | None = None,
+    metaphor_family: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     if speaker_type not in SPEAKER_TYPES:
         raise ValueError(f"speaker_type must be one of: {', '.join(sorted(SPEAKER_TYPES))}")
@@ -122,12 +145,29 @@ def check_style(
     for value, name in ((beat_id, "beat_id"), (scene_id, "scene_id")):
         if value is not None and (not isinstance(value, str) or not value.strip()):
             raise ValueError(f"{name} must be a non-empty string when provided")
+    raw_categories = {
+        "dramatic_beat": dramatic_beat,
+        "gm_move": gm_move,
+        "ending_form": ending_form,
+        "sensory_channel": sensory_channel,
+        "complication_type": complication_type,
+        "npc_social_tactic": npc_social_tactic,
+        "metaphor_family": metaphor_family,
+    }
+    categories: dict[str, str] = {}
+    for name, value in raw_categories.items():
+        if value is None:
+            continue
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{name} must be a non-empty string when provided")
+        categories[name] = value.strip()
     current = _fingerprint(
         text,
         beat_id=beat_id.strip() if isinstance(beat_id, str) else None,
         scene_id=scene_id.strip() if isinstance(scene_id, str) else None,
         speaker_type=speaker_type,
         speaker_id=speaker_id.strip() if isinstance(speaker_id, str) else None,
+        categories=categories,
     )
     history = [item for item in state.get("history", []) if isinstance(item, dict)]
     comparable_history = [item for item in history if _same_voice_context(item, current)]
@@ -182,6 +222,32 @@ def check_style(
             }
         )
 
+    # These labels are supplied by the GM at sampled review/distill cadence.
+    # They are deliberately treated as compact fingerprints: this checker
+    # reports repetition but never decides whether a beat is narratively good
+    # and never rewrites prose.
+    categorical_limit = state.get("max_categorical_history", CATEGORICAL_HISTORY_LIMIT)
+    if type(categorical_limit) is not int or not 1 <= categorical_limit <= CATEGORICAL_HISTORY_LIMIT:
+        raise ValueError("max_categorical_history must be an integer from 1 through 8")
+    categorical_history = [
+        item for item in state.get("categorical_history", []) if isinstance(item, dict)
+    ][-categorical_limit:]
+    comparable_categories = [
+        item for item in categorical_history if _same_voice_context(item, current)
+    ]
+    for field, value in categories.items():
+        prior_count = sum(item.get(field) == value for item in comparable_categories)
+        if prior_count >= 2:
+            findings.append(
+                {
+                    "severity": "warning",
+                    "rule": "categorical_repetition",
+                    "category": field,
+                    "detail": value,
+                    "prior_occurrences": prior_count,
+                }
+            )
+
     if speaker_type in {"npc", "companion"} and findings:
         for finding in findings:
             if finding["rule"] in {"sentence_starter_repetition", "phrase_shape_repetition"}:
@@ -206,6 +272,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Separate narrator patterns from named character voice patterns.",
     )
     parser.add_argument("--speaker-id", help="Stable character id; required for npc or companion entries.")
+    for field in CATEGORICAL_FIELDS:
+        parser.add_argument(
+            f"--{field.replace('_', '-')}",
+            dest=field,
+            help=f"Optional sampled category: {field}.",
+        )
     args = parser.parse_args(argv)
 
     path = Path(args.state_path).resolve()
@@ -219,13 +291,34 @@ def main(argv: list[str] | None = None) -> int:
             scene_id=args.scene_id,
             speaker_type=args.speaker_type,
             speaker_id=args.speaker_id,
+            **{field: getattr(args, field) for field in CATEGORICAL_FIELDS},
         )
         if args.record:
             maximum = int(state.get("max_history", 8))
             if maximum < 1:
                 raise ValueError("max_history must be at least 1")
             state["history"] = (state.get("history", []) + [fingerprint])[-maximum:]
-            state["schema_version"] = 2
+            category_record = {
+                "recorded_at": fingerprint["recorded_at"],
+                "beat_id": fingerprint["beat_id"],
+                "scene_id": fingerprint["scene_id"],
+                "speaker_type": fingerprint["speaker_type"],
+                "speaker_id": fingerprint["speaker_id"],
+                **{field: fingerprint[field] for field in CATEGORICAL_FIELDS if field in fingerprint},
+            }
+            if any(field in category_record for field in CATEGORICAL_FIELDS):
+                categorical_limit = int(state.get("max_categorical_history", CATEGORICAL_HISTORY_LIMIT))
+                if not 1 <= categorical_limit <= CATEGORICAL_HISTORY_LIMIT:
+                    raise ValueError("max_categorical_history must be from 1 through 8")
+                state["categorical_history"] = (
+                    state.get("categorical_history", []) + [category_record]
+                )[-categorical_limit:]
+            else:
+                state.setdefault("categorical_history", [])
+            state["schema_version"] = 3
+            state["max_categorical_history"] = int(
+                state.get("max_categorical_history", CATEGORICAL_HISTORY_LIMIT)
+            )
             state["last_beat_id"] = fingerprint["beat_id"]
             state["last_scene_id"] = fingerprint["scene_id"]
             state["last_speaker"] = {

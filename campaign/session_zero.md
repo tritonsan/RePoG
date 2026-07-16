@@ -74,6 +74,17 @@ one bundle as a single decision. Each option must state:
 - Deferred questions:
 - Explicitly approved mechanics:
 - Explicitly declined mechanics:
+- Resolution grounding: fictional | bands | numeric
+- Narrative Signature anchors, maximum 3:
+- Narrative habits to avoid, maximum 3:
+- Interiority policy: player_owned | shared_when_invited | guided
+- Sensory priorities, maximum 2:
+- Dialogue balance: dialogue_forward | balanced | narration_forward
+- Humor: minimal | situational | frequent
+- Emotional distance: close | moderate | detached
+- Breather frequency: sparse | balanced | generous
+- Breather exit policy: player_led | player_led_with_established_triggers |
+  world_led
 
 `accept` accepts the displayed bundle, including only mechanics clearly listed
 for approval. `mix` combines named parts of displayed bundles. `change` asks
@@ -117,7 +128,8 @@ See `research_dossier.md`.
 
 - Dominant play modes:
 - Mechanics weight:
-- Stat model:
+- Resolution grounding: fictional | bands | numeric
+- Stat model, only when numeric:
 - Starting level:
 - Deterministic checks:
 - Deterministic resources/cooldowns/regeneration:
@@ -136,7 +148,8 @@ See `research_dossier.md`.
 - Routine-turn estimate:
 - Durable-turn estimate:
 - Structural / boundary-turn estimate:
-- Cold distill policy:
+- Cold distill policy: every_durable | scene_checkpoint_or_3_durable |
+  scene_checkpoint_or_5_durable | scene_checkpoint_only
 - Validation policy:
 - Dashboard refresh policy:
 - Style review policy:
@@ -232,6 +245,11 @@ See `player_ties.md`.
 
 See `opening_brief.md` and `first_session.md`.
 
+- First-session prep status: drafting | materialized | consumed
+- Opening status: pending | active | consumed
+- Opening scene mode: ambient | focused | crisis | aftermath | transition |
+  breather
+
 ## 17. Continuity Rules
 
 - Creation capture:
@@ -248,6 +266,7 @@ See `opening_brief.md` and `first_session.md`.
 - Selective hot context:
 - Triggered lookups:
 - On-demand world domains:
+- Source-of-truth ownership map:
 - Context revision and source-of-truth precedence:
 - Visual generation:
 - Visual canon:
@@ -272,6 +291,15 @@ Store the accepted values in `play_profile.yaml` and mirror explanations in
 - Clue density: low | balanced | high
 - Dialogue style: plain | balanced | heightened
 - Pacing: dynamic | deliberate | urgent
+- Narrative Signature anchors, maximum 3:
+- Narrative habits to avoid, maximum 3:
+- Interiority: player_owned | shared_when_invited | guided
+- Sensory focus, maximum 2:
+- Dialogue balance: dialogue_forward | balanced | narration_forward
+- Humor: minimal | situational | frequent
+- Emotional distance: close | moderate | detached
+- Breather frequency: sparse | balanced | generous
+- Breather exit: player_led | player_led_with_established_triggers | world_led
 
 ## Open Questions For Play
 
