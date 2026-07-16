@@ -99,17 +99,14 @@ Generated images are drafts until accepted.
 
 ## Visual Interaction State
 
-Use this checkpoint so image generation cannot strand Session 0 or play. Clear
-it after acceptance, rejection, or an explicit decision to continue without
-the draft.
+`visual_state.json` is the authoritative interaction checkpoint. It permits one
+pending draft at a time and preserves the interrupted context, last meaningful
+beat, return anchor, next step, and requested dashboard placement. Do not copy
+that changing state into this file.
 
-- Pending visual review: no
-- Draft target:
-- Interrupted context: none
-- Return anchor:
-- Next step after review:
-- Dashboard placement requested: no
-- Dashboard placement completed: no
+Use `tools/visual_handoff.py` for `begin`, `attach`, `revise`, `accept`, and
+`cancel`. A visual is not complete until the command returns a `resume` object
+and the GM uses it to restore Session 0 or Player control.
 
 ## Display Policy
 
@@ -122,10 +119,10 @@ the draft.
 Player-facing display should be brief and natural. Do not expose file paths,
 tool names, prompts, quota language, or implementation notes in Player Mode.
 
-Before generating a draft, tell the Player that the next result may contain
-only the image and that they should reply with acceptance or revisions. After
-the visual task, resume the stored return anchor instead of ending with a bare
-update confirmation.
+Before generating a draft, run the begin step and use its player instruction:
+the next result may contain only the image and the Player should reply with
+acceptance or revisions. After the visual task, use the returned resume anchor
+instead of ending with a bare update confirmation.
 
 ## Visual Continuity Rules
 

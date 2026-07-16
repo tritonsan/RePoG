@@ -1,11 +1,18 @@
 {
-  "schema_version": "1.0",
-  "dashboard_version": 2,
+  "schema_version": "3.0",
+  "dashboard_version": 3,
+  "dashboard_revision": 0,
+  "source_revision": 0,
+  "scene_id": "",
   "updated_at": "",
   "refresh_interval_ms": 4000,
+  "refresh": {
+    "status": "setup_pending",
+    "reason": "Waiting for Session Zero"
+  },
   "campaign": {
     "title": "New Campaign",
-    "pitch": "The campaign board will fill in as play begins.",
+    "pitch": "Choose how you want to play, then the campaign board will grow with the adventure.",
     "tone": "Unset"
   },
   "theme": {
@@ -13,48 +20,18 @@
     "background": "#0f1115",
     "mood": "Quiet table"
   },
-  "scene": {
-    "title": "Ready For Session Zero",
-    "location": "Not set yet",
-    "time": "",
-    "summary": "Answer the setup questions, then this board can show the current place, visible pressure, and player-known context.",
-    "pressure": "",
-    "image": ""
-  },
-  "player": {
-    "name": "Unnamed Character",
-    "concept": "Not created yet",
-    "condition": "Ready",
-    "goal": "",
-    "image": "",
-    "stats": {
-      "Power": 2,
-      "Agility": 2,
-      "Endurance": 2,
-      "Technique": 2,
-      "Perception": 2,
-      "Wits": 2,
-      "Presence": 2,
-      "Will": 2
-    },
-    "capabilities": []
-  },
-  "companions": [],
-  "visible_npcs": [],
-  "active_threads": [],
-  "known_clues": [],
-  "inventory": [],
-  "map": {
-    "mode": "leaflet_simple",
-    "summary": "Player-known space",
-    "background_image": "",
-    "bounds": {
-      "width": 1000,
-      "height": 640
-    },
-    "current_node_id": "",
-    "nodes": [],
-    "edges": []
-  },
-  "visuals": []
+  "tiles": [
+    {
+      "id": "setup",
+      "type": "setup_progress",
+      "title": "Session Zero",
+      "order": 10,
+      "data": {
+        "status": "pending",
+        "summary": "Your campaign choices will appear here as they are confirmed.",
+        "completed": 0,
+        "target": null
+      }
+    }
+  ]
 }

@@ -13,16 +13,22 @@ Status values:
 - `deprecated`: no longer current, but kept as history.
 - `needs_regen`: useful concept, but should be remade.
 
-Generation alone does not mean acceptance. A request to generate and add an
-image to the dashboard remains incomplete until the Player accepts the draft,
-the accepted asset exists under `dashboard/assets/`, and the dashboard state
-references that asset.
+Generation alone does not mean acceptance. `visual_state.json` and
+`tools/visual_handoff.py` enforce the draft, review, acceptance, placement, and
+return chain. A request to generate and add an image remains incomplete until
+the accepted asset exists under the appropriate `visuals/` category and
+`dashboard/assets/`, the dashboard references it when placement was requested,
+and the saved return anchor is resumed.
 
 ## Visual Index
 
 `Name | Type | Status | Image File | Linked Element | Prompt Used | Canon Notes | Last Shown`
 
 - `Example | npc | draft | visuals/_drafts/example.png | characters/example.md | short prompt summary | not canon yet | never`
+
+Accepted entries are added by the visual handoff tool. Keep draft rows here
+only as a human-readable index; draft files must never be referenced by the
+player dashboard.
 
 ## Accepted Visual Canon
 
