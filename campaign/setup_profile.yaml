@@ -1,6 +1,7 @@
-schema_version: 2
+schema_version: 3
 workspace_mode: standalone
 status: pending
+setup_revision: 0
 session_zero_mode: ""
 question_target: ""
 questions_completed: 0
@@ -10,10 +11,3 @@ defaulted_packs: []
 deferred_decisions: []
 last_checkpoint: 0
 ready_for_play: false
-turn_protocol: ""
-cold_distill_policy: ""
-validation_policy: ""
-dashboard_refresh_policy: ""
-style_review_policy: ""
-latency_notice_policy: exceptional_only
-performance_estimate_acknowledged: false

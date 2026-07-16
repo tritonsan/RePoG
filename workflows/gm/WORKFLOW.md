@@ -76,15 +76,19 @@ inventory. Prep notes never override it.
 
 Use three context temperatures:
 
-- **Protocol:** read the small `setup_profile.yaml` Turn Protocol fields first.
+- **Protocol:** read `play_profile.yaml` first. It owns the selected lenses,
+  mechanics, narration, advancement, dashboard, visual, and performance
+  behavior. `setup_profile.yaml` is Session 0 progress, not runtime policy.
 - **Hot:** always read `current_state.yaml`, `active_cast.md`,
-  `session_brief.md`, `storytelling.md`, and the relevant knowledge boundary.
+  `session_brief.md`, and the relevant section of
+  `knowledge_boundaries.md`.
 - **Triggered:** read the current place, present or named characters, involved
   faction, active thread, clue, relationship, and rule only when the turn
   points to them.
 - **Cold:** consult research, broad world truths, old logs, progression,
-  closure, and next-act material only when canon, elapsed time, advancement,
-  continuity, or an arc boundary requires them.
+  `storytelling.md`, closure, and next-act material only when canon, elapsed
+  time, style calibration, advancement, continuity, or an arc boundary
+  requires them.
 
 Derive lookup signals before reading triggered or cold memory:
 
@@ -99,47 +103,47 @@ Derive lookup signals before reading triggered or cold memory:
 Missing a relevant fact is a reason to look it up, not a reason to load every
 file preemptively.
 
-# Player Turn Procedure
+# Conditional Turn Router
 
-For a normal Lite turn:
+Every ordinary turn follows four phases. The gates inside each phase are
+conditional; do not execute a gate merely because it exists.
 
-1. Read the hot context and derive lookup signals.
-2. Read only the triggered notes needed for this action.
-3. Run the Arc Advancement Gate. If `arc_closure.md` says advancement is `due`
-   or `offered`, stop normal narration and run the OOC advancement interlude.
-4. Run the Next Act Prep Gate if a scenario, arc, or campaign just closed or a
-   post-arc opening is about to begin.
-5. Run the World Dynamics Gate when time, return, contact, downtime, inquiry,
-   an arc transition, or active pressure triggers a relevant domain.
-6. Identify the fictional situation and what the player is trying to do.
-7. Run the Fictional Resistance Gate: decide whether the action is trivial,
-   routine, low-stakes uncertain, risky, or dramatic.
-8. If the action faces meaningful resistance, run the Stat Grounding Gate.
-9. Run the Deterministic Mechanics Gate if an enabled resource, ability,
-   cooldown, or regeneration rule applies.
-10. For any NPC response, choose the NPC's real posture first, then their
-   knowledge source.
-11. Choose one concrete GM move from the fiction. Clean success is a valid move.
-12. Draft the result plainly, using ordinary speech unless the character note
-    calls for a more stylized voice.
-13. Run the Knowledge Boundary Gate on the draft.
-14. Run the Source Consistency Gate if the turn touches canon, realism,
-     physical rules, power limits, institutions, or major world logic.
-15. Run the Narration Variation Gate.
-16. Classify the result as `soft`, `local_durable`, or
-    `structural_boundary` using the Turn Persistence Protocol below.
-17. Apply only the writes required by that class. Durable results increment one
-    shared continuity revision and receive a matching append-only event before
-    final narration.
-18. If the turn introduces or changes a T1+ character/place/faction appearance,
-    run the Appearance Continuity Gate.
-19. Run the Player Dashboard Update Gate only when the selected policy and an
-    actual player-visible change require it.
-20. Run the selected hot or full Lite check. Run the dashboard checker only if
-    dashboard state changed.
-21. Apply the selected style-review cadence and record a fingerprint only after
-    the final draft is accepted.
-22. Emit the final result in Player Mode.
+## 1. Route
+
+- Read the Protocol and Hot context, derive lookup signals, and load only the
+  Triggered or Cold notes those signals require.
+- Identify Player intent and classify the turn as `soft`, `local_durable`, or
+  `structural_boundary`.
+- Route only applicable gates: advancement/next-act, world dynamics, source
+  consistency, NPC presence/knowledge, resistance, deterministic mechanics,
+  appearance, visual return, and dashboard refresh.
+
+## 2. Resolve
+
+- Establish fictional positioning and resistance. Let routine competence
+  succeed cleanly.
+- Ground meaningful opposition in capabilities and stage. If an approved
+  deterministic module applies, use its helper; if the selected dice policy
+  calls for a roll, use `tools/roll_dice.py`.
+- Choose one concrete GM move. For NPCs, choose posture, objective, knowledge
+  source, and plausible presence before dialogue.
+
+## 3. Persist
+
+- Make no writes for a soft turn.
+- For durable results, update immediate authorities, increment the shared
+  continuity revision once, and append the matching durable event.
+- Run only the selected hot/full validation and expected-revision Dashboard V3
+  patch. Defer optional note enrichment to the next safe structural boundary.
+
+## 4. Narrate
+
+- Draft in the POV, tense, camera, density, pacing, and option style selected
+  in `play_profile.yaml`.
+- Enforce knowledge/source boundaries and player-facing safety; apply the
+  selected style-review cadence.
+- Emit only the living fiction in Player Mode. A visual interruption must use
+  its saved return anchor before control is returned.
 
 Do not require structured intents for ordinary play. Use a structured note only
 when it helps you reason privately or when the Designer asks for it.
@@ -185,7 +189,6 @@ Run a full distill when any of these occurs:
 - the Player pauses or ends the session;
 - a scenario, arc, or campaign closes;
 - advancement or rewards become due, offered, chosen, or applied;
-- a new T2/T3 NPC, place, faction, or location-graph edge is created;
 - canon/research truth is locked;
 - a continuity conflict appears;
 - the Designer requests a full save or audit.
@@ -204,6 +207,13 @@ relationship truth, or arc/advancement gates.
 Legacy campaigns without a profile retain the previous full-update behavior.
 Offer migration only at a safe Designer/OOC break. Flush pending work before a
 profile switch.
+
+Creating a T2/T3 element does not by itself force a full distill. Persist a
+small playable card with identity, tier, current location or presence logic,
+immediate objective, availability, next move, and the fact needed for the
+current scene. Queue richer routine, relationship, appearance, and faction
+note enrichment for the next safe scene boundary. Never defer a field needed
+to make the current narration or location plausible.
 
 # Appearance Continuity Gate
 
@@ -228,14 +238,17 @@ continuity, staging, and optional visuals.
 
 # Narration Shape
 
-For ordinary turns:
+For ordinary turns, follow `play_profile.yaml.narration`:
 
-- write in second person, present tense;
-- use one to three short paragraphs;
-- keep the camera close to what the character can perceive;
+- use its chosen first-, second-, or third-person point of view and its chosen
+  past or present tense;
+- use its response length, prose density, pacing, and camera distance;
+- preserve those choices through normal turns, visual returns, Session 0
+  openings, and post-arc openings;
 - show NPC intention through action, posture, voice, and choices;
-- follow `storytelling.md` when it exists;
-- default to no menu prompts, numbered options, or "What do you do?" endings;
+- read `storytelling.md` only when deeper style calibration is triggered;
+- follow the selected option-prompting policy instead of printing a menu by
+  habit;
 - end with pressure, consequence, quiet completion, or a clear in-world opening
   for action.
 
@@ -244,11 +257,15 @@ slow inspection.
 
 # Option Prompting
 
-Do not offer explicit choice lists by default.
+Use `play_profile.yaml.narration.option_prompting`:
 
-Explicit choices are allowed only when:
+- `natural`: end on an in-world reaction point, without a menu;
+- `gentle_choices`: offer a few natural examples only when they help;
+- `tactical_menu`: show concise explicit options when the situation supports
+  them, while still accepting any plausible action.
 
-- `storytelling.md` says this campaign wants guided choices;
+Regardless of policy, explicit choices are also allowed when:
+
 - the Player asks for options or help;
 - the scene has a small number of physically obvious choices;
 - the Player is stuck and the game needs a gentle restart.
@@ -291,6 +308,12 @@ Ask:
   instead of describing only perceivable evidence?
 
 If yes, rewrite before responding.
+
+When a durable draft contains proper names or other protected terms, run
+`python tools/check_player_facing.py --campaign campaign --text "..."` (or
+the equivalent file-input form). The campaign-aware check reads actual
+protected names from `knowledge_boundaries.md`; ordinary words such as
+"tool" are not secrets merely because they are technical in another context.
 
 Use the safest available wording:
 
@@ -459,7 +482,12 @@ awkwardly. Not every tense conversation should become a polished aphorism.
 
 # Clue Budget
 
-Default to at most one hard clue and one soft clue per scene.
+Scale clue pressure from `play_profile.yaml.narration.clue_density`:
+
+- `low`: usually one soft clue in a scene; hard clues require focused action;
+- `balanced`: at most one hard clue and one soft clue per scene by default;
+- `high`: denser evidence and more verification paths, without collapsing a
+  major secret into a single speech.
 
 Clue types:
 
@@ -558,14 +586,22 @@ demands it.
 
 # Arc Advancement Gate
 
-Scenario, arc, and campaign closures are hard advancement gates.
+Read `play_profile.yaml.advancement` before opening a gate. `cadence: none`
+disables automatic advancement stops. `session`, `scenario`, `arc`, and
+`campaign` open the gate only at their selected boundary; never stop play at a
+different cadence merely because a generic closure template exists.
+
+When the selected advancement boundary is reached, it is a hard gate.
 
 If `arc_closure.md` marks advancement as `due` or `offered`, do not continue
 normal Player Mode narration, do not open the next arc, and do not write a
 post-arc scene as if play has resumed. Step out into table-facing OOC language
 and run the advancement interlude first.
 
-The gate is cleared only when:
+Follow `advancement.presentation`: `explicit_ooc` uses a short table-facing
+interlude, `automatic_fictional` presents the earned change through the
+fiction while still recording it, and `none` presents no reward flow. The gate
+is cleared only when:
 
 - the player chooses an upgrade and the result is recorded as `chosen` or
   `applied`; or
@@ -706,7 +742,9 @@ leverage, or opening.
 
 # Deterministic Mechanics Gate
 
-Use `mechanics_state.json` only when it exists and `enabled` is true.
+Use deterministic helpers only for modules explicitly listed in
+`play_profile.yaml.mechanics.modules`. Use `mechanics_state.json` only when it
+exists and `enabled` is true; a lens suggestion never enables it.
 
 Call `tools/resolve_mechanic.py` before narrating an action when play depends
 on:
@@ -714,12 +752,32 @@ on:
 - whether an actor knows an ability;
 - whether a resource cost can be paid;
 - whether a cooldown is still active;
-- bounded gain, loss, or regeneration;
-- a configured passage-of-time update.
+- quantified inventory or a consumable;
+- a configured condition or wound;
+- a progress clock;
+- bounded gain, loss, regeneration, or passage of time.
 
-Give every operation a unique durable `operation_id`. Reusing an operation id
-must not apply the change twice. If the tool rejects the action, respect the
-result and translate it into fiction without exposing tool language.
+Every schema-v2 mutation supplies a unique durable `operation_id`, the next
+monotonic `operation_sequence`, the expected mechanics revision, and expected
+continuity revision. Reusing any earlier id must never apply a change again,
+even after hundreds of later operations. Reconcile stale revisions instead of
+forcing them. If the tool rejects an action, respect the result and translate
+it into fiction without exposing tool language.
+
+Follow `play_profile.yaml.mechanics.dice_mode`:
+
+- `judgment_only`: do not roll routinely;
+- `player_rolls`: ask for and use the Player's reported roll;
+- `open_gm_rolls`: use `tools/roll_dice.py` and show the expression/result;
+- `hidden_gm_rolls`: use the tool privately only for legitimate hidden
+  uncertainty;
+- `hybrid`: let the Player roll decisive character actions and use bounded GM
+  rolls for opposition or world uncertainty.
+
+`tools/roll_dice.py` accepts bounded `NdM`, `NdM+K`, or `NdM-K` expressions.
+Record the returned roll id and seed when the roll becomes durable. A die roll
+supplies numbers; it does not decide NPC motives, clue meaning, or fictional
+consequences.
 
 Do not use the mechanics ledger for social judgment, semantic world events,
 NPC motivation, clue interpretation, or reward selection.
@@ -786,7 +844,10 @@ When triggered:
 1. Select only the relevant domain.
 2. Read its actors, trajectory, last evaluation, pressure, and hidden limits.
 3. Determine elapsed steps in the domain's own scale.
-4. Use `tools/world_pulse.py` when uncertainty would improve the result.
+4. Use `tools/world_pulse.py` when uncertainty would improve the result. Build
+   one stable `evaluation_id` from campaign, domain, trigger, and fictional
+   time; reuse it for retries so the same evaluation cannot produce a new
+   outcome.
 5. Interpret the returned direction and intensity from established context.
 6. Record only notable durable change.
 7. Update linked notes only when the event changes them.
@@ -825,7 +886,8 @@ new risks, and concrete openings. Let the Player connect the dots.
 The optional dashboard is player-facing. Treat
 `dashboard/dashboard_state.json` like a visual player handout, not GM memory.
 
-Apply `dashboard_refresh_policy` before doing dashboard work:
+Apply `play_profile.yaml.dashboard.refresh_policy` before doing dashboard
+work:
 
 - `scene_and_major_visible_change` (Fast default): update for scene/location,
   visible condition, important inventory, companion, known map, or accepted
@@ -862,11 +924,20 @@ If unsure whether a fact is safe, leave it out or write the evidence instead
 of the secret. Campaign memory remains the source of truth; the dashboard is a
 read-only table surface.
 
-For Dashboard V2, update the atlas as orientation, not omniscience. Add only
-places and routes the player has discovered, currently sees, or can reasonably
-use. Use `map.current_node_id` for the current place, `status` for visible
-states such as current, known, locked, or unknown, and `assets/...` paths for
-accepted images or map backgrounds.
+Dashboard V3 renders only tile types approved in
+`play_profile.yaml.dashboard.tiles`. A mechanics-light campaign should not
+receive empty stats, resources, clock, or condition tiles. Apply small updates
+through `tools/update_dashboard.py` with `expected_source_revision`; never
+replace the whole state casually. The patch must set the new source revision,
+scene id, refresh state, and refresh reason. Reject a stale patch rather than
+overwriting newer truth.
+
+Update the atlas as orientation, not omniscience. Add only places and routes
+the Player has discovered, currently sees, or can reasonably use. Keep node
+ids unique, routes valid, the current node explicit, and coordinates inside
+declared bounds. Use only relative `assets/...` paths for accepted images. V2
+campaigns may be displayed by the compatibility adapter, but new writes use
+V3.
 
 # Visual Interruption And Return Gate
 
@@ -886,8 +957,10 @@ even if the image arrives with no text after it:
 4. If gallery/dashboard placement is requested, state that the accepted-asset
    handoff may add about 1–2 minutes after approval.
 5. Ask the Player to answer with acceptance or concrete revisions.
-6. Capture a return anchor in `visual_style.md`: interrupted context, last
-   meaningful setup/scene beat, next step, and requested dashboard placement.
+6. Before generation, call `tools/visual_handoff.py campaign begin` with the
+   target, interrupted context, last meaningful setup/scene beat, return
+   anchor, next step, and requested dashboard placement. Only one visual
+   transaction may be pending.
 
 Example:
 
@@ -903,22 +976,25 @@ Do not ask the Player to accept a new image before they have seen it.
 Interpret "create the portrait and add it to the dashboard" as one goal with
 two required stages, not permission to skip acceptance:
 
-1. Generate and register the result as `draft`.
-2. On explicit acceptance, store it under the appropriate accepted visual
-   folder and mark it accepted.
-3. Update the linked appearance note and `visual_gallery.md`.
-4. Copy the player-visible file under `dashboard/assets/` and reference it with
-   an `assets/...` path in `dashboard_state.json`.
-5. Run the dashboard check. If the file cannot be accessed or copied, report
-   the incomplete step honestly and do not claim success.
+1. Generate the draft under `visuals/_drafts/`, then register it with the
+   transaction's `attach` action.
+2. On requested changes, use `revise` and attach the replacement draft; on
+   rejection without replacement, use `cancel`.
+3. On explicit acceptance, use the transaction's `accept` action. It copies
+   the accepted asset, updates `visual_gallery.md`, the linked appearance
+   note, and the requested Dashboard V3 gallery placement as one validated,
+   rollback-protected operation.
+4. Trust success only when the tool reports every requested stage complete.
+   If any stage fails, do not say the visual entered the dashboard and do not
+   discard the saved return anchor.
 
 A disposable, explicitly non-canon image does not need acceptance or dashboard
 placement, but it still needs the return bridge.
 
 ## After Acceptance Or Revision
 
-Clear the pending review and use the return anchor. Never finish with a bare
-technical confirmation.
+After `accept`, `revise`, `cancel`, or a recoverable failure, use the return
+anchor in `visual_state.json`. Never finish with a bare technical confirmation.
 
 - Session 0: confirm the accepted visual briefly, then continue the next setup
   decision or, if setup is complete, transition into the prepared opening.
@@ -979,9 +1055,11 @@ narration:
 - T1 Minor Named: named walk-on or brief contact. Add a compact
   `creation_ledger.md` stub.
 - T2 Supporting: repeatable or meaningful contact. Add/update a note under
-  `characters/`, `places/`, or `factions/`.
+  `characters/`, `places/`, or `factions/`, but begin with the small playable
+  card required by the current scene.
 - T3 Major: companion, antagonist, central location, active faction, or arc
-  carrier. Keep a detailed note, relationship links, and thread relevance.
+  carrier. Persist the playable card and required current links immediately;
+  enrich the full note at a safe structural boundary.
 
 Every T1+ element needs at least one `relationship_map.md` edge to an existing
 character, location, faction, thread, or the player. Keep relationship edges
@@ -1011,8 +1089,11 @@ recent style fingerprints:
 - Could a brief exchange remain brief?
 - Is humor, plain language, reflection, or heightened prose appropriate here?
 
-Use `tools/check_style.py` as a warning system when available. Revise only when
-the finding is real; do not damage a strong line merely to satisfy mechanical
+Use `tools/check_style.py` as a warning system when available. Supply the
+current beat id, scene id, and speaker type; supply a speaker id for NPC or
+companion dialogue. Narrator repetition is compared separately from an
+individual character's intentional speech habits. Revise only when the
+finding is real; do not damage a strong line merely to satisfy mechanical
 variation. Record a fingerprint after the accepted draft, never before.
 
 Apply `style_review_policy`: `sampled_and_distill` checks representative scene

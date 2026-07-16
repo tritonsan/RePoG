@@ -1,145 +1,128 @@
-# Local Campaign Dashboard
+# Local Campaign Dashboard V3
 
-RePoG can include a local, auto-refreshing player board for each campaign.
+RePoG includes an optional, local-only, player-safe campaign board. It is a
+secondary view, never the campaign source of truth. Dashboard V3 shows only the
+tiles a campaign actually needs and does not invent a ready character, default
+stats, or mechanical resources during Session 0.
 
-The dashboard is optional. It is not the campaign's source of truth. It is a
-player-facing surface that shows selected, safe information from the campaign:
-current scene, character state, visible NPCs, known clues, active threads,
-inventory, a pan/zoom local atlas, and accepted visuals.
+## V3 State
 
-## How It Works
+`campaign/dashboard/dashboard_state.json` has two revision fields:
 
-Each standalone campaign may contain:
+- `source_revision`: the campaign continuity revision represented by the board;
+- `dashboard_revision`: the board edit revision used for optimistic updates.
+
+It also records `scene_id`, an update timestamp, and refresh status/reason. The
+`tiles` list accepts these types:
 
 ```text
-campaign/dashboard/
-  index.html
-  dashboard_state.json
-  assets/
-  vendor/leaflet/
+setup_progress  scene       character   stats
+resources       clocks      conditions  companions
+people          threads     clues       inventory
+map             gallery
 ```
 
-`dashboard_state.json` is curated by the agent. It should contain only
-information the player character can know, perceive, or has already confirmed.
+A minimal active board can contain only a scene and people tile. Mechanics-light
+campaigns should omit stats, resources, conditions, clocks, and inventory tiles
+unless the Player explicitly chose those systems.
 
-`index.html` reads `dashboard_state.json` every few seconds and updates the
-view. The V2 template vendors Leaflet locally for the atlas; it does not use a
-CDN and should keep working offline once the repository is present.
-Leaflet's license is included under `vendor/leaflet/LICENSE`.
-
-## Dashboard V2 Shape
-
-V2 is still read-only and player-safe. Add these optional fields when a
-campaign wants the richer local atlas:
+Example:
 
 ```json
 {
-  "dashboard_version": 2,
-  "map": {
-    "mode": "leaflet_simple",
-    "summary": "Player-known space",
-    "background_image": "assets/maps/local-atlas.png",
-    "bounds": { "width": 1000, "height": 640 },
-    "current_node_id": "dock",
-    "nodes": [
-      {
-        "id": "dock",
-        "label": "Old Dock",
-        "type": "place",
-        "x": 420,
-        "y": 280,
-        "status": "current",
-        "summary": "Where the character is now."
+  "schema_version": "3.0",
+  "dashboard_version": 3,
+  "dashboard_revision": 4,
+  "source_revision": 12,
+  "scene_id": "old-dock-arrival",
+  "updated_at": "2026-07-16T12:00:00Z",
+  "refresh_interval_ms": 4000,
+  "refresh": {"status": "current", "reason": "Scene changed"},
+  "campaign": {"title": "Salt Road", "pitch": "A hard voyage home.", "tone": "Tense wonder"},
+  "theme": {"accent": "#7dd3fc", "background": "#0f1115", "mood": "Cold dawn"},
+  "tiles": [
+    {
+      "id": "scene",
+      "type": "scene",
+      "title": "Current Scene",
+      "order": 10,
+      "data": {
+        "title": "Old Dock",
+        "location": "Lantern Quay",
+        "summary": "Rain needles the empty landing.",
+        "pressure": "The tide turns soon.",
+        "image": ""
       }
-    ],
-    "edges": [
-      { "from": "dock", "to": "market", "status": "known", "label": "main road" }
-    ]
-  }
+    }
+  ]
 }
 ```
 
-If no atlas image exists, keep `background_image` blank. The board will render a
-neutral abstract map surface with player-known nodes and routes.
+V2 files remain readable in the browser through a compatibility adapter. New
+campaigns and all atomic update tooling use V3.
 
-## Open It Locally
+## Validate And Open
 
-From the repository root:
-
-```bash
-python -m http.server 8787 --directory campaign/dashboard
-```
-
-Then open this in Codex's in-app browser or a normal browser:
-
-```text
-http://localhost:8787/
-```
-
-## Player-Safe Rule
-
-The dashboard must never show:
-
-- GM-only truth;
-- protected names before reveal;
-- unrevealed clues or secret motives;
-- internal ids;
-- file paths outside `assets/`;
-- prompt, tool, validation, script, YAML, or Markdown language;
-- notes about how the agent stores or checks the campaign.
-
-If a fact belongs in `knowledge_boundaries.md` as hidden, it does not belong in
-the dashboard.
-
-## Image Assets
-
-Store accepted player-visible images under:
-
-```text
-dashboard/assets/
-```
-
-Use relative paths in `dashboard_state.json`, such as:
-
-```json
-"image": "assets/locations/lantern-quay.png"
-```
-
-Do not reference absolute local paths, external URLs, draft images, or secret
-GM-only visuals.
-
-For V2, map backgrounds also count as dashboard assets and must use
-`assets/...` paths.
-
-## Checks
-
-Validate the dashboard state:
+From the workspace root:
 
 ```bash
 python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
+python tools/serve_dashboard.py campaign/dashboard
 ```
 
-Validate the campaign folder:
+Then open `http://127.0.0.1:8787/`. The server binds only to loopback, validates
+the state before startup and before serving state updates, disables directory
+listing, and adds no-cache and browser security headers. Use `--check-only` to
+validate the server target without opening a port.
+
+## Atomic Tile Updates
+
+Use the board revision shown in the current state:
 
 ```bash
-python tools/check_state.py campaign
+python tools/update_dashboard.py campaign/dashboard/dashboard_state.json \
+  --input-json '{"expected_revision":0,"source_revision":1,"scene_id":"arrival","refresh":{"status":"current","reason":"Opening scene prepared"},"operations":[{"op":"upsert","tile":{"id":"scene","type":"scene","title":"Current Scene","order":10,"data":{"title":"Arrival","location":"Old Dock","summary":"The voyage begins.","pressure":"","image":""}}}]}'
 ```
+
+`upsert` replaces one tile by id or appends it; `remove` takes an `id`. The tool
+refuses a stale `expected_revision`, validates the complete candidate, and uses
+an atomic file replacement. It never rewrites campaign memory.
+
+## Map And Accessibility
+
+A map tile uses local Leaflet assets, positive width/height bounds, unique nodes
+inside those bounds, valid edges, and an optional current node. Every map also
+renders a keyboard-readable text list of locations and routes. Refreshes update
+only changed tiles and preserve the map view and open place when possible.
+
+Accepted images open in a keyboard-safe dialog that restores focus. The board
+honors reduced-motion preferences. External image URLs, absolute paths, draft
+assets, missing assets, hidden fields, invalid theme colors, duplicate ids, and
+stale continuity revisions fail validation.
 
 ## Visual Acceptance And Return
 
-Generated images are drafts until accepted. When the Player asks to create an
-image and add it to the dashboard, the agent previews the draft first, explains
-before generation that acceptance will be needed, and completes the asset copy
-plus dashboard reference only after acceptance.
+Generated images are drafts until accepted. Use the transaction tool:
 
-Afterward, the agent returns to the interrupted Session 0 step or play scene. A
-bare "dashboard updated" message is not a complete player experience.
+```bash
+python tools/visual_handoff.py campaign begin --transaction-id visual-example --input-json '{"target":"Player portrait","interrupted_context":"Session Zero","last_meaningful_beat":"The character concept was confirmed.","return_anchor":"Session Zero: visual choice","next_step":"Ask whether to begin play","dashboard_placement_requested":true}'
+python tools/visual_handoff.py campaign attach --transaction-id visual-example --draft-path visuals/_drafts/portrait.png
+python tools/visual_handoff.py campaign accept --transaction-id visual-example --name "Ari" --visual-type character --destination assets/characters/ari-v1.png --campaign-destination visuals/characters/ari-v1.png --canon-notes "Short dark hair and a weathered red coat."
+```
 
-## Known Limits
+Use the transaction id returned by `begin`; the fixed id above is illustrative.
+`accept` copies the approved asset into campaign visual memory and dashboard
+assets, updates the visual gallery, records appearance canon, performs requested
+dashboard placement, and clears the pending state as one rollback-protected
+chain. `--campaign-destination` is optional; when omitted, the visual type selects
+an accepted `visuals/` category. Its `resume` result is the required return to
+the interrupted question or fictional beat. `revise` and `cancel` preserve the
+same anchor.
 
-- The dashboard is read-only. Player actions still happen in the agent chat.
-- The dashboard is local-only.
-- The agent must curate `dashboard_state.json`; there is no automatic exporter
-  from all campaign notes yet.
-- If the local server is not running, the page may not load the JSON in some
-  browser contexts.
+## Player-Safe Boundary
+
+Only confirmed, player-known information belongs in dashboard state. Never add
+GM-only truth, protected names, secret motives, unrevealed clues, internal ids,
+campaign file paths, or workflow notes. Accepted source assets live below
+`campaign/visuals/`; their player-board copies live below
+`campaign/dashboard/assets/` and are referenced as relative `assets/...` paths.

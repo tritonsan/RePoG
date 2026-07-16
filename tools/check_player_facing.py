@@ -33,7 +33,7 @@ RULES: list[tuple[str, str, re.Pattern[str]]] = [
             r"resolver|patch|schema|json|yaml|markdown|stdout|stdin|cli|audit|"
             r"validation|validator|failure_category|runtime_config|state file|"
             r"turn log|current_state|session_log|memory file|agents\.md|skill\.md|"
-            r"tool|script|prompt|engine mode|lite mode|player mode|designer mode"
+            r"script|prompt|engine mode|lite mode|player mode|designer mode"
             r")\b"
         ),
     ),
@@ -59,7 +59,61 @@ def _line_number(text: str, index: int) -> int:
     return text.count("\n", 0, index) + 1
 
 
-def scan_text(text: str) -> dict:
+def _clean_markdown_value(value: str) -> str:
+    cleaned = value.strip().strip("`*_ ")
+    return re.sub(r"\s+", " ", cleaned)
+
+
+def load_protected_names(campaign_path: Path) -> list[str]:
+    """Read exact unrevealed proper nouns from the campaign knowledge ledger."""
+    path = campaign_path
+    if path.is_dir():
+        path = path / "knowledge_boundaries.md"
+    if not path.exists():
+        return []
+    text = path.read_text(encoding="utf-8")
+    section = re.search(
+        r"(?ms)^## Protected Proper Nouns\s*$\n(?P<body>.*?)(?=^##\s|\Z)",
+        text,
+    )
+    if section is None:
+        return []
+    body = section.group("body")
+    headings = list(re.finditer(r"(?m)^###\s+(.+?)\s*$", body))
+    protected: list[str] = []
+    placeholders = {"protected name", "name", "example"}
+    safe_statuses = {"revealed", "pc-known", "player-known", "confirmed"}
+    for index, heading in enumerate(headings):
+        name = _clean_markdown_value(heading.group(1))
+        if not name or name.casefold() in placeholders:
+            continue
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(body)
+        entry = body[heading.end() : end]
+        status_match = re.search(r"(?mi)^\s*-\s*Status:\s*(.+?)\s*$", entry)
+        status = _clean_markdown_value(status_match.group(1)).casefold() if status_match else ""
+        is_safe = any(re.match(rf"^{re.escape(safe)}\b", status) for safe in safe_statuses)
+        if not is_safe:
+            protected.append(name)
+    return sorted(set(protected), key=lambda item: (item.casefold(), item))
+
+
+def _protected_findings(text: str, protected_names: list[str]) -> list[dict]:
+    findings: list[dict] = []
+    for name in protected_names:
+        pattern = re.compile(rf"(?<!\w){re.escape(name)}(?!\w)", re.IGNORECASE)
+        for match in pattern.finditer(text):
+            findings.append(
+                {
+                    "rule": "protected_name",
+                    "message": "Contains an unrevealed campaign-protected name.",
+                    "line": _line_number(text, match.start()),
+                    "match": match.group(0),
+                }
+            )
+    return findings
+
+
+def scan_text(text: str, protected_names: list[str] | None = None) -> dict:
     findings: list[dict] = []
     for rule_id, message, pattern in RULES:
         for match in pattern.finditer(text):
@@ -72,9 +126,13 @@ def scan_text(text: str) -> dict:
                 }
             )
 
+    findings.extend(_protected_findings(text, protected_names or []))
+    findings.sort(key=lambda item: (item["line"], item["rule"], item["match"].casefold()))
+
     return {
         "ok": not findings,
         "finding_count": len(findings),
+        "protected_name_count": len(protected_names or []),
         "findings": findings,
     }
 
@@ -92,10 +150,16 @@ def main(argv: list[str] | None = None) -> int:
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--text", help="Player-facing text to scan.")
     source.add_argument("--file", help="File containing player-facing text.")
+    parser.add_argument(
+        "--campaign",
+        help="Campaign directory or knowledge_boundaries.md used for exact protected-name checks.",
+    )
     args = parser.parse_args(argv)
 
     try:
-        result = scan_text(_read_input(args))
+        campaign_path = Path(args.campaign).resolve() if args.campaign else Path.cwd() / "campaign"
+        protected_names = load_protected_names(campaign_path)
+        result = scan_text(_read_input(args), protected_names)
     except OSError as exc:
         result = {"ok": False, "error": "input_read_failed", "reason": str(exc)}
         print(json.dumps(result, indent=2, ensure_ascii=True))

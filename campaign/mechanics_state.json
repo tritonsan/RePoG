@@ -1,7 +1,12 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "enabled": false,
   "revision": 0,
+  "continuity_revision": 0,
+  "operation_sequence": 0,
+  "operation_registry": {},
+  "last_operation": null,
   "actors": {},
-  "applied_operations": []
+  "clocks": {},
+  "elapsed_time": {}
 }

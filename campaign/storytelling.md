@@ -8,8 +8,14 @@ the GM should offer explicit choices.
 
 ## Narrative Voice
 
-Default voice: second person, present tense, close camera.
+Default voice: second person, present tense, close camera. These are defaults,
+not hard requirements. Materialize the chosen values in `play_profile.yaml`
+and preserve them through ordinary turns, visual returns, closures, and
+post-arc openings.
 
+- Point of view: first | second | third
+- Tense: past | present
+- Camera: close | medium | wide
 - Preferred texture:
 - Point of view notes:
 - Humor level:
@@ -19,6 +25,8 @@ Default voice: second person, present tense, close camera.
 ## Option Prompting Policy
 
 Default: no menu prompts.
+
+- Runtime mode: natural | gentle_choices | tactical_menu
 
 Ordinary turns should not end with "What do you do?", numbered options, or a
 2 to 4 choice list. End with a natural in-world opening, pressure, consequence,
@@ -163,6 +171,8 @@ The opening scene should not reveal:
 
 Default: dynamic pacing.
 
+- Runtime pacing: dynamic | deliberate | urgent
+
 Accelerate during danger, pursuit, countdowns, and irreversible choices. Slow
 down for discovery, aftermath, emotional turns, social tension, and meaningful
 inspection. Compress low-risk travel, routine shopping, repeated setup, and
@@ -172,6 +182,8 @@ other actions that should simply work.
 
 Length follows the dramatic function of the moment, not the model's previous
 answer.
+
+- Runtime length: brief | dynamic | expansive
 
 - Routine passage or simple exchange: brief.
 - Active scene with a meaningful reaction point: medium.
@@ -185,7 +197,8 @@ message length, paragraph count, or sentence rhythm.
 
 ## Narrator Variety
 
-- Prose density:
+- Prose density: lean | balanced | lush
+- Dialogue style: plain | balanced | heightened
 - Humor level and suitable contexts:
 - Plain-language preference:
 - Sensory detail frequency:
@@ -278,6 +291,7 @@ competence, moves time forward, changes position, reveals ordinary information,
 or lets the player reach the next meaningful decision.
 
 - Challenge density:
+- Clue density: low | balanced | high
 - Routine competence level:
 - Clean success frequency:
 - Consequence severity:

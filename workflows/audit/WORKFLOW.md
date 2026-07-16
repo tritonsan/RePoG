@@ -17,17 +17,22 @@ Check:
 - `session_zero.md` exists and tracks the Session 0 module decisions;
 - `research_dossier.md` exists and records research status, mode, source scope,
   canon/realism policy, hard boundaries, and open source questions;
-- existing canon and specific real-world campaigns do not lock major world
-  truths, powers, institutions, or factions while research is still
-  `needed_pending` unless the Designer explicitly accepted that risk;
+- `research_dossier.md` has explicit `Risk accepted` and
+  `Current-scale lock permitted` fields; `needed_pending` never begins play,
+  and partial/unavailable research locks only under its declared gate;
 - fully original campaigns do not import external canon through research; they
   use adjacent research only as grounding and keep unresolved rules as
   Designer questions;
 - `campaign_one_pager.md` is player-safe and does not reveal GM-only secrets;
 - `system_fit.md` explains the expected play activity mix and mechanics
   weight;
-- `setup_profile.yaml` selects a valid Turn Protocol before play, materializes
-  its policies, and records acknowledgement of the displayed time estimates;
+- `setup_profile.yaml` stores only Session 0 progress, activated/defaulted/
+  completed packs, and readiness; a ready Deep pack has its required output;
+- `play_profile.yaml` is locked to the same setup revision before play and owns
+  valid lenses, approved mechanics, narration, advancement, dashboard,
+  visual, and performance policy;
+- lens combinations are deduplicated, documented conflicts are resolved, and
+  no lens silently enables a mechanic such as HP, mana, wounds, or inventory;
 - Custom protocols keep authoritative state, knowledge boundaries, durable
   revision events, and hot validation mandatory;
 - `palette.md` has Yes / No / Maybe boundaries that do not conflict with
@@ -59,8 +64,8 @@ Check:
   learned;
 - advancement rewards are tied to player actions and fiction sources, not
   arbitrary gifts;
-- scenario, arc, or campaign closures have an advancement status of `due`,
-  `offered`, `chosen`, `deferred`, or `applied`;
+- only the closure selected by `play_profile.yaml.advancement.cadence` opens an
+  advancement gate; `none` does not stop normal play;
 - normal fiction does not continue past a `due` or `offered` advancement gate;
 - reward budget is driven by achievement quality first and play volume second;
 - GM-awarded perks are fiction-derived, limited, and not exchangeable for a
@@ -70,6 +75,9 @@ Check:
 - companion or allied NPC advancement is considered when an NPC meaningfully
   participated or changed;
 - `current_state.yaml` is readable and small;
+- no campaign is `ready_for_play` with a placeholder campaign id, blank player
+  identity/concept, blank scene location/pressure, unfinished opening brief,
+  missing World Operating Model, or missing starting snapshot;
 - V2 campaigns contain memory version and non-negative continuity revision;
 - `current_state.yaml.persistence` has a valid last-distilled revision, bounded
   durable-turn counter, and deduplicated pending cold targets;
@@ -79,7 +87,8 @@ Check:
   three; Maximum Continuity leaves no durable turn pending;
 - session/scene/arc closure and advancement gates have no unresolved cold
   targets;
-- every present T2+ NPC has one complete, plausible `active_cast.md` row;
+- every active T2/T3 NPC has one complete, plausible `active_cast.md` row with
+  location, activity, objective, availability, reason-here, and next move;
 - `location_graph.md` endpoints resolve and directed routes are explicit;
 - `relationship_map.md` contains current truth without duplicate current pairs;
 - stale prep revision is reported and never overrides current state;
@@ -89,10 +98,13 @@ Check:
   clear refresh triggers, and notable changes rather than continuous
   simulation;
 - hidden world events remain outside Player Mode and the dashboard;
-- `mechanics_state.json`, when enabled, has bounded resources, known abilities,
-  cooldown units, and no duplicate applied operation ids;
-- `style_state.json`, when present, is valid, bounded, and stores fingerprints
-  rather than full narration;
+- `mechanics_state.json`, when enabled, validates strict integer resources,
+  ability costs/cooldowns, quantified inventory, conditions, clocks, elapsed
+  time, continuity revision, monotonic operation sequence, and its unbounded
+  operation-id registry;
+- `style_state.json`, when present, is valid, bounded, stores fingerprints
+  rather than full narration, and separates narrator repetition from named
+  NPC/companion speech habits;
 - `storytelling.md` exists and defines option prompting, reveal policy, and
   pacing defaults;
 - `storytelling.md` defines challenge density, routine competence, clean
@@ -150,16 +162,22 @@ Check:
   scripts, YAML, Markdown, or implementation language;
 - dashboard NPCs, clues, threads, visuals, map nodes, and inventory are all
   player-known or character-perceivable;
-- Dashboard V2 atlas backgrounds, portraits, and visual references use only
-  relative `assets/...` paths and no external URLs or absolute paths;
-- Dashboard V2 map nodes and routes do not imply undiscovered locations,
+- Dashboard V3 uses only approved tile types, has current source revision and
+  scene id, contains no draft/missing asset, and never shows fabricated
+  placeholder stats or readiness;
+- Dashboard V3 atlas nodes are unique and inside bounds, current node and route
+  endpoints are valid, and map/visual references use only relative
+  `assets/...` paths;
+- compatibility-loaded V2 maps still do not imply undiscovered locations,
   hidden routes, secret factions, or protected names before reveal;
 - no campaign marked ready for play has a pending visual review;
 - every accepted visual requested for dashboard placement exists under
   `dashboard/assets/`, is referenced by an `assets/...` path, and has passed
   the dashboard check;
-- visual generation return anchors are cleared after acceptance, rejection,
-  or an explicit choice to proceed without the draft;
+- `visual_state.json` has at most one pending transaction; pending work has a
+  target, interrupted context, last beat, return anchor, and next step;
+- visual generation return anchors are preserved through errors and cleared
+  only after atomic acceptance, rejection, or an explicit choice to proceed;
 - no obvious mojibake or placeholder names remain;
 - player-facing examples do not overuse cryptic, aphoristic, or market-style
   dialogue;
@@ -174,20 +192,27 @@ Check:
 
 Use Lite tools when available:
 
-- `tools/check_player_facing.py` for leakage;
+- `tools/check_player_facing.py --campaign campaign` for protected-name
+  leakage without broad generic-word false positives;
 - `tools/check_state.py campaign --scope hot` for per-durable-turn current
   sanity and `--scope full` at the selected distill boundary;
-- `tools/check_dashboard.py` for local dashboard state;
+- `tools/check_dashboard.py` for local dashboard state, asset, revision, tile,
+  map, and player-facing safety;
 - `tools/check_style.py` for warning-level narration repetition checks;
-- `tools/world_pulse.py` for deterministic uncertainty when a relevant domain
-  refresh is due;
-- `tools/resolve_mechanic.py` for enabled deterministic resource and cooldown
-  operations;
+- `tools/world_pulse.py` with a stable evaluation id for deterministic
+  uncertainty when a relevant domain refresh is due;
+- `tools/roll_dice.py` for bounded, reproducible approved dice rolls;
+- `tools/resolve_mechanic.py` for approved resource, ability, inventory,
+  condition, clock, and time operations;
+- `tools/visual_handoff.py` for resumable and rollback-protected visual work;
+- `tools/update_dashboard.py` for expected-revision atomic tile patches;
+- `tools/serve_dashboard.py --check-only` before loopback serving;
+- `tools/verify_workspace.py` for the dependency-free public workspace check;
 - `tools/snapshot.py` before larger repairs.
 
-If the tools are not implemented yet, perform a manual audit and report that
-the mechanical check layer is pending. Separate link checking and dice tools
-are intentionally deferred until play proves they are needed.
+If a campaign predates these contracts, preserve it through the documented
+compatibility path and report the migration gap; do not claim a check ran when
+its tool or required state is absent.
 
 # Reporting
 

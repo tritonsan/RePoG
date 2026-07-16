@@ -15,6 +15,7 @@ from typing import Any
 
 WORD_RE = re.compile(r"\b[\w']+\b", re.UNICODE)
 SENTENCE_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+SPEAKER_TYPES = {"narrator", "npc", "companion", "mixed", "other"}
 
 
 def _words(text: str) -> list[str]:
@@ -29,7 +30,14 @@ def _bucket(word_count: int) -> str:
     return "long"
 
 
-def _fingerprint(text: str) -> dict[str, Any]:
+def _fingerprint(
+    text: str,
+    *,
+    beat_id: str | None = None,
+    scene_id: str | None = None,
+    speaker_type: str = "narrator",
+    speaker_id: str | None = None,
+) -> dict[str, Any]:
     words = _words(text)
     sentences = [part.strip() for part in SENTENCE_RE.split(text) if part.strip()]
     starters = []
@@ -47,6 +55,10 @@ def _fingerprint(text: str) -> dict[str, Any]:
     )
     return {
         "recorded_at": datetime.now(timezone.utc).isoformat(),
+        "beat_id": beat_id,
+        "scene_id": scene_id,
+        "speaker_type": speaker_type,
+        "speaker_id": speaker_id,
         "word_count": len(words),
         "length_bucket": _bucket(len(words)),
         "paragraph_count": len([part for part in re.split(r"\n\s*\n", text) if part.strip()]),
@@ -81,9 +93,44 @@ def _atomic_write(path: Path, data: dict[str, Any]) -> None:
         raise
 
 
-def check_style(state: dict[str, Any], text: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    current = _fingerprint(text)
+def _same_voice_context(prior: dict[str, Any], current: dict[str, Any]) -> bool:
+    prior_type = prior.get("speaker_type", "narrator")
+    current_type = current.get("speaker_type", "narrator")
+    if prior_type != current_type:
+        return False
+    if current_type in {"npc", "companion"}:
+        current_id = current.get("speaker_id")
+        return current_id is not None and prior.get("speaker_id") == current_id
+    return True
+
+
+def check_style(
+    state: dict[str, Any],
+    text: str,
+    *,
+    beat_id: str | None = None,
+    scene_id: str | None = None,
+    speaker_type: str = "narrator",
+    speaker_id: str | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if speaker_type not in SPEAKER_TYPES:
+        raise ValueError(f"speaker_type must be one of: {', '.join(sorted(SPEAKER_TYPES))}")
+    if speaker_id is not None and (not isinstance(speaker_id, str) or not speaker_id.strip()):
+        raise ValueError("speaker_id must be a non-empty string when provided")
+    if speaker_type in {"npc", "companion"} and speaker_id is None:
+        raise ValueError("speaker_id is required for npc or companion style entries")
+    for value, name in ((beat_id, "beat_id"), (scene_id, "scene_id")):
+        if value is not None and (not isinstance(value, str) or not value.strip()):
+            raise ValueError(f"{name} must be a non-empty string when provided")
+    current = _fingerprint(
+        text,
+        beat_id=beat_id.strip() if isinstance(beat_id, str) else None,
+        scene_id=scene_id.strip() if isinstance(scene_id, str) else None,
+        speaker_type=speaker_type,
+        speaker_id=speaker_id.strip() if isinstance(speaker_id, str) else None,
+    )
     history = [item for item in state.get("history", []) if isinstance(item, dict)]
+    comparable_history = [item for item in history if _same_voice_context(item, current)]
     findings: list[dict[str, Any]] = []
 
     folded_text = text.casefold()
@@ -91,7 +138,7 @@ def check_style(state: dict[str, Any], text: str) -> tuple[list[dict[str, Any]],
         if isinstance(phrase, str) and phrase.strip() and phrase.casefold() in folded_text:
             findings.append({"severity": "warning", "rule": "avoid_phrase", "detail": phrase})
 
-    recent = history[-3:]
+    recent = comparable_history[-3:]
     if len(recent) == 3 and all(item.get("length_bucket") == current["length_bucket"] for item in recent):
         counts = [item.get("word_count") for item in recent if isinstance(item.get("word_count"), int)]
         if len(counts) == 3:
@@ -107,7 +154,7 @@ def check_style(state: dict[str, Any], text: str) -> tuple[list[dict[str, Any]],
 
     prior_starters: dict[str, int] = {}
     prior_ngrams: dict[str, int] = {}
-    for item in history[-8:]:
+    for item in comparable_history[-8:]:
         for starter in set(item.get("sentence_starters", [])):
             prior_starters[starter] = prior_starters.get(starter, 0) + 1
         for ngram in set(item.get("four_grams", [])):
@@ -135,6 +182,11 @@ def check_style(state: dict[str, Any], text: str) -> tuple[list[dict[str, Any]],
             }
         )
 
+    if speaker_type in {"npc", "companion"} and findings:
+        for finding in findings:
+            if finding["rule"] in {"sentence_starter_repetition", "phrase_shape_repetition"}:
+                finding["context"] = "character_voice"
+
     return findings, current
 
 
@@ -145,18 +197,41 @@ def main(argv: list[str] | None = None) -> int:
     source.add_argument("--text", help="Candidate narration.")
     source.add_argument("--text-file", help="Read candidate narration from a UTF-8 file.")
     parser.add_argument("--record", action="store_true", help="Record this accepted narration fingerprint.")
+    parser.add_argument("--beat-id", help="Durable beat or turn identifier for this entry.")
+    parser.add_argument("--scene-id", help="Scene identifier for this entry.")
+    parser.add_argument(
+        "--speaker-type",
+        choices=sorted(SPEAKER_TYPES),
+        default="narrator",
+        help="Separate narrator patterns from named character voice patterns.",
+    )
+    parser.add_argument("--speaker-id", help="Stable character id; required for npc or companion entries.")
     args = parser.parse_args(argv)
 
     path = Path(args.state_path).resolve()
     try:
         state = _load_state(path)
         text = args.text if args.text is not None else Path(args.text_file).read_text(encoding="utf-8")
-        findings, fingerprint = check_style(state, text)
+        findings, fingerprint = check_style(
+            state,
+            text,
+            beat_id=args.beat_id,
+            scene_id=args.scene_id,
+            speaker_type=args.speaker_type,
+            speaker_id=args.speaker_id,
+        )
         if args.record:
             maximum = int(state.get("max_history", 8))
             if maximum < 1:
                 raise ValueError("max_history must be at least 1")
             state["history"] = (state.get("history", []) + [fingerprint])[-maximum:]
+            state["schema_version"] = 2
+            state["last_beat_id"] = fingerprint["beat_id"]
+            state["last_scene_id"] = fingerprint["scene_id"]
+            state["last_speaker"] = {
+                "type": fingerprint["speaker_type"],
+                "id": fingerprint["speaker_id"],
+            }
             _atomic_write(path, state)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(json.dumps({"ok": False, "error": str(exc)}, indent=2))

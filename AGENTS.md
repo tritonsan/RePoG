@@ -46,7 +46,8 @@ request to continue the fiction.
 
 In Player Mode:
 
-- speak as the GM in second person, present tense;
+- speak in the point of view and tense locked in `play_profile.yaml` (second
+  person, present tense is the default, not a universal rule);
 - show only places, people, pressure, sensory details, consequences, and
   choices;
 - hide file operations, checks, YAML, Markdown structure, tool names, scripts,
@@ -101,6 +102,7 @@ campaign always uses `campaign/`.
 ```text
 campaign/
   setup_profile.yaml
+  play_profile.yaml
   session_zero.md
   campaign_one_pager.md
   research_dossier.md
@@ -128,6 +130,7 @@ campaign/
   world_dynamics.md
   style_state.json
   mechanics_state.json
+  visual_state.json
   creation_ledger.md
   relationship_map.md
   secrets_and_clues.md
@@ -146,8 +149,10 @@ campaign/
 The memory model is intentionally small:
 
 - `setup_profile.yaml` owns Session 0 depth, adaptive-pack progress, visible
-  defaults, deferred decisions, checkpoints, the play-readiness gate, and the
-  selected turn-performance protocol.
+  defaults, deferred decisions, checkpoints, and the play-readiness gate.
+- `play_profile.yaml` is the materialized runtime contract for lenses,
+  player-approved mechanics, tracking and dice, narration, advancement,
+  dashboard, visuals, and turn-performance policy.
 - `session_zero.md` is the module index and decision log for campaign
   creation.
 - `campaign_one_pager.md` is the compact player-facing campaign promise and
@@ -199,10 +204,13 @@ The memory model is intentionally small:
   player knowledge between gameable places.
 - `world_dynamics.md` tracks only campaign-relevant offscreen domains and
   notable on-demand changes. It is not a continuous simulation.
-- `style_state.json` stores a short rolling fingerprint history for narration
-  variation checks, not full prose.
+- `style_state.json` stores short beat/scene/speaker-aware fingerprints for
+  narration variation checks, not full prose.
 - `mechanics_state.json` is an optional deterministic ledger for resources,
-  abilities, cooldowns, and regeneration when Session 0 enables it.
+  abilities/cooldowns, quantified inventory, conditions, clocks, and elapsed
+  time when the Player approves those modules.
+- `visual_state.json` owns the single resumable draft/acceptance transaction
+  and its return anchor.
 - `creation_ledger.md` is the compact production memory for every T1+ named
   NPC, location, or faction introduced during worldbuilding or play.
 - `relationship_map.md` stores current relationship truth only. Historical
@@ -248,6 +256,16 @@ Standard uses the repo-local 17-module interview:
 16. Starting Situation / Session 0.5.
 17. Continuity Rules.
 
+Immediately after the pitch, offer a contextual Starter Bundle with 2–4
+choices. Each choice states how play will feel, the tracking it adds, its
+estimated speed effect, and why it fits. Accept `accept`, `mix`, `change`,
+`default`, or `defer`, then materialize the result in `play_profile.yaml`.
+
+Session 0 may compose the `fantasy`, `realistic`, or `cyberpunk` setting lens
+with the `survival` play lens. Read lens briefs only during setup. Lenses ask
+questions and suggest defaults; they never activate HP, mana, inventory,
+wounds, dice, or any other mechanic without explicit Player approval.
+
 The interview is setting-neutral. Codex must first understand the chosen
 universe, genre, storytelling preferences, power and expertise model, and canon
 level, then derive character capabilities, issues, factions, faces, places,
@@ -272,7 +290,7 @@ default. Deep completes the Standard core and activates only relevant adaptive
 packs. Never enter play while `ready_for_play` is false.
 
 Every Session 0 depth must explicitly choose a turn protocol during System
-Fit. Offer:
+Fit and store it under `play_profile.yaml.performance`. Offer:
 
 - `fast` (recommended): current truth is immediate; secondary propagation is
   batched at a scene boundary or after at most five durable turns;
@@ -323,9 +341,10 @@ Classify new NPCs, locations, and factions by tier:
 - T1 Minor Named: named walk-on or brief contact. Add a `creation_ledger.md`
   stub and at least one `relationship_map.md` edge.
 - T2 Supporting: repeatable or meaningful contact. Add/update a note under
-  `characters/`, `places/`, or `factions/`.
+  `characters/`, `places/`, or `factions/`; begin with a small playable card.
 - T3 Major: companion, antagonist, central location, active faction, or arc
-  carrier. Keep a detailed note, relationship edges, and thread relevance.
+  carrier. Persist the playable card and current links now, then enrich it at
+  a safe structural boundary.
 
 Player attention can promote an element. Long interaction, repeated mention,
 trust, suspicion, emotional reaction, or practical dependence is a signal to
@@ -333,46 +352,28 @@ raise the tier and update the ledger/map.
 
 # Turn Handling
 
-For a play turn:
+Every play turn uses the four-phase conditional router in the GM workflow:
 
-1. Identify the active campaign.
-2. Read the selected turn protocol from `setup_profile.yaml`, then read the hot
-   set: authoritative `current_state.yaml`, `active_cast.md`,
-   `session_brief.md`, `storytelling.md`, and the relevant portion of
-   `knowledge_boundaries.md`.
-3. Derive lookup signals from the current place, present characters, elapsed
-   time, player action, active thread, mechanic, and knowledge boundary.
-4. Read only the triggered character/place/faction/thread/rule notes. Consult
-   cold campaign references such as research, world truths, progression, arc
-   files, and older logs only when a signal requires them.
-5. Check whether the fiction triggers an on-demand domain refresh in
-   `world_dynamics.md`.
-6. Interpret the player action directly.
-7. Use `resolve_mechanic.py` when an enabled deterministic resource, ability,
-   cooldown, or regeneration rule applies.
-8. Classify the result as `soft`, `local_durable`, or `structural_boundary`.
-9. For `soft`, do not write campaign memory, refresh the dashboard, or run
-   state/style tools. The knowledge, source, resistance, and arc gates still
-   apply before narration.
-10. For `local_durable`, immediately update authoritative current truth,
-    increment one shared continuity revision, and append the matching
-    `### Durable Revision N` entry to `session_log.md`. Also update any
-    authority that changed now: active NPC state, knowledge boundaries,
-    current relationship truth, inventory, condition, or mechanics state.
-    Secondary character/faction/place detail, threads, issues, prep, dashboard,
-    and style history may wait for the selected distill boundary.
-11. For `structural_boundary`, reconcile every pending cold target, append a
-    `### Distilled Through Revision N` marker, reset the bounded persistence
-    counters, refresh the dashboard according to policy, and run the required
-    full checks. Scene ends, cadence limits, session stops, scenario/arc/
-    campaign closures, advancement/rewards, new T2/T3 entities or graph edges,
-    canon/research locks, and continuity conflicts are structural boundaries.
-12. Run `check_state.py campaign --scope hot` after a local durable turn.
-    Fast and Balanced run the full check at distill; Maximum Continuity runs it
-    after every durable turn. Run the dashboard checker only when the dashboard
-    was changed.
-13. Apply the selected style cadence only after the final draft is chosen.
-14. Reply in Player Mode with no technical leakage.
+1. **Route:** read `play_profile.yaml` and the hot set
+   (`current_state.yaml`, `active_cast.md`, `session_brief.md`, and the relevant
+   knowledge section); derive lookup signals and load only required triggered
+   or cold notes. Classify `soft`, `local_durable`, or `structural_boundary`.
+2. **Resolve:** establish fictional resistance, NPC presence/knowledge, and
+   one concrete move. Use only approved deterministic modules; follow the
+   selected dice policy and use `roll_dice.py` only when it calls for a roll.
+3. **Persist:** write nothing for soft turns. Durable turns update immediate
+   authorities, increment one continuity revision, append the matching event,
+   then run the selected hot/full check and expected-revision Dashboard V3
+   patch. Optional T2/T3 note enrichment may wait for a safe boundary.
+4. **Narrate:** enforce knowledge and source boundaries, then use the profile's
+   POV, tense, camera, density, response length, pacing, and option policy.
+   Apply style cadence only after the final draft is chosen and reply with no
+   technical leakage.
+
+Scene ends, cadence limits, session stops, matching advancement gates,
+canon/research locks, and continuity conflicts are structural boundaries. New
+T2/T3 elements alone are not; their small playable card must still be written
+immediately.
 
 `current_state.yaml`, immediately relevant active-cast truth, knowledge
 boundaries, mechanical results, inventory/conditions, and the arc/advancement
@@ -396,10 +397,11 @@ unrevealed clues, internal ids, file paths outside `assets/`, prompts, tools,
 scripts, checks, YAML, Markdown, or explanations of how the campaign memory is
 stored.
 
-When updating `dashboard/dashboard_state.json`, curate it from the player's
-confirmed knowledge and what the character can currently perceive. If a
-dashboard fact conflicts with campaign memory, campaign memory wins and the
-dashboard should be corrected.
+Dashboard V3 renders only the tile types selected in
+`play_profile.yaml.dashboard.tiles`. Mechanics-light campaigns should not show
+empty stat/resource tiles. Curate every tile from confirmed Player knowledge
+and current perception. If a dashboard fact conflicts with campaign memory,
+campaign memory wins and the dashboard should be corrected.
 
 Follow `dashboard_refresh_policy`. The Fast default is
 `scene_and_major_visible_change`: refresh for a scene/location change, visible
@@ -408,10 +410,12 @@ change, but not for an ordinary dialogue-only turn. Balanced and Maximum
 Continuity default to `every_visible_change`. `manual` and `scene_only` are
 available only through an explicit Custom choice.
 
-For Dashboard V2, use `dashboard_version: 2` and set `map.mode` to
-`leaflet_simple`. The atlas is not a secret map; every node, route, label,
+Use `tools/update_dashboard.py` for expected-revision atomic tile patches.
+Keep `source_revision`, `scene_id`, refresh state, and refresh reason current;
+reject stale writes. The atlas is not a secret map: every node, route, label,
 image, and summary must be player-known or directly perceivable. Use
-`assets/...` relative paths only for player-visible images and map backgrounds.
+`assets/...` relative paths only. V2 dashboards remain readable through the
+compatibility adapter, but new campaign states use V3.
 
 Do not mention dashboard file updates in Player Mode. If the Designer asks how
 to open it, use Designer Mode and point them to `docs/dashboard.md`.
@@ -423,7 +427,8 @@ an image result may appear without a following text message, set expectations
 before generating: say that the next result will be the draft image by itself,
 explain whether acceptance is required before canon/dashboard use, tell the
 Player to reply with acceptance or revisions, and record the setup or scene
-beat that must resume afterward.
+beat that must resume afterward. Call `tools/visual_handoff.py campaign begin`
+before generation so `visual_state.json` owns that return anchor.
 
 The same pre-generation message must state that a draft commonly adds about
 1–3+ minutes and that each revision repeats the generation cost. If accepted
@@ -431,10 +436,11 @@ gallery/dashboard placement was requested, disclose its typical additional
 1–2 minute cost. Keep these as estimates, not guarantees.
 
 Treat "generate this and add it to the dashboard" as a two-stage request:
-generate a draft, then after explicit acceptance store it as an accepted asset,
-update its gallery and appearance note, copy it into `dashboard/assets/`, update
-`dashboard_state.json`, and validate the dashboard. Never claim it was added
-unless both the accepted local asset and dashboard reference exist.
+generate/attach a draft, then after explicit acceptance use the visual
+transaction's atomic `accept` action. It must copy the accepted asset, update
+the gallery and appearance note, patch the requested Dashboard V3 placement,
+and validate the result with rollback on failure. Never claim it was added
+unless the tool reports every requested stage complete.
 
 After visual work, do not end with only "updated" or "added." During Session 0,
 continue the next pending step. During play, briefly restate the last fictional
@@ -453,9 +459,11 @@ The tools should remain small. A tool that starts to perform full intent
 routing, act scaffolding, or narrative generation is probably becoming a second
 engine and should be challenged.
 
-`world_pulse.py` may supply deterministic uncertainty, `resolve_mechanic.py`
-may enforce explicitly configured mechanical state, and `check_style.py` may
-report repetition. None of them may invent semantic world events or narration.
+`world_pulse.py` may supply deterministic uncertainty from a stable evaluation
+id, `roll_dice.py` may produce bounded reproducible rolls,
+`resolve_mechanic.py` may enforce explicitly configured mechanical state, and
+`check_style.py` may report speaker-aware repetition. None of them may invent
+semantic world events, NPC motives, consequences, or narration.
 
 # Quality Bar
 

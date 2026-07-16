@@ -36,6 +36,13 @@ At the end of each module, summarize the locked answer briefly, record whether
 the module is locked, open, or defaulted, then ask the first question of the
 next missing module.
 
+After the Campaign Pitch, infer a contextual Starter Bundle. Present 2–4
+campaign-specific choices, not generic genre menus. Each choice must state its
+play effect, tracking/latency effect when relevant, and why it is recommended.
+Accept `accept`, `mix`, `change`, `default`, `defer`, or a free-form answer.
+Materialize the accepted result in `play_profile.yaml`; lens briefs are setup
+inputs and are not hot play context.
+
 If the Designer says "use defaults", choose coherent defaults, show the
 assumptions in Designer Mode, and then create files.
 
@@ -87,8 +94,9 @@ Ask it as one decision and wait:
 > accepted art into the gallery/dashboard can add about 1–2 minutes.
 
 Persist the chosen preset and its materialized policies in
-`setup_profile.yaml` and mirror the readable summary in `system_fit.md` and
-`session_zero.md`:
+`play_profile.yaml.performance` and mirror the readable summary in
+`system_fit.md` and `session_zero.md`. `setup_profile.yaml` owns interview
+progress only:
 
 | Profile | Cold distill | Validation | Dashboard | Style review |
 | --- | --- | --- | --- | --- |
@@ -110,14 +118,15 @@ validation policies are `hot_each_durable_full_on_distill` and
 `manual`. Style review may be `sampled_and_distill`,
 `every_2_durable_and_distill`, or `every_durable`.
 
-Set `performance_estimate_acknowledged: true` only after the Designer chooses
+Set `performance.estimate_acknowledged: true` only after the Designer chooses
 a displayed option or confirms the final setup summary containing these
 estimates. If they say "use defaults," select Fast but still show its estimate
 and caveat in the final confirmation.
 
 # Quick Session 0
 
-Use 6–8 decisions: pitch; boundaries/agency/consequence; character concept,
+Use 6–8 decisions: pitch plus contextual Starter Bundle;
+boundaries/agency/consequence; character concept,
 defining competence and weakness; starting world/problem/place; mechanics,
 progression and failure; the explicit Turn Protocol choice;
 narration/options/visuals; research if needed; and final confirmation. Keep the
@@ -134,7 +143,14 @@ Deep packs.
 
 # Deep Session 0
 
-Complete the Standard core, then activate only relevant packs:
+Complete the Standard core, then activate only relevant packs. Activation is
+deterministic: persistent crew/company opens `group`; personal-depth play opens
+`character_foundation`; a substantially original/altered society opens
+`world_fabric`; exploration/travel/sandbox play opens `location_network`;
+politics/intrigue opens `faction_information`; explicit arc/endgame design
+opens `campaign_architecture`; tactical resource/progression play opens
+`mechanics_progression`; canon or specific real-world grounding opens
+`source_grounding`:
 
 - `character_foundation`: identity, inner life, daily life, voice, resources,
   personal places, relationships, and change line. Create
@@ -160,6 +176,24 @@ or default the rest. At 30–45 decisions, ask permission before opening another
 branch. Route world detail into existing files; do not create separate society,
 history, economy, or geography notebooks.
 
+# Lens And Mechanic Composition
+
+Read `briefs/lenses/INDEX.md` after the pitch and only the candidate lens files
+that match it. V1 setting lenses are `fantasy`, `realistic`, and `cyberpunk`;
+`survival` is a composable play lens. A campaign may combine them, such as
+fantasy plus survival.
+
+Lenses propose questions, GM behavior, research needs, and optional modules.
+They never enable mechanics automatically. Ask one explicit approval decision
+before adding any of: `bounded_resources`, `abilities_costs`,
+`strict_consumables`, `wounds`, `clocks`, `dice_resolution`, or
+`structured_travel`. Explicit player choice outranks lens suggestions, while
+safety/canon/research limits still outrank unsupported choices.
+
+Materialize inventory, time, travel, wound, dice, narration, advancement,
+dashboard, visual, and performance choices in `play_profile.yaml`. Do not read
+the lens briefs during normal play.
+
 # Completion Gate
 
 Before setting `status: complete` and `ready_for_play: true`, ensure every core
@@ -169,7 +203,7 @@ the character, starting place, one pressure, actionable opening, V2 state,
 active cast, location graph, knowledge boundaries, dashboard, and starting
 snapshot are ready and checked.
 
-Also require a valid Turn Protocol, all preset policies materialized (or a
+Also require a valid Turn Protocol in `play_profile.yaml`, all preset policies materialized (or a
 safe complete Custom policy), `performance_estimate_acknowledged: true`, and a
 matching readable summary in `system_fit.md` and `session_zero.md`.
 
@@ -221,9 +255,15 @@ Defaults:
 - User-supplied homebrew: treat the Designer's material as authoritative and
   ask before using outside references.
 
-Record the durable version in `research_dossier.md`. If web search is not
-available, set `research_status: unavailable` and write conservative
-assumptions plus open questions.
+Record the durable version in `research_dossier.md` with one of
+`not_needed`, `needed_pending`, `partial_complete`, `complete`, or
+`unavailable_risk_accepted`. Record `Risk accepted: yes|no` and
+`Current-scale lock permitted: yes|no` as explicit fields; prose mentioning
+risk never counts as acceptance. `needed_pending` cannot enter play.
+`partial_complete` may enter play only when the researched scope safely covers
+the starting scale and current-scale lock permission is explicit. If research
+is unavailable, keep conservative assumptions and open questions, then require
+explicit risk acceptance before using `unavailable_risk_accepted`.
 
 ## 3. Group Contract
 
@@ -251,6 +291,11 @@ Decide what kind of play the campaign engine should support:
 - what needs deterministic checks versus GM judgment.
 - whether resources, cooldowns, regeneration, or ability prerequisites need the
   optional deterministic mechanics ledger.
+- which candidate setting/play lenses describe the campaign, and which
+  suggested deterministic modules the Player explicitly approves;
+- dice mode: judgment-only, player rolls, open GM rolls, hidden GM rolls, or
+  hybrid;
+- inventory, time, travel, and wound tracking rigor.
 
 Run the Turn Protocol Gate in this module after the campaign's mechanics
 weight is understood. This is required for Quick, Standard, and Deep. Do not
@@ -258,6 +303,8 @@ turn it into a list of file operations; present the player-facing time,
 freshness, dashboard, and visual tradeoffs.
 
 Record the durable version in `system_fit.md` and summarize it in `rules.md`.
+Materialize runtime values in `play_profile.yaml`; readable Markdown never
+overrides that structured profile.
 
 ## 5. Canon Policy
 
@@ -288,9 +335,12 @@ Yes list.
 
 ## 7. Visual Mode And Art Direction
 
-Decide whether generated visuals are off, manual-only, major-only, curated, or
-rich. Record quota stance, eligible targets, art direction, visual canon, and
-dashboard display policy. Generated images remain drafts until accepted.
+First decide independently whether the dashboard is `off` or `on`. If on,
+confirm its refresh policy and initial tiles. Then decide whether generated
+visuals are `off`, `manual_only`, `major_only`, `curated`, or `rich`, plus
+`gallery_only` or `dashboard_after_approval` placement. Record quota stance,
+eligible targets, art direction, and visual canon. Generated images remain
+drafts until accepted; enabling a dashboard never enables image generation.
 
 Before the choice, repeat the relevant performance costs: dashboard refresh
 and validation approximately +1–2 minutes when performed, an image draft
@@ -299,12 +349,15 @@ accepted gallery/dashboard placement approximately +1–2 minutes. Treat these
 as estimates. Record the selected dashboard cadence and the acknowledgement in
 `visual_style.md`.
 
-Record the durable version in `visual_style.md` and `visual_gallery.md`.
+Record readable art direction in `visual_style.md` and `visual_gallery.md`,
+runtime choices in `play_profile.yaml`, and any pending interruption in
+`visual_state.json`.
 
 If Session 0 generates a visual, do not let generation end the setup flow.
 Before generating, explain that the next result may be only the draft image and
-ask the Designer to accept or revise it afterward. Record the pending review
-and Session 0 return anchor in `visual_style.md`. After acceptance, finish any
+ask the Designer to accept or revise it afterward. Use
+`tools/visual_handoff.py ... begin` to record the pending review and Session 0
+return anchor. After acceptance, finish any
 requested gallery/dashboard update and continue the next pending module. If it
 was the final setup task, complete validation and move into the prepared opening
 or explicitly ask whether to begin play.
@@ -328,6 +381,12 @@ Ask one truth category at a time when needed:
 
 Each truth should include a game implication: what pressure, opportunity, or
 constraint it creates at the table.
+
+After the individual truths, run one coherence synthesis and write a compact
+World Operating Model in `world.md`: the main cause/effect chains, who benefits,
+who pays, how the Player can perceive the system, deliberate exceptions, and
+how conflicts between active lenses were resolved. Keep unresolved assumptions
+open instead of smoothing contradictions away.
 
 Record the durable version in `world_truths.md` and summarize key items in
 `world.md`. Do not lock a truth that conflicts with `research_dossier.md`
@@ -560,7 +619,9 @@ rules, `relationship_map.md` format notes, `progression.md`,
 During Session 0, establish storytelling preferences as part of the pitch,
 group contract, system fit, and continuity modules:
 
-- narrative voice and point of view;
+- point of view (`first`, `second`, or `third`) and tense (`present` or `past`);
+- camera distance, prose density, response-length range, dialogue style, and
+  pacing;
 - whether the campaign wants natural openings, occasional guided choices, or
   tactical menu-style choices;
 - how lore should be revealed;
@@ -589,7 +650,10 @@ group contract, system fit, and continuity modules:
 - pacing preference: fast, slow, dynamic, action-heavy, social-heavy, or mixed;
 - what information must stay hidden until the player discovers it.
 
-Default storytelling stance:
+Materialize these choices in `play_profile.yaml.narration`. `storytelling.md`
+holds nuance and examples and is triggered context, not an always-hot contract.
+
+Default storytelling stance when the Player accepts defaults:
 
 - no menu prompts;
 - no routine "What do you do?" endings;
@@ -640,7 +704,9 @@ When starting the blank Lite campaign included in this workspace:
 2. Use the already prepared `campaign/`; do not copy or create another campaign
    folder.
 3. Ask the depth gate, then run Quick, Standard, or adaptive Deep.
-4. Fill `session_zero.md` as the module index and decision log.
+4. Fill `session_zero.md` as the module index and decision log. Materialize
+   accepted runtime choices into `play_profile.yaml`; keep
+   `setup_profile.yaml` limited to interview progress.
 5. Fill the module files: `campaign_one_pager.md`, `research_dossier.md`,
    `system_fit.md`, `palette.md`, `world_truths.md`, `issues.md`,
    `faces_and_places.md`, `progression.md`, `arc_closure.md`,
@@ -649,19 +715,21 @@ When starting the blank Lite campaign included in this workspace:
    `rules.md`.
 6. Create the player files: `player.md`, `player_ties.md`, and
    `current_state.yaml`. Initialize its persistence block,
-   `active_cast.md`, `location_graph.md`, and `style_state.json`; configure
-   `mechanics_state.json` only when deterministic mechanics are enabled.
+   `active_cast.md`, `location_graph.md`, `style_state.json`, and
+   `visual_state.json`; enable `mechanics_state.json` only when the player
+   approves a stateful deterministic module.
 7. Create only enough NPCs, places, factions, threads, and flexible clues to
    make the first session playable.
 8. Fill `opening_brief.md` as `first_campaign_opening` and `first_session.md`
    as the Session 0.5 prep page.
 9. Draft the first player-facing scene from `opening_brief.md`, then check it
    for leakage.
-10. If the campaign uses the optional dashboard, fill
-    `dashboard/dashboard_state.json` with only player-safe opening information.
-    Prefer Dashboard V2: set `dashboard_version: 2`, `map.mode` to
-    `leaflet_simple`, a conservative player-known atlas, and relative
-    `assets/...` paths only for accepted images or map backgrounds.
+10. If the campaign uses the optional dashboard, create a Dashboard V3 state
+    with only the approved tiles and player-safe opening information. Set its
+    source revision and scene id to the opening state; use relative
+    `assets/...` paths only for accepted images. Apply later changes through
+    `tools/update_dashboard.py` with the expected source revision. Legacy V2
+    states remain readable through the compatibility adapter.
 11. Record the used opening as the matching durable revision entry in
     `session_log.md`; if setup fully reconciled it, append the matching
     distilled-through marker and reset persistence counters.
@@ -676,6 +744,8 @@ comparison exercise, not the default workflow.
 Create or revise these files:
 
 - `session_zero.md`
+- `setup_profile.yaml`
+- `play_profile.yaml`
 - `campaign_one_pager.md`
 - `research_dossier.md`
 - `world.md`
@@ -692,6 +762,7 @@ Create or revise these files:
 - `storytelling.md`
 - `world_dynamics.md`
 - `style_state.json`
+- `visual_state.json`
 - `mechanics_state.json` when deterministic mechanics are enabled
 - `appearance_guide.md`
 - `opening_brief.md`

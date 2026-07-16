@@ -128,12 +128,45 @@ Default stance:
 
 ## Dice
 
-Dice are optional. If used, define:
+Dice are optional. Record one Session 0 mode:
+
+- `judgment_only`: no routine rolls; resolve from positioning and capability.
+- `player_rolls`: the player rolls and reports the result.
+- `open_gm_rolls`: RePoG rolls and shows the expression and result.
+- `hidden_gm_rolls`: RePoG may roll privately when hidden uncertainty matters.
+- `hybrid`: the player rolls decisive character actions; RePoG may roll
+  bounded world or opposition uncertainty.
+
+If dice are used, also define:
 
 - when to roll;
 - who rolls;
 - what success, partial success, and failure mean;
 - how consequences are chosen.
+
+`tools/roll_dice.py` accepts only bounded `NdM`, `NdM+K`, or `NdM-K`
+expressions. Reuse its returned seed to reproduce a disputed roll. A roll
+supplies numbers, never the fictional meaning of success or failure.
+
+## Deterministic Ledger
+
+Enable `mechanics_state.json` only after the player accepts a mechanic that
+benefits from exact tracking. The schema-v2 ledger may track:
+
+- bounded resources and configured ability costs/cooldowns;
+- quantified inventory and consumables;
+- short conditions or wounds with optional duration;
+- explicit progress clocks;
+- elapsed units used by configured regeneration, cooldowns, and durations.
+
+Every update supplies the current mechanics revision, continuity revision, and
+the next monotonic operation sequence. Retrying the latest sequence with the
+same operation id is safe. A stale sequence, revision, or continuity revision
+must be reconciled instead of forced through.
+
+The ledger does not decide social judgment, NPC motivation, clue meaning,
+world events, damage fiction, or narrative consequences. Those remain GM
+decisions grounded in the campaign.
 
 ## Recurring Rulings
 

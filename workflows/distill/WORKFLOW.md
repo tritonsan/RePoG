@@ -13,7 +13,8 @@ Distill is not a technical changelog. It is the GM's memory becoming sharper.
 
 Read:
 
-- the selected Turn Protocol fields in `setup_profile.yaml`;
+- `play_profile.yaml`, which owns runtime performance, narration, mechanics,
+  advancement, dashboard, and visual policy;
 - `session_log.md`;
 - `current_state.yaml`;
 - `active_cast.md`;
@@ -42,6 +43,8 @@ Read:
 - relevant `places/*.md`;
 - relevant `factions/*.md`;
 - `opening_brief.md` when preparing a next-scene or post-arc opening;
+- `style_state.json` when a style review is due;
+- `visual_state.json` when a visual transaction was completed or interrupted;
 - `dashboard/dashboard_state.json` when the campaign uses a local dashboard;
 - `rules.md` if rulings changed.
 
@@ -97,8 +100,9 @@ Update the smallest necessary files:
   player-known connection truth changed;
 - update `opening_brief.md` as `post_arc_opening` when the next session needs a
   fresh opening bridge.
-- update `dashboard/dashboard_state.json` when player-known scene, thread,
-  clue, inventory, NPC, map, visual, or character information changed.
+- patch Dashboard V3 through `tools/update_dashboard.py` when an approved tile
+  has player-known scene, thread, clue, inventory, NPC, map, visual, or
+  character information to refresh.
 
 # Summary Shape
 
@@ -133,8 +137,8 @@ Distill is mandatory at the first applicable boundary:
 - three durable turns for Balanced;
 - every durable turn for Maximum Continuity;
 - a session pause/end, scenario/arc/campaign closure, advancement/reward gate,
-  T2/T3 or location-graph creation, canon/research lock, continuity conflict,
-  manual full-save request, or profile change.
+  canon/research lock, continuity conflict, manual full-save request, or
+  profile change.
 
 For each pending event:
 
@@ -142,7 +146,8 @@ For each pending event:
    the event summary.
 2. Update only affected secondary notes; do not touch unrelated campaign
    files merely because a distill is running.
-3. Apply the dashboard refresh policy using player-safe information.
+3. Apply `play_profile.yaml.dashboard.refresh_policy` using player-safe
+   information and an expected-revision Dashboard V3 tile patch.
 4. Append the distilled-through marker with trigger and reconciled files.
 5. Set `persistence.last_distilled_revision` to the marker revision, reset
    `durable_turns_since_distill` to 0, and clear `pending_cold_targets`.
@@ -153,6 +158,22 @@ If this pass only propagates an already recorded durable event, do not create a
 second continuity revision. If the distill itself establishes a new closure,
 reward, world reaction, or other durable fiction, first create one matching
 durable revision event, then distill through that revision.
+
+# Deferred Note Enrichment
+
+A T2/T3 element created during play may begin as a small playable card rather
+than forcing an immediate full distill. At the next safe structural boundary,
+enrich only promoted elements that remain relevant:
+
+- recurring NPCs gain baseline routine, availability logic, independent aim,
+  knowledge limits, voice, appearance, and current relationships;
+- recurring places gain traffic, ordinary population, access, presence logic,
+  routes, and current disruption;
+- recurring factions gain capability, method, representative, current move,
+  visibility channel, and next move if ignored.
+
+Do not expand an incidental element merely to fill a template. Clear the
+pending cold target once the smallest complete note is validated.
 
 # Appearance Continuity Review
 
@@ -175,8 +196,11 @@ continuity and useful staging.
 
 # Closure And Advancement Review
 
-When the end of a session, scenario, or arc creates an advancement moment, run
-this review before finalizing memory:
+Run this review only when the closure matches
+`play_profile.yaml.advancement.cadence`. `none` creates no automatic reward
+gate; `session`, `scenario`, `arc`, and `campaign` trigger only at their named
+boundary. When a matching advancement moment occurs, review it before
+finalizing memory:
 
 1. Determine closure level: beat, session, scenario, arc, or campaign.
 2. Tag achievements: combat_success, social_success, discovery,
@@ -201,10 +225,9 @@ this review before finalizing memory:
 Major arc closure should usually change both character capability and world
 state. Do not reduce every reward to a stat increase.
 
-For scenario, arc, and campaign closures, set `Advancement status` to `due`
-unless the OOC advancement interlude has already been offered. A post-arc
-opening may be drafted, but the GM must not play it while advancement is `due`
-or `offered`.
+Set `Advancement status` to `due` only at the selected cadence and use the
+profile's presentation policy. A post-arc opening may be drafted, but the GM
+must not play it while advancement is `due` or `offered`.
 
 # Carry-Forward Review
 
@@ -374,13 +397,18 @@ Review recent style findings and table feel:
 # Dashboard Distill
 
 If the campaign uses a local dashboard, refresh it after distillation only
-when the selected policy calls for a scene/major/visible change or the Designer
-explicitly requested it. Maximum Continuity still does not rewrite an
-unchanged dashboard merely to perform work.
+when `play_profile.yaml.dashboard.refresh_policy` calls for the visible change
+or the Designer explicitly requested it. Maximum Continuity still does not
+rewrite an unchanged dashboard merely to perform work.
 
 The dashboard should show only stable, player-known information that remains
 useful for the next scene or session. Remove stale visible NPCs, resolved
 threads that no longer matter, and draft visuals that were not accepted.
+
+Patch only affected V3 tiles with `tools/update_dashboard.py`, supplying the
+dashboard's expected source revision and the new continuity revision. Update
+the scene id, refresh status, and reason. A stale revision is a conflict to
+reconcile, never permission to overwrite newer player-facing state.
 
 Do not use the dashboard to preserve GM-only truth. Keep hidden facts in
 campaign memory and knowledge boundaries until play reveals them.
