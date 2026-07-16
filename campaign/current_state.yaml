@@ -1,6 +1,6 @@
 campaign_id: new_campaign
 mode: lite
-memory_version: 2
+memory_version: 3
 continuity_revision: 0
 status: draft
 last_updated: ""
@@ -23,15 +23,11 @@ player:
   stat_budget_note: ""
   condition: ready
   current_goal: ""
-  stats:
-    Power: 2
-    Agility: 2
-    Endurance: 2
-    Technique: 2
-    Perception: 2
-    Wits: 2
-    Presence: 2
-    Will: 2
+  # Fill eight numeric stats only when
+  # play_profile.yaml.mechanics.resolution_grounding is numeric. Fictional
+  # campaigns use capabilities and limits; bands campaigns may store only the
+  # broad bands they actually use.
+  stats: {}
   capabilities: []
 
 current_scene:
@@ -39,8 +35,28 @@ current_scene:
   location: ""
   summary: ""
   present_npcs: []
+  # May be blank when scene_frame.mode is breather. Issues or threads may
+  # remain active without becoming immediate scene pressure.
   immediate_pressure: ""
   open_choices: []
+
+# This compact frame is the resumable causal contract for the live scene. A
+# draft campaign may leave its strings blank. Before play, scene_id,
+# ongoing_process, last_causal_beat.returned_control_at, and resume_anchor must
+# be meaningful enough to resume without inventing a new beat.
+scene_frame:
+  scene_id: ""
+  mode: ambient
+  ongoing_process: ""
+  disruption: ""
+  last_causal_beat:
+    player_intent: ""
+    world_response: ""
+    changed_fact: ""
+    returned_control_at: ""
+  # At most 3 consequences that have already been caused but not yet surfaced.
+  pending_consequences: []
+  resume_anchor: ""
 
 inventory: []
 
@@ -49,5 +65,3 @@ conditions: []
 active_clocks: []
 
 active_threats: []
-
-notes_for_next_turn: []

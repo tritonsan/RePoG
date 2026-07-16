@@ -6,6 +6,25 @@ First appeared:
 
 Linked elements:
 
+## Scene Composition
+
+When this place becomes a scene, compose it from:
+
+`baseline routine + scene mode + current disruption + naturally present people + player arrival or action`
+
+Choose the mode that follows the fiction:
+
+- `ambient`: foreground routine, local life, and neutral affordances;
+- `focused`: concentrate on the process intersecting the player's goal;
+- `crisis`: show environment through immediate action, obstacles, and witnesses;
+- `aftermath`: show costs, changed relationships, and disrupted routine;
+- `transition`: compress low-risk passage while preserving meaningful change;
+- `breather`: let ordinary care, conversation, rest, or small projects breathe.
+
+Local noise, false leads, clues, and complications are optional ceilings, not
+content quotas. A quiet, empty, closed, or recovering place can still have
+independent life and causal logic.
+
 ## Represents
 
 - Issues:
@@ -45,7 +64,8 @@ architectural encyclopedia.
 ## Reaction Point
 
 The pressure, opportunity, visible change, or NPC action the scene should land
-on so the player naturally wants to respond.
+on so the player naturally wants to respond. In `ambient` or `breather` mode,
+this may be a low-pressure affordance rather than a threat or hook.
 
 ## Baseline Routine
 
@@ -70,7 +90,8 @@ How this place can connect to active threads without becoming only a clue board.
 ## Local Noise And False Leads
 
 Unrelated tensions, ordinary business, misleading details, or side activity
-that make the place feel alive.
+that make the place feel alive. Use only when natural; do not force one into
+every visit.
 
 ## Clue Exposure Gates
 
@@ -110,7 +131,8 @@ Use this for recurring or important obstacles in the place.
 
 ### Obstacle Name
 
-- Relevant stat:
+- Resolution factor: fictional capability/permission, broad band, or numeric
+  stat according to `play_profile.yaml.mechanics.resolution_grounding`.
 - Difficulty: trivial, routine, challenging, hard, or extreme.
 - Why this fits the current campaign stage:
 - Clean success:

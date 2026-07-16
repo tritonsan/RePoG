@@ -8,9 +8,21 @@ campaign-specific mechanics.
 Codex handles ordinary fictional positioning directly. Use deterministic rules
 only when they improve fairness, tension, or continuity.
 
-## Stat Scale
+`play_profile.yaml.mechanics.resolution_grounding` selects the campaign's
+resolution basis:
 
-Default stats use a 1 to 5 scale:
+- `fictional` (default): permissions, competence, approach, leverage, limits,
+  opposition, and consequences decide outcomes in the fiction;
+- `bands`: broad setting-appropriate capability bands support comparison
+  without requiring a full stat block;
+- `numeric`: the eight-stat 1–5 model and budgets below are active.
+
+Do not require numeric player, NPC, faction, or obstacle stats unless the
+selected grounding is `numeric`.
+
+## Numeric Stat Scale
+
+When numeric grounding is active, stats use a 1 to 5 scale:
 
 - 1: weak or unreliable.
 - 2: ordinary but usable.
@@ -29,20 +41,22 @@ Default stats:
 - Presence
 - Will
 
-## Starting Level Budgets
+## Numeric Starting Level Budgets
 
 - Beginner: 16 points, recommended max 3.
 - Competent: 20 points, recommended max 4.
 - Advanced: 24 points, recommended max 4.
 - Elite: 28 points, recommended max 5.
 
-Campaigns may rename tiers to match the setting. Keep the numeric limits clear.
+Campaigns may rename tiers to match the setting. These budgets do not apply to
+fictional or banded grounding.
 
 ## Stat Use And Opposition Model
 
-Stats are not only for the player. Use the same 1 to 5 scale for T2+ NPCs,
-companions, major antagonists, important faction faces, and significant
-obstacles.
+Under numeric grounding, stats are not only for the player. Use the same 1 to
+5 scale for T2+ NPCs, companions, major antagonists, important faction faces,
+and significant obstacles. Under fictional or banded grounding, use the
+equivalent prose permissions or broad bands instead.
 
 Use stats as fictional capability anchors:
 

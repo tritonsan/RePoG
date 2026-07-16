@@ -6,6 +6,12 @@ Use this file to separate what the GM knows from what the player, player
 character, companions, NPCs, and factions know. This file exists to prevent
 GM-only facts from leaking into player-facing narration or NPC dialogue.
 
+This file is the sole authority for current knowledge facts and their current
+holders. Character and faction notes own stable epistemic habits—how an actor
+notices, verifies, misreads, or tests information—and refer here by fact id.
+They must not maintain a second prose copy of what the actor currently knows or
+suspects.
+
 ## Core Rule
 
 Player-facing narration may only directly state:
@@ -45,6 +51,7 @@ truths that the GM knows but the player character has not learned.
 
 ### Protected Name
 
+- Fact id:
 - Status: GM-only, foreshadowable, PC-known, companion-known, NPC-known, or
   revealed.
 - Player knows:
@@ -61,6 +68,7 @@ truths that the GM knows but the player character has not learned.
 Facts the player character can act on directly.
 
 - Fact:
+- Fact id:
 - Source:
 - Last confirmed:
 
@@ -68,27 +76,28 @@ Facts the player character can act on directly.
 
 ### Companion Name
 
-- Knows:
-- Suspects:
-- Does not know:
-- Must not say or imply yet:
+- Confirmed fact ids:
+- Suspicion fact ids:
+- Explicitly unknown fact ids:
+- Must-not-imply fact ids:
 - How they could learn more:
 
 ## NPC And Faction Knowledge
 
 ### NPC Or Faction Name
 
-- Knows:
-- Suspects:
-- Does not know:
+- Confirmed fact ids:
+- Suspicion fact ids:
+- Explicitly unknown fact ids:
 - Verification method:
-- Must not say or imply yet:
+- Must-not-imply fact ids:
 
 ## Reveal Ledger
 
 Use compact entries.
 
 - Fact/name:
+  - Fact id:
   - Status:
   - Known by player/PC:
   - Known by companions:

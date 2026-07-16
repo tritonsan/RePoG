@@ -82,8 +82,9 @@ rules. RePoG explains the tracking cost first, and only the mechanic modules
 you approve become part of the campaign.
 
 The resulting `play_profile.yaml` keeps the accepted lenses, mechanics,
-narration style, advancement cadence, dashboard policy, visual policy, and
-turn-speed preference in one compact runtime contract. This lets a mixed
+narrative signature, player-authorship boundary, resolution grounding,
+breather preference, advancement cadence, dashboard policy, visual policy,
+and turn-speed preference in one compact runtime contract. This lets a mixed
 fantasy-survival campaign keep both identities without making every fantasy
 campaign track rations or spell points.
 
@@ -91,8 +92,9 @@ campaign track rations or spell points.
 
 Session 0 also asks how much maintenance each turn should perform:
 
-- **Fast (recommended):** saves current truth immediately and batches
-  secondary notes at scene boundaries or after five durable turns.
+- **Fast (recommended):** saves current truth immediately, uses a small scene
+  checkpoint when needed, and reserves full distillation for five durable
+  turns or a true structural boundary.
 - **Balanced:** reconciles secondary notes at important beats or after three
   durable turns.
 - **Maximum Continuity:** updates every affected note and runs full checks on
@@ -118,6 +120,21 @@ estimates rather than guarantees.
 
 During play, these notes and checks remain behind the curtain. The player
 speaks in natural language and receives the living world, not technical state.
+
+## GM Flow And Breathing Room
+
+RePoG resolves each turn from the player's stated intent and method, the
+world's real resistance, what involved characters can actually know, and the
+nearest causal consequence. The GM does not speak for the player character or
+decide their private feelings unless the selected narration contract explicitly
+invites shared interiority.
+
+The pacing model also makes room for recovery, ordinary conversation,
+maintenance, companion time, small exploration, and quiet personal choices.
+A calm scene does not receive a surprise threat merely because the GM wants to
+move on. The player may remain there, leave through a natural affordance, or
+encounter an already-established world event when its real trigger becomes
+due.
 
 If you request a generated visual, RePoG first preserves the interrupted
 question or fictional beat. A visual is not treated as campaign canon or added

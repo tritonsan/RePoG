@@ -8,7 +8,9 @@ that follows. It is not a session transcript.
 ## Current Progression State
 
 - Current closure level:
+- Advancement presentation: none
 - Advancement status: not_due
+- OOC interlude status: not_applicable
 - Fiction continuation locked until advancement: no
 - Last milestone:
 - Next likely milestone:
@@ -21,14 +23,26 @@ that follows. It is not a session transcript.
 - GM-awarded perk: none
 - World pressure that should respond to growth:
 
+`Advancement presentation` must be `explicit_ooc`, `automatic_fictional`, or
+`none` and should mirror `play_profile.yaml`. `OOC interlude status` must be
+`not_applicable`, `not_offered`, `offered`,
+`deferred`, or `resolved`. Only `explicit_ooc` may use values other than
+`not_applicable`. It may lock fiction only while an offered player choice is
+unresolved; deferral clears the lock. `automatic_fictional` and `none` always
+use `not_applicable` and never lock continuation.
+
 ## Closure Review Template
 
 ### Closure Title
 
 - Date:
 - Closure level: beat, session, scenario, arc, or campaign.
+- Advancement presentation at closure: explicit_ooc, automatic_fictional, or
+  none.
 - Advancement status: not_due, due, offered, chosen, deferred, or applied.
-- Fiction continuation locked until advancement: yes/no.
+- OOC interlude status at closure: not_applicable, not_offered, offered,
+  deferred, or resolved.
+- Fiction continuation locked at closure: yes/no.
 - What closed:
 - Closure volume: short, medium, long, or saga.
 - Achievement quality: minor, moderate, major, or transformative.
@@ -43,14 +57,6 @@ that follows. It is not a session transcript.
 - Faction reactions:
 - Companion or ally changes:
 - Failure consequences still alive:
-
-## Advancement Gate
-
-- Status:
-- OOC interlude offered: yes/no.
-- Fiction may continue: yes/no.
-- Deferred until:
-- Reason if no upgrade is due:
 
 ## Reward Calibration
 
@@ -120,6 +126,9 @@ that follows. It is not a session transcript.
 - New threat or complication:
 
 ## Pending OOC Questions
+
+Use only for an `explicit_ooc` interlude or a question the player requested.
+Leave empty for normal `automatic_fictional` and `none` progression.
 
 - Question:
 - Why it matters:

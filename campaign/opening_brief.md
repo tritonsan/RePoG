@@ -2,9 +2,27 @@
 
 Campaign id: `new_campaign`
 
+Opening status: `pending`
+
+Allowed values are `pending`, `active`, and `consumed`:
+
+- `pending`: the next opening is still being prepared and may be incomplete;
+- `active`: this file owns the next opening and may be checked against the live
+  starting state;
+- `consumed`: the opening has already been narrated and this file is historical
+  evidence, not live scene truth.
+
 This file is the GM's working source for the next player-facing opening. It
 defines what the player must know before acting, what should remain hidden, and
 whether the opening is the first campaign scene or a post-arc bridge.
+
+While status is `active`, this file is the sole owner of the next finalized
+opening. `first_session.md` may supply drafting inputs until its prep status
+becomes `materialized`; `session_brief.md` may reference this file but must not
+copy its opening text. After the opening is used, mark both this file and
+`first_session.md` consumed in the same durable checkpoint. A consumed opening
+must not be compared to `current_state.yaml` for current location, present
+NPCs, pressure, scene mode, or resume state.
 
 ## Opening Type
 
@@ -14,6 +32,20 @@ Allowed values:
 
 - `first_campaign_opening`
 - `post_arc_opening`
+
+## Scene Mode
+
+`ambient`
+
+Allowed values are `ambient`, `focused`, `crisis`, `aftermath`, `transition`,
+and `breather`.
+
+Frame the opening through this causal composition:
+
+`baseline routine + scene mode + current disruption + naturally present people + player arrival`
+
+Do not add local noise, clues, or an interruption merely to fill every term.
+They are optional and must follow the place and mode.
 
 ## Where
 
@@ -40,6 +72,12 @@ Facts the character and player may know before choosing an action.
 
 What is happening in front of the character right now.
 
+## Ongoing Local Process
+
+What was already happening before the character arrived or acted. In a quiet
+or empty place, record the routine, absence, recovery, or physical process that
+still gives the scene independent logic.
+
 ## Neutral Action Space
 
 Natural things the character could decide to do without being pushed into one
@@ -50,6 +88,16 @@ storytelling preferences allow guided choices.
 
 A small pressure, opportunity, irregularity, or visible tension that makes the
 scene alive without explaining the whole campaign plot.
+
+For a `breather` opening, pressure may stay in the background. Offer ordinary
+affordances without a menu or manufactured threat. Leave the scene when the
+player chooses a new goal, follows an affordance elsewhere, or a previously
+established trigger genuinely comes due under the selected breather exit
+policy.
+
+This field may be blank when Scene Mode is `breather`. Campaign-level pressure
+may remain active in `issues.md` or `threads.md` without becoming immediate
+scene pressure.
 
 ## Do Not Reveal Yet
 

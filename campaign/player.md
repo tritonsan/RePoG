@@ -34,7 +34,17 @@ has a claim on them.
 
 Tier name and what that means in this setting.
 
-## Stats
+## Resolution Profile
+
+Use the grounding selected in
+`play_profile.yaml.mechanics.resolution_grounding`:
+
+- `fictional`: describe permissions, reliable competencies, limits, leverage,
+  and counterplay without numeric stats;
+- `bands`: record only the broad capability bands the campaign actually uses;
+- `numeric`: fill all eight 1–5 stats below and apply the chosen budget.
+
+## Stats (Numeric Grounding Only)
 
 - Power:
 - Agility:

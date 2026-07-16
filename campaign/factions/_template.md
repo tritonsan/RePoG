@@ -8,7 +8,12 @@ Linked elements:
 
 Faction Power Band:
 
-## Faction Capability Profile
+## Stable Capability
+
+Describe the faction's durable reach, resources, authority, dependencies, and
+limits. Under `fictional` resolution grounding, prose is sufficient. Under
+`bands`, use setting-appropriate broad bands. Fill the 1–5 profile below only
+when `play_profile.yaml.mechanics.resolution_grounding` is `numeric`.
 
 - Influence:
 - Resources:
@@ -18,10 +23,11 @@ Faction Power Band:
 - Legitimacy:
 - Information:
 
-Use the same 1 to 5 meaning as character stats, but treat these as broad
-organizational capabilities, not one person's attributes.
+When numeric grounding is active, use the same 1 to 5 meaning as character
+stats, but treat these as broad organizational capabilities, not one person's
+attributes.
 
-## Typical Member Stats
+## Typical Member Stats (Numeric Grounding Only)
 
 - Power:
 - Agility:
@@ -35,12 +41,14 @@ organizational capabilities, not one person's attributes.
 ## Specialist Stats
 
 What a trained specialist, agent, veteran, or professional representative looks
-like mechanically at the current campaign stage.
+like mechanically at the current campaign stage. Under fictional or banded
+grounding, describe only the relevant competence, leverage, and limits.
 
 ## Elite / Leader Stats
 
 What the faction's serious leaders or elite threats can do, and why those stats
-fit the current campaign stage.
+fit the current campaign stage. Numeric values are required only under numeric
+grounding.
 
 ## Weak Points And Limits
 
@@ -82,14 +90,16 @@ The NPC or public figure who makes this faction playable at the table.
 Locations, routes, offices, rooms, vehicles, or territories where the faction
 can be encountered or affected.
 
-## What The Faction Knows About The Player
+## Knowledge References
 
-Facts the faction can act on directly because they were observed, reported, or
-verified.
+`knowledge_boundaries.md` owns the faction's current confirmed, suspected,
+unknown, and protected facts. Reference those facts by id instead of copying
+them into this note.
 
-## What The Faction Suspects
-
-Unconfirmed beliefs the faction may test, pressure, or investigate.
+- Knowledge-boundary entry:
+- Confirmed fact ids:
+- Suspicion fact ids:
+- Protected-name or reveal-ledger ids:
 
 ## How The Faction Verifies Information
 
@@ -104,11 +114,11 @@ How this faction usually pushes people without exposing everything it knows.
 
 How the faction presents itself.
 
-## True Desire
+## Stable Desire
 
 What the faction really wants.
 
-## Methods
+## Stable Methods
 
 How it usually gets what it wants.
 
@@ -120,23 +130,24 @@ People, places, money, leverage, secrets, weapons, or legitimacy.
 
 Who opposes, funds, fears, needs, or manipulates this faction.
 
-## Current Move
+## Current World Domain Reference
 
-What the faction is doing now.
+Reference the owning entry in `world_dynamics.md` for the faction's current
+offscreen trajectory, next evaluation trigger, and pressure. Do not duplicate
+the current move here. If faction members are acting in the immediate scene
+chain, their temporary location and objective belong in `active_cast.md`.
 
-## Next Move If Ignored
+- Domain id:
+- Active-cast row, if any:
 
-What the faction is likely to attempt without player involvement, and which
-fictional trigger should cause the GM to evaluate that move.
+## Player Relationship Posture And References
 
-## Pressure Clock Or Escalation
+Record only the faction's stable baseline posture and the ids of current edges.
+`relationship_map.md` owns how the faction currently views the player and
+`session_log.md` owns historical changes.
 
-What gets worse if the player ignores this faction or if the faction succeeds
-offscreen.
-
-## Player Relationship
-
-How the faction currently views the player.
+- Baseline posture toward people in the player's position:
+- Relationship-map edge ids:
 
 ## Player Integration Hooks
 

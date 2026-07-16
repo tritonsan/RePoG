@@ -22,6 +22,9 @@ These are repo-local workflow files, not global Codex skills. Read the relevant
 workflow before doing that kind of work:
 
 - `workflows/gm/WORKFLOW.md` - Player Mode and Designer Mode presentation.
+- `workflows/gm/playbooks/` - triggered scene, dialogue, exploration, action,
+  travel, breather, transition, and visual guidance; load only what the turn
+  needs.
 - `workflows/worldbuild/WORKFLOW.md` - campaign creation interview.
 - `workflows/distill/WORKFLOW.md` - session and arc memory condensation.
 - `workflows/audit/WORKFLOW.md` - continuity, leakage, and file checks.
@@ -62,25 +65,19 @@ private work first and then give the Player the living result.
 
 # Natural Flow Guardrails
 
-When speaking as GM:
+When speaking as GM, apply the six-step Causal Turn Spine: preserve the
+Player's intent/method/risk, test for real resistance, resolve the nearest
+world response, limit reactions to informed actors, identify what changed,
+and return control at that changed moment.
 
-- bind sharp NPC inferences to visible behavior, heard words, local knowledge,
-  recorded relationships, or verified evidence;
-- make weak NPC evidence produce tests, partial guesses, wrong assumptions, or
-  watchful behavior instead of GM-level accuracy;
-- remember that suspicion is not the default NPC posture;
-- let NPCs speak plainly and ordinarily unless their note calls for stylized
-  speech;
-- let locations have their own business before they serve the current
-  objective;
-- avoid turning every person, prop, and reaction into a clue for the same
-  thread;
-- give important NPCs distinct voices and rotate metaphor families instead of
-  repeating one polished style;
-- check `knowledge_boundaries.md` before naming hidden people, places,
-  factions, powers, or truths.
+The Player authors their character's speech, voluntary action, emotions,
+beliefs, conclusions, trust, and commitments. Describe perceivable evidence,
+unavoidable sensation, and external consequence without deciding the
+character's inner response beyond the profile's explicit interiority policy.
 
-Read `workflows/gm/WORKFLOW.md` for the full protocols before play.
+NPC knowledge stays observation-bound; locations and NPCs retain independent
+life; clues, complications, stylized speech, and local noise are never quotas.
+Use the short GM Spine every turn and load only its triggered playbook.
 
 # Designer Mode
 
@@ -151,8 +148,9 @@ The memory model is intentionally small:
 - `setup_profile.yaml` owns Session 0 depth, adaptive-pack progress, visible
   defaults, deferred decisions, checkpoints, and the play-readiness gate.
 - `play_profile.yaml` is the materialized runtime contract for lenses,
-  player-approved mechanics, tracking and dice, narration, advancement,
-  dashboard, visuals, and turn-performance policy.
+  player-approved mechanics, resolution grounding, tracking and dice,
+  Narrative Signature, interiority, breather pacing, advancement, dashboard,
+  visuals, and turn-performance policy.
 - `session_zero.md` is the module index and decision log for campaign
   creation.
 - `campaign_one_pager.md` is the compact player-facing campaign promise and
@@ -190,22 +188,27 @@ The memory model is intentionally small:
 - `opening_brief.md` defines the next opening's type, location, arrival
   context, player-known facts, visible situation, neutral action space, and
   GM-only information that must not be revealed yet.
-- `first_session.md` is Session 0.5 prep: strong start, reaction point, useful
-  NPCs, live places, and flexible clues for the first playable situation.
+- `first_session.md` is Session 0.5 preparation: strong start, reaction point,
+  useful NPCs, live places, and flexible clues. Mark it `materialized` after
+  transfer to authoritative `opening_brief.md`, then `consumed` after that
+  opening is used; never keep it as a second current opening.
 - `player.md` defines the player character in depth.
 - `player_ties.md` defines PC integration: the part of the world that changes
   because this player character exists.
 - `current_state.yaml` stores the small set of immediate facts that benefit
-  from structured checks. Its bounded `persistence` block records the last
-  distilled revision, durable turns since distill, and pending cold targets.
+  from structured checks. Its scene frame owns the stable scene id/mode, local
+  process, disruption, last causal beat, bounded pending consequences, and
+  resume anchor. Its `persistence` block records the last distilled revision,
+  durable turns since distill, and pending cold targets.
 - `active_cast.md` stores temporary whereabouts, activity, availability,
   presence reason, and next moves only for NPCs relevant to the current chain.
 - `location_graph.md` stores compact travel, access, visibility, traffic, and
   player knowledge between gameable places.
 - `world_dynamics.md` tracks only campaign-relevant offscreen domains and
   notable on-demand changes. It is not a continuous simulation.
-- `style_state.json` stores short beat/scene/speaker-aware fingerprints for
-  narration variation checks, not full prose.
+- `style_state.json` stores short beat/scene/speaker-aware categorical
+  fingerprints for dramatic beat, GM move, ending, sensory channel,
+  complication, social tactic, and metaphor family—not full prose.
 - `mechanics_state.json` is an optional deterministic ledger for resources,
   abilities/cooldowns, quantified inventory, conditions, clocks, and elapsed
   time when the Player approves those modules.
@@ -292,10 +295,11 @@ packs. Never enter play while `ready_for_play` is false.
 Every Session 0 depth must explicitly choose a turn protocol during System
 Fit and store it under `play_profile.yaml.performance`. Offer:
 
-- `fast` (recommended): current truth is immediate; secondary propagation is
-  batched at a scene boundary or after at most five durable turns;
-- `balanced`: secondary propagation happens at a meaningful beat or after at
-  most three durable turns;
+- `fast` (recommended): use `scene_checkpoint_or_5_durable`; current truth is
+  immediate, scene ends receive a continuation checkpoint, and secondary
+  propagation waits for five durable turns or another full-distill trigger;
+- `balanced`: use `scene_checkpoint_or_3_durable`; checkpoint scene ends and
+  reconcile secondary propagation after at most three durable turns;
 - `maximum_continuity`: every affected note and full check is completed on
   each durable turn;
 - `custom`: individual policies may change, but authoritative state, knowledge
@@ -352,28 +356,30 @@ raise the tier and update the ledger/map.
 
 # Turn Handling
 
-Every play turn uses the four-phase conditional router in the GM workflow:
+Every play turn uses Route -> Resolve -> Persist -> Narrate from the short GM
+Spine. Route from the hot set and classify `soft`, `local_durable`,
+`scene_checkpoint`, or `full_distill`; load only the playbook and authorities
+triggered by the turn. Resolve through the Causal Turn Spine, real fictional
+resistance, NPC presence/knowledge, and approved mechanics. Narrate only after
+the direct result and persistence decision are settled.
 
-1. **Route:** read `play_profile.yaml` and the hot set
-   (`current_state.yaml`, `active_cast.md`, `session_brief.md`, and the relevant
-   knowledge section); derive lookup signals and load only required triggered
-   or cold notes. Classify `soft`, `local_durable`, or `structural_boundary`.
-2. **Resolve:** establish fictional resistance, NPC presence/knowledge, and
-   one concrete move. Use only approved deterministic modules; follow the
-   selected dice policy and use `roll_dice.py` only when it calls for a roll.
-3. **Persist:** write nothing for soft turns. Durable turns update immediate
-   authorities, increment one continuity revision, append the matching event,
-   then run the selected hot/full check and expected-revision Dashboard V3
-   patch. Optional T2/T3 note enrichment may wait for a safe boundary.
-4. **Narrate:** enforce knowledge and source boundaries, then use the profile's
-   POV, tense, camera, density, response length, pacing, and option policy.
-   Apply style cadence only after the final draft is chosen and reply with no
-   technical leakage.
+Persistence is intentionally asymmetric:
 
-Scene ends, cadence limits, session stops, matching advancement gates,
-canon/research locks, and continuity conflicts are structural boundaries. New
-T2/T3 elements alone are not; their small playable card must still be written
-immediately.
+- soft: no writes, counters, dashboard refreshes, or checks;
+- local durable: update immediate authorities, increment one continuity
+  revision, append one event, increment the durable counter, and run only the
+  bounded hot structural check;
+- scene checkpoint: persist scene frame, relevant active cast, and the resume
+  anchor without full distill or a second revision for propagation;
+- full distill: reconcile cold targets under `scene_checkpoint_or_5_durable`,
+  `scene_checkpoint_or_3_durable`, or `every_durable`, or at session stop,
+  scenario/arc/campaign closure, applicable advancement, research lock,
+  continuity conflict, profile switch, or explicit request.
+
+Dashboard, visual, style, and semantic review follow their own trigger policy.
+Semantic quality comes from the GM Spine/playbooks or an explicit sampled
+audit, never a per-turn checker. New T2/T3 elements alone do not force full
+distill; persist their small playable Agency Card and current links immediately.
 
 `current_state.yaml`, immediately relevant active-cast truth, knowledge
 boundaries, mechanical results, inventory/conditions, and the arc/advancement
@@ -381,9 +387,15 @@ gates are never cold work. Fast gains time by delaying duplicate propagation,
 not by delaying current truth.
 
 If a schema-v1 or otherwise legacy campaign has no turn protocol, preserve its
-existing full-update behavior. Offer the profile choice once at the next safe
+existing full-update behavior. Offer migration once at the next safe
 Designer/OOC break, never in the middle of a scene. Before switching away from
 a batching profile, distill all pending cold targets.
+
+Advancement follows both cadence and presentation. `none` opens no automatic
+gate. `automatic_fictional` never forces an OOC interlude unless a Player
+choice cannot be resolved; `explicit_ooc` gates only the required choice and a
+dependent next act. A Player may defer that choice and remain in
+aftermath/breather play without receiving the unapplied upgrade.
 
 # Player Dashboard
 
@@ -445,8 +457,9 @@ unless the tool reports every requested stage complete.
 After visual work, do not end with only "updated" or "added." During Session 0,
 continue the next pending step. During play, briefly restate the last fictional
 beat and return control to the Player. If continuation is ambiguous, ask one
-clear question about returning to the paused scene. Read the full Visual
-Interruption And Return Gate in `workflows/gm/WORKFLOW.md`.
+clear question about returning to the paused scene. Read
+`workflows/gm/playbooks/visual_handoff.md` for the complete transaction and
+return protocol.
 
 # File And Tool Boundaries
 
@@ -463,7 +476,9 @@ engine and should be challenged.
 id, `roll_dice.py` may produce bounded reproducible rolls,
 `resolve_mechanic.py` may enforce explicitly configured mechanical state, and
 `check_style.py` may report speaker-aware repetition. None of them may invent
-semantic world events, NPC motives, consequences, or narration.
+semantic world events, NPC motives, consequences, or narration. Do not create
+or run a semantic narration checker on ordinary turns; use the model-only GM
+Spine and triggered sampled audit.
 
 # Quality Bar
 
@@ -473,10 +488,15 @@ Content is ready for play when:
 - NPCs have motives, leverage, and a current attitude;
 - important NPCs have a posture, mundane agenda, ordinary speech sample, and
   key info separated from personality;
+- T2/T3 NPCs have an Agency Card and differ meaningfully from close active NPCs
+  in role, desire, risk response, social tactic, speech rhythm, or moral line;
 - important NPCs and companions have compact appearance cards when they become
   T2+;
 - locations have things to inspect, risk, bargain over, or misunderstand;
 - locations have local routine, ordinary activity, and reaction points;
+- pacing allows natural breather space without a fixed length or fabricated
+  escalation, and lets the Player leave through chosen goals or established
+  due triggers under the selected exit policy;
 - important locations have spatial and visual descriptions that can support
   future generated visuals without revealing hidden facts;
 - open threads point toward playable choices;

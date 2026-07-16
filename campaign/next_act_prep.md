@@ -107,7 +107,10 @@ already clear.
 
 ## Opening Brief Inputs
 
-Use these to update `opening_brief.md` as `post_arc_opening`.
+Use these to draft `opening_brief.md` as `post_arc_opening` with Opening status
+`pending`. Set it to `active` only after this frame is playable and any
+dependent advancement choice is cleared; set it to `consumed` after the
+opening is narrated. `first_session.md` remains historical and consumed.
 
 - Previous consequence:
 - How the character got here:

@@ -12,8 +12,10 @@ python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
 ```
 
 `hot` is the bounded per-durable-turn check used by Fast and Balanced. `full`
-is the default when `--scope` is omitted and is required at distill, scene,
-session, closure, advancement, migration, and audit boundaries.
+is the default when `--scope` is omitted and is required at full distill,
+session stop, closure, advancement, migration, and audit boundaries. A scene
+checkpoint alone persists its small handoff contract and does not force a full
+distill.
 
 Run the dependency-free distributable smoke check with:
 
@@ -44,16 +46,45 @@ requested dashboard placement roll back together on failure.
 python tools/snapshot.py campaign --label before_scene
 ```
 
+## GM Contract Migration
+
+```bash
+python tools/migrate_gm_contract.py campaign --dry-run
+python tools/snapshot.py campaign --label before_gm_contract_v3
+python tools/migrate_gm_contract.py campaign --apply --json
+```
+
+Apply is refused until a snapshot manifest already exists. The migration is
+idempotent, preserves fiction prose, maps legacy scene-boundary persistence
+names to scene-checkpoint policies, and marks uncertain NPC agency/offscreen,
+opening-lifecycle, faction-motion, relationship, and knowledge ownership for
+review rather than inventing answers.
+
+## Sampled GM Replay Audit
+
+`tools/gm_replay_suite.json` contains 12 reproducible, non-API scenarios for
+sampled quality review. Each fixture provides private initial state, ordered
+turns, expected observations, critical failures, and a blank scoring record.
+Run it only at an explicit audit or scheduled sample using the blind procedure
+in `workflows/audit/WORKFLOW.md`; it is not a per-turn checker or a second
+narrative engine. A scenario passes at mean score 1.5 or higher with no
+critical Player-authorship or knowledge-boundary failure.
+
 ## Player-Facing And Style Checks
 
 ```bash
 python tools/check_player_facing.py --campaign campaign --text "You step into the rain."
 python tools/check_style.py campaign/style_state.json --text "Rain ticks against the glass." --scene-id dock --beat-id turn-12
 python tools/check_style.py campaign/style_state.json --text "Rain ticks against the glass." --scene-id dock --beat-id turn-12 --record
+python tools/check_style.py campaign/style_state.json --text "The room settles." --dramatic-beat respite --gm-move offer-affordance --ending-form open-moment --record
 ```
 
 Use `--speaker-type npc --speaker-id <id>` for a character-only excerpt. This
 keeps a deliberate character voice separate from narrator-pattern warnings.
+Style schema v3 also retains at most eight optional categorical fingerprints
+(`dramatic_beat`, `gm_move`, `ending_form`, `sensory_channel`,
+`complication_type`, `npc_social_tactic`, and `metaphor_family`). Repetition is
+warning-only; the helper does not judge meaning or rewrite narration.
 The player-facing check reads exact unrevealed names from
 `knowledge_boundaries.md`; ordinary words such as "tool" are not banned.
 
