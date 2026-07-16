@@ -32,15 +32,43 @@ reasoning as product features.
 
 | Change | GPT-5.6 semantic role | Deterministic enforcement | Verification / demo evidence |
 | --- | --- | --- | --- |
-| Contextual Session 0 and lenses | Infer useful campaign-specific options, combine lenses, surface conflicts | Profile and readiness validation | Pending implementation |
-| GM routing and narration profile | Interpret fictional intent, resistance, voice, and consequences | Profile enums, knowledge checks, bounded state validation | Pending implementation |
-| Mechanics and dice | Decide when an established rule applies and translate results into fiction | Seeded dice, strict state operations, revision/idempotency checks | Pending implementation |
-| Visual handoff | Preserve the interrupted setup/scene context in the conversation | Single pending transaction, asset/gallery/dashboard validation | Pending implementation |
-| Dashboard V3 | Curate player-safe summaries and adaptive widgets | Revision-aware patching, strict schema/assets/map validation | Pending implementation |
+| Contextual Session 0 and lenses | Infer useful campaign-specific options, combine lenses, surface conflicts | Profile, research, Deep-pack, and readiness validation | `python tools/verify_workspace.py`; Session 0/profile acceptance suite |
+| GM routing and narration profile | Interpret fictional intent, resistance, voice, and consequences | Profile enums, campaign-aware knowledge checks, bounded hot/full validation | Four-phase workflow review; hot-context and POV/tense acceptance cases |
+| Mechanics and dice | Decide when an established rule applies and translate results into fiction | Seeded dice, strict state operations, revision/idempotency checks | Seed/bounds/strict-integer tests and a 205-operation old-id replay test |
+| Visual handoff | Preserve the interrupted setup/scene context in the conversation | Single pending transaction, dual asset copy, atomic rollback, gallery/dashboard validation | Begin/attach/accept and injected-failure rollback tests |
+| Dashboard V3 | Curate player-safe summaries and adaptive widgets | Revision-aware patching, strict schema/assets/map/protected-name validation | Dashboard/server checks plus browser polling, map-state, text-atlas, and focus-restoration smoke tests |
+
+## Public Workspace Verification
+
+The downloaded workspace can verify itself without installing dependencies:
+
+```bash
+python tools/verify_workspace.py
+python tools/verify_workspace.py --json
+```
+
+The command checks the distributable layout, parses bundled Python helpers,
+runs the full campaign validator, and validates Dashboard V3. The JSON form is
+intended for Codex, Claude Code, and other agentic tools.
+
+Final implementation verification on July 16, 2026:
+
+- development acceptance suite: `265 passed`;
+- public dependency-free verifier: 0 errors, 0 warnings, one expected
+  fresh-template `location_blank` info;
+- dashboard validator and `serve_dashboard.py --check-only`: 0 errors;
+- browser smoke: an update arriving after an unchanged polling cycle rendered,
+  unrelated tile updates preserved map zoom and the open text atlas, and the
+  visual dialog restored keyboard focus after Escape;
+- Build Week range: `7ccfd90..HEAD` (baseline excluded by Git range syntax).
+
+The development test harness remains outside the clean player ZIP. The public
+workspace carries its own dependency-free verifier and all runtime guardrails.
 
 ## Submission Evidence To Record
 
-- Codex task/session id and the `/feedback` submission reference.
+- Codex task/session id: `019f4afe-8604-74e1-b604-5eace6fb6b9c`.
+- `/feedback` submission reference: pending submission from this task.
 - Final test counts and exact verification commands.
 - Before/after screenshots of the same dashboard states and viewports.
 - A public video shorter than three minutes with audio, showing a mixed

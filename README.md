@@ -51,7 +51,10 @@ Start this RePoG campaign and guide me through Session 0.
 
 ![Start a new conversation in the RePoG workspace](assets/getting-started/04-start-conversation.gif)
 
-Choose Quick, Standard, or Deep Session 0 and answer naturally.
+Choose Quick, Standard, or Deep Session 0 and answer naturally. After your
+pitch, RePoG offers a small Starter Bundle of campaign-specific approaches;
+you can accept one, mix them, change them, use the recommended default, or
+defer a non-critical choice.
 
 </details>
 
@@ -69,6 +72,20 @@ understand the file structure before playing.
 All modes use the same continuity model. Quick records visible defaults;
 Standard gives a balanced setup; Deep opens only the detail packages relevant
 to the chosen campaign.
+
+## Lenses And Optional Mechanics
+
+Session 0 can combine setting lenses (`fantasy`, `realistic`, `cyberpunk`) with
+the `survival` play lens. Lenses shape questions and coherent defaults; they do
+not silently turn on HP, mana, inventory accounting, dice, wounds, or other
+rules. RePoG explains the tracking cost first, and only the mechanic modules
+you approve become part of the campaign.
+
+The resulting `play_profile.yaml` keeps the accepted lenses, mechanics,
+narration style, advancement cadence, dashboard policy, visual policy, and
+turn-speed preference in one compact runtime contract. This lets a mixed
+fantasy-survival campaign keep both identities without making every fantasy
+campaign track rations or spell points.
 
 ## Turn Speed And Continuity
 
@@ -102,27 +119,39 @@ estimates rather than guarantees.
 During play, these notes and checks remain behind the curtain. The player
 speaks in natural language and receives the living world, not technical state.
 
+If you request a generated visual, RePoG first preserves the interrupted
+question or fictional beat. A visual is not treated as campaign canon or added
+to the dashboard until you accept it; after acceptance, revision, or
+cancellation, play returns to the preserved point.
+
 ## Optional Dashboard
 
 After Session 0, open the local player dashboard with:
 
 ```bash
-python -m http.server 8787 --directory campaign/dashboard
+python tools/serve_dashboard.py campaign/dashboard
 ```
 
 Then visit `http://localhost:8787/`. The dashboard is read-only and contains
-only player-known information. See [`docs/dashboard.md`](docs/dashboard.md).
+only player-known information. Dashboard V3 uses campaign-specific tiles, so a
+mechanics-light game does not show invented stats or resources. Revision-aware
+updates reject stale data instead of silently replacing newer state. See
+[`docs/dashboard.md`](docs/dashboard.md).
 
 ## Optional Checks
 
 ```bash
+python tools/verify_workspace.py
 python tools/check_state.py campaign --scope hot
 python tools/check_state.py campaign --scope full
 python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
 python tools/snapshot.py campaign --label before_scene
 ```
 
-These are guardrails, not a second game engine.
+`verify_workspace.py` is the dependency-free all-in-one smoke check for the
+downloaded workspace. Add `--json` for agent-readable output. The individual
+commands remain useful when diagnosing one area. These are guardrails, not a
+second game engine.
 
 ## Workspace Contents
 
@@ -130,7 +159,7 @@ These are guardrails, not a second game engine.
 - `CLAUDE.md`: compatibility bridge for Claude Code.
 - `OPEN_CAMPAIGN.md`: first-conversation instructions.
 - `workflows/`: worldbuilding, GM, distill, and audit procedures.
-- `briefs/`: Session 0 interview guidance.
+- `briefs/`: Session 0 interview guidance and composable genre lenses.
 - `campaign/`: this game's readable memory and player dashboard.
 - `tools/`: small local checks, snapshots, mechanics, and style helpers.
 
