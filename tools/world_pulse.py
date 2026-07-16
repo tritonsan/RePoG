@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
-import secrets
 import sys
 from typing import Any
 
@@ -17,18 +17,29 @@ def _fail(message: str) -> dict[str, Any]:
     return {"ok": False, "error": message}
 
 
+def _integer(value: Any, name: str) -> int:
+    if type(value) is not int:
+        raise ValueError(f"{name} must be an integer")
+    return value
+
+
+def _stable_seed(evaluation_id: str, domain: str) -> int:
+    digest = hashlib.sha256(f"repog-world-pulse-v2\0{evaluation_id}\0{domain}".encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big")
+
+
 def generate_pulse(payload: dict[str, Any]) -> dict[str, Any]:
     domain = payload.get("domain")
     if not isinstance(domain, str) or not domain.strip():
         return _fail("domain must be a non-empty string")
 
     try:
-        elapsed_steps = int(payload.get("elapsed_steps", 0))
-        volatility = int(payload.get("volatility", 0))
-        pressure = int(payload.get("pressure", 0))
-        event_cap = int(payload.get("event_cap", 3))
-    except (TypeError, ValueError):
-        return _fail("elapsed_steps, volatility, pressure, and event_cap must be integers")
+        elapsed_steps = _integer(payload.get("elapsed_steps", 0), "elapsed_steps")
+        volatility = _integer(payload.get("volatility", 0), "volatility")
+        pressure = _integer(payload.get("pressure", 0), "pressure")
+        event_cap = _integer(payload.get("event_cap", 3), "event_cap")
+    except ValueError as exc:
+        return _fail(str(exc))
 
     if elapsed_steps < 0:
         return _fail("elapsed_steps must be at least 0")
@@ -39,11 +50,21 @@ def generate_pulse(payload: dict[str, Any]) -> dict[str, Any]:
     if not 1 <= event_cap <= 5:
         return _fail("event_cap must be between 1 and 5")
 
+    evaluation_id = payload.get("evaluation_id")
     raw_seed = payload.get("seed")
-    try:
-        seed = secrets.randbits(63) if raw_seed is None else int(raw_seed)
-    except (TypeError, ValueError):
-        return _fail("seed must be an integer when provided")
+    if evaluation_id is not None and (not isinstance(evaluation_id, str) or not evaluation_id.strip()):
+        return _fail("evaluation_id must be a non-empty string when provided")
+    if raw_seed is None:
+        if not isinstance(evaluation_id, str) or not evaluation_id.strip():
+            return _fail("evaluation_id is required unless a legacy seed is provided")
+        evaluation_id = evaluation_id.strip()
+        seed = _stable_seed(evaluation_id, domain.strip())
+        seed_source = "evaluation_id"
+    else:
+        if type(raw_seed) is not int:
+            return _fail("seed must be an integer when provided")
+        seed = raw_seed
+        seed_source = "explicit_seed"
 
     rng = random.Random(seed)
     opportunities = min(event_cap, 1 + elapsed_steps // 3 + volatility // 2)
@@ -70,7 +91,9 @@ def generate_pulse(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": True,
         "domain": domain.strip(),
+        "evaluation_id": evaluation_id,
         "seed": seed,
+        "seed_source": seed_source,
         "inputs": {
             "elapsed_steps": elapsed_steps,
             "volatility": volatility,
