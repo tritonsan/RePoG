@@ -6,6 +6,7 @@ This is the summary campaign bible. Keep detailed creation decisions in the
 module files:
 
 - `session_zero.md`
+- `play_profile.yaml`
 - `campaign_one_pager.md`
 - `research_dossier.md`
 - `system_fit.md`
@@ -36,6 +37,24 @@ What kind of play this campaign promises the Player.
 How the story advances: episodic arcs, faction clocks, mysteries, heists,
 survival travel, personal quests, political intrigue, or another structure.
 
+## World Operating Model
+
+Record the campaign's compact operating model here. It is the materialized
+result of Session 0, not another world encyclopedia. Replace this instruction
+before marking the campaign ready.
+
+- Active cause-and-effect chain:
+- Who benefits while it continues:
+- Who pays the cost:
+- How the Player can notice it:
+- What changes if nobody intervenes:
+- Selected setting/play lenses:
+- Resolved lens tensions and precedence:
+
+Genre lenses may suggest pressures or questions, but only accepted Session 0
+decisions become world truth. Record the accepted runtime contract in
+`play_profile.yaml`; do not consult lens briefs during ordinary play.
+
 ## Initial Scale
 
 What is onstage at campaign start, what stays offscreen, and how far play can
@@ -52,6 +71,9 @@ wording, and reveal triggers.
 
 See `appearance_guide.md` for player, NPC, faction, and location appearance
 detail rules.
+
+Runtime point of view, tense, camera, response length, challenge/clue density,
+advancement, dashboard, and visual policy live in `play_profile.yaml`.
 
 ## Mechanical Weight
 

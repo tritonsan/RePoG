@@ -12,7 +12,9 @@ Designer wants and wait:
 
 After persisting the choice, ask the campaign pitch. Ask one decision per
 message in every mode. A skipped, defaulted, deferred, or answered decision is
-never asked again.
+never asked again. A Starter Bundle is one decision because the Designer
+chooses one coherent option; do not hide unrelated follow-up decisions inside
+the same message.
 
 Quick combines related modules into a playable core and records its visible
 assumptions. Standard follows all modules below. Deep activates only the packs
@@ -22,12 +24,42 @@ Architecture, Mechanics And Progression, and Source Grounding. Deep checkpoints
 after every 8–10 decisions and asks permission before exceeding its 30–45
 decision target.
 
+Use this deterministic Deep activation table after each accepted answer:
+
+- named crew, party, company, organization, or shared base -> Group / Company;
+- original society, law, economy, culture, metaphysics, or history needing
+  construction -> World Fabric;
+- exploration, journey, route choice, sandbox travel, or survival logistics ->
+  Location Network;
+- politics, intrigue, investigation across groups, hidden agendas, or contested
+  information -> Faction And Information;
+- multi-arc promises, deliberate setup/payoff, climax conditions, or planned
+  endings -> Campaign Architecture;
+- tactical play, bounded resources, quantified inventory, conditions, clocks,
+  dice, or detailed advancement -> Mechanics And Progression;
+- existing canon, real period/place/profession, hard science, or source-sensitive
+  homebrew -> Source Grounding;
+- detailed identity, inner conflict, personal relationships, daily life, or a
+  character-change arc -> Character Foundation.
+
+Do not activate Group / Company for a solo character without a persistent
+collective. Do not activate World Fabric merely because every campaign has a
+world. Record each trigger and activated pack in `setup_profile.yaml`.
+
 Every depth includes one explicit Turn Protocol choice. `fast` is the
 recommended default, but do not select it silently: show the timing/freshness
 tradeoffs and record the answer. Quick keeps its 6–8 target by treating
 research as conditional and combining related mechanics decisions.
 
 Use this interview when starting a Lite campaign from scratch.
+
+`setup_profile.yaml` owns only interview progress, pack completion, readiness,
+and the setup revision. `play_profile.yaml` is the materialized runtime
+contract. Do not duplicate runtime policy fields back into the setup profile.
+Increment `setup_revision` after each persisted Session 0 decision. Whenever
+the runtime contract is refreshed, set `play_profile.yaml.source_setup_revision`
+to that same revision. A ready campaign requires `profile_status: locked` and
+matching revisions.
 
 Do not ask every question at once. Ask exactly one question per assistant
 message, then wait for the Designer's answer. Move through Session 0 modules
@@ -53,12 +85,47 @@ question should be only:
 
 > What is the campaign pitch: the universe, tone, and player fantasy you want?
 
+After that answer, inspect `lenses/INDEX.md` and only the candidate lens briefs
+suggested by the pitch. Offer 2 to 4 Starter Bundles. Each option must state:
+
+- the intended feel;
+- proposed setting and play lenses;
+- any optional mechanics awaiting approval;
+- tracking load and approximate speed effect;
+- why it fits the pitch.
+
+Recommend one option, then accept only one response decision: `accept`, `mix`,
+`change`, `default`, or `defer`. Lens selection never enables a mechanic by
+implication. Materialize accepted choices in `play_profile.yaml`, explain them
+in `system_fit.md`, and record resolved lens conflicts in the World Operating
+Model. Do not load lens briefs during ordinary play.
+
+### Quick Decision Map
+
+Keep Quick within 6–8 decisions by using this sequence:
+
+1. depth;
+2. pitch;
+3. Starter Bundle;
+4. boundaries plus agency/consequence stance;
+5. character concept plus defining capability/flaw;
+6. starting world pressure and place;
+7. Turn Protocol plus dashboard/visual cost acknowledgement;
+8. final summary approval, including every defaulted or deferred item.
+
+Research becomes a separate decision only when the Research Gate is needed;
+combine it with the final approval by reducing optional detail, never by
+silently accepting risk.
+
 ## Session 0 Modules
 
 ### 1. Campaign Pitch
 
 Ask for the universe or genre, emotional tone, player fantasy, core play feel,
 and what the campaign should not become.
+
+Then run the Starter Bundle decision described above. Relevant lens briefs are
+question generators, not runtime instructions.
 
 ### 2. Research Need Gate
 
@@ -72,6 +139,15 @@ factions, or major NPCs. If research is unavailable or intentionally skipped,
 record conservative assumptions and open Session 0 questions instead of
 silently inventing rules.
 
+Record explicit `Risk accepted` and `Current-scale lock permitted` yes/no
+fields.
+`needed_pending` never permits world locking or play readiness. If research is
+unavailable and the Designer explicitly accepts a named bounded risk, use
+`unavailable_risk_accepted`; do not treat boilerplate or an empty note as
+consent. Set `Current-scale lock permitted: yes` only after `not_needed` or
+`complete` is confirmed, or after a `partial_complete`/unavailable risk is
+explicitly bounded to the initial play scale.
+
 Examples: existing franchise canon, real-world 1920s crime, hard science
 survival, original fantasy with historical analogues, or private homebrew notes.
 
@@ -81,6 +157,12 @@ Ask about boundaries, content limits, seriousness, humor, violence, moral
 pressure, agency, failure, loss, and how often Codex should clarify before
 acting.
 
+Also choose runtime narration as one coherent style card: point of view, tense,
+camera, prose density, response length, option prompting, dialogue style, and
+pacing. Second-person present close-camera narration remains the default, not
+a requirement. Persist the accepted card in `play_profile.yaml`; preserve it
+across normal play, visual returns, closure interludes, and post-arc openings.
+
 ### 4. System Fit
 
 Ask what kind of play the campaign should support: combat, social pressure,
@@ -88,6 +170,11 @@ investigation, survival, travel, intrigue, heist, horror, drama, or a mix.
 Then establish mechanics weight, stats, starting level, and which areas need
 deterministic checks versus GM judgment. Ask whether resources, ability
 prerequisites, cooldowns, or regeneration need the optional mechanics ledger.
+
+Derive mechanic suggestions from the accepted lenses, but require explicit
+approval for every entry in `mechanics.modules`. Record inventory,
+time, travel, wound, and dice policies even when they remain light or off.
+Fantasy does not imply mana or HP; survival does not imply strict inventory.
 
 Then ask one Turn Protocol decision:
 
@@ -102,7 +189,7 @@ Then ask one Turn Protocol decision:
   durable revision events, or hot validation.
 
 State that these are estimates rather than guarantees. Record the selected
-profile and materialized policies in `setup_profile.yaml`, `system_fit.md`, and
+profile and materialized policies in `play_profile.yaml`, `system_fit.md`, and
 `session_zero.md`. Do not complete setup until the estimate caveat is
 acknowledged.
 
@@ -123,6 +210,15 @@ and storytelling habits.
 Ask whether visuals are off, manual-only, major-only, curated, or rich. Record
 quota stance, eligible targets, art direction, acceptance/canon policy, and
 whether accepted images may appear on the player dashboard.
+
+Choose dashboard mode independently from visual mode. If enabled, select only
+useful initial tiles from: setup progress, scene, character, stats, resources,
+clocks, conditions, companions, people, threads, clues, inventory, map, and
+gallery. Do not show stats/resources for a mechanics-light campaign merely
+because the renderer supports them. Choose refresh policy `manual`,
+`scene_and_major_visible_change`, `every_visible_change`, `scene_only`, or
+`manual`, plus visual placement `gallery_only` or
+`dashboard_after_approval`.
 
 Disclose approximate added time before the choice: +1–2 minutes when a
 dashboard refresh runs, +1–3+ minutes for each image draft or revision, and
@@ -189,6 +285,9 @@ or allied NPC advancement should work.
 
 Record durable decisions in `progression.md`. Use `arc_closure.md` later for
 actual closure reviews and chosen upgrades.
+
+Materialize cadence as beat, session, scenario, arc, campaign, none, or custom;
+materialize presentation as `explicit_ooc`, `automatic_fictional`, or `none`.
 
 ### 14. Player Character
 
@@ -257,6 +356,10 @@ current state, immediately relevant active-cast truth, knowledge changes,
 mechanical results, inventory/conditions, durable events, and arc/reward gates
 are never deferred.
 
+Before `ready_for_play: true`, confirm `play_profile.yaml.profile_status` is
+`locked`, contains no pending critical runtime policy, and its
+`source_setup_revision` matches `setup_profile.yaml.setup_revision`.
+
 ## Storytelling Defaults
 
 Default to natural GM narration:
@@ -283,6 +386,7 @@ Default to natural GM narration:
 Use the interview to create:
 
 - `session_zero.md`
+- `play_profile.yaml`
 - `campaign_one_pager.md`
 - `research_dossier.md`
 - `world.md`

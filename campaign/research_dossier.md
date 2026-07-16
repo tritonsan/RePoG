@@ -7,10 +7,14 @@ which rules Codex must respect during worldbuilding and play.
 ## Research Status
 
 - Status: `needed_pending`
-- Mode: `fully_original`
+- Mode: `none`
+- Setting classification: `fully_original`
 - Last reviewed:
 - Research performed by:
 - Web search used: no
+- Risk accepted: no
+- Current-scale lock permitted: no
+- Risk acceptance notes:
 
 Allowed statuses:
 
@@ -24,10 +28,22 @@ Allowed statuses:
   Designer explicitly accepted conservative assumptions.
 
 World truths, factions, powers, and source-sensitive rules must not be marked
-locked while status is `needed_pending` unless the explicit risk acceptance is
-recorded here.
+locked while status is `needed_pending`. Set `Risk accepted: yes` only after
+the Designer explicitly accepts the named uncertainty; when that happens use
+`unavailable_risk_accepted`, record the reason in `Risk acceptance notes`, and
+set `Current-scale lock permitted: yes` only if the risk is bounded enough to
+play at the current scale. A template explanation or a blank field is never
+risk acceptance.
 
-Allowed modes:
+Allowed research modes:
+
+- `none`
+- `web`
+- `designer_sources`
+- `mixed`
+- `unavailable`
+
+Allowed setting classifications:
 
 - `canon_existing_world`
 - `real_world_specific`

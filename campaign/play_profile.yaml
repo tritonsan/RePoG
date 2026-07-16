@@ -1,0 +1,83 @@
+schema_version: 1
+profile_status: pending
+source_setup_revision: 0
+# profile_status: pending | locked
+performance:
+  turn_protocol: ""
+  cold_distill_policy: ""
+  validation_policy: ""
+  style_review_policy: ""
+  latency_notice_policy: exceptional_only
+  estimate_acknowledged: false
+
+# Composable Session 0 lenses. A lens may suggest a mechanic, but only an
+# explicit entry under mechanics.modules enables that mechanic.
+setting_lenses: []
+play_lenses: []
+lens_conflicts_resolved: []
+
+mechanics:
+  modules: []
+  inventory_tracking: abstract
+  time_tracking: coarse
+  travel_tracking: abstract
+  wound_tracking: narrative
+  dice_mode: judgment_only
+
+narration:
+  point_of_view: second
+  tense: present
+  camera: close
+  prose_density: balanced
+  response_length: dynamic
+  option_prompting: natural
+  challenge_density: balanced
+  clue_density: balanced
+  dialogue_style: plain
+  pacing: dynamic
+
+advancement:
+  cadence: ""
+  presentation: ""
+
+dashboard:
+  mode: "off"
+  refresh_policy: scene_and_major_visible_change
+  tiles: []
+
+visuals:
+  mode: "off"
+  dashboard_placement: gallery_only
+
+# Allowed values
+# setting_lenses: fantasy | realistic | cyberpunk | custom:<slug>
+# play_lenses: survival | custom:<slug>
+# mechanics.modules: bounded_resources | abilities_costs |
+#   strict_consumables | wounds | clocks | dice_resolution |
+#   structured_travel
+# inventory_tracking: abstract | quantified | encumbrance
+# time_tracking: coarse | scene | step
+# travel_tracking: abstract | route_time
+# wound_tracking: narrative | conditions
+# dice_mode: judgment_only | player_rolls | open_gm_rolls |
+#   hidden_gm_rolls | hybrid
+# point_of_view: first | second | third
+# tense: past | present
+# camera: close | medium | wide
+# prose_density: lean | balanced | lush
+# response_length: brief | dynamic | expansive
+# option_prompting: natural | gentle_choices | tactical_menu
+# challenge_density: low | balanced | high
+# clue_density: low | balanced | high
+# dialogue_style: plain | balanced | heightened
+# pacing: dynamic | deliberate | urgent
+# advancement.cadence: none | session | scenario | arc | campaign
+# advancement.presentation: none | explicit_ooc | automatic_fictional
+# dashboard.mode: off | on
+# dashboard.refresh_policy: manual | scene_only |
+#   scene_and_major_visible_change | every_visible_change
+# dashboard.tiles: setup_progress | scene | character | stats | resources |
+#   clocks | conditions | companions | people | threads | clues | inventory |
+#   map | gallery
+# visuals.mode: off | manual_only | major_only | curated | rich
+# visuals.dashboard_placement: gallery_only | dashboard_after_approval

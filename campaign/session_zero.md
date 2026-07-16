@@ -15,7 +15,10 @@ Keep each module short, current, and useful at the table.
 - Locked decisions: none
 - Defaulted decisions: none
 - Deferred decisions: none
-- Turn protocol: pending
+- Starter Bundle: pending
+- Accepted setting lenses: none
+- Accepted play lenses: none
+- Runtime profile: `play_profile.yaml` pending
 - Expected routine turn: pending
 - Expected durable turn: pending
 - Expected structural / boundary turn: pending
@@ -53,6 +56,32 @@ Status terms:
 - `locked_with_open_questions`: safe at the current scale, with named limits
   that remain unresolved.
 
+## Starter Bundle Decision
+
+After the pitch, offer 2 to 4 contextual bundles and ask the Designer to choose
+one bundle as a single decision. Each option must state:
+
+- how the campaign should feel;
+- proposed setting and play lenses;
+- proposed tracking/mechanics, clearly marked as suggestions;
+- expected tracking load and approximate speed effect;
+- why the option fits the pitch.
+
+- Response: accept | mix | change | default | defer
+- Accepted bundle:
+- Mixed or changed elements:
+- Defaulted assumptions:
+- Deferred questions:
+- Explicitly approved mechanics:
+- Explicitly declined mechanics:
+
+`accept` accepts the displayed bundle, including only mechanics clearly listed
+for approval. `mix` combines named parts of displayed bundles. `change` asks
+for a replacement set. `default` permits the recommended coherent choice and
+records every assumption as defaulted. `defer` postpones only non-critical
+details; it cannot bypass safety, research, readiness, or an active Deep-pack
+critical decision.
+
 ## 1. Campaign Pitch
 
 - Universe or genre:
@@ -60,16 +89,21 @@ Status terms:
 - Player fantasy:
 - Core play feel:
 - This campaign is not:
+- Starter Bundle decision:
 
 ## 2. Research Need Gate
 
 See `research_dossier.md`.
 
 - Research mode:
+- Setting classification:
 - Research status:
 - Web search decision:
 - Source scope:
 - Open source questions:
+- Risk accepted: no
+- Current-scale lock permitted: no
+- Risk acceptance notes:
 
 ## 3. Group Contract
 
@@ -88,6 +122,16 @@ See `research_dossier.md`.
 - Deterministic checks:
 - Deterministic resources/cooldowns/regeneration:
 - GM judgment zones:
+- Accepted setting lenses: fantasy | realistic | cyberpunk | custom:<slug>
+- Accepted play lenses: survival | custom:<slug>
+- Lens conflicts and precedence:
+- Approved mechanic modules (`mechanics.modules`):
+- Inventory tracking: abstract | quantified | encumbrance
+- Time tracking: coarse | scene | step
+- Travel tracking: abstract | route_time
+- Wound tracking: narrative | conditions
+- Dice mode: judgment_only | player_rolls | open_gm_rolls | hidden_gm_rolls |
+  hybrid
 - Turn protocol: fast | balanced | maximum_continuity | custom
 - Routine-turn estimate:
 - Durable-turn estimate:
@@ -98,6 +142,10 @@ See `research_dossier.md`.
 - Style review policy:
 - Latency notice policy:
 - Performance estimate acknowledged:
+
+Materialize accepted runtime choices in `play_profile.yaml`. Keep
+`setup_profile.yaml` limited to interview progress, pack completion, readiness,
+and revision metadata.
 
 ## 5. Canon Policy
 
@@ -122,6 +170,11 @@ See `visual_style.md` and `visual_gallery.md`.
 - Art direction:
 - Visual canon policy:
 - Display policy:
+- Dashboard mode: off | on
+- Dashboard refresh policy: manual | scene_only |
+  scene_and_major_visible_change | every_visible_change
+- Dashboard tiles:
+- Accepted visual placement: gallery_only | dashboard_after_approval
 - Dashboard refresh cost acknowledged:
 - Image generation and revision cost acknowledged:
 
@@ -164,6 +217,8 @@ See `progression.md`, `arc_closure.md`, and `next_act_prep.md`.
 
 - Arc dramatic question and closure signals:
 - Crew or group social contract:
+- Advancement cadence: session | scenario | arc | campaign | none
+- Advancement presentation: explicit_ooc | automatic_fictional | none
 
 ## 14. Player Character
 
@@ -201,6 +256,22 @@ See `opening_brief.md` and `first_session.md`.
 - Maximum durable turns before cold distill:
 - Mandatory structural/boundary triggers:
 - Durable event log and recovery policy:
+
+## Runtime Narration Contract
+
+Store the accepted values in `play_profile.yaml` and mirror explanations in
+`storytelling.md`.
+
+- Point of view: first | second | third
+- Tense: past | present
+- Camera: close | medium | wide
+- Prose density: lean | balanced | lush
+- Response length: brief | dynamic | expansive
+- Option prompting: natural | gentle_choices | tactical_menu
+- Challenge density: low | balanced | high
+- Clue density: low | balanced | high
+- Dialogue style: plain | balanced | heightened
+- Pacing: dynamic | deliberate | urgent
 
 ## Open Questions For Play
 
