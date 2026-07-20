@@ -6,6 +6,22 @@ First appeared:
 
 Linked elements:
 
+## Companion Grounding
+
+Fill this compact card when the place belongs to an AI Companion's life. A
+real-city campaign may use real public geography, but the companion's exact
+home, workplace details, and private network remain fictional.
+
+- Geography class: real_public | fictional_private | fictional_world
+- City or region:
+- Timezone:
+- Companion's relationship to the place:
+- Ordinary opening hours or availability:
+- Regular people or roles:
+- Routine activities:
+- Travel relation to home/work:
+- Privacy boundary:
+
 ## Scene Composition
 
 When this place becomes a scene, compose it from:

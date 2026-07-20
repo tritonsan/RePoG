@@ -7,6 +7,7 @@ Keep each module short, current, and useful at the table.
 
 ## Session 0 Profile
 
+- Experience: pending (rpg | companion)
 - Depth: pending
 - Activated Deep packs: none
 - Decisions completed: 0
@@ -18,14 +19,87 @@ Keep each module short, current, and useful at the table.
 - Starter Bundle: pending
 - Accepted setting lenses: none
 - Accepted play lenses: none
-- Runtime profile: `play_profile.yaml` pending
+- Runtime profile: pending (`play_profile.yaml` for RPG,
+  `companion_profile.yaml` for Companion)
 - Expected routine turn: pending
 - Expected durable turn: pending
 - Expected structural / boundary turn: pending
 - Dashboard refresh cost: approximately +1–2 minutes when run
+- Companion View cost: no ordinary-message refresh; a small local update only
+  when already-shared visible truth changes
 - Image generation cost: approximately +1–3+ minutes per draft
 - Performance estimate acknowledged: no
 - Final player confirmation: pending
+
+The experience gate and depth gate are routing questions and do not count in
+the content-decision total.
+
+## Companion Module Status
+
+Use this section only when Experience is `companion`. Leave the RPG Module
+Status below as an inactive template; only this selected block participates in
+Companion readiness. For RPG, this block is an inactive template and only the
+RPG Module Status block participates in readiness.
+
+- Premise And World: open
+- Identity And Appearance: open
+- Home, Work, Education, And Economics: open
+- Routine, Hobbies, And Obligations: open
+- Values And Moral Lines: open
+- Psychology And Contradictions: open
+- Voice And Messaging Habits: open
+- Backstory And Turning Points: open
+- Social Circle: open
+- Life Problems, Projects, And Goals: open
+- Initial User Relationship: open
+- Relational Evidence, Conflict, Boundaries, And Repair: open
+- Concealment, Topic Disclosure, Deception, And Help: open
+- Time, Initiative, User Memory, Performance, And Privacy: open
+- AI Transparency, Portrait, Companion View, And Final Confirmation: open
+
+### Companion Runtime Summary
+
+- Primary companion id:
+- Starter Bundle:
+- Setting: real_city_fictional_private | fictional_world
+- Public city/time grounding:
+- Private people and places: fictional
+- Starting relationship:
+- Allowed relationship scope:
+- Adult and boundary gates confirmed:
+- Channel: async_text
+- Conversation language:
+- Response length:
+- Initiative:
+- Humor:
+- Advice/list/question habits:
+- Life density: grounded
+- Offline progression: reconcile_on_next_message
+- Autonomy: causal
+- User memory: off | ask_before_save | contextual_low_risk
+- Sensitive memory: explicit_consent_only
+- Disclosure logic:
+- Direct deception: no_direct_lies | character_consistent_opt_in
+- Boundary reference:
+- Layered transparency confirmed:
+- Direct identity answer confirmed:
+- Portrait: off | optional_manual | setup_once
+- Companion View: off | light
+- RPG Dashboard: off
+- Exchange persistence: single_begin_exchange
+- Defaulted persona/life decisions:
+- Deferred decisions:
+
+### Companion Deep Packs
+
+- companion_persona: inactive
+- life_fabric: inactive
+- backstory_and_turning_points: inactive
+- social_ecology: inactive
+- relationship_and_intimacy: inactive
+- conversation_voice: inactive
+- real_world_grounding: inactive
+- long_horizon_development: inactive
 
 ## Module Status
 
@@ -53,6 +127,7 @@ Status terms:
 - `open`: still needs a Designer answer.
 - `defaulted`: Codex chose a coherent default because the Designer allowed it.
 - `defer`: intentionally left for play to discover.
+- `inactive`: belongs to the unselected RPG/Companion experience.
 - `locked_with_open_questions`: safe at the current scale, with named limits
   that remain unresolved.
 
@@ -85,6 +160,11 @@ one bundle as a single decision. Each option must state:
 - Breather frequency: sparse | balanced | generous
 - Breather exit policy: player_led | player_led_with_established_triggers |
   world_led
+- World Voices: off | manual | curated | reactive
+- World Voices approval: review_each | preapproved_bounded
+- World Voices Dashboard: off | delivered_only | delivered_and_public
+- Artifact richness: concise | balanced | rich
+- Communication speed: slow | mixed | fast | setting_defined
 
 `accept` accepts the displayed bundle, including only mechanics clearly listed
 for approval. `mix` combines named parts of displayed bundles. `change` asks
@@ -187,6 +267,8 @@ See `visual_style.md` and `visual_gallery.md`.
 - Dashboard refresh policy: manual | scene_only |
   scene_and_major_visible_change | every_visible_change
 - Dashboard tiles:
+- Dashboard map skin: auto | minimal | survey | civic | field | systems
+- World Voices policy and likely communication channels:
 - Accepted visual placement: gallery_only | dashboard_after_approval
 - Dashboard refresh cost acknowledged:
 - Image generation and revision cost acknowledged:

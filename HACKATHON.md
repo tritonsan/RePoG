@@ -22,7 +22,9 @@ keeping hard invariants deterministic:
 - a compact materialized play profile;
 - bounded dice and mechanical helpers;
 - a validated visual interruption/return lifecycle;
-- an adaptive, revision-aware Dashboard V3.
+- an adaptive, revision-aware Dashboard V3 with a setting-neutral Atlas V1;
+- an AI Companion branch that reuses human-readable continuity without
+  pretending to run a background person-simulation.
 
 RePoG remains a local workspace. It does not require API keys and does not
 claim API-only capabilities such as Programmatic Tool Calling or persisted
@@ -37,6 +39,9 @@ reasoning as product features.
 | Mechanics and dice | Decide when an established rule applies and translate results into fiction | Seeded dice, strict state operations, revision/idempotency checks | Seed/bounds/strict-integer tests and a 205-operation old-id replay test |
 | Visual handoff | Preserve the interrupted setup/scene context in the conversation | Single pending transaction, dual asset copy, atomic rollback, gallery/dashboard validation | Begin/attach/accept and injected-failure rollback tests |
 | Dashboard V3 | Curate player-safe summaries and adaptive widgets | Revision-aware patching, strict schema/assets/map/protected-name validation | Dashboard/server checks plus browser polling, map-state, text-atlas, and focus-restoration smoke tests |
+| Atlas V1 | Choose useful player-known spatial context, map scale, and schematic versus approved spatial presentation | Bounded point/line/area geometry, deterministic stable layout, hidden-topology rejection, local-only rendering | Atlas validator/compiler regressions plus desktop/mobile browser snapshots across neutral skins |
+| World Voices — One Event, Many Truths | Decide whether communication occurs; model information reach, bounded perspective, motive, silence, voice, deception, correction, and natural Player-facing delivery | Stable artifact/thread/distribution ids, revisions, permanent idempotency, lifecycle and source references, atomic Markdown/manifest writes, knowledge-linked acquisition, and paginated hidden-safe projection | Dependency-free workspace/state/dashboard/server checks; focused delayed-delivery, archive, duplicate-operation, protected-name, deliberate-falsehood, and hidden-projection smoke; desktop/mobile document-tile browser smoke |
+| AI Companion — A Life Beyond The Reply | Synthesize a behaviorally coherent adult character from a compact hot kernel; preserve voice, contradictions, independent obligations, topic-specific selective disclosure, causal everyday developments, disagreement, callbacks, and natural conversational initiative across long context | Explicit RPG/Companion routing, one-call exchange clock, schema-v2 semantic operations, backward-time rejection, stable current condition, attention queue, qualitative relational evidence, strict disclosure and boundary ledgers, consent-tagged user memory, optional player-safe Companion View, and structural validation | `tools/companion_acceptance_suite.json` (20 cases); fixed-time clock/idempotency tests; disclosure/boundary/memory fixtures; Companion View privacy checks; mode-aware hot/full checks; dependency-free workspace verification |
 
 ## Public Workspace Verification
 
@@ -48,13 +53,15 @@ python tools/verify_workspace.py --json
 ```
 
 The command checks the distributable layout, parses bundled Python helpers,
-validates the 12-scenario GM replay fixture, runs the full campaign validator,
-and validates Dashboard V3. The JSON form is intended for Codex, Claude Code,
-and other agentic tools.
+validates the 12-scenario GM replay and 20-scenario Companion acceptance
+fixtures, exercises the fixed-time single-exchange, semantic-idempotency,
+disclosure, boundary, memory, View-privacy, and mode-routing contracts, runs
+the full campaign validator, and validates Dashboard V3. The
+JSON form is intended for Codex, Claude Code, and other agentic tools.
 
-Latest implementation verification on July 16, 2026:
+Latest implementation verification on July 20, 2026:
 
-- development acceptance suite: `284 passed`;
+- development acceptance suite: `317 passed`;
 - public dependency-free verifier: 0 errors, 0 warnings, one expected
   fresh-template `location_blank` info;
 - dashboard validator and `serve_dashboard.py --check-only`: 0 errors;
@@ -68,6 +75,53 @@ Latest implementation verification on July 16, 2026:
 
 The development test harness remains outside the clean player ZIP. The public
 workspace carries its own dependency-free verifier and all runtime guardrails.
+
+### World Voices verification — July 19, 2026
+
+- `python tools/verify_workspace.py` and `--json`: PASS, 0 errors, 0 warnings,
+  one expected fresh-template `location_blank` info;
+- `python tools/check_state.py campaign --scope hot` and `--scope full`: PASS,
+  0 errors, 0 warnings, the same expected info;
+- `python tools/check_world_voices.py campaign`: PASS, 0 errors, 0 warnings;
+- `python tools/check_dashboard.py campaign/dashboard/dashboard_state.json`
+  and `python tools/serve_dashboard.py campaign/dashboard --check-only`: PASS,
+  0 errors, 0 warnings;
+- Python compilation, extracted inline Dashboard JavaScript syntax, and
+  `git diff --check`: PASS;
+- focused lifecycle smoke: zero visible documents before delivery, one after
+  acquisition, one after distribution archive, permanent idempotent replay
+  rejection, zero validation findings, hidden memo absent, deliberate
+  falsehood retained as a claim rather than world truth, and protected-name
+  misuse rejected; an injected projection-validation failure restored the
+  previous player-safe projection byte-for-byte;
+- browser smoke: stable timeline order; hidden documents absent; Compare
+  Accounts exposed no objective truth; an unrelated Dashboard refresh
+  preserved the open reader; 1280 px and 390 px layouts had no horizontal
+  overflow; dialog focus trap and return focus passed; browser console reported
+  zero errors.
+
+### AI Companion verification — July 20, 2026
+
+- `python tools/verify_workspace.py`: PASS, including fixed-time 3-day/long-gap
+  ceilings, single-call exchange/continuity behavior, backward-time rejection,
+  permanent semantic retry safety, contextual relationship evidence, stable
+  current condition, strict disclosure/boundary/memory fixtures, atomic
+  Companion View revision and privacy checks, setup-gate order, valid
+  pending/ready Companion fixtures, real-city grounding failure, exact Quick
+  decision count, migration, and legacy RPG fallback;
+- `python tools/check_companion.py campaign --scope full`: PASS, 0 errors and
+  0 warnings on the clean pending template;
+- `python tools/migrate_companion_contract.py campaign --dry-run --json`:
+  PASS and idempotent on the V2 template; V1 apply requires a prior snapshot
+  and reports uncertain relationship/disclosure meaning for review;
+- `python tools/check_companion_view.py ...` and
+  `python tools/serve_companion_view.py ... --check-only`: PASS with a 12,716
+  byte static surface; projection leakage, external assets, and stale revision
+  tests were rejected;
+- shared hot/full campaign checks, Dashboard, World Voices, loopback server
+  preflight, Python compilation, and `git diff --check`: PASS;
+- development suite: `317 passed` with only the existing pytest-asyncio
+  deprecation notice.
 
 ## Submission Evidence To Record
 

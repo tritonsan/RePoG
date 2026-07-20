@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "enabled": false,
+  "public_surface_revision": 0,
+  "identity": {
+    "name": "",
+    "pronouns": "",
+    "tagline": ""
+  },
+  "portrait": null,
+  "local_clock": null,
+  "last_shared_status": null,
+  "shared_cards": []
+}

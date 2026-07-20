@@ -1,7 +1,8 @@
 schema_version: 2
 profile_status: pending
 source_setup_revision: 0
-# profile_status: pending | locked
+# profile_status: pending | locked | inactive
+# Set inactive when setup_profile.experience_mode is companion.
 performance:
   turn_protocol: ""
   cold_distill_policy: ""
@@ -54,7 +55,18 @@ advancement:
 dashboard:
   mode: "off"
   refresh_policy: scene_and_major_visible_change
+  map_skin: auto
   tiles: []
+
+# Optional, trigger-driven in-world communication. Missing configuration is
+# treated as off for legacy campaigns. Enabling it never authorizes continuous
+# actor scans or automatic publication.
+world_voices:
+  mode: off
+  approval_policy: review_each
+  dashboard_policy: off
+  artifact_richness: balanced
+  communication_speed: setting_defined
 
 visuals:
   mode: "off"
@@ -100,9 +112,16 @@ visuals:
 # dashboard.mode: off | on
 # dashboard.refresh_policy: manual | scene_only |
 #   scene_and_major_visible_change | every_visible_change
+# dashboard.map_skin: auto | minimal | survey | civic | field | systems
 # dashboard.tiles: setup_progress | scene | character | stats | resources |
 #   clocks | conditions | companions | people | threads | clues | inventory |
-#   map | gallery
+#   map | gallery | documents
+# world_voices.mode: off | manual | curated | reactive
+# world_voices.approval_policy: review_each | preapproved_bounded
+# world_voices.dashboard_policy: off | delivered_only |
+#   delivered_and_public
+# world_voices.artifact_richness: concise | balanced | rich
+# world_voices.communication_speed: slow | mixed | fast | setting_defined
 # visuals.mode: off | manual_only | major_only | curated | rich
 # visuals.dashboard_placement: gallery_only | dashboard_after_approval
 # performance.cold_distill_policy: every_durable |

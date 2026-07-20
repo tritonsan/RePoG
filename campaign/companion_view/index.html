@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Companion View</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to companion</a>
+  <main id="main" class="shell" tabindex="-1">
+    <header class="masthead">
+      <p class="eyebrow">RePoG · Companion View</p>
+      <p id="connection-status" class="connection" role="status" aria-live="polite">Loading shared details…</p>
+    </header>
+
+    <section id="inactive" class="empty-panel" hidden>
+      <h1>Companion View</h1>
+      <p>This optional view will appear after Companion setup enables it.</p>
+    </section>
+
+    <article id="companion" class="companion" hidden>
+      <figure id="portrait-wrap" class="portrait-wrap" hidden>
+        <img id="portrait" class="portrait" alt="">
+      </figure>
+
+      <section class="identity" aria-labelledby="companion-name">
+        <div class="identity-topline">
+          <p id="pronouns" class="pronouns"></p>
+          <p id="clock" class="clock" aria-live="off" hidden></p>
+        </div>
+        <h1 id="companion-name"></h1>
+        <p id="tagline" class="tagline"></p>
+      </section>
+
+      <section id="status-section" class="status-card" aria-labelledby="status-heading" hidden>
+        <p id="status-heading" class="section-label">Last shared</p>
+        <p id="shared-status" class="status-text"></p>
+        <time id="shared-at" class="shared-at"></time>
+      </section>
+
+      <section id="cards-section" class="shared-section" aria-labelledby="shared-heading" hidden>
+        <div class="section-heading">
+          <p class="section-label">Between you</p>
+          <h2 id="shared-heading">Shared threads</h2>
+        </div>
+        <ul id="shared-cards" class="shared-cards"></ul>
+      </section>
+    </article>
+  </main>
+  <script src="app.js" defer></script>
+</body>
+</html>

@@ -12,7 +12,60 @@ narrative fact is schema-normalized.
 
 # Audit Checklist
 
-Check:
+First route by `setup_profile.yaml.experience_mode`. Legacy missing values mean
+RPG. For Companion, run `tools/check_companion.py` and audit the Companion
+contract below; do not report missing player character, opening scene, arc,
+mechanics, dashboard, or World Voices readiness.
+
+For Companion, check:
+
+- `companion_profile.yaml` is locked at the setup revision and
+  `play_profile.yaml` is inactive;
+- the primary T3 note is adult, behaviorally specific, internally
+  contradictory, voice-distinct, and has a routine, obligation, active life
+  thread, goals, social connection or chosen isolation, and causal next move;
+- `companion_state.json` uses schema v2; timestamps are timezone-aware,
+  operational and semantic sequences are monotonic, current condition resolves
+  to notes, backward time is rejected, and the same operation cannot be
+  applied twice;
+- ordinary replies use one `begin-exchange` state call and only durable
+  meaning changes open `commit-semantic`; no separate per-message checker or
+  View patch is hidden in the route;
+- repeated current-activity questions preserve place/activity until an
+  established transition;
+- elapsed-time developments stay below the returned ceiling and major changes
+  have seeded causes;
+- `knowledge_boundaries.md` uses a strict per-topic ledger separating private
+  truth, current willingness, already-shared surface, and evidence gates; the
+  character does not reveal their whole history at first contact;
+- relationship context is qualitative, multi-dimensional, and evidence-based,
+  with no inferred user emotions, ordered trust/closeness ladder, point
+  thresholds, or dependency pressure;
+- `boundaries.md` has a referenced active version; broad relationship scope is
+  a maximum permission rather than automatic consent, and direct-deception
+  opt-in never applies to AI identity, real safety, consent/boundaries, or
+  memory semantics;
+- `user_context.md` follows `off`, `ask_before_save`, or
+  `contextual_low_risk`, contains no transcript or inferred facts, and has no
+  sensitive entry without explicit consent; forget requests remove active
+  content; an `off` policy also leaves no durable user-event item in the hot
+  attention queue;
+- direct human/real/AI questions receive clear fictional-AI disclosure while
+  ordinary messages do not repeat it;
+- replies do not default to lists, advice, therapeutic paraphrase, or a question
+  every time, and use at most one self-originated beat;
+- optional portraits use visual approval and return to conversation; the RPG
+  Dashboard remains off. If the separate Companion View is light, it validates
+  only accepted art and already-shared facts, never private presence,
+  relationship evidence, disclosure readiness, user memory, or internal ids.
+
+For a representative Companion audit, use
+`tools/companion_acceptance_suite.json`. Deterministic cases run inside
+`verify_workspace.py`; sample semantic cases in a fresh conversation and judge
+them against their expected behavior after the reply, never as a hidden
+per-message checker.
+
+For RPG, check:
 
 - `session_zero.md` exists and tracks the Session 0 module decisions;
 - `research_dossier.md` exists and records research status, mode, source scope,
@@ -180,16 +233,38 @@ Check:
 - dashboard text does not contain GM-only truth, protected names before reveal,
   hidden clues, internal ids, file paths outside `assets/`, prompts, tools,
   scripts, YAML, Markdown, or implementation language;
-- dashboard NPCs, clues, threads, visuals, map nodes, and inventory are all
+- dashboard NPCs, clues, threads, visuals, map features, and inventory are all
   player-known or character-perceivable;
 - Dashboard V3 uses only approved tile types, has current source revision and
   scene id, contains no draft/missing asset, and never shows fabricated
   placeholder stats or readiness;
-- Dashboard V3 atlas nodes are unique and inside bounds, current node and route
-  endpoints are valid, and map/visual references use only relative
+- Legacy atlas nodes and Atlas V1 features are unique and inside their declared
+  coordinate space; current feature and route endpoints are valid; unknown
+  Atlas V1 geometry is omitted; and map/visual references use only relative
   `assets/...` paths;
+- `map_atlas.json`, when present, stores geometry and presentation only;
+  connection, access, and travel truth still agree with `location_graph.md`;
 - compatibility-loaded V2 maps still do not imply undiscovered locations,
   hidden routes, secret factions, or protected names before reveal;
+- World Voices artifact bodies and manifest references exist and remain inside
+  `world_voices/`; artifact/thread/version links, lifecycle states, revisions,
+  and permanent operation sequences are valid;
+- every artifact has a causal event or prior artifact, and every distribution
+  has recipients, channel, fictional timing, causal basis, and append-only
+  history;
+- claim fact ids resolve to `knowledge_boundaries.md`, which remains the sole
+  current fact/holder authority; the private manifest does not create a second
+  truth ledger;
+- scheduled, delayed, in-transit, lost, or hidden documents do not enter the
+  Dashboard projection; hidden artifacts are absent from player-facing names,
+  paths, counts, pages, search, and comparison;
+- World Voices catalog pages stay bounded, document paths remain relative
+  below `assets/world_voices/`, and player files contain no epistemic basis,
+  claim class, fact id, operation id, actual provenance, or GM-only field;
+- corrections, retractions, and superseding editions preserve and link the
+  original artifact instead of rewriting it;
+- protected-name delivery has a matching knowledge revision, and the
+  Dashboard contains no name still protected from the player character;
 - no campaign marked ready for play has a pending visual review;
 - every accepted visual requested for dashboard placement exists under
   `dashboard/assets/`, is referenced by an `assets/...` path, and has passed
@@ -243,6 +318,8 @@ Use Lite tools when available:
   sanity and `--scope full` at the selected distill boundary;
 - `tools/check_dashboard.py` for local dashboard state, asset, revision, tile,
   map, and player-facing safety;
+- `tools/check_world_voices.py campaign` for private lifecycle/reference and
+  player-projection integrity at full-distill/audit boundaries;
 - `tools/check_style.py` for policy-triggered, warning-level categorical
   narration repetition checks, never soft-turn or semantic gating;
 - `tools/world_pulse.py` with a stable evaluation id for deterministic

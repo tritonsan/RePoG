@@ -11,7 +11,32 @@ beat. Reference those authorities instead of copying their state here.
 
 As of revision: 0
 
+In AI Companion mode, use Active Threads for shared callbacks, promises,
+upcoming conversations, and user-relevant open loops. The companion's private
+work/family/project movement belongs in `world_dynamics.md`; an explicitly
+shared upcoming user event belongs in `user_context.md` and may be referenced
+here without copying sensitive detail.
+
+## Companion Shared Continuity
+
+Use this section instead of Arc Compass when Experience is `companion`. Do not
+force ordinary conversation into dramatic pressure or a climax structure.
+
+### Shared Loop
+
+- Thread id:
+- Kind: callback | shared_plan | unfinished_conversation | invitation
+- What was explicitly established:
+- Due window:
+- Companion interest:
+- User interest: explicit | inferred_for_lookup_only | unknown
+- Status: open | addressed | cancelled
+- Source reference:
+- Last changed revision: 0
+
 ## Arc Compass
+
+RPG-only. Leave inactive in Companion mode.
 
 - Dramatic question:
 - Active pressures:

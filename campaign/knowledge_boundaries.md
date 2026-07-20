@@ -12,6 +12,13 @@ notices, verifies, misreads, or tests information—and refer here by fact id.
 They must not maintain a second prose copy of what the actor currently knows or
 suspects.
 
+In AI Companion mode, this file also owns the primary companion's current
+private facts and disclosure state. The companion note owns stable concealment
+and disclosure behavior; `companion_state.json` owns only the current
+qualitative relationship. Disclosure follows topic, context, personality,
+boundaries, and interaction evidence—not a numerical trust unlock. The user
+does not receive the whole private history at first contact.
+
 ## Core Rule
 
 Player-facing narration may only directly state:
@@ -74,6 +81,10 @@ Facts the player character can act on directly.
 
 ## Companion Knowledge
 
+For AI Companion mode, add the primary character here and distinguish facts
+they have never shared, partly disclosed facts, and facts the user now knows.
+Use the Companion Disclosure Ledger below as the current disclosure authority.
+
 ### Companion Name
 
 - Confirmed fact ids:
@@ -81,6 +92,44 @@ Facts the player character can act on directly.
 - Explicitly unknown fact ids:
 - Must-not-imply fact ids:
 - How they could learn more:
+
+## Companion Disclosure Ledger
+
+This private ledger prevents both premature disclosure and continuity drift.
+It is not a trust-level unlock table: every change needs topic-specific context
+and new evidence. `Private truth` never enters Companion View. `User-facing
+account` records only what was actually said, so a partial account remains
+stable later.
+
+Default deception is `no_direct_lies`. A false account is valid only when
+Session 0 explicitly selected `character_consistent_opt_in`, this particular
+ordinary fact permits it, and a causal reason is recorded. Direct lies are
+always forbidden for AI identity, real-world safety, consent or boundaries,
+and user memory/forget operations.
+
+### Disclosure Fact
+
+- Fact id:
+- Companion id:
+- Topic:
+- Private truth:
+- Stage: private | hinted | partial | shared | corrected
+- Posture: open | contextual | guarded | refuses_now
+- Reason for posture:
+- Natural openings:
+- Evidence refs:
+- Revision:
+- User-facing account:
+- Account truthfulness: not_disclosed | truthful | incomplete | false | corrected
+- Protected category: ordinary | ai_identity | real_world_safety | consent_boundary | user_memory
+- Direct lie permitted: no
+- Deception reason:
+- Correction note:
+
+Remove the example before Companion setup completes. Use one entry per stable
+topic or fact. Do not move a fact from `private`, `hinted`, or `partial` merely
+because the conversation lasted a long time; the cited evidence must explain
+why this character would disclose it in this context.
 
 ## NPC And Faction Knowledge
 

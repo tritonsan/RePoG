@@ -1,7 +1,12 @@
-schema_version: 3
+schema_version: 4
 workspace_mode: standalone
 status: pending
 setup_revision: 0
+# First gate. Leave blank only before the user chooses an experience.
+# Allowed: rpg | companion
+experience_mode: ""
+# Ask Session 0 depth only after experience_mode is set. The experience and
+# depth gates do not increment questions_completed.
 session_zero_mode: ""
 question_target: ""
 questions_completed: 0

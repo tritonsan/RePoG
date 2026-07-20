@@ -106,6 +106,19 @@ them into this note.
 Records, witnesses, rituals, social tests, surveillance, questions, or other
 methods used before treating a rumor as fact.
 
+## Communication Tendencies
+
+Stable institutional habits only. Current publications, distribution, and
+knowledge remain in World Voices and `knowledge_boundaries.md`.
+
+- Common public channels:
+- Private reporting chain:
+- Typical audiences and intermediaries:
+- Publication speed and approval bottlenecks:
+- Censorship, access, and archive behavior:
+- Authentication, house style, and attribution habits:
+- Response, correction, denial, and silence habits:
+
 ## Common Pressure Tactics
 
 How this faction usually pushes people without exposing everything it knows.

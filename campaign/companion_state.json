@@ -1,0 +1,55 @@
+{
+  "schema_version": 2,
+  "state_revision": 0,
+  "continuity_revision": 0,
+  "public_surface_revision": 0,
+  "interaction_sequence": 0,
+  "semantic_operation_sequence": 0,
+  "last_semantic_operation_id": "",
+  "semantic_operation_ledger": [],
+  "configured_timezone": "",
+  "configured_utc_offset": "",
+  "last_observation_at": null,
+  "last_user_contact_at": null,
+  "current_window": {
+    "window_id": "",
+    "started_at": null,
+    "last_exchange_at": null
+  },
+  "current_presence": {
+    "as_of": null,
+    "place_ref": "",
+    "activity": "",
+    "with_refs": [],
+    "availability": "unknown",
+    "expected_until": null,
+    "source": "setup_pending"
+  },
+  "current_condition": {
+    "as_of": null,
+    "energy": "unknown",
+    "social_bandwidth": "unknown",
+    "emotional_weather": "",
+    "active_preoccupation": "",
+    "cause_ref": "",
+    "reevaluate_after": null
+  },
+  "attention_queue": [],
+  "pending_transition": null,
+  "last_gap": {
+    "gap_id": "",
+    "elapsed_minutes": 0,
+    "band": "same_window",
+    "event_ceiling": 0,
+    "reconciled_revision": 0
+  },
+  "relational_context": {
+    "companion_posture": "unestablished",
+    "reciprocity_pattern": "unestablished",
+    "boundary_refs": [],
+    "active_tensions": [],
+    "recent_evidence": [],
+    "last_change_evidence_id": ""
+  },
+  "recent_operation_ids": []
+}

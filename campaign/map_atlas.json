@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "atlas_id": "campaign-atlas",
+  "coordinate_space": {
+    "type": "cartesian",
+    "width": 1000,
+    "height": 640,
+    "origin": "top_left"
+  },
+  "scale_mode": "region",
+  "projection": "schematic",
+  "skin": "auto",
+  "tile": {
+    "id": "atlas",
+    "title": "Known Atlas",
+    "order": 60
+  },
+  "current_feature_id": "",
+  "background_image": "",
+  "features": []
+}

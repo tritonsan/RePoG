@@ -1,8 +1,9 @@
 # RePoG Workspace
 
-RePoG turns an agentic coding workspace into a long-form solo tabletop RPG Game
-Master. This repository is the ready-to-play workspace: download the ZIP, open
-the extracted folder, and start a new conversation.
+RePoG turns an agentic coding workspace into either a long-form solo tabletop
+RPG Game Master or a persistent AI Companion with a coherent fictional life.
+This repository is the ready-to-use workspace: download the ZIP, open the
+extracted folder, and start a new conversation.
 
 ## Watch the Demo
 
@@ -46,13 +47,14 @@ folder can also be opened in Claude Code or another agentic coding tool.
 Start a new conversation in the opened workspace and send:
 
 ```text
-Start this RePoG campaign and guide me through Session 0.
+Start RePoG and guide me through setup.
 ```
 
 ![Start a new conversation in the RePoG workspace](assets/getting-started/04-start-conversation.gif)
 
-Choose Quick, Standard, or Deep Session 0 and answer naturally. After your
-pitch, RePoG offers a small Starter Bundle of campaign-specific approaches;
+Choose RPG Campaign or AI Companion, then choose Quick, Standard, or Deep
+Session 0 and answer naturally. After your pitch, RePoG offers a small Starter
+Bundle of experience-specific approaches;
 you can accept one, mix them, change them, use the recommended default, or
 defer a non-critical choice.
 
@@ -63,19 +65,71 @@ maintains it while you focus on the character, world, and choices. You do not
 need to copy templates, run an installer, clone a development repository, or
 understand the file structure before playing.
 
+## Choose An Experience
+
+- **RPG Campaign:** RePoG acts as Game Master, maintains a living world, and
+  supports scenes, NPCs, optional mechanics, arc closure, visuals, and the
+  player-safe Dashboard.
+- **AI Companion:** RePoG performs one persistent adult fictional character
+  with a grounded independent life, social ecology, private knowledge,
+  qualitative relationship development, and natural asynchronous messages.
+
+The Companion does not pretend to be a real human. It stays in character in
+ordinary conversation, but a direct identity question receives a clear answer
+that it is an AI portraying a fictional companion. It never runs a hidden
+background process, exposes a love meter, or silently stores sensitive user
+facts.
+
 ## Session 0 Depth
 
-- **Quick:** 6–8 decisions, roughly 10–15 minutes.
-- **Standard:** 17 core modules, roughly 30–60 minutes.
+- **Quick:** RPG uses 6–8 decisions; Companion uses exactly 7. Roughly 10–15
+  minutes.
+- **Standard:** RPG uses 17 core modules; Companion uses 15. Roughly 30–60
+  minutes.
 - **Deep:** adaptive detail packs, normally 30–45 decisions and 60–120 minutes.
 
 All modes use the same continuity model. Quick records visible defaults;
 Standard gives a balanced setup; Deep opens only the detail packages relevant
 to the chosen campaign.
 
-## Lenses And Optional Mechanics
+## AI Companion Continuity
 
-Session 0 can combine setting lenses (`fantasy`, `realistic`, `cyberpunk`) with
+Companion setup defines identity, appearance, voice, values, contradictions,
+backstory, home, work or education, finances, routine, hobbies,
+responsibilities, family and friends, active problems, projects, and short- and
+long-term goals. Close social contacts use the same T1–T3 memory tiers as RPG
+NPCs, while casual background people remain lightweight.
+
+The character's life advances only from established causes. On the next user
+message, one deterministic local exchange call measures elapsed wall time,
+advances the contact clock, and supplies a conservative ceiling: short gaps
+usually preserve the same activity, ordinary gaps allow at most a small
+grounded update, and long gaps receive a compressed recap rather than a
+cascade of dramatic events. A second write is needed only when the reply
+creates a durable change. Retried operations are idempotent, backward time is
+rejected, and asking what the character is doing twice does not randomly
+teleport them elsewhere.
+
+The relationship remains qualitative and evidence-based; it is not a meter or
+an ordered intimacy ladder. The companion can disagree, refuse, have
+boundaries, reveal each private topic gradually, remember an explicitly shared
+upcoming event, or bring up one development from their own life. User feelings
+are never inferred as facts. Raw transcripts are not the memory model; Session
+0 can disable user memory, ask before every save, or allow low-risk contextual
+memory, while sensitive context always requires explicit consent.
+
+Companion mode never loads the RPG Dashboard. It can optionally create a much
+lighter separate Companion View containing only an accepted portrait and
+facts already shared in conversation. Private whereabouts, relationship
+evidence, disclosure readiness, user memory, hidden contacts, and internal
+state never appear there. The View refreshes only when its visible truth
+changes, so ordinary replies do not pay a dashboard cost. See
+[`docs/companion-mode.md`](docs/companion-mode.md) for the runtime, privacy,
+disclosure, and migration contract.
+
+## RPG Lenses And Optional Mechanics
+
+RPG Session 0 can combine setting lenses (`fantasy`, `realistic`, `cyberpunk`) with
 the `survival` play lens. Lenses shape questions and coherent defaults; they do
 not silently turn on HP, mana, inventory accounting, dice, wounds, or other
 rules. RePoG explains the tracking cost first, and only the mechanic modules
@@ -84,13 +138,14 @@ you approve become part of the campaign.
 The resulting `play_profile.yaml` keeps the accepted lenses, mechanics,
 narrative signature, player-authorship boundary, resolution grounding,
 breather preference, advancement cadence, dashboard policy, visual policy,
-and turn-speed preference in one compact runtime contract. This lets a mixed
-fantasy-survival campaign keep both identities without making every fantasy
-campaign track rations or spell points.
+map-skin preference, optional World Voices policy, and turn-speed preference in
+one compact runtime contract.
+This lets a mixed fantasy-survival campaign keep both identities without making
+every fantasy campaign track rations or spell points.
 
-## Turn Speed And Continuity
+## RPG Turn Speed And Continuity
 
-Session 0 also asks how much maintenance each turn should perform:
+RPG Session 0 also asks how much maintenance each turn should perform:
 
 - **Fast (recommended):** saves current truth immediately, uses a small scene
   checkpoint when needed, and reserves full distillation for five durable
@@ -117,11 +172,13 @@ estimates rather than guarantees.
 - secrets and knowledge boundaries;
 - progression, companion development, arc closure, and next-act preparation;
 - accepted visuals and the optional player-safe dashboard.
+- causally justified letters, notices, reports, rumors, and contradictory
+  in-world accounts when optional World Voices is enabled.
 
 During play, these notes and checks remain behind the curtain. The player
 speaks in natural language and receives the living world, not technical state.
 
-## GM Flow And Breathing Room
+## RPG GM Flow And Breathing Room
 
 RePoG resolves each turn from the player's stated intent and method, the
 world's real resistance, what involved characters can actually know, and the
@@ -141,7 +198,40 @@ question or fictional beat. A visual is not treated as campaign canon or added
 to the dashboard until you accept it; after acceptance, revision, or
 cancellation, play returns to the preserved point.
 
-## Optional Dashboard
+## Optional Companion View
+
+When Companion Session 0 selected `light`, open its separate read-only view
+with:
+
+```bash
+python tools/serve_companion_view.py campaign/companion_view
+```
+
+Then visit `http://localhost:8790/`. This is not the RPG Dashboard: its initial
+HTML, CSS, and JavaScript total about 13 KB, it uses no map or RPG polling
+surface, and ordinary replies do not refresh it. It contains only accepted art
+and facts already shared in conversation. Precise private presence,
+relationship evidence, disclosure readiness, hidden contacts, user memory,
+and internal continuity fields are structurally rejected.
+
+## Optional RPG World Voices
+
+World Voices lets the setting communicate through persistent letters,
+newspapers, notices, faction documents, legal records, intelligence, rumors,
+and other setting-appropriate artifacts. Different people and institutions may
+describe the same event differently because each source is limited by what it
+could observe, learn, infer, conceal, distort, or deliberately misrepresent.
+A document can exist in the world without making its claims objective truth.
+
+The feature is off by default and remains trigger-driven: ordinary turns do no
+document work or archive scan. When enabled in Session 0, the campaign chooses
+review policy, communication speed, artifact richness, and whether legitimately
+acquired documents appear in the read-only Dashboard. The Player replies,
+publishes, shares, leaks, or questions documents through natural conversation;
+drafted character wording always waits for approval. See
+[`docs/world-voices.md`](docs/world-voices.md).
+
+## Optional RPG Dashboard
 
 After Session 0, open the local player dashboard with:
 
@@ -152,7 +242,10 @@ python tools/serve_dashboard.py campaign/dashboard
 Then visit `http://localhost:8787/`. The dashboard is read-only and contains
 only player-known information. Dashboard V3 uses campaign-specific tiles, so a
 mechanics-light game does not show invented stats or resources. Revision-aware
-updates reject stale data instead of silently replacing newer state. See
+updates reject stale data instead of silently replacing newer state. Its
+optional Atlas V1 map supports regions, cities, interiors, and abstract
+networks with local, setting-neutral skins; it does not require a map service,
+API key, or generated background image. See
 [`docs/dashboard.md`](docs/dashboard.md).
 
 ## Optional Checks
@@ -161,7 +254,11 @@ updates reject stale data instead of silently replacing newer state. See
 python tools/verify_workspace.py
 python tools/check_state.py campaign --scope hot
 python tools/check_state.py campaign --scope full
+python tools/check_companion.py campaign --scope full
+python tools/companion_state.py campaign begin-exchange --operation-id exchange-0001 --expected-state-revision 0
+python tools/check_companion_view.py campaign/companion_view/companion_view_state.json --campaign campaign
 python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
+python tools/check_world_voices.py campaign
 python tools/snapshot.py campaign --label before_scene
 ```
 
@@ -175,9 +272,11 @@ second game engine.
 - `AGENTS.md`: durable GM and continuity rules.
 - `CLAUDE.md`: compatibility bridge for Claude Code.
 - `OPEN_CAMPAIGN.md`: first-conversation instructions.
-- `workflows/`: worldbuilding, GM, distill, and audit procedures.
+- `workflows/`: worldbuilding, RPG GM, Companion conversation, distill, and
+  audit procedures.
 - `briefs/`: Session 0 interview guidance and composable genre lenses.
-- `campaign/`: this game's readable memory and player dashboard.
+- `campaign/`: this RPG or Companion's readable memory, optional RPG
+  Dashboard, and independent optional light Companion View.
 - `tools/`: small local checks, snapshots, mechanics, and style helpers.
 
 RePoG is licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).

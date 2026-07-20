@@ -50,6 +50,8 @@ before marking the campaign ready.
 - What changes if nobody intervenes:
 - Selected setting/play lenses:
 - Resolved lens tensions and precedence:
+- Communication infrastructure and ordinary news speed:
+- Censorship, access, and common public/private channels:
 
 Genre lenses may suggest pressures or questions, but only accepted Session 0
 decisions become world truth. Record the accepted runtime contract in

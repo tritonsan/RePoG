@@ -14,11 +14,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from check_companion_view import MAX_STATE_BYTES as COMPANION_VIEW_MAX_STATE_BYTES
+from check_companion_view import check_companion_view_data
 from check_dashboard import check_dashboard_data
+from companion_state import validate_state as validate_companion_state
 
 
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,79}$")
+PLACEMENT_TARGETS = {"none", "rpg_dashboard_gallery", "companion_view_portrait"}
 
 
 class VisualError(Exception):
@@ -118,14 +122,56 @@ def _commit_with_rollback(changes: dict[Path, bytes]) -> None:
         raise VisualError("accept_failed_rolled_back", f"Visual acceptance failed and was rolled back: {exc}{detail}") from exc
 
 
-def _state_paths(root: Path) -> tuple[Path, Path, Path]:
+def _state_paths(root: Path) -> tuple[Path, Path]:
     state_path = root / "visual_state.json"
     gallery_path = root / "visual_gallery.md"
-    dashboard_path = root / "dashboard" / "dashboard_state.json"
-    for path in (state_path, gallery_path, dashboard_path):
+    for path in (state_path, gallery_path):
         if not path.is_file():
             raise VisualError("file_missing", f"Required campaign file is missing: {path.relative_to(root)}")
-    return state_path, gallery_path, dashboard_path
+    return state_path, gallery_path
+
+
+def _placement(payload: dict) -> tuple[str, bool]:
+    """Return the placement target and whether this is a legacy boolean call."""
+
+    explicit = payload.get("placement_target")
+    legacy_boolean = explicit is None
+    requested = payload.get("dashboard_placement_requested", False)
+    if not isinstance(requested, bool):
+        raise VisualError("input_invalid", "dashboard_placement_requested must be true or false.")
+    if explicit is None:
+        return ("rpg_dashboard_gallery" if requested else "none"), True
+    if not isinstance(explicit, str) or explicit not in PLACEMENT_TARGETS:
+        raise VisualError(
+            "input_invalid",
+            "placement_target must be none, rpg_dashboard_gallery, or companion_view_portrait.",
+        )
+    if "dashboard_placement_requested" in payload and requested != (explicit == "rpg_dashboard_gallery"):
+        raise VisualError("input_invalid", "placement_target conflicts with dashboard_placement_requested.")
+    return explicit, legacy_boolean
+
+
+def _companion_revision_pair(root: Path) -> tuple[dict, dict, Path, Path]:
+    companion_state_path = root / "companion_state.json"
+    view_state_path = root / "companion_view" / "companion_view_state.json"
+    if not companion_state_path.is_file() or not view_state_path.is_file():
+        raise VisualError("file_missing", "Companion portrait placement requires companion_state.json and Companion View state.")
+    companion_state = _load_json(companion_state_path)
+    state_findings = validate_companion_state(companion_state)
+    if state_findings:
+        raise VisualError("companion_state_invalid", json.dumps(state_findings, ensure_ascii=False))
+    view_state = _load_json(view_state_path)
+    view_validation = check_companion_view_data(
+        view_state,
+        view_state_path,
+        campaign_path=root,
+        require_assets=True,
+    )
+    if not view_validation["ok"]:
+        raise VisualError("companion_view_validation_failed", json.dumps(view_validation["findings"], ensure_ascii=False))
+    if companion_state.get("public_surface_revision") != view_state.get("public_surface_revision"):
+        raise VisualError("companion_view_revision_stale", "Companion state and Companion View public revisions do not match.", exit_code=3)
+    return companion_state, view_state, companion_state_path, view_state_path
 
 
 def _pending(state: dict, transaction_id: str) -> dict:
@@ -143,7 +189,7 @@ def _write_state(state_path: Path, state: dict) -> None:
 
 
 def begin(root: Path, payload: dict) -> dict:
-    state_path, _, _ = _state_paths(root)
+    state_path, _ = _state_paths(root)
     state = _load_json(state_path)
     _validate_state(state)
     if state.get("pending") is not None:
@@ -151,9 +197,8 @@ def begin(root: Path, payload: dict) -> dict:
     transaction_id = payload.get("transaction_id") or f"visual-{uuid.uuid4().hex[:12]}"
     if not isinstance(transaction_id, str) or not SAFE_ID.fullmatch(transaction_id):
         raise VisualError("input_invalid", "transaction_id must be a short lowercase id.")
-    placement_requested = payload.get("dashboard_placement_requested", False)
-    if not isinstance(placement_requested, bool):
-        raise VisualError("input_invalid", "dashboard_placement_requested must be true or false.")
+    placement_target, legacy_placement = _placement(payload)
+    placement_requested = placement_target == "rpg_dashboard_gallery"
     pending = {
         "transaction_id": transaction_id,
         "status": "begun",
@@ -165,12 +210,18 @@ def begin(root: Path, payload: dict) -> dict:
         "return_anchor": _required(payload, "return_anchor"),
         "next_step": _required(payload, "next_step"),
         "dashboard_placement_requested": placement_requested,
+        "placement_target": placement_target,
+        "legacy_dashboard_asset_copy": legacy_placement,
         "dashboard_tile_id": str(payload.get("dashboard_tile_id", "gallery")).strip() or "gallery",
         "appearance_file": str(payload.get("appearance_file", "appearance_guide.md")).strip() or "appearance_guide.md",
         "revision_instructions": "",
         "revision_count": 0,
         "started_at": _utc_now(),
     }
+    if placement_target == "companion_view_portrait":
+        companion_state, _, _, _ = _companion_revision_pair(root)
+        pending["expected_companion_state_revision"] = companion_state["state_revision"]
+        pending["expected_public_surface_revision"] = companion_state["public_surface_revision"]
     if not SAFE_ID.fullmatch(pending["dashboard_tile_id"]):
         raise VisualError("input_invalid", "dashboard_tile_id must be a short lowercase id.")
     appearance_path = _campaign_file(root, pending["appearance_file"], must_exist=True)
@@ -189,7 +240,7 @@ def begin(root: Path, payload: dict) -> dict:
 
 
 def attach(root: Path, payload: dict) -> dict:
-    state_path, _, _ = _state_paths(root)
+    state_path, _ = _state_paths(root)
     state = _load_json(state_path)
     _validate_state(state)
     transaction_id = _required(payload, "transaction_id")
@@ -211,7 +262,7 @@ def attach(root: Path, payload: dict) -> dict:
 
 
 def revise(root: Path, payload: dict) -> dict:
-    state_path, _, _ = _state_paths(root)
+    state_path, _ = _state_paths(root)
     state = _load_json(state_path)
     _validate_state(state)
     transaction_id = _required(payload, "transaction_id")
@@ -300,8 +351,59 @@ def _dashboard_with_visual(dashboard: dict, pending: dict, payload: dict, asset_
     return candidate
 
 
+def _safe_relative_asset(value: str, *, label: str) -> str:
+    clean = value.strip().replace("\\", "/")
+    parts = Path(clean).parts
+    if not clean.startswith("assets/") or ".." in parts or any(part.lower() in {"_drafts", "drafts"} for part in parts):
+        raise VisualError("input_invalid", f"{label} must be a safe assets/... path.")
+    if Path(clean).suffix.lower() not in IMAGE_SUFFIXES:
+        raise VisualError("input_invalid", f"{label} must be a PNG, JPEG, WebP, or GIF image.")
+    return clean
+
+
+def _companion_view_with_portrait(
+    root: Path,
+    pending: dict,
+    payload: dict,
+    asset_path: str,
+) -> tuple[Path, dict, Path, dict]:
+    view = root / "companion_view"
+    for required in (view / "index.html", view / "app.js", view / "style.css"):
+        if not required.is_file():
+            raise VisualError("file_missing", f"Required Companion View file is missing: {required.relative_to(root)}")
+    companion_state, view_state, companion_state_path, view_state_path = _companion_revision_pair(root)
+    expected_state = pending.get("expected_companion_state_revision")
+    expected_public = pending.get("expected_public_surface_revision")
+    if expected_state != companion_state.get("state_revision") or expected_public != companion_state.get("public_surface_revision"):
+        raise VisualError("companion_view_revision_stale", "Companion state changed while the portrait was under review.", exit_code=3)
+    companion_candidate = copy.deepcopy(companion_state)
+    companion_candidate["state_revision"] += 1
+    companion_candidate["public_surface_revision"] += 1
+    state_findings = validate_companion_state(companion_candidate)
+    if state_findings:
+        raise VisualError("companion_state_invalid", json.dumps(state_findings, ensure_ascii=False))
+    view_candidate = copy.deepcopy(view_state)
+    view_candidate["portrait"] = {
+        "asset": asset_path,
+        "alt": _required(payload, "portrait_alt"),
+    }
+    view_candidate["public_surface_revision"] = companion_candidate["public_surface_revision"]
+    validation = check_companion_view_data(
+        view_candidate,
+        view_state_path,
+        campaign_path=root,
+        require_assets=False,
+    )
+    encoded = _json_bytes(view_candidate)
+    if len(encoded) > COMPANION_VIEW_MAX_STATE_BYTES:
+        raise VisualError("companion_view_validation_failed", "Companion View projection exceeds 8 KB.")
+    if not validation["ok"]:
+        raise VisualError("companion_view_validation_failed", json.dumps(validation["findings"], ensure_ascii=False))
+    return companion_state_path, companion_candidate, view_state_path, view_candidate
+
+
 def accept(root: Path, payload: dict) -> dict:
-    state_path, gallery_path, dashboard_path = _state_paths(root)
+    state_path, gallery_path = _state_paths(root)
     state = _load_json(state_path)
     _validate_state(state)
     transaction_id = _required(payload, "transaction_id")
@@ -309,14 +411,21 @@ def accept(root: Path, payload: dict) -> dict:
     if pending.get("status") != "attached" or not pending.get("draft_path"):
         raise VisualError("draft_not_attached", "Attach a generated draft before accepting it.", exit_code=3)
     draft = _campaign_file(root, pending["draft_path"], must_exist=True)
-    destination_value = _required(payload, "destination").replace("\\", "/")
-    destination_parts = Path(destination_value).parts
-    if not destination_value.startswith("assets/") or ".." in destination_parts or any(part.lower() in {"_drafts", "drafts"} for part in destination_parts):
-        raise VisualError("input_invalid", "destination must be a safe assets/... path.")
-    destination = _campaign_file(root / "dashboard", destination_value)
-    if destination.suffix.lower() not in IMAGE_SUFFIXES:
-        raise VisualError("input_invalid", "Accepted visual must be a PNG, JPEG, WebP, or GIF image.")
-    if destination.exists():
+    destination_value = _safe_relative_asset(_required(payload, "destination"), label="destination")
+    placement_target = str(pending.get("placement_target", "")).strip()
+    if placement_target not in PLACEMENT_TARGETS:
+        placement_target = "rpg_dashboard_gallery" if pending.get("dashboard_placement_requested") else "none"
+    legacy_dashboard_copy = bool(pending.get("legacy_dashboard_asset_copy", "placement_target" not in pending))
+    dashboard_needed = placement_target == "rpg_dashboard_gallery" or legacy_dashboard_copy
+    dashboard_path = root / "dashboard" / "dashboard_state.json"
+    destination: Path | None = None
+    if dashboard_needed:
+        if not dashboard_path.is_file():
+            raise VisualError("file_missing", "Required campaign file is missing: dashboard/dashboard_state.json")
+        destination = _campaign_file(root / "dashboard", destination_value)
+    elif placement_target == "companion_view_portrait":
+        destination = _campaign_file(root / "companion_view", destination_value)
+    if destination is not None and destination.exists():
         raise VisualError("asset_exists", "Destination already exists; choose a versioned asset name.", exit_code=3)
 
     campaign_destination_value = str(payload.get("campaign_destination", "")).strip().replace("\\", "/")
@@ -359,19 +468,38 @@ def accept(root: Path, payload: dict) -> dict:
         appearance_path.read_text(encoding="utf-8"), payload, pending, campaign_destination_value
     )
 
+    draft_bytes = draft.read_bytes()
     changes: dict[Path, bytes] = {
-        destination: draft.read_bytes(),
-        campaign_destination: draft.read_bytes(),
+        campaign_destination: draft_bytes,
         gallery_path: gallery_candidate.encode("utf-8"),
         appearance_path: appearance_candidate.encode("utf-8"),
     }
-    if pending.get("dashboard_placement_requested"):
+    dashboard_asset: str | None = None
+    companion_view_asset: str | None = None
+    if destination is not None:
+        changes[destination] = draft_bytes
+    if placement_target == "rpg_dashboard_gallery":
         dashboard = _load_json(dashboard_path)
         dashboard_candidate = _dashboard_with_visual(dashboard, pending, payload, destination_value)
         dashboard_validation = check_dashboard_data(dashboard_candidate, dashboard_path, require_assets=False)
         if not dashboard_validation["ok"]:
             raise VisualError("dashboard_validation_failed", json.dumps(dashboard_validation["findings"], ensure_ascii=False))
         changes[dashboard_path] = _json_bytes(dashboard_candidate)
+        dashboard_asset = f"dashboard/{destination_value}"
+    elif dashboard_needed:
+        # Preserve the pre-placement-target behavior: old boolean calls copied an
+        # accepted asset into dashboard/assets even when no tile patch was asked for.
+        dashboard_asset = f"dashboard/{destination_value}"
+    if placement_target == "companion_view_portrait":
+        companion_state_path, companion_state, view_state_path, view_state = _companion_view_with_portrait(
+            root,
+            pending,
+            payload,
+            destination_value,
+        )
+        changes[companion_state_path] = _json_bytes(companion_state)
+        changes[view_state_path] = _json_bytes(view_state)
+        companion_view_asset = f"companion_view/{destination_value}"
 
     completed_at = _utc_now()
     resume = {"return_anchor": pending["return_anchor"], "next_step": pending["next_step"]}
@@ -380,30 +508,41 @@ def accept(root: Path, payload: dict) -> dict:
         "status": "accepted",
         "target": pending["target"],
         "asset": campaign_destination_value,
-        "dashboard_asset": f"dashboard/{destination_value}",
-        "dashboard_placement_completed": bool(pending.get("dashboard_placement_requested")),
+        "placement_target": placement_target,
+        "dashboard_placement_completed": placement_target == "rpg_dashboard_gallery",
+        "companion_view_placement_completed": placement_target == "companion_view_portrait",
         "resume": resume,
         "completed_at": completed_at,
     }
+    if dashboard_asset is not None:
+        history_entry["dashboard_asset"] = dashboard_asset
+    if companion_view_asset is not None:
+        history_entry["companion_view_asset"] = companion_view_asset
     state["history"].append(history_entry)
     state["pending"] = None
     state["revision"] += 1
     changes[state_path] = _json_bytes(state)
     _commit_with_rollback(changes)
-    return {
+    result = {
         "ok": True,
         "action": "accept",
         "transaction_id": transaction_id,
         "asset": campaign_destination_value,
-        "dashboard_asset": f"dashboard/{destination_value}",
+        "placement_target": placement_target,
         "dashboard_placement_completed": history_entry["dashboard_placement_completed"],
+        "companion_view_placement_completed": history_entry["companion_view_placement_completed"],
         "resume": resume,
         "player_handoff": f"Return to: {resume['return_anchor']} Next: {resume['next_step']}",
     }
+    if dashboard_asset is not None:
+        result["dashboard_asset"] = dashboard_asset
+    if companion_view_asset is not None:
+        result["companion_view_asset"] = companion_view_asset
+    return result
 
 
 def cancel(root: Path, payload: dict) -> dict:
-    state_path, _, _ = _state_paths(root)
+    state_path, _ = _state_paths(root)
     state = _load_json(state_path)
     _validate_state(state)
     transaction_id = _required(payload, "transaction_id")
@@ -460,6 +599,7 @@ def main(argv: list[str] | None = None) -> int:
     begin_parser.add_argument("--return-anchor")
     begin_parser.add_argument("--next-step")
     begin_parser.add_argument("--dashboard-placement-requested", action="store_true", default=None)
+    begin_parser.add_argument("--placement-target", choices=sorted(PLACEMENT_TARGETS))
     begin_parser.add_argument("--dashboard-tile-id")
     begin_parser.add_argument("--appearance-file")
     begin_parser.set_defaults(handler=begin)
@@ -485,6 +625,7 @@ def main(argv: list[str] | None = None) -> int:
     accept_parser.add_argument("--canon-notes")
     accept_parser.add_argument("--last-shown")
     accept_parser.add_argument("--appearance-file")
+    accept_parser.add_argument("--portrait-alt")
     accept_parser.set_defaults(handler=accept)
 
     cancel_parser = commands.add_parser("cancel")

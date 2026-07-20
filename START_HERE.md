@@ -10,16 +10,17 @@ This ZIP is already a clean RePoG campaign workspace.
 5. Send:
 
 ```text
-Start this RePoG campaign and guide me through Session 0.
+Start RePoG and guide me through setup.
 ```
 
-The first question asks whether you want Quick, Standard, or Deep setup. After
-your pitch, the agent presents 2–4 contextual Starter Bundle options. You can
+The first question asks whether you want an RPG Campaign or an AI Companion.
+The next asks whether you want Quick, Standard, or Deep setup. After your
+pitch, the agent presents 2–4 contextual Starter Bundle options. You can
 accept one, mix parts, ask for changes, use the recommended default, or defer a
 non-critical choice. The agent then maintains `campaign/` privately while you
 answer and play.
 
-The Starter Bundle also sets a compact narrative signature, whether action
+For RPG, the Starter Bundle also sets a compact narrative signature, whether action
 resolution is fictional, band-based, or numeric, and how often the campaign
 should offer calm breather scenes. Quick uses visible recommended defaults, so
 these additions do not create extra setup questions.
@@ -31,7 +32,17 @@ approve them. During System Fit the agent also asks whether turns should use
 Fast (recommended), Balanced, Maximum Continuity, or Custom maintenance and
 shows expected wait ranges before you choose.
 
-During play, Fast uses no file work or checker for a purely soft turn. It uses
+For AI Companion, Quick uses seven decisions while Standard and Deep let you
+shape more of the character. RePoG creates one adult fictional companion with
+a stable voice, home, routine, work, social circle, obligations, projects,
+boundaries, private facts, and a causal life beyond the user. It stores user
+context only under the chosen memory policy, uses no relationship meter, and
+does not run in the background. When you return, one local exchange call
+reconciles elapsed time conservatively from the saved clock. If directly asked
+whether they are real, the character clearly identifies as an AI portraying a
+fictional companion.
+
+During RPG play, Fast uses no file work or checker for a purely soft turn. It uses
 a small checkpoint when a scene needs a reliable return point and performs a
 full distillation only at its durable-turn limit or a real structural boundary.
 Breather scenes may continue as long as you want; RePoG does not manufacture a
@@ -40,13 +51,23 @@ new threat simply to end a quiet moment.
 Do not open the ZIP archive itself; open the extracted folder. No installation,
 repository clone, template copy, or campaign-creation command is required.
 
-Optional dashboard after setup:
+Optional RPG Dashboard after RPG setup:
 
 ```bash
 python tools/serve_dashboard.py campaign/dashboard
 ```
 
 Then open `http://localhost:8787/`.
+
+If Companion Session 0 enabled the separate light Companion View, start it
+instead with:
+
+```bash
+python tools/serve_companion_view.py campaign/companion_view
+```
+
+The Companion View is off by default and never contains private relationship,
+memory, disclosure, or precise-presence state.
 
 Optional dependency-free workspace check:
 

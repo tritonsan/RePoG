@@ -1,5 +1,10 @@
 # Character Name
 
+In AI Companion mode, use `_companion_template.md` for the primary character.
+Use this template for their social circle; read “player” as the user-facing
+counterpart only where relevant, and keep every contact's life independent of
+the user.
+
 Tier: T1/T2/T3
 
 First appeared:
@@ -202,6 +207,18 @@ What this character cannot accurately conclude without stronger evidence.
 
 Questions, traps, rituals, social pressure, verification habits, or behavior
 checks they use before trusting information.
+
+## Communication Tendencies
+
+Stable habits only; current messages, recipients, and knowledge belong to
+World Voices and `knowledge_boundaries.md`.
+
+- Preferred forms and channels:
+- Audiences they address directly:
+- Audiences they avoid or use intermediaries for:
+- Delay, silence, and reply habits:
+- Drafting, signing, quoting, or authentication habits:
+- How voice changes between private and public communication:
 
 ## Dialogue Boundaries
 

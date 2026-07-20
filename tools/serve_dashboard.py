@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from check_dashboard import check_dashboard
+from check_world_voices import validate_projection_file
 
 
 SECURITY_HEADERS = {
@@ -54,6 +55,17 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                         "error_count": result["error_count"],
                     }
                 ).encode("utf-8")
+                self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+        if request_path.startswith("/assets/world_voices/") and request_path.endswith(".json"):
+            relative = request_path.lstrip("/")
+            result = validate_projection_file(Path(self.directory).parent, relative)
+            if not result["ok"]:
+                body = json.dumps({"ok": False, "message": "Player document projection did not pass validation.", "error_count": result["error_count"]}).encode("utf-8")
                 self.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))

@@ -68,15 +68,38 @@ Bundle and final summary.
 If the Designer says "use defaults", choose coherent defaults, show the
 assumptions in Designer Mode, and then create files.
 
-# First Question: Session 0 Depth Gate
+# First Question: Experience Gate
 
-When `setup_profile.yaml.status` is `pending`, the first response asks only:
+For schema-v4 workspaces with a blank `experience_mode`, ask only:
+
+> What would you like to create: an RPG Campaign with RePoG as the Game
+> Master, or an AI Companion—a persistent fictional character with an
+> independent, grounded life?
+
+Persist `rpg` or `companion` before asking anything else. Do not combine this
+with Session 0 depth or a pitch. This routing choice does not count toward the
+Quick, Standard, or Deep content-decision target. Legacy schema-v1–v3
+campaigns without this field remain RPG campaigns and must not be sent back to
+this gate.
+
+# Second Question: Session 0 Depth Gate
+
+After `experience_mode` is selected and `session_zero_mode` is blank, ask only:
 
 > Which Session 0 depth do you want: Quick (10–15 minutes), Standard (30–60
 > minutes), or Deep (60–120 minutes, normally 30–45 decisions)?
 
 Persist the selection before asking the campaign pitch. Do not reopen this gate
-for an active or completed campaign.
+for an active or completed campaign. When depth is persisted, change setup
+status from `pending` to `in_progress`; `pending` is reserved for the two
+routing gates.
+
+If `experience_mode` is `companion`, continue with Companion Session 0 below
+and materialize `companion_profile.yaml`; set `play_profile.yaml` to
+`profile_status: inactive` and treat the RPG module-status block as inactive.
+If it is `rpg`, use the RPG interview below, treat the Companion module-status
+block as inactive, and set `companion_profile.yaml` to
+`profile_status: inactive` when setup is completed.
 
 # Shared Interview Rules
 
@@ -87,9 +110,148 @@ for an active or completed campaign.
   confirmation.
 - Do not begin play until `setup_profile.yaml.ready_for_play` is true.
 
+# Companion Session 0
+
+Companion setup builds one persistent adult fictional character and their
+bounded personal world. It does not create a player character, opening quest,
+combat system, arc, RPG Dashboard, or World Voices policy. It may enable the
+separate lightweight Companion View. The conversational channel is
+asynchronous text; elapsed life is reconciled only when the user returns.
+
+After the premise, offer 2–4 contextual Companion Starter Bundles. Each bundle
+should show the proposed personality/voice, independent-life shape, initial
+relationship, initiative level, memory policy, direct-deception policy,
+Companion View choice, real/fictional setting choice, and why it fits. Explain
+that the default View is off, the light View adds no ordinary-message tool
+call, and image generation is a separate potentially multi-minute operation.
+Accept `accept`, `mix`, `change`, `default`, `defer`, or a free-form answer. Do
+not present a clinical trait inventory.
+
+All depths must materialize:
+
+- an adult T3 primary companion note from
+  `campaign/characters/_companion_template.md`;
+- at least one non-user obligation, active life thread, and social connection
+  or explicitly chosen isolation;
+- home, routine, work/education, economics, hobbies, current problems, short
+  and long goals, and causal next moves;
+- behavioral values, moral lines, humor, social courage, conflict, ways of
+  building trust and showing warmth, help-seeking, concealment, false
+  self-belief, and at least one meaningful contradiction; jealousy or
+  competition is optional and may be `not salient`;
+- backstory, formative relationships, turning points, earned success, and a
+  useful unresolved past thread; loss, shame, or trauma is included only when
+  the chosen character actually calls for it;
+- a compact social ecology using existing T0–T3 tiers;
+- asynchronous conversation style, response length, initiative, advice/list/
+  question habits, timezone, life density, and causal autonomy;
+- qualitative relationship and disclosure logic with no visible score;
+- the selected `off | ask_before_save | contextual_low_risk` user-memory
+  policy and explicit consent for sensitive memory;
+- layered transparency and the direct identity answer;
+- a compact Hot Character Kernel with expertise, blind spots, voice under
+  different conditions, independent anchors, and disclosure routing;
+- optional accepted portrait policy and `off | light` Companion View, with the
+  RPG Dashboard always off;
+- `single_begin_exchange` persistence, so ordinary chat uses one state call.
+
+## Companion Quick
+
+Use exactly seven content decisions; the experience and depth gates do not
+count:
+
+1. premise, world, and desired feel;
+2. one contextual Starter Bundle choice;
+3. starting relationship and content boundaries;
+4. conversation style, length, humor, and initiative;
+5. time/timezone, grounded life density, and causal autonomy;
+6. user memory, disclosure/privacy, deception opt-in, optional portrait, and
+   Companion View;
+7. final confirmation of locked and visible defaulted assumptions.
+
+Infer the remaining required persona, life, backstory, and social-ecology
+details coherently from those answers. Show all non-user choices as defaults in
+`session_zero.md` and `setup_profile.yaml.defaulted_packs`; do not make Quick
+answer a hidden 40-field form.
+
+## Companion Standard
+
+Use these 15 modules, normally one decision each with a short follow-up only
+when truly necessary:
+
+1. premise and world;
+2. identity and appearance;
+3. home, city, work/education, and economics;
+4. routine, hobbies, and obligations;
+5. values and moral lines;
+6. psychology and inner contradictions;
+7. voice and messaging habits;
+8. backstory and turning points;
+9. social circle;
+10. current life problems, projects, and goals;
+11. initial user relationship;
+12. trust-building, conflict, optional jealousy/competition, and repair;
+13. concealment, topic-specific disclosure, optional character-consistent
+    deception, and asking for help;
+14. time, initiative, user memory, and privacy;
+15. AI transparency, optional portrait, and final confirmation.
+
+## Companion Deep
+
+Target 30–45 content decisions. Complete the Standard core, then activate only
+the packs supported by the user's answers:
+
+- `companion_persona`: identity, values, contradictions, appearance, behavior;
+- `life_fabric`: home, work, money, routine, hobbies, obligations, projects;
+- `backstory_and_turning_points`: upbringing, relationships, success, useful
+  unresolved past, and loss only when salient;
+- `social_ecology`: T3/T2/T1 contacts, ties, conflicts, routines, availability;
+- `relationship_and_intimacy`: contextual evidence, boundaries, disclosure,
+  disagreement, optional jealousy, warmth, romance/hostility scope, and repair;
+- `conversation_voice`: rhythm, vocabulary, humor, length, initiative, silence,
+  advice, lists, and questions;
+- `real_world_grounding`: real public geography/timezone and factual scope;
+- `long_horizon_development`: causal goals, pressures, likely change channels,
+  and bounded future evaluation triggers.
+
+Checkpoint every 8–10 decisions. At 30–45, ask before opening another branch.
+A real city deterministically opens `real_world_grounding` and the Research
+Gate. Public geography and timezone may be real; the companion's home, work,
+family, friends, and private social network remain fictional. Do not impersonate
+a real person or research live weather/news on every exchange.
+
+## Companion Completion Gate
+
+Before `ready_for_play: true`:
+
+- `companion_profile.yaml` schema v2 is `locked` at the current setup revision and
+  `play_profile.yaml` is `inactive` at that revision;
+- the primary companion is an explicitly adult T3 with the required behavioral
+  core, independent life, backstory, voice, social ecology, and boundaries;
+- `companion_state.json` schema v2 has the configured timezone, initial
+  place/activity, availability, causal current condition, bounded attention
+  queue, and evidence-based starting relational context;
+- current presence refers to real campaign notes;
+- at least one life domain exists in `world_dynamics.md` and the strict
+  Companion Disclosure Ledger has a valid primary topic entry in
+  `knowledge_boundaries.md`;
+- the versioned Companion Boundaries section exists and matches the profile's
+  boundary reference;
+- `user_context.md` contains no example memory and no inferred or unconsented
+  sensitive fact;
+- real-city research, if required, permits current-scale use;
+- no pending portrait transaction remains; when Companion View is `light`, its
+  player-safe state validates without private presence, relationship evidence,
+  user memory, hidden truth, or internal ids.
+
+After confirmation, read `workflows/companion/WORKFLOW.md` and answer in the
+character's established messaging voice. Do not narrate an RPG opening.
+
 # Turn Protocol Gate
 
-Every depth must make one explicit Turn Protocol decision inside System Fit.
+This gate is RPG-only. Every RPG depth must make one explicit Turn Protocol
+decision inside System Fit. Companion mode uses the lightweight persistence
+contract in `companion_profile.yaml.performance` instead.
 Ask it as one decision and wait:
 
 > Which turn protocol do you want?
@@ -388,7 +550,11 @@ Yes list.
 ## 7. Visual Mode And Art Direction
 
 First decide independently whether the dashboard is `off` or `on`. If on,
-confirm its refresh policy and initial tiles. Then decide whether generated
+confirm its refresh policy and initial tiles. If a map tile is enabled, default
+`dashboard.map_skin` to `auto` inside the Starter Bundle rather than adding a
+new Quick question. Standard or Deep may offer `minimal`, `survey`, `civic`,
+`field`, or `systems` when the Player cares who made or uses the map. The skin
+is provenance-based, not a rigid genre assignment. Then decide whether generated
 visuals are `off`, `manual_only`, `major_only`, `curated`, or `rich`, plus
 `gallery_only` or `dashboard_after_approval` placement. Record quota stance,
 eligible targets, art direction, and visual canon. Generated images remain
@@ -413,6 +579,30 @@ return anchor. After acceptance, finish any
 requested gallery/dashboard update and continue the next pending module. If it
 was the final setup task, complete validation and move into the prepared opening
 or explicitly ask whether to begin play.
+
+### World Voices Starter Choice
+
+Treat World Voices as an optional communication layer inside the Starter
+Bundle, not a separate Quick questionnaire. Infer a coherent proposal from the
+pitch and ask an extra decision only when communication infrastructure,
+censorship, approval, or document richness would materially change play.
+
+Materialize `world_voices.mode` (`off`, `manual`, `curated`, or `reactive`),
+review-first or explicitly preapproved bounded behavior, Dashboard policy,
+artifact richness, and communication speed in `play_profile.yaml`. Missing or
+unselected behavior remains off. Enabling World Voices never authorizes
+continuous actor scans or publication quotas.
+
+Standard or relevant Deep packs may establish common public/private channels,
+news speed, interception/loss, censorship and access, faction media behavior,
+and institutional approval bottlenecks. Route stable habits into character and
+faction communication tendencies. Do not prebuild exhaustive voice profiles,
+documents, knowledge, or historical archives before they become playable.
+
+When the documents tile is selected, Dashboard must be on and the World Voices
+Dashboard policy must permit it. Explain that soft turns remain unaffected;
+only triggered drafting/review/delivery turns add work, with duration varying
+by document richness and model load rather than a promised fixed estimate.
 
 ## 8. World Truths
 
@@ -835,55 +1025,77 @@ must not invent the cause, motive, or meaning of an event.
 
 When starting the blank Lite campaign included in this workspace:
 
-1. Ask for or derive a short, readable `campaign_id`, then replace the
-   `new_campaign` placeholder inside `campaign/` as setup answers are written.
+1. Ask the experience gate, persist `rpg` or `companion`, then ask the depth
+   gate. These routing gates do not count as content decisions.
 2. Use the already prepared `campaign/`; do not copy or create another campaign
    folder.
-3. Ask the depth gate, then run Quick, Standard, or adaptive Deep.
-4. Fill `session_zero.md` as the module index and decision log. Materialize
-   accepted runtime choices into `play_profile.yaml`; keep
+3. Run the selected experience's Quick, Standard, or adaptive Deep interview.
+   From the premise, derive a short readable `campaign_id` unless the user
+   supplies one; do not add an id-only question to Quick. Replace the
+   `new_campaign` placeholder as answers are materialized.
+4. Fill `session_zero.md` as the module index and decision log. For RPG,
+   materialize accepted runtime choices into `play_profile.yaml`; for
+   Companion, materialize them into `companion_profile.yaml`. Mark the unused
+   runtime profile `inactive`; keep
    `setup_profile.yaml` limited to interview progress.
-5. Fill the module files: `campaign_one_pager.md`, `research_dossier.md`,
+5. For Companion, create the primary T3 character note, current presence,
+   consent-based user-memory policy, life domains, knowledge/disclosure entry,
+   and only the social contacts and places needed for a coherent starting life.
+   Validate with `tools/check_companion.py`; then skip RPG-only steps 6–12 and
+   continue with the shared check and snapshot in steps 13–14.
+6. For RPG, fill the module files: `campaign_one_pager.md`, `research_dossier.md`,
    `system_fit.md`, `palette.md`, `world_truths.md`, `issues.md`,
    `faces_and_places.md`, `progression.md`, `arc_closure.md`,
    `next_act_prep.md`, `knowledge_boundaries.md`, `world.md`, `boundaries.md`,
    `storytelling.md`, `appearance_guide.md`, `world_dynamics.md`, and
    `rules.md`.
-6. Create the player files: `player.md`, `player_ties.md`, and
+7. Create the player files: `player.md`, `player_ties.md`, and
    `current_state.yaml`. Initialize its memory-v3 persistence block and
    `scene_frame`, `active_cast.md`, `location_graph.md`, schema-v3
    `style_state.json`, and
    `visual_state.json`; enable `mechanics_state.json` only when the player
    approves a stateful deterministic module.
-7. Create only enough NPCs, places, factions, threads, and flexible clues to
+8. Create only enough NPCs, places, factions, threads, and flexible clues to
    make the first session playable.
-8. Fill `first_session.md` as `drafting` and `opening_brief.md` as `pending`;
+9. Fill `first_session.md` as `drafting` and `opening_brief.md` as `pending`;
    materialize `first_campaign_opening` by changing them to `materialized` and
    `active`, then mark both `consumed` after the first player-facing use.
-9. Draft the first player-facing scene from `opening_brief.md`, then check it
+10. Draft the first player-facing scene from `opening_brief.md`, then check it
    for leakage.
-10. If the campaign uses the optional dashboard, create a Dashboard V3 state
+11. If the campaign uses the optional dashboard, create a Dashboard V3 state
     with only the approved tiles and player-safe opening information. Set its
     source revision and scene id to the opening state; use relative
     `assets/...` paths only for accepted images. Apply later changes through
     `tools/update_dashboard.py` with the expected source revision. Legacy V2
-    states remain readable through the compatibility adapter.
-11. Record the used opening as the matching durable revision entry in
+    states remain readable through the compatibility adapter. When a map is
+    selected, keep travel truth in `location_graph.md`, stable geometry in
+    optional `map_atlas.json`, and compile a player-safe Atlas V1 tile. Use
+    `schematic` unless spatial geography has been approved; never infer secret
+    or unknown places merely to make the map look fuller.
+12. Record the used opening as the matching durable revision entry in
     `session_log.md`; if setup fully reconciled it, append the matching
     distilled-through marker and reset persistence counters.
-12. Run the full Lite state check.
-13. Take a starting snapshot.
+13. Run the full Lite state check.
+14. Take a starting snapshot.
 
 Do not require an existing campaign. A port from another project is an optional
 comparison exercise, not the default workflow.
 
 # Outputs
 
-Create or revise these files:
+Create or revise only the files owned by the selected experience. Companion
+uses the shared setup/session log, Companion profile/state/user context,
+primary/social character notes, relevant places, knowledge boundaries, life
+domains, threads, relationship map, research dossier, visuals, and snapshot;
+leave RPG player/scene/mechanics/dashboard files as inactive templates.
+
+The complete workspace inventory is:
 
 - `session_zero.md`
 - `setup_profile.yaml`
-- `play_profile.yaml`
+- `play_profile.yaml` for RPG, or mark it inactive for Companion
+- `companion_profile.yaml`, `companion_state.json`, and `user_context.md` for
+  Companion, or mark the profile inactive for RPG
 - `campaign_one_pager.md`
 - `research_dossier.md`
 - `world.md`
@@ -910,6 +1122,7 @@ Create or revise these files:
 - `current_state.yaml`
 - `active_cast.md`
 - `location_graph.md`
+- `map_atlas.json`, when a stable player atlas needs authored geometry
 - `creation_ledger.md`
 - `relationship_map.md`
 - `secrets_and_clues.md`

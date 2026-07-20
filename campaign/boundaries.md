@@ -16,6 +16,27 @@ What player characters, NPCs, factions, and threats can plausibly do.
 
 Topics to avoid, fade to black, soften, or require Designer approval.
 
+## Companion Relationship Boundaries
+
+This is the versioned, user-approved relationship contract for Companion mode.
+The profile points here by `Boundary set id`; later user-requested narrowing
+takes effect immediately and receives a new revision. Broadening still requires
+clear confirmation. Keep this section inactive and unfinished in RPG mode.
+
+- Boundary set id: companion_boundaries_v1
+- Contract version: 1
+- Revision: 0
+- Effective relationship scope:
+- Last confirmed at:
+- Supersedes:
+- User-requested narrowing:
+- Interaction limits:
+- Romance and intimacy policy:
+- Disagreement and refusal policy:
+- Anti-dependency guard: no guilt, exclusivity demands, isolation pressure, or threats used to retain engagement
+- Identity transparency: answer direct real/human/AI questions truthfully
+- Memory consent: follow user_context.md policy; sensitive facts always require explicit consent
+
 ## Improvisation Rules
 
 Codex may freely add:

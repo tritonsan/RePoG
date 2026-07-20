@@ -19,7 +19,7 @@ It also records `scene_id`, an update timestamp, and refresh status/reason. The
 setup_progress  scene       character   stats
 resources       clocks      conditions  companions
 people          threads     clues       inventory
-map             gallery
+map             gallery     documents
 ```
 
 A minimal active board can contain only a scene and people tile. Mechanics-light
@@ -90,10 +90,99 @@ an atomic file replacement. It never rewrites campaign memory.
 
 ## Map And Accessibility
 
-A map tile uses local Leaflet assets, positive width/height bounds, unique nodes
-inside those bounds, valid edges, and an optional current node. Every map also
-renders a keyboard-readable text list of locations and routes. Refreshes update
-only changed tiles and preserve the map view and open place when possible.
+A map tile uses only bundled Leaflet assets and never requires a remote tile
+provider or API key. Legacy `bounds + nodes + edges` maps remain readable.
+New maps should use the Atlas V1 contract, which can represent points, routes,
+boundaries, water, regions, terrain, structures, and hazards without changing
+Dashboard V3 itself.
+
+Atlas V1 uses an explicit top-left Cartesian coordinate space. `schematic`
+projection communicates approximate topology; `spatial` is reserved for
+approved geography. Four scales are available: `region`, `city`, `interior`,
+and `network`. Skins (`auto`, `minimal`, `survey`, `civic`, `field`, and
+`systems`) change visual provenance only. They never change knowledge, access,
+risk, or route truth.
+
+```json
+{
+  "atlas_version": 1,
+  "coordinate_space": {
+    "type": "cartesian",
+    "width": 1000,
+    "height": 640,
+    "origin": "top_left"
+  },
+  "scale_mode": "region",
+  "projection": "schematic",
+  "skin": "survey",
+  "current_feature_id": "lantern-quay",
+  "features": [
+    {
+      "id": "lantern-quay",
+      "label": "Lantern Quay",
+      "style_role": "place",
+      "knowledge_state": "confirmed",
+      "access_state": "open",
+      "risk_state": "none",
+      "geometry": {"type": "point", "coordinates": [180, 420]}
+    },
+    {
+      "id": "north-gate",
+      "label": "North Gate",
+      "style_role": "landmark",
+      "geometry": {"type": "point", "coordinates": [590, 250]}
+    },
+    {
+      "id": "salt-road",
+      "label": "Salt Road",
+      "style_role": "route",
+      "from": "lantern-quay",
+      "to": "north-gate",
+      "geometry": {
+        "type": "line",
+        "coordinates": [[180, 420], [360, 350], [590, 250]]
+      }
+    }
+  ]
+}
+```
+
+`campaign/map_atlas.json` is the editable cartographic source. Point features
+may keep a `location_ref` matching a player-known location-graph endpoint;
+generated routes keep an internal `route_ref`. Those provenance fields are
+removed from the player-facing tile. Authored areas and line geometry remain
+stable across later compiles, while newly known graph endpoints receive a
+deterministic schematic position.
+
+Preview or apply the derived tile with:
+
+```powershell
+python tools/compile_map_atlas.py campaign --dry-run
+python tools/compile_map_atlas.py campaign
+```
+
+The compiler runs only when the map tile is enabled. It reads `Player-known`
+connections, omits unknown topology, validates the complete candidate board,
+and uses the current continuity revision for an atomic Dashboard V3 patch. A
+second unchanged run is a no-op. `--emit-request` prints the patch without
+writing it when another workflow needs to apply the update.
+
+State axes stay separate:
+
+- knowledge: `confirmed`, `reported`, `inferred`, `stale`;
+- access: `open`, `conditional`, `blocked`, `unknown`;
+- risk: `none`, `caution`, `danger`, `unknown`.
+
+An unknown feature must be omitted entirely because even its silhouette or
+route stub can reveal hidden topology. Generated schematic context may use an
+unlabelled `presentation_only: true` neutral area; it is decorative and does
+not enter popups, selection, legends, or the text atlas.
+
+Every map provides a synchronized keyboard-readable atlas ordered around the
+current location, then known places, areas, and routes. Visual states use line
+pattern, shape, and text as well as color. Refreshes update only changed tiles
+and preserve the map view, selected feature, open detail, and text-atlas state
+when possible.
 
 Accepted images open in a keyboard-safe dialog that restores focus. The board
 honors reduced-motion preferences. External image URLs, absolute paths, draft
@@ -126,3 +215,26 @@ GM-only truth, protected names, secret motives, unrevealed clues, internal ids,
 campaign file paths, or workflow notes. Accepted source assets live below
 `campaign/visuals/`; their player-board copies live below
 `campaign/dashboard/assets/` and are referenced as relative `assets/...` paths.
+
+## World Voices Documents
+
+The optional V3 `documents` tile points only to
+`assets/world_voices/catalog.json`. The catalog contains bounded page
+references; each page holds at most 40 player-safe summaries, and each readable
+document is a separate validated JSON file. This keeps the central Dashboard
+state and initial load bounded while allowing a large local archive.
+
+Inbox, Public, Archive, Threads, source/type filters, search, local unread
+emphasis, a document reader, and Compare Accounts are presentation only. Read
+state stays in browser storage. Replies and all campaign-changing annotations
+happen through natural-language play.
+
+The controlled personal, newspaper, faction, official, intelligence, and
+neutral skins use local HTML/CSS and text-only insertion. Open reader/focus
+state survives unrelated tile refreshes. Compare Accounts displays only
+player-known statements and never announces objective truth.
+
+Private `campaign/world_voices/` files are never browser-readable. Hidden
+documents are absent from catalog files, pages, document filenames, visible
+counts, search, and comparisons. The loopback server validates each requested
+World Voices JSON file before serving it. See `docs/world-voices.md`.

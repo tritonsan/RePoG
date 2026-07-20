@@ -16,6 +16,9 @@ Present these as typical planning ranges, not guarantees:
 - each image revision repeats the generation cost;
 - placing an accepted visual into the gallery and dashboard can add about
   1–2 minutes after approval.
+- placing an accepted Companion portrait into the lightweight Companion View
+  is a small local transaction, but image generation itself still carries the
+  full 1–3+ minute draft cost.
 
 The Fast profile should default to dashboard refreshes at scene changes and
 major player-visible changes, not ordinary dialogue turns. Before image
@@ -101,8 +104,10 @@ Generated images are drafts until accepted.
 
 `visual_state.json` is the authoritative interaction checkpoint. It permits one
 pending draft at a time and preserves the interrupted context, last meaningful
-beat, return anchor, next step, and requested dashboard placement. Do not copy
-that changing state into this file.
+beat, return anchor, next step, and explicit placement target. Targets are
+`none`, `rpg_dashboard_gallery`, or `companion_view_portrait`; Companion mode
+must never choose the RPG target. Do not copy that changing state into this
+file.
 
 Use `tools/visual_handoff.py` for `begin`, `attach`, `revise`, `accept`, and
 `cancel`. A visual is not complete until the command returns a `resume` object
@@ -111,6 +116,8 @@ and the GM uses it to restore Session 0 or Player control.
 ## Display Policy
 
 - Dashboard refresh policy:
+- Companion View: off | light
+- Dashboard map skin: auto
 - Show accepted visuals in Player Mode:
 - Show draft visuals in Player Mode:
 - Repeat existing visuals when an element returns:

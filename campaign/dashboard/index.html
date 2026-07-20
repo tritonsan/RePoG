@@ -88,15 +88,152 @@
     .track { height: 7px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.08); }
     .fill { height: 100%; width: var(--value); background: linear-gradient(90deg, var(--accent), #a78bfa); }
     .setup-progress { display: grid; gap: 11px; }
-    .map-wrap { min-height: 360px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #11151c; }
-    .map-canvas { width: 100%; height: 360px; }
-    .map-marker { display: grid; place-items: center; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50%; background: var(--accent); box-shadow: 0 8px 20px rgba(0,0,0,.55); }
-    .map-marker.current { background: #fcd34d; box-shadow: 0 0 0 7px rgba(252,211,77,.18), 0 8px 20px rgba(0,0,0,.55); }
-    .map-marker.unknown { opacity: .52; filter: grayscale(.5); }
-    .leaflet-tooltip.map-label { border: 1px solid var(--line-strong); border-radius: 6px; color: var(--text); background: rgba(23,26,33,.94); box-shadow: none; }
-    .map-alternative { color: var(--muted); font-size: .85rem; }
-    .map-alternative summary { cursor: pointer; color: var(--accent); }
-    .map-alternative ul { margin: 8px 0 0; padding-left: 20px; }
+    .atlas-shell {
+      --atlas-surface: #111820; --atlas-surface-2: #17212b; --atlas-grid: rgba(181, 201, 218, .10);
+      --atlas-area: #263746; --atlas-area-2: #30495a; --atlas-water: #173e55; --atlas-structure: #36414d;
+      --atlas-line: #c8d5df; --atlas-line-casing: rgba(5, 10, 14, .72); --atlas-boundary: #8fa4b3;
+      --atlas-point: #dce8ef; --atlas-label-bg: rgba(15, 22, 29, .94); --atlas-label-text: #f5f8fa;
+      --atlas-current: #f8d66d; --atlas-selected: #8fddff; --atlas-caution: #f5bf59; --atlas-danger: #f2777f;
+      display: grid; gap: 10px;
+    }
+    .atlas-shell[data-skin="survey"] {
+      --atlas-surface: #d9d0b8; --atlas-surface-2: #c8bea2; --atlas-grid: rgba(64, 52, 37, .12);
+      --atlas-area: #b7ad8f; --atlas-area-2: #a8a07f; --atlas-water: #7898a0; --atlas-structure: #a79b84;
+      --atlas-line: #433d34; --atlas-line-casing: rgba(244, 238, 218, .8); --atlas-boundary: #685d4b;
+      --atlas-point: #302d28; --atlas-label-bg: rgba(239, 232, 211, .96); --atlas-label-text: #24221e;
+      --atlas-current: #b14e35; --atlas-selected: #176b82;
+    }
+    .atlas-shell[data-skin="civic"] {
+      --atlas-surface: #e0e4e7; --atlas-surface-2: #cdd4d9; --atlas-grid: rgba(40, 55, 66, .10);
+      --atlas-area: #c3ccd2; --atlas-area-2: #b5c2ca; --atlas-water: #8db8ca; --atlas-structure: #aeb7bd;
+      --atlas-line: #344653; --atlas-line-casing: rgba(246, 248, 249, .9); --atlas-boundary: #70838f;
+      --atlas-point: #243943; --atlas-label-bg: rgba(250, 251, 252, .96); --atlas-label-text: #18252c;
+      --atlas-current: #b94b35; --atlas-selected: #006f94;
+    }
+    .atlas-shell[data-skin="field"] {
+      --atlas-surface: #273126; --atlas-surface-2: #313d2e; --atlas-grid: rgba(222, 226, 190, .10);
+      --atlas-area: #455241; --atlas-area-2: #53604a; --atlas-water: #315b63; --atlas-structure: #4a5144;
+      --atlas-line: #e1dfbd; --atlas-line-casing: rgba(17, 23, 16, .78); --atlas-boundary: #a6aa83;
+      --atlas-point: #f0eaca; --atlas-label-bg: rgba(31, 39, 28, .95); --atlas-label-text: #f4f0d5;
+      --atlas-current: #ffd66b; --atlas-selected: #9dddcf;
+    }
+    .atlas-shell[data-skin="systems"] {
+      --atlas-surface: #07151b; --atlas-surface-2: #0b2028; --atlas-grid: rgba(70, 216, 223, .13);
+      --atlas-area: #12343d; --atlas-area-2: #164651; --atlas-water: #123f58; --atlas-structure: #1b3944;
+      --atlas-line: #8fe6e3; --atlas-line-casing: rgba(0, 8, 11, .84); --atlas-boundary: #5e9fa5;
+      --atlas-point: #c6ffef; --atlas-label-bg: rgba(5, 23, 29, .96); --atlas-label-text: #d9fff7;
+      --atlas-current: #ffe071; --atlas-selected: #68f5ee;
+    }
+    .atlas-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .atlas-meta, .atlas-controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .atlas-controls button, .atlas-feature-button {
+      min-width: 44px; min-height: 44px; border: 1px solid var(--line-strong); border-radius: 8px;
+      color: var(--text); background: rgba(255,255,255,.045); cursor: pointer;
+    }
+    .atlas-controls button { padding: 0 12px; font-weight: 800; }
+    .atlas-controls button:hover, .atlas-feature-button:hover { background: rgba(255,255,255,.09); }
+    .atlas-stage { position: relative; }
+    .map-wrap { min-height: 390px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--atlas-surface); }
+    .map-canvas {
+      width: 100%; height: 390px; background-color: var(--atlas-surface);
+      background-image: linear-gradient(var(--atlas-grid) 1px, transparent 1px), linear-gradient(90deg, var(--atlas-grid) 1px, transparent 1px);
+      background-size: 42px 42px;
+    }
+    .atlas-shell[data-scale="interior"] .map-canvas { background-size: 24px 24px; }
+    .atlas-shell[data-scale="network"] .map-canvas {
+      background-image: linear-gradient(var(--atlas-grid) 1px, transparent 1px), linear-gradient(90deg, var(--atlas-grid) 1px, transparent 1px), radial-gradient(circle at center, var(--atlas-surface-2), var(--atlas-surface));
+      background-size: 32px 32px, 32px 32px, auto;
+    }
+    .atlas-shell[data-skin="survey"] .map-canvas {
+      background-image: repeating-linear-gradient(14deg, transparent 0 18px, var(--atlas-grid) 19px 20px), radial-gradient(circle at 30% 35%, rgba(255,255,255,.16), transparent 38%);
+      background-size: auto;
+    }
+    .atlas-shell[data-skin="field"] .map-canvas { background-size: 36px 36px; }
+    .atlas-surface-layer { fill: var(--atlas-surface-2); fill-opacity: .12; stroke: none; }
+    .atlas-area { stroke: var(--atlas-boundary); stroke-width: 1.4; fill: var(--atlas-area); fill-opacity: .72; }
+    .atlas-area.atlas-role-water { fill: var(--atlas-water); fill-opacity: .82; }
+    .atlas-area.atlas-role-region, .atlas-area.atlas-role-terrain { fill: var(--atlas-area-2); fill-opacity: .42; }
+    .atlas-area.atlas-role-structure { fill: var(--atlas-structure); fill-opacity: .82; }
+    .atlas-area.atlas-role-hazard { stroke: var(--atlas-danger); stroke-width: 2.3; }
+    .atlas-presentation { pointer-events: none; fill-opacity: .22; stroke-opacity: .45; }
+    .atlas-line-casing { stroke: var(--atlas-line-casing); stroke-width: 6; fill: none; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+    .atlas-line { stroke: var(--atlas-line); stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .atlas-line.atlas-role-boundary { stroke: var(--atlas-boundary); stroke-width: 1.8; stroke-dasharray: 10 5; }
+    .atlas-line.atlas-role-water { stroke: var(--atlas-water); stroke-width: 4; }
+    .atlas-line.atlas-role-hazard { stroke: var(--atlas-danger); }
+    .atlas-access-conditional { stroke-dasharray: 10 6; }
+    .atlas-access-blocked { stroke-dasharray: 2 8; stroke-linecap: butt; }
+    .atlas-access-unknown { stroke-dasharray: 14 5 2 5; }
+    .atlas-knowledge-reported { opacity: .62; }
+    .atlas-knowledge-inferred { opacity: .54; }
+    .atlas-knowledge-stale { opacity: .68; }
+    .atlas-selected.atlas-area, .atlas-selected.atlas-line { stroke: var(--atlas-selected); stroke-width: 4; }
+    .atlas-current-feature.atlas-area, .atlas-current-feature.atlas-line { stroke: var(--atlas-current); stroke-width: 4; }
+    .atlas-marker-icon { background: transparent; border: 0; }
+    .atlas-point-shell { position: relative; display: grid; place-items: center; width: 24px; height: 24px; }
+    .atlas-point-core {
+      position: relative; display: block; width: 16px; height: 16px; border: 2px solid var(--atlas-line-casing);
+      border-radius: 50%; background: var(--atlas-point); box-shadow: 0 4px 12px rgba(0,0,0,.48);
+    }
+    .atlas-point-shell.atlas-role-landmark .atlas-point-core { border-radius: 2px; transform: rotate(45deg); }
+    .atlas-point-shell.atlas-role-structure .atlas-point-core { border-radius: 2px; }
+    .atlas-point-shell.atlas-role-hazard .atlas-point-core { border-radius: 1px; clip-path: polygon(50% 0, 100% 100%, 0 100%); background: var(--atlas-danger); }
+    .atlas-point-shell.atlas-access-conditional .atlas-point-core { outline: 2px dashed var(--atlas-label-text); outline-offset: 2px; }
+    .atlas-point-shell.atlas-access-blocked .atlas-point-core::after { content: ""; position: absolute; left: -4px; top: 5px; width: 20px; height: 3px; background: var(--atlas-danger); transform: rotate(-45deg); }
+    .atlas-point-shell.atlas-access-unknown .atlas-point-core { outline: 2px dotted var(--atlas-label-text); outline-offset: 2px; }
+    .atlas-point-shell.atlas-knowledge-reported .atlas-point-core { border-style: dashed; opacity: .7; }
+    .atlas-point-shell.atlas-knowledge-inferred .atlas-point-core { border-style: dotted; opacity: .62; }
+    .atlas-point-shell.atlas-knowledge-stale .atlas-point-core { opacity: .68; }
+    .atlas-point-shell.atlas-risk-caution .atlas-point-core::before, .atlas-point-shell.atlas-risk-danger .atlas-point-core::before, .atlas-point-shell.atlas-risk-unknown .atlas-point-core::before {
+      content: "!"; position: absolute; z-index: 2; right: -10px; top: 12px; min-width: 13px; height: 13px; padding: 1px;
+      border: 1px solid var(--atlas-line-casing); border-radius: 3px; color: #141414; background: var(--atlas-caution); font: 900 9px/10px ui-sans-serif, system-ui; text-align: center;
+    }
+    .atlas-point-shell.atlas-risk-danger .atlas-point-core::before { content: "!!"; color: #fff; background: var(--atlas-danger); }
+    .atlas-point-shell.atlas-risk-unknown .atlas-point-core::before { content: "?"; color: #fff; background: #5d626a; }
+    .atlas-point-shell.atlas-current-feature::before, .atlas-point-shell.atlas-selected::after {
+      content: ""; position: absolute; inset: -4px; border: 3px solid var(--atlas-current); border-radius: 50%; pointer-events: none;
+    }
+    .atlas-point-shell.atlas-selected::after { inset: -8px; border-color: var(--atlas-selected); border-style: dashed; }
+    .atlas-status-marker { display: grid; place-items: center; min-width: 24px; height: 20px; padding: 0 5px; border: 2px solid var(--atlas-line-casing); border-radius: 5px; color: #121212; background: var(--atlas-caution); font: 900 11px/1 ui-sans-serif, system-ui; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+    .atlas-status-marker.danger { color: #fff; background: var(--atlas-danger); }
+    .atlas-status-marker.blocked { color: #fff; background: #5d626a; }
+    .leaflet-tooltip.atlas-label { border: 1px solid var(--atlas-boundary); border-radius: 6px; padding: 3px 7px; color: var(--atlas-label-text); background: var(--atlas-label-bg); box-shadow: none; white-space: nowrap; }
+    .leaflet-tooltip.atlas-label::before { display: none; }
+    .leaflet-tooltip.atlas-label.atlas-knowledge-reported::after { content: " · reported"; font-size: .72em; opacity: .82; }
+    .leaflet-tooltip.atlas-label.atlas-knowledge-inferred::after { content: " · inferred"; font-size: .72em; opacity: .82; }
+    .leaflet-tooltip.atlas-label.atlas-knowledge-stale::after { content: " · last known"; font-size: .72em; opacity: .82; }
+    .leaflet-tooltip.atlas-label.atlas-selected-label { opacity: 1 !important; border-color: var(--atlas-selected); }
+    .atlas-zoom-low .atlas-label.atlas-priority-2, .atlas-zoom-low .atlas-label.atlas-priority-3,
+    .atlas-zoom-mid .atlas-label.atlas-priority-3 { opacity: 0 !important; pointer-events: none; }
+    .atlas-shell .leaflet-tooltip.atlas-label.atlas-selected-label { opacity: 1 !important; }
+    .atlas-legend { position: absolute; z-index: 700; left: 10px; bottom: 10px; max-width: min(390px, calc(100% - 20px)); border: 1px solid var(--line-strong); border-radius: 8px; color: var(--text); background: rgba(15,18,23,.93); box-shadow: 0 8px 24px rgba(0,0,0,.34); }
+    .atlas-legend summary { min-height: 42px; padding: 10px 12px; cursor: pointer; color: var(--accent); font-weight: 750; }
+    .atlas-legend-body { display: flex; flex-wrap: wrap; gap: 8px 12px; padding: 0 12px 12px; font-size: .78rem; }
+    .atlas-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .atlas-swatch { display: inline-block; width: 26px; height: 0; border-top: 3px solid #dbe7ee; }
+    .atlas-swatch.reported { opacity: .6; border-top-style: dashed; }
+    .atlas-swatch.conditional { border-top-style: dashed; }
+    .atlas-swatch.blocked { border-top: 3px dotted #dbe7ee; }
+    .atlas-swatch.caution { width: 14px; height: 14px; border: 2px solid #fff; border-radius: 3px; background: var(--warn); }
+    .atlas-lower { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 1.2fr); gap: 10px; }
+    .atlas-detail, .atlas-text { min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.025); }
+    .atlas-detail { display: grid; align-content: start; gap: 8px; padding: 12px; }
+    .atlas-detail h3 { font-size: 1.05rem; }
+    .atlas-detail-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .atlas-detail-badges .chip { color: var(--text); }
+    .atlas-text summary { min-height: 44px; padding: 11px 12px; cursor: pointer; color: var(--accent); font-weight: 750; }
+    .atlas-feature-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 7px; padding: 0 10px 10px; list-style: none; margin: 0; }
+    .atlas-feature-button { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; align-items: center; padding: 8px 10px; text-align: left; }
+    .atlas-feature-button[aria-pressed="true"] { border-color: var(--atlas-selected); box-shadow: inset 3px 0 var(--atlas-selected); }
+    .atlas-feature-button[aria-current="location"] { box-shadow: inset 3px 0 var(--atlas-current); }
+    .atlas-feature-name { overflow-wrap: anywhere; }
+    .atlas-feature-state { color: var(--muted); font-size: .74rem; text-align: left; }
+    .atlas-empty-text { padding: 0 12px 12px; color: var(--soft); }
+    .atlas-shell[data-scale="region"] .atlas-point-core { width: 18px; height: 18px; }
+    .atlas-shell[data-scale="city"] .atlas-area.atlas-role-region { stroke-width: 2; }
+    .atlas-shell[data-scale="interior"] .atlas-area.atlas-role-structure { stroke-width: 2.2; fill-opacity: .9; }
+    .atlas-shell[data-scale="network"] .atlas-line { stroke-linecap: butt; stroke-linejoin: bevel; }
+    .atlas-shell[data-scale="network"] .atlas-point-core { border-radius: 2px; }
     .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
     .visual-button { display: grid; gap: 8px; padding: 0 0 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.025); cursor: zoom-in; text-align: left; }
     .visual-button img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
@@ -105,13 +242,67 @@
     .lightbox[hidden] { display: none; }
     .lightbox-close { position: absolute; top: 14px; right: 16px; min-width: 42px; min-height: 42px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--panel); cursor: pointer; }
     .lightbox img { max-width: min(1100px, 94vw); max-height: 88vh; object-fit: contain; }
+    .documents-shell { display: grid; gap: 12px; min-height: 320px; }
+    .documents-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(130px, .35fr)); gap: 8px; }
+    .documents-toolbar input, .documents-toolbar select {
+      min-height: 44px; width: 100%; border: 1px solid var(--line-strong); border-radius: 8px;
+      padding: 9px 11px; color: var(--text); background: var(--panel-2);
+    }
+    .documents-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+    .documents-tabs button, .document-card, .documents-more, .document-action {
+      min-height: 44px; border: 1px solid var(--line-strong); border-radius: 8px; color: var(--text);
+      background: rgba(255,255,255,.035); cursor: pointer;
+    }
+    .documents-tabs button { padding: 8px 12px; }
+    .documents-tabs button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: inset 0 -2px var(--accent); }
+    .document-list { display: grid; gap: 8px; }
+    .document-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; padding: 11px 12px; text-align: left; }
+    .document-card:hover { background: rgba(255,255,255,.07); }
+    .document-card.unread { border-left: 4px solid var(--accent); }
+    .document-card.unread::after { content: "Unread"; align-self: start; color: var(--accent); font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+    .document-card h3 { overflow-wrap: anywhere; }
+    .document-card p { grid-column: 1 / -1; color: var(--muted); font-size: .84rem; }
+    .document-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; color: var(--soft); font-size: .76rem; }
+    .documents-more { width: 100%; padding: 9px 12px; }
+    .document-dialog { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 20px; background: rgba(4,6,10,.9); }
+    .document-dialog[hidden] { display: none; }
+    .document-dialog-panel { display: grid; grid-template-rows: auto minmax(0, 1fr); width: min(1040px, 96vw); max-height: 92vh; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 12px; color: #25221d; background: #e8e1d1; box-shadow: 0 30px 90px rgba(0,0,0,.55); }
+    .document-dialog-head { display: flex; justify-content: space-between; gap: 14px; align-items: center; padding: 12px 14px; border-bottom: 1px solid rgba(36,31,25,.18); color: #25221d; background: rgba(255,255,255,.34); }
+    .document-dialog-head h2 { color: inherit; font-size: .9rem; }
+    .document-dialog-actions { display: flex; gap: 7px; }
+    .document-action { padding: 7px 11px; color: #25221d; border-color: rgba(36,31,25,.28); background: rgba(255,255,255,.42); }
+    .document-reader { overflow: auto; padding: clamp(18px, 4vw, 48px); }
+    .document-paper { width: min(760px, 100%); margin: 0 auto; }
+    .document-paper[data-skin="personal"] { font-family: Georgia, "Times New Roman", serif; }
+    .document-paper[data-skin="newspaper"] { width: min(860px, 100%); font-family: Georgia, "Times New Roman", serif; }
+    .document-paper[data-skin="faction"] { border-left: 8px solid #783f2d; padding-left: 24px; }
+    .document-paper[data-skin="official"] { border: 2px solid #4e4a42; padding: clamp(18px, 3vw, 34px); }
+    .document-paper[data-skin="intelligence"] { color: #dbe7d8; background: #23302a; padding: clamp(18px, 3vw, 34px); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .document-kicker { margin-bottom: 8px; font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+    .document-paper h3 { margin-bottom: 10px; font-size: clamp(1.45rem, 4vw, 2.35rem); line-height: 1.08; }
+    .document-byline, .document-acquisition { margin-top: 8px; opacity: .76; }
+    .document-body { margin-top: 28px; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.72; }
+    .document-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 22px; }
+    .document-links span { border: 1px solid currentColor; border-radius: 999px; padding: 4px 8px; font-size: .76rem; opacity: .72; }
+    .compare-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+    .compare-account { padding: 18px; border: 1px solid rgba(36,31,25,.2); background: rgba(255,255,255,.3); }
+    .compare-account h3 { margin-bottom: 6px; font-size: 1.1rem; }
+    .compare-account pre { margin: 16px 0 0; white-space: pre-wrap; font: inherit; line-height: 1.55; }
+    .compare-note { margin-bottom: 18px; padding: 10px 12px; border-left: 4px solid #866b2c; background: rgba(255,255,255,.35); }
     :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-    @media (max-width: 980px) { .tile, .tile.wide { grid-column: span 6; } .tile.full { grid-column: 1 / -1; } }
+    @media (max-width: 980px) { .tile, .tile.wide { grid-column: span 6; } .tile.full { grid-column: 1 / -1; } .atlas-lower { grid-template-columns: 1fr; } }
     @media (max-width: 680px) {
       .app { padding: 8px; } .topbar { grid-template-columns: 1fr; gap: 8px; } .sync { justify-content: flex-start; } .meta { text-align: left; }
       .tiles { grid-template-columns: 1fr; gap: 8px; } .tile, .tile.wide, .tile.full { grid-column: 1; }
-      .hero { grid-template-columns: 1fr; } .hero-media { order: -1; min-height: 190px; } .map-wrap, .map-canvas { min-height: 300px; height: 300px; }
+      .hero { grid-template-columns: 1fr; } .hero-media { order: -1; min-height: 190px; }
+      .atlas-toolbar { align-items: flex-start; } .atlas-controls { width: 100%; } .atlas-controls button { flex: 1; }
+      .map-wrap, .map-canvas { min-height: 330px; height: 330px; } .atlas-legend { position: static; max-width: none; margin-top: 8px; }
+      .atlas-feature-list { grid-template-columns: 1fr; }
+      .documents-toolbar { grid-template-columns: 1fr; }
+      .document-dialog { padding: 8px; }
+      .document-dialog-panel { width: 100%; max-height: 96vh; }
+      .document-dialog-head { align-items: flex-start; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -141,6 +332,19 @@
     <img id="lightboxImage" alt="">
   </div>
 
+  <div class="document-dialog" id="documentDialog" role="dialog" aria-modal="true" aria-labelledby="documentDialogTitle" hidden>
+    <section class="document-dialog-panel">
+      <header class="document-dialog-head">
+        <h2 id="documentDialogTitle">World Voices document</h2>
+        <div class="document-dialog-actions">
+          <button class="document-action" type="button" id="documentCompare" hidden>Compare accounts</button>
+          <button class="document-action" type="button" id="documentClose">Close</button>
+        </div>
+      </header>
+      <div class="document-reader" id="documentReader"></div>
+    </section>
+  </div>
+
   <script src="vendor/leaflet/leaflet.js"></script>
   <script>
     "use strict";
@@ -149,12 +353,16 @@
     const tileSignatures = new Map();
     const mapRegistry = new Map();
     const mapViews = new Map();
+    const documentTileState = new Map();
+    const documentCache = new Map();
     let refreshTimer = null;
     let appliedSourceRevision = null;
     let appliedDashboardRevision = null;
     let requestSequence = 0;
     let latestResponseSequence = 0;
     let lightboxReturnFocus = null;
+    let documentReturnFocus = null;
+    let openDocumentContext = null;
 
     const text = (value, fallback = "") => {
       if (value === null || value === undefined) return fallback;
@@ -249,6 +457,205 @@
       if (dialog.hidden) return;
       if (event.key === "Escape") { closeLightbox(); return; }
       if (event.key === "Tab") { event.preventDefault(); document.getElementById("lightboxClose").focus(); }
+    });
+
+    function readDocumentReads() {
+      try { return new Set(JSON.parse(localStorage.getItem("repog-world-voices-read") || "[]")); }
+      catch (_) { return new Set(); }
+    }
+
+    function writeDocumentReads(reads) {
+      try { localStorage.setItem("repog-world-voices-read", JSON.stringify(Array.from(reads).slice(-5000))); }
+      catch (_) { /* Presentation-only state may be unavailable in private browsing. */ }
+    }
+
+    function safeProjectionPath(value, kind) {
+      const clean = text(value).replaceAll("\\", "/");
+      const prefix = kind === "catalog" ? "assets/world_voices/catalog.json" : `assets/world_voices/${kind}/`;
+      if ((kind === "catalog" ? clean !== prefix : !clean.startsWith(prefix)) || clean.includes("..") || !clean.endsWith(".json")) throw new Error("Unsafe document projection path.");
+      return clean;
+    }
+
+    async function fetchProjection(path, kind) {
+      const clean = safeProjectionPath(path, kind);
+      const response = await fetch(`${clean}?t=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Document projection is unavailable.");
+      return response.json();
+    }
+
+    function documentState(tileId, data) {
+      if (!documentTileState.has(tileId)) documentTileState.set(tileId, {
+        view: ["inbox","public","archive","threads"].includes(data.default_view) ? data.default_view : "inbox",
+        source: "", type: "", query: "", catalog: null, documents: [], loadedPages: new Set(), token: 0
+      });
+      return documentTileState.get(tileId);
+    }
+
+    function documentMatches(summary, state, reads) {
+      if (state.view === "inbox" && reads.has(summary.key)) return false;
+      if (state.view === "public" && summary.access_scope !== "public") return false;
+      if (state.source && summary.source_label !== state.source) return false;
+      if (state.type && summary.artifact_type !== state.type) return false;
+      if (state.query) {
+        const haystack = [summary.title, summary.source_label, summary.artifact_type, summary.acquisition_summary].join(" ").toLocaleLowerCase();
+        if (!haystack.includes(state.query.toLocaleLowerCase())) return false;
+      }
+      return true;
+    }
+
+    function documentCard(summary, state, rerender) {
+      const reads = readDocumentReads();
+      const button = element("button", `document-card${reads.has(summary.key) ? "" : " unread"}`);
+      button.type = "button";
+      button.dataset.documentKey = summary.key;
+      button.append(element("h3", "", summary.title || "Untitled document"));
+      const meta = element("span", "document-meta");
+      [summary.source_label, summary.artifact_type, summary.received_time].filter((item) => text(item)).forEach((item) => meta.append(element("span", "", item)));
+      button.append(meta);
+      if (text(summary.acquisition_summary)) button.append(element("p", "", summary.acquisition_summary));
+      button.addEventListener("click", () => openDocument(summary, state, rerender, button));
+      return button;
+    }
+
+    async function loadDocumentPage(state, pageIndex) {
+      if (!state.catalog || state.loadedPages.has(pageIndex) || !state.catalog.pages?.[pageIndex]) return;
+      const reference = state.catalog.pages[pageIndex];
+      const page = await fetchProjection(reference.path, "pages");
+      if (!Array.isArray(page.documents)) throw new Error("Document page is invalid.");
+      const existing = new Set(state.documents.map((item) => item.key));
+      page.documents.forEach((item) => { if (!existing.has(item.key)) state.documents.push(item); });
+      state.loadedPages.add(pageIndex);
+    }
+
+    async function loadAllDocumentPages(state) {
+      if (!state.catalog) return;
+      for (let index = 0; index < state.catalog.pages.length; index += 1) await loadDocumentPage(state, index);
+    }
+
+    function renderDocumentShell(shell, tileId, data) {
+      const state = documentState(tileId, data); shell.replaceChildren();
+      if (!state.catalog) { shell.append(empty("Loading player-known documents…")); return; }
+      if (text(data.summary)) shell.append(element("p", "muted", data.summary));
+      const tabs = element("div", "documents-tabs"); tabs.setAttribute("role", "group"); tabs.setAttribute("aria-label", "Document views");
+      [["inbox","Inbox"],["public","Public"],["archive","Archive"],["threads","Threads"]].forEach(([value,label]) => {
+        const button = element("button", "", label); button.type = "button"; button.setAttribute("aria-pressed", String(state.view === value));
+        button.addEventListener("click", () => { state.view = value; renderDocumentShell(shell, tileId, data); }); tabs.append(button);
+      });
+      shell.append(tabs);
+      const toolbar = element("div", "documents-toolbar");
+      const search = document.createElement("input"); search.type = "search"; search.value = state.query; search.placeholder = "Search player-known documents"; search.setAttribute("aria-label", "Search documents");
+      let searchTimer = null; search.addEventListener("input", () => { state.query = search.value; clearTimeout(searchTimer); searchTimer = setTimeout(async () => { if (state.query) await loadAllDocumentPages(state); renderDocumentShell(shell, tileId, data); const next = shell.querySelector('input[type="search"]'); if (next) { next.focus(); next.setSelectionRange(state.query.length, state.query.length); } }, 180); });
+      const source = document.createElement("select"); source.setAttribute("aria-label", "Filter by source"); source.append(new Option("All sources", ""));
+      Array.from(new Set(state.documents.map((item) => item.source_label).filter(Boolean))).sort().forEach((item) => source.append(new Option(item, item))); source.value = state.source; source.addEventListener("change", () => { state.source = source.value; renderDocumentShell(shell, tileId, data); });
+      const type = document.createElement("select"); type.setAttribute("aria-label", "Filter by document type"); type.append(new Option("All types", ""));
+      Array.from(new Set(state.documents.map((item) => item.artifact_type).filter(Boolean))).sort().forEach((item) => type.append(new Option(item, item))); type.value = state.type; type.addEventListener("change", () => { state.type = type.value; renderDocumentShell(shell, tileId, data); });
+      toolbar.append(search, source, type); shell.append(toolbar);
+      const reads = readDocumentReads();
+      const filtered = state.documents.filter((summary) => documentMatches(summary, state, reads));
+      filtered.sort((a,b) => state.view === "threads"
+        ? String(a.thread_key).localeCompare(String(b.thread_key)) || Number(b.received_order) - Number(a.received_order)
+        : Number(b.received_order) - Number(a.received_order));
+      const list = element("div", "document-list");
+      if (!filtered.length) list.append(empty(state.view === "inbox" ? "No unread documents." : "No player-known documents match this view."));
+      else filtered.forEach((summary) => list.append(documentCard(summary, state, () => renderDocumentShell(shell, tileId, data))));
+      shell.append(list);
+      if (state.loadedPages.size < state.catalog.pages.length) {
+        const more = element("button", "documents-more", "Load older documents"); more.type = "button";
+        more.addEventListener("click", async () => { more.disabled = true; await loadDocumentPage(state, state.loadedPages.size); renderDocumentShell(shell, tileId, data); }); shell.append(more);
+      }
+      shell.append(element("p", "small", `${state.documents.length} of ${state.catalog.visible_count} player-known documents loaded. Read state stays in this browser.`));
+    }
+
+    function documentsTile(tileId, data) {
+      const shell = element("section", "documents-shell");
+      const state = documentState(tileId, data); const token = ++state.token;
+      renderDocumentShell(shell, tileId, data);
+      (async () => {
+        try {
+          state.catalog = await fetchProjection(data.catalog_path, "catalog");
+          state.documents = []; state.loadedPages = new Set(); await loadDocumentPage(state, 0);
+          if (state.token === token && shell.isConnected) renderDocumentShell(shell, tileId, data);
+        } catch (_) { if (state.token === token && shell.isConnected) shell.replaceChildren(empty("The player-safe document archive is unavailable.")); }
+      })();
+      return shell;
+    }
+
+    function documentPaper(documentData) {
+      const paper = element("article", "document-paper"); paper.dataset.skin = text(documentData.skin, "neutral");
+      paper.append(element("p", "document-kicker", `${text(documentData.artifact_type, "Document")} · ${text(documentData.authored_time, "Undated")}`));
+      paper.append(element("h3", "", documentData.title || "Untitled document"));
+      paper.append(element("p", "document-byline", `${text(documentData.source_label, "Unknown source")} · ${text(documentData.authored_place, "Place not stated")}`));
+      paper.append(element("p", "document-acquisition", documentData.acquisition_context || "This document reached you through an established channel."));
+      paper.append(element("pre", "document-body", documentData.body_text || ""));
+      if (Array.isArray(documentData.links) && documentData.links.length) {
+        const links = element("div", "document-links"); documentData.links.forEach((link) => links.append(element("span", "", `${text(link.kind, "reference")}: ${text(link.label)}`))); paper.append(links);
+      }
+      return paper;
+    }
+
+    async function openDocument(summary, state, rerender, returnFocus) {
+      try {
+        let documentData = documentCache.get(summary.key);
+        if (!documentData) { documentData = await fetchProjection(summary.path, "documents"); documentCache.set(summary.key, documentData); }
+        const reads = readDocumentReads(); reads.add(summary.key); writeDocumentReads(reads); rerender();
+        documentReturnFocus = document.querySelector(`.document-card[data-document-key="${CSS.escape(summary.key)}"]`)
+          || document.querySelector('.documents-tabs button[aria-pressed="true"]')
+          || document.querySelector('.documents-toolbar input')
+          || returnFocus;
+        openDocumentContext = { summary, state, documentData };
+        document.getElementById("documentDialogTitle").textContent = documentData.title || "World Voices document";
+        document.getElementById("documentReader").replaceChildren(documentPaper(documentData));
+        const compare = document.getElementById("documentCompare");
+        compare.hidden = state.documents.filter((item) => item.compare_group === summary.compare_group).length < 2 && state.loadedPages.size >= state.catalog.pages.length;
+        compare.onclick = () => compareAccounts(summary.compare_group, state);
+        const dialog = document.getElementById("documentDialog"); dialog.hidden = false; document.getElementById("documentClose").focus();
+      } catch (_) { /* The validated server may reject a stale or unsafe projection. */ }
+    }
+
+    async function compareAccounts(group, state) {
+      await loadAllDocumentPages(state);
+      const summaries = state.documents.filter((item) => item.compare_group === group);
+      const accounts = [];
+      for (const summary of summaries) {
+        let data = documentCache.get(summary.key);
+        if (!data) { data = await fetchProjection(summary.path, "documents"); documentCache.set(summary.key, data); }
+        accounts.push(data);
+      }
+      const reader = document.getElementById("documentReader"); reader.replaceChildren();
+      reader.append(element("p", "compare-note", "These are the accounts your character can access. Their differences do not establish which account is objectively true."));
+      const grid = element("div", "compare-grid");
+      accounts.forEach((account) => { const card = element("article", "compare-account"); card.append(element("h3", "", account.title), element("p", "small", `${account.source_label} · ${account.authored_time}`), element("pre", "", account.body_text)); grid.append(card); });
+      reader.append(grid); document.getElementById("documentDialogTitle").textContent = "Compare player-known accounts"; document.getElementById("documentCompare").hidden = true;
+    }
+
+    function closeDocumentDialog() {
+      const dialog = document.getElementById("documentDialog"); if (dialog.hidden) return;
+      const openKey = openDocumentContext?.summary?.key || "";
+      const restoreFocus = () => (openKey ? document.querySelector(`.document-card[data-document-key="${CSS.escape(openKey)}"]`) : null)
+        || (documentReturnFocus && document.contains(documentReturnFocus) ? documentReturnFocus : null)
+        || document.querySelector('.documents-tabs button[aria-pressed="true"]')
+        || document.querySelector('.documents-toolbar input');
+      dialog.hidden = true; document.getElementById("documentReader").replaceChildren(); openDocumentContext = null;
+      const immediateTarget = restoreFocus();
+      if (immediateTarget) immediateTarget.focus();
+      const focusAfterClose = () => {
+        const focusTarget = restoreFocus();
+        if (focusTarget) focusTarget.focus();
+        documentReturnFocus = null;
+      };
+      requestAnimationFrame(focusAfterClose);
+      setTimeout(focusAfterClose, 0);
+    }
+    document.getElementById("documentClose").addEventListener("click", closeDocumentDialog);
+    document.getElementById("documentDialog").addEventListener("click", (event) => { if (event.target.id === "documentDialog") closeDocumentDialog(); });
+    document.addEventListener("keydown", (event) => {
+      const dialog = document.getElementById("documentDialog"); if (dialog.hidden) return;
+      if (event.key === "Escape") { event.preventDefault(); closeDocumentDialog(); return; }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(dialog.querySelectorAll('button:not([hidden]):not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+      if (!focusable.length) return; const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
 
     function chips(items, emptyLabel) {
@@ -352,60 +759,508 @@
       return wrap;
     }
 
-    function mapAlternative(data, nodes, edges) {
-      const details = element("details", "map-alternative");
+    const ATLAS_SCALE_MODES = new Set(["region", "city", "interior", "network"]);
+    const ATLAS_PROJECTIONS = new Set(["spatial", "schematic"]);
+    const ATLAS_SKINS = new Set(["auto", "minimal", "survey", "civic", "field", "systems"]);
+    const ATLAS_STYLE_ROLES = new Set(["place", "landmark", "route", "boundary", "water", "region", "terrain", "structure", "hazard", "neutral"]);
+    const ATLAS_KNOWLEDGE = new Set(["confirmed", "reported", "inferred", "stale", "unknown"]);
+    const ATLAS_ACCESS = new Set(["open", "conditional", "blocked", "unknown"]);
+    const ATLAS_RISK = new Set(["none", "caution", "danger", "unknown"]);
+    const ATLAS_GEOMETRY = new Set(["point", "line", "area"]);
+    const atlasMountTokens = new Map();
+
+    const atlasEnum = (value, allowed, fallback) => allowed.has(text(value).toLowerCase()) ? text(value).toLowerCase() : fallback;
+    const atlasNumber = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+    const atlasPair = (value) => Array.isArray(value) && value.length === 2 && value.every((item) => Number.isFinite(Number(item))) ? [Number(value[0]), Number(value[1])] : null;
+    const atlasAsset = (value) => { const clean = text(value).replaceAll("\\", "/"); return clean.startsWith("assets/") && !clean.split("/").includes("..") ? clean : ""; };
+    const atlasWords = (value) => text(value).replaceAll("_", " ");
+    const atlasDefaultRole = (type) => type === "line" ? "route" : type === "area" ? "region" : "place";
+
+    function atlasPriority(feature, currentId) {
+      if (feature.id === currentId) return 0;
+      const explicit = feature.labelPriority;
+      if (Number.isFinite(Number(explicit))) return Math.max(0, Math.min(3, Math.round(Number(explicit))));
+      const named = { current: 0, primary: 1, secondary: 2, minor: 3 }[text(explicit).toLowerCase()];
+      if (named !== undefined) return named;
+      if (["landmark", "region"].includes(feature.styleRole)) return 1;
+      return feature.geometry.type === "point" ? 2 : 3;
+    }
+
+    function atlasFeature(raw, index, legacy = false) {
+      raw = object(raw);
+      const geometry = object(raw.geometry);
+      const type = atlasEnum(geometry.type, ATLAS_GEOMETRY, "");
+      if (!type) return null;
+      let coordinates;
+      if (type === "point") coordinates = atlasPair(geometry.coordinates);
+      else coordinates = array(geometry.coordinates).map(atlasPair).filter(Boolean);
+      if (!coordinates || (type === "line" && coordinates.length < 2) || (type === "area" && coordinates.length < 3)) return null;
+      const presentationOnly = Boolean(raw.presentation_only);
+      const knowledgeState = atlasEnum(raw.knowledge_state, ATLAS_KNOWLEDGE, "confirmed");
+      if (knowledgeState === "unknown") return null;
+      return {
+        id: text(raw.id, `atlas-feature-${index}`),
+        label: text(raw.label || raw.name, presentationOnly ? "" : "Place"),
+        summary: text(raw.summary || raw.description || raw.detail),
+        geometry: { type, coordinates },
+        styleRole: atlasEnum(raw.style_role, ATLAS_STYLE_ROLES, atlasDefaultRole(type)),
+        knowledgeState,
+        accessState: atlasEnum(raw.access_state, ATLAS_ACCESS, "open"),
+        riskState: atlasEnum(raw.risk_state, ATLAS_RISK, "none"),
+        from: text(raw.from), to: text(raw.to), direction: text(raw.direction || raw.route_direction || (raw.one_way ? "one_way" : "")),
+        duration: text(raw.duration_label || raw.duration || raw.travel), conditions: text(raw.conditions || raw.condition),
+        labelPriority: raw.label_priority ?? raw.importance,
+        presentationOnly,
+        legacy
+      };
+    }
+
+    function legacyKnowledge(status) {
+      status = text(status).toLowerCase();
+      if (["unknown", "hidden", "undiscovered"].includes(status)) return "unknown";
+      if (["reported", "rumored", "rumour"].includes(status)) return "reported";
+      if (status === "inferred") return "inferred";
+      if (["stale", "last_known"].includes(status)) return "stale";
+      return "confirmed";
+    }
+
+    function legacyAccess(status) {
+      status = text(status).toLowerCase();
+      if (["locked", "blocked", "closed", "sealed"].includes(status)) return "blocked";
+      if (["conditional", "restricted", "permit"].includes(status)) return "conditional";
+      if (["access_unknown", "unclear"].includes(status)) return "unknown";
+      return "open";
+    }
+
+    function adaptLegacyAtlas(data) {
+      const width = Math.max(1, atlasNumber(data.bounds?.width, 1000));
+      const height = Math.max(1, atlasNumber(data.bounds?.height, 640));
+      let currentFromNode = "";
+      const nodes = array(data.nodes).map((node, index) => {
+        node = object(node);
+        const legacyId = text(node.id, `legacy-place-${index}`);
+        if (node.current) currentFromNode = legacyId;
+        return atlasFeature({
+          id: legacyId, label: node.label || node.name, summary: node.summary,
+          style_role: node.style_role || (node.landmark ? "landmark" : "place"), knowledge_state: legacyKnowledge(node.status),
+          access_state: legacyAccess(node.status), risk_state: node.risk_state,
+          label_priority: node.label_priority || node.importance,
+          geometry: { type: "point", coordinates: [atlasNumber(node.x, 0), atlasNumber(node.y, 0)] }
+        }, index, true);
+      }).filter(Boolean);
+      const byId = new Map(nodes.map((feature) => [feature.id, feature]));
+      const edges = array(data.edges).map((edge, index) => {
+        edge = object(edge); const from = byId.get(text(edge.from)), to = byId.get(text(edge.to));
+        if (!from || !to) return null;
+        return atlasFeature({
+          id: text(edge.id, `legacy-route-${index}`), label: edge.label || `${from.label} — ${to.label}`,
+          summary: edge.summary, style_role: edge.style_role || "route", knowledge_state: legacyKnowledge(edge.status),
+          access_state: legacyAccess(edge.status), risk_state: edge.risk_state, from: from.id, to: to.id,
+          direction: edge.direction || (edge.one_way ? "one_way" : ""), duration_label: edge.duration || edge.travel,
+          conditions: edge.conditions,
+          geometry: { type: "line", coordinates: [from.geometry.coordinates, to.geometry.coordinates] }
+        }, nodes.length + index, true);
+      }).filter(Boolean);
+      if (!nodes.some((feature) => feature.id === currentFromNode)) currentFromNode = "";
+      return {
+        atlasVersion: 0, width, height,
+        scaleMode: atlasEnum(data.scale_mode || data.mode, ATLAS_SCALE_MODES, "region"),
+        projection: atlasEnum(data.projection, ATLAS_PROJECTIONS, "spatial"),
+        skin: atlasEnum(data.skin, ATLAS_SKINS, "minimal"),
+        backgroundImage: atlasAsset(data.background_image), summary: text(data.summary),
+        currentFeatureId: text(data.current_node_id || currentFromNode), features: [...nodes, ...edges]
+      };
+    }
+
+    function normalizeAtlas(data) {
+      data = object(data);
+      if (Number(data.atlas_version) !== 1) return adaptLegacyAtlas(data);
+      const space = object(data.coordinate_space);
+      const width = Math.max(1, atlasNumber(space.width, 1000));
+      const height = Math.max(1, atlasNumber(space.height, 640));
+      const seen = new Set();
+      let features = array(data.features).map((feature, index) => atlasFeature(feature, index)).filter((feature) => {
+        if (!feature || seen.has(feature.id)) return false;
+        seen.add(feature.id); return true;
+      });
+      const candidateIds = new Set(features.map((feature) => feature.id));
+      features = features.filter((feature) => !((feature.from || feature.to) && (!candidateIds.has(feature.from) || !candidateIds.has(feature.to))));
+      const visibleIds = new Set(features.map((feature) => feature.id));
+      const currentFeatureId = visibleIds.has(text(data.current_feature_id)) ? text(data.current_feature_id) : "";
+      return {
+        atlasVersion: 1, width, height,
+        scaleMode: atlasEnum(data.scale_mode, ATLAS_SCALE_MODES, "region"),
+        projection: atlasEnum(data.projection, ATLAS_PROJECTIONS, "schematic"),
+        skin: atlasEnum(data.skin, ATLAS_SKINS, "minimal"),
+        backgroundImage: atlasAsset(data.background_image), summary: text(data.summary), currentFeatureId, features
+      };
+    }
+
+    function atlasResolvedSkin(atlas) {
+      return atlas.skin === "auto" ? "minimal" : atlas.skin;
+    }
+
+    function atlasLatLng(atlas, coordinate) {
+      return [atlas.height - coordinate[1], coordinate[0]];
+    }
+
+    function atlasCenter(atlas, feature) {
+      const points = feature.geometry.type === "point" ? [feature.geometry.coordinates] : feature.geometry.coordinates;
+      const total = points.reduce((sum, point) => [sum[0] + point[0], sum[1] + point[1]], [0, 0]);
+      return atlasLatLng(atlas, [total[0] / points.length, total[1] / points.length]);
+    }
+
+    function atlasLinePosition(atlas, feature, fraction = .68) {
+      const points = feature.geometry.coordinates;
+      if (feature.geometry.type !== "line" || points.length < 2) return atlasCenter(atlas, feature);
+      const lengths = points.slice(1).map((point, index) => Math.hypot(point[0] - points[index][0], point[1] - points[index][1]));
+      const total = lengths.reduce((sum, length) => sum + length, 0);
+      if (!total) return atlasCenter(atlas, feature);
+      let remaining = total * fraction;
+      for (let index = 0; index < lengths.length; index += 1) {
+        if (remaining <= lengths[index]) {
+          const ratio = remaining / lengths[index];
+          return atlasLatLng(atlas, [
+            points[index][0] + (points[index + 1][0] - points[index][0]) * ratio,
+            points[index][1] + (points[index + 1][1] - points[index][1]) * ratio
+          ]);
+        }
+        remaining -= lengths[index];
+      }
+      return atlasLatLng(atlas, points[points.length - 1]);
+    }
+
+    function atlasClasses(feature, extra = "") {
+      return [
+        `atlas-role-${feature.styleRole}`, `atlas-knowledge-${feature.knowledgeState}`,
+        `atlas-access-${feature.accessState}`, `atlas-risk-${feature.riskState}`, extra
+      ].filter(Boolean).join(" ");
+    }
+
+    function atlasPointIcon(feature, currentId, selectedId) {
+      const state = [feature.id === currentId ? "atlas-current-feature" : "", feature.id === selectedId ? "atlas-selected" : ""].filter(Boolean).join(" ");
+      const shellClass = `atlas-point-shell ${atlasClasses(feature, state)}`;
+      return L.divIcon({
+        className: "atlas-marker-icon", html: `<span class="${shellClass}" aria-hidden="true"><span class="atlas-point-core"></span></span>`,
+        iconSize: [24,24], iconAnchor: [12,12], popupAnchor: [0,-13], tooltipAnchor: [0,-14]
+      });
+    }
+
+    function atlasStateText(feature) {
+      const parts = [atlasWords(feature.styleRole)];
+      if (feature.knowledgeState !== "confirmed") parts.push(atlasWords(feature.knowledgeState === "stale" ? "last_known" : feature.knowledgeState));
+      if (feature.accessState !== "open") parts.push(`access ${atlasWords(feature.accessState)}`);
+      if (feature.riskState !== "none") parts.push(`risk ${atlasWords(feature.riskState)}`);
+      if (feature.direction) parts.push(atlasWords(feature.direction));
+      return parts.join(" · ");
+    }
+
+    function atlasPopup(feature, atlas) {
+      const popup = element("div", "atlas-popup");
+      popup.append(element("strong", "", feature.label));
+      if (feature.summary) popup.append(element("p", "", feature.summary));
+      popup.append(element("p", "small", atlasStateText(feature)));
+      if (feature.from && feature.to) {
+        const byId = new Map(atlas.features.map((item) => [item.id, item]));
+        popup.append(element("p", "small", `${byId.get(feature.from)?.label || "Route start"} → ${byId.get(feature.to)?.label || "Route end"}${feature.duration ? ` · ${feature.duration}` : ""}`));
+      }
+      return popup;
+    }
+
+    function atlasStatus(feature) {
+      if (feature.accessState === "blocked") return { label: "BLOCKED", className: "blocked" };
+      if (feature.riskState === "danger") return { label: "!!", className: "danger" };
+      if (feature.riskState === "caution") return { label: "!", className: "" };
+      if (feature.riskState === "unknown") return { label: "RISK ?", className: "blocked" };
+      if (["one_way", "forward", "directed"].includes(feature.direction.toLowerCase())) return { label: "ONE WAY", className: "" };
+      return null;
+    }
+
+    function buildAtlasLegend(atlas) {
+      const visible = atlas.features.filter((feature) => !feature.presentationOnly);
+      const knowledge = new Set(visible.map((feature) => feature.knowledgeState));
+      const access = new Set(visible.map((feature) => feature.accessState));
+      const risk = new Set(visible.map((feature) => feature.riskState));
+      const details = element("details", "atlas-legend");
+      details.append(element("summary", "", "Atlas legend"));
+      const body = element("div", "atlas-legend-body");
+      const add = (label, swatchClass) => { const item = element("span", "atlas-legend-item"); item.append(element("span", `atlas-swatch ${swatchClass}`), element("span", "", label)); body.append(item); };
+      add("Confirmed/open", "");
+      if (knowledge.has("reported") || knowledge.has("inferred") || knowledge.has("stale")) add("Reported / last known", "reported");
+      if (access.has("conditional")) add("Conditional access", "conditional");
+      if (access.has("blocked")) add("Blocked", "blocked");
+      if (risk.has("caution") || risk.has("danger") || risk.has("unknown")) add("Risk marker", "caution");
+      details.append(body); return details;
+    }
+
+    function atlasDetail(feature, atlas) {
+      const detail = element("div", "atlas-detail"); detail.setAttribute("aria-live", "polite");
+      if (!feature) {
+        detail.append(element("h3", "", "Atlas details"), element("p", "muted", "Choose a known place, route, or area from the atlas list."));
+        return detail;
+      }
+      detail.append(element("h3", "", feature.label));
+      if (feature.summary) detail.append(element("p", "muted", feature.summary));
+      const badges = element("div", "atlas-detail-badges");
+      [atlasWords(feature.styleRole), atlasWords(feature.knowledgeState === "stale" ? "last_known" : feature.knowledgeState), `access ${atlasWords(feature.accessState)}`, `risk ${atlasWords(feature.riskState)}`]
+        .forEach((label) => badges.append(element("span", "chip", label)));
+      detail.append(badges);
+      if (feature.from && feature.to) {
+        const byId = new Map(atlas.features.map((item) => [item.id, item]));
+        detail.append(element("p", "small", `${byId.get(feature.from)?.label || "Route start"} → ${byId.get(feature.to)?.label || "Route end"}`));
+      }
+      if (feature.duration) detail.append(element("p", "small", `Travel: ${feature.duration}`));
+      if (feature.conditions) detail.append(element("p", "small", `Conditions: ${feature.conditions}`));
+      return detail;
+    }
+
+    function atlasText(atlas, tileId, selectedId) {
+      const details = element("details", "atlas-text"); details.open = true;
       details.append(element("summary", "", "Map locations and routes (text alternative)"));
-      const list = document.createElement("ul");
-      if (!nodes.length) list.append(element("li", "", "No player-known places yet."));
-      nodes.forEach((node) => list.append(element("li", "", `${node.label}${node.summary ? ` — ${node.summary}` : ""}`)));
-      edges.forEach((edge) => {
-        const from = nodes.find((node) => node.id === edge.from)?.label || edge.from;
-        const to = nodes.find((node) => node.id === edge.to)?.label || edge.to;
-        list.append(element("li", "", `Route: ${from} to ${to}${edge.label ? ` — ${edge.label}` : ""}`));
+      const features = atlas.features.filter((feature) => !feature.presentationOnly).slice().sort((a, b) => {
+        const order = { point: 0, area: 1, line: 2 };
+        return order[a.geometry.type] - order[b.geometry.type] || atlasPriority(a, atlas.currentFeatureId) - atlasPriority(b, atlas.currentFeatureId) || a.label.localeCompare(b.label);
+      });
+      if (!features.length) { details.append(element("p", "atlas-empty-text", "No player-known atlas features yet.")); return details; }
+      const list = element("ul", "atlas-feature-list");
+      const byId = new Map(atlas.features.map((feature) => [feature.id, feature]));
+      features.forEach((feature) => {
+        const item = document.createElement("li"); const button = element("button", "atlas-feature-button"); button.type = "button";
+        button.dataset.featureId = feature.id; button.setAttribute("aria-pressed", String(feature.id === selectedId));
+        if (feature.id === atlas.currentFeatureId) button.setAttribute("aria-current", "location");
+        const currentPrefix = feature.id === atlas.currentFeatureId ? "current · " : "";
+        const routeText = feature.from && feature.to ? `. ${byId.get(feature.from)?.label || "Route start"} to ${byId.get(feature.to)?.label || "Route end"}${feature.duration ? `, ${feature.duration}` : ""}${feature.conditions ? `, ${feature.conditions}` : ""}` : "";
+        button.setAttribute("aria-label", `${feature.label}. ${currentPrefix}${atlasStateText(feature)}${routeText}`);
+        button.append(element("span", "atlas-feature-name", feature.label), element("span", "atlas-feature-state", `${currentPrefix}${atlasStateText(feature)}`));
+        button.addEventListener("click", () => selectAtlasFeature(tileId, feature.id, { openPopup: true, pan: true }));
+        item.append(button); list.append(item);
       });
       details.append(list); return details;
     }
 
     function captureMap(tileId) {
+      atlasMountTokens.set(tileId, Symbol("cancelled-atlas-mount"));
       const record = mapRegistry.get(tileId);
       if (!record) return;
       const center = record.instance.getCenter();
-      mapViews.set(tileId, { center: [center.lat, center.lng], zoom: record.instance.getZoom(), popupNodeId: record.popupNodeId });
+      mapViews.set(tileId, {
+        center: [center.lat, center.lng], zoom: record.instance.getZoom(),
+        selectedFeatureId: record.selectedFeatureId, popupFeatureId: record.popupFeatureId,
+        legendOpen: record.legend?.open, textOpen: record.textAtlas?.open
+      });
       record.instance.remove(); mapRegistry.delete(tileId);
     }
 
-    function mapTile(tileId, data) {
-      const wrap = element("div", "items");
-      if (text(data.summary)) wrap.append(element("p", "muted", data.summary));
-      const mapWrap = element("div", "map-wrap"); wrap.append(mapWrap);
-      const nodes = array(data.nodes).map((node, index) => ({ id: text(node.id, String(index)), label: text(node.label || node.name, "Place"), x: Number(node.x) || 0, y: Number(node.y) || 0, summary: text(node.summary), status: text(node.status), current: Boolean(node.current) }));
-      const edges = array(data.edges); wrap.append(mapAlternative(data, nodes, edges));
-      if (!nodes.length) { mapWrap.append(empty("No player-known map yet.")); return wrap; }
-      if (!window.L) { mapWrap.append(empty("Interactive map unavailable. Use the text alternative below.")); return wrap; }
-      const canvas = element("div", "map-canvas"); canvas.setAttribute("aria-hidden", "true"); mapWrap.append(canvas);
-      const width = Math.max(1, Number(data.bounds?.width) || 1000), height = Math.max(1, Number(data.bounds?.height) || 640), bounds = [[0,0],[height,width]];
-      const map = L.map(canvas, { crs: L.CRS.Simple, minZoom: -2, maxZoom: 3, zoomControl: true, attributionControl: false });
-      if (text(data.background_image)) L.imageOverlay(data.background_image, bounds).addTo(map);
-      else L.rectangle(bounds, { stroke: false, fill: true, fillColor: "#171d26", fillOpacity: 1 }).addTo(map);
-      const byId = new Map(nodes.map((node) => [node.id, node]));
-      edges.forEach((edge) => { const from = byId.get(text(edge.from)), to = byId.get(text(edge.to)); if (from && to) L.polyline([[from.y,from.x],[to.y,to.x]], { color: "#7dd3fc", weight: 2, opacity: .76 }).addTo(map); });
-      const record = { instance: map, popupNodeId: "" };
-      const currentId = text(data.current_node_id);
-      nodes.forEach((node) => {
-        const markerClass = `map-marker ${node.id === currentId || node.current ? "current" : ""} ${["unknown","locked"].includes(node.status) ? "unknown" : ""}`;
-        const icon = L.divIcon({ className: "", html: `<span class="${markerClass}" aria-hidden="true"></span>`, iconSize: [18,18], iconAnchor: [9,9] });
-        const marker = L.marker([node.y,node.x], { icon, keyboard: false, title: node.label }).addTo(map);
-        marker.bindTooltip(node.label, { permanent: true, direction: "top", offset: [0,-10], className: "map-label" });
-        const popup = element("div", ""); popup.append(element("strong", "", node.label)); if (node.summary) popup.append(element("p", "", node.summary)); marker.bindPopup(popup);
-        marker.on("popupopen", () => { record.popupNodeId = node.id; }); marker.on("popupclose", () => { if (record.popupNodeId === node.id) record.popupNodeId = ""; });
-        record[`marker:${node.id}`] = marker;
+    function atlasBounds(record) {
+      const knownCoordinates = record.atlas.features
+        .filter((feature) => !feature.presentationOnly)
+        .flatMap((feature) => feature.geometry.type === "point" ? [feature.geometry.coordinates] : feature.geometry.coordinates)
+        .map((coordinate) => atlasLatLng(record.atlas, coordinate));
+      return knownCoordinates.length
+        ? L.latLngBounds(knownCoordinates)
+        : L.latLngBounds([[0,0],[record.atlas.height, record.atlas.width]]);
+    }
+
+    function fitAtlas(record) {
+      record.instance.fitBounds(atlasBounds(record), { padding: [24,24], animate: false, maxZoom: record.atlas.scaleMode === "interior" ? 2 : 1.5 });
+    }
+
+    function atlasZoomClass(record) {
+      const zoom = record.instance.getZoom();
+      record.shell.classList.toggle("atlas-zoom-low", zoom <= 0);
+      record.shell.classList.toggle("atlas-zoom-mid", zoom > 0 && zoom <= 1.5);
+      record.shell.classList.toggle("atlas-zoom-high", zoom > 1.5);
+    }
+
+    function declutterAtlasLabels(record) {
+      if (mapRegistry.get(record.tileId) !== record) return;
+      const labels = Array.from(record.layers.values()).filter((entry) => !entry.feature.presentationOnly && entry.layer.getTooltip?.()?._container).sort((a, b) => {
+        const selectedA = a.feature.id === record.selectedFeatureId ? -2 : a.feature.id === record.atlas.currentFeatureId ? -1 : 0;
+        const selectedB = b.feature.id === record.selectedFeatureId ? -2 : b.feature.id === record.atlas.currentFeatureId ? -1 : 0;
+        return selectedA - selectedB || atlasPriority(a.feature, record.atlas.currentFeatureId) - atlasPriority(b.feature, record.atlas.currentFeatureId);
       });
+      labels.forEach((entry) => { entry.layer.getTooltip()._container.style.visibility = ""; });
+      const occupied = [];
+      labels.forEach((entry) => {
+        const label = entry.layer.getTooltip()._container;
+        const protectedLabel = entry.feature.id === record.selectedFeatureId || entry.feature.id === record.atlas.currentFeatureId;
+        if (!protectedLabel && Number.parseFloat(getComputedStyle(label).opacity || "1") < .05) { label.style.visibility = "hidden"; return; }
+        const rect = label.getBoundingClientRect();
+        const padded = { left: rect.left - 4, right: rect.right + 4, top: rect.top - 3, bottom: rect.bottom + 3 };
+        const overlaps = occupied.some((other) => padded.left < other.right && padded.right > other.left && padded.top < other.bottom && padded.bottom > other.top);
+        if (overlaps && !protectedLabel) label.style.visibility = "hidden";
+        else occupied.push(padded);
+      });
+    }
+
+    function scheduleAtlasDeclutter(record) {
+      requestAnimationFrame(() => declutterAtlasLabels(record));
+    }
+
+    function updateAtlasSelection(record) {
+      record.buttons.forEach((button, id) => button.setAttribute("aria-pressed", String(id === record.selectedFeatureId)));
+      record.layers.forEach((entry, id) => {
+        const selected = id === record.selectedFeatureId;
+        const current = id === record.atlas.currentFeatureId;
+        if (entry.feature.geometry.type === "point") {
+          entry.layer.setIcon(atlasPointIcon(entry.feature, record.atlas.currentFeatureId, record.selectedFeatureId));
+          entry.layer.setZIndexOffset(current ? 1000 : selected ? 500 : 0);
+        } else if ((current || selected) && entry.layer.bringToFront) entry.layer.bringToFront();
+        const path = entry.layer.getElement?.(); if (path) path.classList.toggle("atlas-selected", selected);
+        const tooltip = entry.layer.getTooltip?.()?._container; if (tooltip) tooltip.classList.toggle("atlas-selected-label", selected);
+      });
+      const feature = record.featureById.get(record.selectedFeatureId);
+      record.detail.replaceWith(atlasDetail(feature, record.atlas));
+      record.detail = record.shell.querySelector(".atlas-detail");
+      scheduleAtlasDeclutter(record);
+    }
+
+    function selectAtlasFeature(tileId, featureId, options = {}) {
+      const record = mapRegistry.get(tileId);
+      if (!record) {
+        const saved = mapViews.get(tileId) || {}; saved.selectedFeatureId = featureId; mapViews.set(tileId, saved); return;
+      }
+      const entry = record.layers.get(featureId);
+      if (!entry || entry.feature.presentationOnly) return;
+      record.selectedFeatureId = featureId; updateAtlasSelection(record);
+      const saved = mapViews.get(tileId) || {}; saved.selectedFeatureId = featureId; mapViews.set(tileId, saved);
+      if (options.pan) record.instance.panTo(atlasCenter(record.atlas, entry.feature), { animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches });
+      if (options.openPopup) {
+        entry.layer.openPopup(atlasCenter(record.atlas, entry.feature));
+        record.popupFeatureId = featureId;
+      }
+    }
+
+    function bindAtlasFeature(record, feature, layer) {
+      record.layers.set(feature.id, { feature, layer });
+      if (feature.presentationOnly) return;
+      layer.bindPopup(atlasPopup(feature, record.atlas), { closeButton: false, autoPan: false, className: "atlas-popup-shell" });
+      layer.on("click", () => selectAtlasFeature(record.tileId, feature.id, { openPopup: false, pan: false }));
+      layer.on("popupopen", () => { record.popupFeatureId = feature.id; selectAtlasFeature(record.tileId, feature.id); });
+      layer.on("popupclose", () => { if (record.popupFeatureId === feature.id) record.popupFeatureId = ""; });
+      const priority = atlasPriority(feature, record.atlas.currentFeatureId);
+      const labelNode = element("span", "", feature.label);
+      layer.bindTooltip(labelNode, {
+        permanent: true, direction: feature.geometry.type === "point" ? "top" : "center", opacity: 1,
+        pane: "atlas-labels", className: `atlas-label atlas-priority-${priority} atlas-knowledge-${feature.knowledgeState}`
+      });
+    }
+
+    function atlasStatusMarker(record, feature) {
+      const status = atlasStatus(feature);
+      if (!status || feature.geometry.type === "point" || feature.presentationOnly) return;
+      const html = `<span class="atlas-status-marker ${status.className}" aria-hidden="true">${status.label}</span>`;
+      const position = feature.geometry.type === "line" ? atlasLinePosition(record.atlas, feature) : atlasCenter(record.atlas, feature);
+      L.marker(position, {
+        pane: "atlas-points", interactive: false, keyboard: false,
+        icon: L.divIcon({ className: "atlas-marker-icon", html, iconSize: [54,20], iconAnchor: [27,-7] })
+      }).addTo(record.instance);
+    }
+
+    function addAtlasFeature(record, feature) {
+      const coordinates = feature.geometry.type === "point" ? atlasLatLng(record.atlas, feature.geometry.coordinates) : feature.geometry.coordinates.map((point) => atlasLatLng(record.atlas, point));
+      const currentClass = feature.id === record.atlas.currentFeatureId ? "atlas-current-feature" : "";
+      const selectedClass = feature.id === record.selectedFeatureId ? "atlas-selected" : "";
+      const presentationClass = feature.presentationOnly ? "atlas-presentation" : "";
+      let layer;
+      if (feature.geometry.type === "area") {
+        layer = L.polygon(coordinates, {
+          pane: feature.presentationOnly ? "atlas-surface" : "atlas-areas", interactive: !feature.presentationOnly,
+          className: `atlas-area ${atlasClasses(feature, `${currentClass} ${selectedClass} ${presentationClass}`)}`
+        }).addTo(record.instance);
+      } else if (feature.geometry.type === "line") {
+        if (!feature.presentationOnly && !["boundary", "neutral"].includes(feature.styleRole)) L.polyline(coordinates, { pane: "atlas-lines", interactive: false, className: "atlas-line-casing" }).addTo(record.instance);
+        layer = L.polyline(coordinates, {
+          pane: feature.presentationOnly ? "atlas-surface" : "atlas-lines", interactive: !feature.presentationOnly,
+          className: `atlas-line ${atlasClasses(feature, `${currentClass} ${selectedClass} ${presentationClass}`)}`
+        }).addTo(record.instance);
+      } else {
+        layer = L.marker(coordinates, {
+          pane: feature.presentationOnly ? "atlas-surface" : "atlas-points", interactive: !feature.presentationOnly, keyboard: false,
+          title: feature.presentationOnly ? "" : feature.label,
+          zIndexOffset: feature.id === record.atlas.currentFeatureId ? 1000 : feature.id === record.selectedFeatureId ? 500 : 0,
+          icon: atlasPointIcon(feature, record.atlas.currentFeatureId, record.selectedFeatureId)
+        }).addTo(record.instance);
+      }
+      bindAtlasFeature(record, feature, layer); atlasStatusMarker(record, feature);
+    }
+
+    function mountAtlas(tileId, shell, canvas, atlas, token) {
+      if (atlasMountTokens.get(tileId) !== token || !shell.isConnected || !canvas.isConnected) return;
+      if (!window.L) { canvas.replaceWith(empty("Interactive atlas unavailable. Use the synchronized text atlas below.")); return; }
+      const saved = mapViews.get(tileId) || {};
+      const visible = atlas.features.filter((feature) => !feature.presentationOnly);
+      const validSelection = visible.some((feature) => feature.id === saved.selectedFeatureId) ? saved.selectedFeatureId : "";
+      const selectedFeatureId = validSelection || (visible.some((feature) => feature.id === atlas.currentFeatureId) ? atlas.currentFeatureId : "");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const map = L.map(canvas, {
+        crs: L.CRS.Simple, minZoom: -2.5, maxZoom: 4, zoomSnap: .5, zoomDelta: .5,
+        zoomControl: false, attributionControl: false, keyboard: false, boxZoom: false,
+        scrollWheelZoom: false, doubleClickZoom: false,
+        zoomAnimation: !reduceMotion, fadeAnimation: !reduceMotion, markerZoomAnimation: !reduceMotion
+      });
+      canvas.setAttribute("aria-hidden", "true"); canvas.setAttribute("tabindex", "-1");
+      [["atlas-surface", 200], ["atlas-areas", 300], ["atlas-lines", 400], ["atlas-points", 500], ["atlas-labels", 600]].forEach(([name, zIndex]) => {
+        const pane = map.createPane(name); pane.style.zIndex = String(zIndex);
+      });
+      const record = {
+        tileId, instance: map, atlas, shell, canvas, selectedFeatureId, popupFeatureId: "",
+        layers: new Map(), featureById: new Map(visible.map((feature) => [feature.id, feature])),
+        buttons: new Map(Array.from(shell.querySelectorAll(".atlas-feature-button")).map((button) => [button.dataset.featureId, button])),
+        detail: shell.querySelector(".atlas-detail"), legend: shell.querySelector(".atlas-legend"), textAtlas: shell.querySelector(".atlas-text")
+      };
       mapRegistry.set(tileId, record);
-      const saved = mapViews.get(tileId);
-      if (saved) { map.setView(saved.center, saved.zoom, { animate: false }); if (saved.popupNodeId && record[`marker:${saved.popupNodeId}`]) record[`marker:${saved.popupNodeId}`].openPopup(); }
-      else map.fitBounds(bounds, { padding: [22,22], animate: false });
-      setTimeout(() => map.invalidateSize(false), 0);
-      return wrap;
+      if (atlas.backgroundImage) L.imageOverlay(atlas.backgroundImage, [[0,0],[atlas.height,atlas.width]], { pane: "atlas-surface", opacity: .86, interactive: false }).addTo(map);
+      atlas.features.filter((feature) => feature.geometry.type === "area").forEach((feature) => addAtlasFeature(record, feature));
+      atlas.features.filter((feature) => feature.geometry.type === "line").forEach((feature) => addAtlasFeature(record, feature));
+      atlas.features.filter((feature) => feature.geometry.type === "point").forEach((feature) => addAtlasFeature(record, feature));
+      map.on("zoomend", () => { atlasZoomClass(record); scheduleAtlasDeclutter(record); });
+      map.on("moveend", () => {
+        const center = map.getCenter(); const state = mapViews.get(tileId) || {};
+        Object.assign(state, { center: [center.lat, center.lng], zoom: map.getZoom(), selectedFeatureId: record.selectedFeatureId, popupFeatureId: record.popupFeatureId });
+        mapViews.set(tileId, state);
+        scheduleAtlasDeclutter(record);
+      });
+      requestAnimationFrame(() => {
+        if (mapRegistry.get(tileId) !== record || !canvas.isConnected) return;
+        map.invalidateSize(false);
+        const bounds = atlasBounds(record);
+        if (Array.isArray(saved.center) && Number.isFinite(Number(saved.zoom)) && bounds.contains(saved.center)) map.setView(saved.center, saved.zoom, { animate: false });
+        else fitAtlas(record);
+        atlasZoomClass(record); updateAtlasSelection(record); scheduleAtlasDeclutter(record);
+        if (saved.legendOpen) record.legend.open = true;
+        if (saved.textOpen === false) record.textAtlas.open = false;
+        if (saved.popupFeatureId && record.layers.has(saved.popupFeatureId)) selectAtlasFeature(tileId, saved.popupFeatureId, { openPopup: true, pan: false });
+      });
+    }
+
+    function scheduleAtlasMount(tileId, shell, canvas, atlas) {
+      const token = Symbol("atlas-mount"); atlasMountTokens.set(tileId, token);
+      requestAnimationFrame(() => mountAtlas(tileId, shell, canvas, atlas, token));
+    }
+
+    function mapTile(tileId, data) {
+      const atlas = normalizeAtlas(data); const selectedId = mapViews.get(tileId)?.selectedFeatureId || "";
+      const shell = element("section", "atlas-shell"); shell.dataset.scale = atlas.scaleMode; shell.dataset.skin = atlasResolvedSkin(atlas); shell.dataset.projection = atlas.projection;
+      if (atlas.summary) shell.append(element("p", "muted", atlas.summary));
+      const toolbar = element("div", "atlas-toolbar");
+      const meta = element("div", "atlas-meta");
+      meta.append(element("span", "tag", `${atlasWords(atlas.scaleMode)} atlas`), element("span", "tag", atlasWords(atlas.projection)), element("span", "tag", atlas.skin === "auto" ? "auto · minimal" : atlasWords(atlas.skin)));
+      const controls = element("div", "atlas-controls");
+      [["−", "Zoom out", "out"], ["+", "Zoom in", "in"], ["Fit", "Fit the full known atlas", "fit"]].forEach(([label, ariaLabel, action]) => {
+        const button = element("button", "", label); button.type = "button"; button.setAttribute("aria-label", ariaLabel);
+        button.addEventListener("click", () => { const record = mapRegistry.get(tileId); if (!record) return; if (action === "in") record.instance.zoomIn(.5); else if (action === "out") record.instance.zoomOut(.5); else fitAtlas(record); });
+        controls.append(button);
+      });
+      toolbar.append(meta, controls); shell.append(toolbar);
+      const stage = element("div", "atlas-stage"); const mapWrap = element("div", "map-wrap");
+      const canvas = element("div", "map-canvas"); canvas.setAttribute("aria-hidden", "true"); canvas.setAttribute("tabindex", "-1"); mapWrap.append(canvas);
+      stage.append(mapWrap, buildAtlasLegend(atlas)); shell.append(stage);
+      const lower = element("div", "atlas-lower");
+      const initial = atlas.features.find((feature) => !feature.presentationOnly && feature.id === selectedId) || atlas.features.find((feature) => !feature.presentationOnly && feature.id === atlas.currentFeatureId);
+      lower.append(atlasDetail(initial, atlas), atlasText(atlas, tileId, initial?.id || "")); shell.append(lower);
+      scheduleAtlasMount(tileId, shell, canvas, atlas);
+      return shell;
     }
 
     function galleryTile(data) {
@@ -432,13 +1287,14 @@
         case "inventory": return chips(data.items, "Inventory is empty.");
         case "map": return mapTile(tile.id, data);
         case "gallery": return galleryTile(data);
+        case "documents": return documentsTile(tile.id, data);
         default: return empty("This tile type is not supported by this dashboard.");
       }
     }
 
     function createTile(tile) {
       const article = element("article", "tile"); article.dataset.tileId = tile.id;
-      if (["scene","map","gallery"].includes(tile.type)) article.classList.add(tile.type === "map" ? "full" : "wide");
+      if (["scene","map","gallery","documents"].includes(tile.type)) article.classList.add(tile.type === "map" ? "full" : "wide");
       const header = element("header", "tile-head"); header.append(element("h2", "", tile.title));
       if (text(tile.subtitle)) header.append(element("span", "tag", tile.subtitle));
       const body = element("div", "tile-body"); body.append(tileBody(tile)); article.append(header, body); return article;
@@ -480,6 +1336,10 @@
       const refresh = object(data.refresh); setText("statusText", refresh.reason, "Campaign board current");
       document.getElementById("statusDot").classList.toggle("warn", !["current","disabled"].includes(refresh.status));
       setText("revisionText", `Source ${sourceRevision} · Board ${dashboardRevision}${data.scene_id ? ` · ${data.scene_id}` : ""}`);
+      if (appliedSourceRevision !== null && sourceRevision > appliedSourceRevision) {
+        documentCache.clear();
+        array(data.tiles).filter((tile) => tile?.type === "documents").forEach((tile) => tileSignatures.delete(tile.id));
+      }
       renderTiles(data.tiles);
       appliedSourceRevision = sourceRevision; appliedDashboardRevision = dashboardRevision;
       setText("updateAnnouncement", `Campaign board updated to revision ${sourceRevision}.`);

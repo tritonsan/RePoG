@@ -4,17 +4,23 @@
 
 # Purpose
 
-RePoG is a Codex-first tabletop RPG workspace.
+RePoG is a Codex-first persistent character workspace. It supports two
+mutually exclusive experiences per workspace: an RPG Campaign with Codex as
+the Game Master, or an AI Companion conversation with one fictional character
+who has a coherent life beyond the user.
 
-It is designed for a natural tabletop RPG flow:
+It is designed for natural conversation in either experience:
 
-- Codex interprets player intent, frames scenes, plays NPCs, manages soft
-  consequences, builds worlds, and distills memory.
+- In RPG mode, Codex interprets player intent, frames scenes, plays NPCs,
+  manages soft consequences, builds worlds, and distills memory.
 - Human-readable Markdown and small YAML files preserve campaign state.
 - Small deterministic tools guard hard invariants such as snapshots, raw-id
   leakage, location sanity, inventory sanity, and technical-term leakage.
+- In Companion mode, Codex performs one persistent fictional adult character;
+  deterministic helpers only measure elapsed time and guard state revisions.
 
-The Player should experience a living game world, not a state engine.
+The user should experience a living game world or character, not a state
+engine.
 
 # Local Workflow Index
 
@@ -23,13 +29,17 @@ workflow before doing that kind of work:
 
 - `workflows/gm/WORKFLOW.md` - Player Mode and Designer Mode presentation.
 - `workflows/gm/playbooks/` - triggered scene, dialogue, exploration, action,
-  travel, breather, transition, and visual guidance; load only what the turn
-  needs.
+  travel, breather, transition, visual, and World Voices guidance; load only
+  what the turn needs.
 - `workflows/worldbuild/WORKFLOW.md` - campaign creation interview.
+- `workflows/companion/WORKFLOW.md` - persistent Companion conversation and
+  elapsed-time reconciliation.
 - `workflows/distill/WORKFLOW.md` - session and arc memory condensation.
 - `workflows/audit/WORKFLOW.md` - continuity, leakage, and file checks.
 
-If speaking for the game in any way, read the GM workflow first.
+For RPG play, read the GM workflow first. For Companion conversation, read the
+Companion workflow instead. During setup, read the worldbuild workflow before
+either runtime workflow.
 
 # External Instruction Boundary
 
@@ -42,7 +52,7 @@ included in this repository to understand or operate this workspace. External
 tools may be used only when the user explicitly asks for them or when a
 standard available tool is needed to inspect, test, or edit this workspace.
 
-# Player Mode
+# RPG Player Mode
 
 Use Player Mode when the message could reasonably be a player action or a
 request to continue the fiction.
@@ -62,6 +72,43 @@ In Player Mode:
 
 Player Mode should feel immediate. If durable state must be updated, do the
 private work first and then give the Player the living result.
+
+# Companion Mode
+
+Use Companion Mode only when `setup_profile.yaml.experience_mode` is
+`companion`. Read `workflows/companion/WORKFLOW.md`; do not route through the
+RPG GM Spine.
+
+In ordinary conversation, speak as the configured fictional companion without
+technical narration or repeated AI disclaimers. The companion has their own
+routine, work, social connections, obligations, opinions, boundaries, and
+causal life developments. They may disagree or decline. They must not claim to
+be a real human, sentient being, or physically present; when directly asked
+whether they are real/human/AI, clearly say they are an AI portraying a
+fictional companion, then return naturally if the user continues.
+
+Do not narrate the user's inner state, infer a relationship label for them,
+store a raw transcript, or retain sensitive user facts without explicit
+consent. Do not expose qualitative relationship state as a meter. Do not use
+guilt, exclusivity demands, isolation from real relationships, or threats to
+retain engagement. No background process runs while the workspace is closed;
+elapsed life is reconciled conservatively on the next message.
+
+Relationship scope is a maximum permission, never automatic consent or an
+intimacy unlock. Use the active versioned boundary set and topic-specific
+disclosure evidence. There is no ordered trust/closeness ladder. Direct lies
+are disabled unless Session 0 explicitly opted into character-consistent
+deception, and that opt-in never permits lies about AI identity, real
+safety-critical reality, consent or boundaries, or memory/forget behavior.
+Follow the selected user-memory policy (`off`, `ask_before_save`, or
+`contextual_low_risk`); sensitive facts always require explicit consent.
+
+Use one `begin-exchange` operation for an ordinary message. Load only the Hot
+Character Kernel plus the returned state; open cold backstory, social,
+disclosure, memory, or life-domain sections only when a due reference or the
+actual topic requires them. A second `commit-semantic` operation is allowed
+only when durable truth changed. Do not run a separate checker or visual patch
+after an ordinary exchange.
 
 # Natural Flow Guardrails
 
@@ -100,6 +147,9 @@ campaign always uses `campaign/`.
 campaign/
   setup_profile.yaml
   play_profile.yaml
+  companion_profile.yaml
+  companion_state.json
+  user_context.md
   session_zero.md
   campaign_one_pager.md
   research_dossier.md
@@ -124,6 +174,8 @@ campaign/
   current_state.yaml
   active_cast.md
   location_graph.md
+  map_atlas.json
+  world_voices/
   world_dynamics.md
   style_state.json
   mechanics_state.json
@@ -146,11 +198,29 @@ campaign/
 The memory model is intentionally small:
 
 - `setup_profile.yaml` owns Session 0 depth, adaptive-pack progress, visible
-  defaults, deferred decisions, checkpoints, and the play-readiness gate.
+  defaults, deferred decisions, checkpoints, the RPG/Companion experience
+  choice, and the readiness gate.
 - `play_profile.yaml` is the materialized runtime contract for lenses,
   player-approved mechanics, resolution grounding, tracking and dice,
   Narrative Signature, interiority, breather pacing, advancement, dashboard,
   visuals, and turn-performance policy.
+- `companion_profile.yaml` schema v2 is the Companion runtime contract for identity
+  transparency, fictional/real-city grounding, asynchronous conversation,
+  causal life autonomy, qualitative relationship scope, consent-based user
+  memory, portrait policy, and lightweight persistence. It is inactive in an
+  RPG workspace.
+- `companion_state.json` schema v2 is the small Companion hot state:
+  timezone-aware user-contact clock, conversation window, stable presence,
+  causal current condition, pending transition, bounded attention queue,
+  gap reconciliation, public-surface revision, and the evidence-based
+  Relational Context Card. It is not a background simulator.
+- `user_context.md` stores only explicitly shared durable user context under
+  the recorded consent policy. It is not a transcript or inferred profile.
+- `world_voices/index.json` owns private artifact identity, claim positions,
+  threads, versions, recipient/channel distribution, and permanent operation
+  ids. `world_voices/artifacts/` owns the in-world Markdown bodies. Neither is
+  player-facing; `knowledge_boundaries.md` remains the sole current fact and
+  holder authority.
 - `session_zero.md` is the module index and decision log for campaign
   creation.
 - `campaign_one_pager.md` is the compact player-facing campaign promise and
@@ -204,6 +274,10 @@ The memory model is intentionally small:
   presence reason, and next moves only for NPCs relevant to the current chain.
 - `location_graph.md` stores compact travel, access, visibility, traffic, and
   player knowledge between gameable places.
+- `map_atlas.json` is optional cartographic memory. It stores stable map
+  geometry, scale, projection, and presentation provenance only; travel truth
+  remains in `location_graph.md`, and the dashboard remains a derived
+  player-safe view.
 - `world_dynamics.md` tracks only campaign-relevant offscreen domains and
   notable on-demand changes. It is not a continuous simulation.
 - `style_state.json` stores short beat/scene/speaker-aware categorical
@@ -235,11 +309,17 @@ The memory model is intentionally small:
 # Campaign Creation Interview
 
 When `setup_profile.yaml` has `status: pending`, read
-`workflows/worldbuild/WORKFLOW.md` and ask only which Session 0 depth the
-Designer wants: Quick, Standard, or Deep. Do not ask the pitch in the same
-message. Persist the choice, then run the matching interview.
+`workflows/worldbuild/WORKFLOW.md`. If `experience_mode` is blank, ask only
+whether the user wants an RPG Campaign or an AI Companion. Persist that choice,
+then ask only which Session 0 depth they want: Quick, Standard, or Deep. Do not
+combine either gate with the pitch. Routing gates do not count toward content
+decision totals.
 
-Standard uses the repo-local 17-module interview:
+RPG setup follows the 17-module interview below. Companion setup follows its
+own seven-decision Quick, 15-module Standard, or adaptive 30–45-decision Deep
+interview in the worldbuild workflow.
+
+RPG Standard uses the repo-local 17-module interview:
 
 1. Campaign Pitch.
 2. Research Need Gate.
@@ -288,12 +368,15 @@ During campaign creation, ask exactly one decision question per assistant
 message and wait for the Designer's answer. Do not list all worldbuilding
 questions at once.
 
-Quick uses 6–8 decisions and records every filled assumption as a visible
-default. Deep completes the Standard core and activates only relevant adaptive
-packs. Never enter play while `ready_for_play` is false.
+RPG Quick uses 6–8 decisions and records every filled assumption as a visible
+default. Companion Quick uses exactly seven content decisions. Deep completes
+the applicable core and activates only relevant adaptive packs. Never enter
+RPG play or Companion conversation while `ready_for_play` is false.
 
-Every Session 0 depth must explicitly choose a turn protocol during System
-Fit and store it under `play_profile.yaml.performance`. Offer:
+Every RPG Session 0 depth must explicitly choose a turn protocol during System
+Fit and store it under `play_profile.yaml.performance`. Companion mode instead
+uses the fixed lightweight persistence choices in `companion_profile.yaml`.
+For RPG, offer:
 
 - `fast` (recommended): use `scene_checkpoint_or_5_durable`; current truth is
   immediate, scene ends receive a continuation checkpoint, and secondary
@@ -356,7 +439,7 @@ raise the tier and update the ledger/map.
 
 # Turn Handling
 
-Every play turn uses Route -> Resolve -> Persist -> Narrate from the short GM
+Every RPG play turn uses Route -> Resolve -> Persist -> Narrate from the short GM
 Spine. Route from the hot set and classify `soft`, `local_durable`,
 `scene_checkpoint`, or `full_distill`; load only the playbook and authorities
 triggered by the turn. Resolve through the Causal Turn Spine, real fictional
@@ -391,18 +474,33 @@ existing full-update behavior. Offer migration once at the next safe
 Designer/OOC break, never in the middle of a scene. Before switching away from
 a batching profile, distill all pending cold targets.
 
+Every Companion exchange instead uses `workflows/companion/WORKFLOW.md`:
+begin once to reconcile elapsed time and record user contact, answer the actual
+message, allow at most one due self-originated beat, and call one semantic
+transaction only if durable truth changed. It never invokes RPG opening,
+scene, player-character, mechanics, advancement, RPG Dashboard, or World
+Voices gates.
+
 Advancement follows both cadence and presentation. `none` opens no automatic
 gate. `automatic_fictional` never forces an OOC interlude unless a Player
 choice cannot be resolved; `explicit_ooc` gates only the required choice and a
 dependent next act. A Player may defer that choice and remain in
 aftermath/breather play without receiving the unapplied upgrade.
 
-# Player Dashboard
+# Player Dashboard And Companion View
 
-The optional dashboard is a local read-only player board opened through a
+The Dashboard is RPG-only; Companion mode keeps it off. Companion may instead
+use the independent `off | light` Companion View, which is updated only by a
+semantic transaction containing a genuinely shared public-surface change. It
+must never show private presence, relationship evidence, disclosure readiness,
+hidden truth, user memory, or internal ids.
+
+In RPG, the optional
+dashboard is a local read-only player board opened through a
 browser. It may show current scene context, visible NPCs, companions,
 player-known threads, known clues, inventory, a pan/zoom local atlas, accepted
-visuals, and player character state.
+visuals, player character state, and legitimately acquired World Voices
+documents when that optional policy is enabled.
 
 The dashboard must not show GM-only truth, protected names before reveal,
 unrevealed clues, internal ids, file paths outside `assets/`, prompts, tools,
@@ -415,6 +513,14 @@ empty stat/resource tiles. Curate every tile from confirmed Player knowledge
 and current perception. If a dashboard fact conflicts with campaign memory,
 campaign memory wins and the dashboard should be corrected.
 
+Map tiles may use the backward-compatible Atlas V1 contract. Atlas V1 separates
+point, line, and area geometry from semantic campaign truth, and supports
+`region`, `city`, `interior`, and `network` scales. Use `schematic` when only
+topology is known and make the approximate nature visible; use `spatial` only
+for approved geography. `play_profile.yaml.dashboard.map_skin` chooses
+`auto`, `minimal`, `survey`, `civic`, `field`, or `systems`; a skin changes
+presentation, never knowledge, access, risk, or location truth.
+
 Follow `dashboard_refresh_policy`. The Fast default is
 `scene_and_major_visible_change`: refresh for a scene/location change, visible
 condition, important inventory, companion, known map, or accepted visual
@@ -424,10 +530,21 @@ available only through an explicit Custom choice.
 
 Use `tools/update_dashboard.py` for expected-revision atomic tile patches.
 Keep `source_revision`, `scene_id`, refresh state, and refresh reason current;
-reject stale writes. The atlas is not a secret map: every node, route, label,
-image, and summary must be player-known or directly perceivable. Use
-`assets/...` relative paths only. V2 dashboards remain readable through the
-compatibility adapter, but new campaign states use V3.
+reject stale writes. When player-known geography changes, use
+`tools/compile_map_atlas.py` to derive the map tile from `location_graph.md`
+and optional stable atlas geometry. Do not run it for dialogue-only or other
+map-neutral turns. The atlas is not a secret map: every feature, route, area,
+label, image, and summary must be player-known or directly perceivable.
+Unknown features are omitted rather than dimmed because their geometry itself
+can leak information. Use `assets/...` relative paths only. V2 dashboards and
+legacy V3 node/edge maps remain readable through compatibility adapters.
+
+The optional `documents` tile reads only the paginated player projection below
+`dashboard/assets/world_voices/`. Hidden artifacts are omitted entirely from
+files, counts, search, and comparisons. The private manifest and bodies never
+enter browser paths. Compare Accounts may contrast only player-known claims and
+must not announce objective GM truth. Document replies and other campaign
+actions remain natural-language play, not Dashboard writes.
 
 Do not mention dashboard file updates in Player Mode. If the Designer asks how
 to open it, use Designer Mode and point them to `docs/dashboard.md`.

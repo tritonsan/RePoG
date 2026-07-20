@@ -10,6 +10,17 @@ does not by itself invoke full distillation.
 
 Distill is not a technical changelog. It is the GM's memory becoming sharper.
 
+This RPG distill workflow does not run for ordinary Companion exchanges.
+Companion mode follows `workflows/companion/WORKFLOW.md`: one
+`begin-exchange` call owns contact-clock work, while a bounded
+`commit-semantic` transaction updates only the authorities affected by a
+meaningful life, disclosure, relationship, callback, user-memory, or public
+surface change. At a Companion session stop or explicit full review, reconcile
+the append-only history and triggered cold notes without creating RPG scene,
+arc, advancement, Dashboard, or World Voices state. The separate optional
+Companion View is refreshed only when the same semantic transaction changes
+already-shared player-safe truth.
+
 # Inputs
 
 Start with `play_profile.yaml`, `current_state.yaml.persistence`, and pending
@@ -22,6 +33,7 @@ named by those events or required by the trigger. Relevant inputs may include:
 - `current_state.yaml`;
 - `active_cast.md`;
 - `location_graph.md` when movement, access, or discovery changed;
+- `map_atlas.json` only when stable geometry or atlas presentation changed;
 - `world.md`;
 - `research_dossier.md`, when source scope, canon, realism, or world logic was
   tested;
@@ -451,6 +463,34 @@ pacing, and continuation are model-reviewed with the GM Spine rubric only when
 sampled or explicitly audited; do not add a semantic Python checker or run one
 per turn.
 
+# World Voices Distill
+
+World Voices is trigger-driven. Artifact creation that matters later,
+approval/canonization, scheduled or completed distribution, Player discovery,
+interception, publication, retraction, supersession, and an approved Player
+response are durable when they change world or knowledge state.
+
+For one such change:
+
+1. update the private artifact/distribution memory with a stable operation id;
+2. update `knowledge_boundaries.md` immediately when holders or protected-name
+   access change;
+3. increment continuity once and append exactly one matching durable revision;
+4. keep only active/pending artifact and thread references hot;
+5. project and patch the documents tile only when player-visible state changed
+   and refresh policy calls for it.
+
+Do not add a second revision for cold propagation. Fast and Balanced may defer
+voice enrichment, old-thread summaries, archive reconciliation, and stable
+communication-tendency updates to their normal full-distill boundary. Hidden
+artifact creation or movement never refreshes the Dashboard. A scheduled or
+in-transit artifact remains absent until a believable acquisition completes.
+
+Corrections, replies, retractions, and superseding editions append and link new
+history; never rewrite or delete the original body. Player-authored wording is
+persisted only after explicit approval. Later reactions wait for a believable
+receipt trigger and do not recursively cascade in the same turn.
+
 # Dashboard Distill
 
 If the campaign uses a local dashboard, refresh it after distillation only
@@ -467,8 +507,21 @@ dashboard's expected source revision and the new continuity revision. Update
 the scene id, refresh status, and reason. A stale revision is a conflict to
 reconcile, never permission to overwrite newer player-facing state.
 
+If player-known geography, access, or route knowledge changed, update its
+authoritative campaign source first, then run `tools/compile_map_atlas.py` once
+to produce the Atlas V1 tile. Preserve stable geometry and the selected view;
+do not re-layout an unchanged atlas or compile it for map-neutral turns.
+
 Do not use the dashboard to preserve GM-only truth. Keep hidden facts in
 campaign memory and knowledge boundaries until play reveals them.
+
+For a player-visible World Voices change, regenerate the bounded player-safe
+catalog with `tools/world_voices.py ... project`, then add or patch only the
+`documents` tile through `tools/update_dashboard.py` with expected source and
+dashboard revisions. The tile points to
+`assets/world_voices/catalog.json`; it never embeds the private manifest or
+unbounded archive. Do not project claim classifications, fact ids, actual
+provenance, hidden counts, or undiscovered filenames.
 
 # Post-Arc Opening Brief
 

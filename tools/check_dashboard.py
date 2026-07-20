@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import re
@@ -27,8 +28,28 @@ ALLOWED_TILE_TYPES = {
     "inventory",
     "map",
     "gallery",
+    "documents",
 }
 ALLOWED_REFRESH_STATUS = {"setup_pending", "current", "stale", "refreshing", "error", "disabled"}
+ATLAS_SCALE_MODES = {"region", "city", "interior", "network"}
+ATLAS_PROJECTIONS = {"spatial", "schematic"}
+ATLAS_SKINS = {"auto", "minimal", "survey", "civic", "field", "systems"}
+ATLAS_STYLE_ROLES = {
+    "place",
+    "landmark",
+    "route",
+    "boundary",
+    "water",
+    "region",
+    "terrain",
+    "structure",
+    "hazard",
+    "neutral",
+}
+ATLAS_KNOWLEDGE_STATES = {"confirmed", "reported", "inferred", "stale", "unknown"}
+ATLAS_ACCESS_STATES = {"open", "conditional", "blocked", "unknown"}
+ATLAS_RISK_STATES = {"none", "caution", "danger", "unknown"}
+ATLAS_GEOMETRY_TYPES = {"point", "line", "area"}
 HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 RAW_ID = re.compile(r"\b[a-z][a-z0-9]+(?:_[a-z0-9]+)+\b")
 MOJIBAKE = re.compile("[\u00c3\u00c4\u00c5]")
@@ -39,18 +60,28 @@ TECHNICAL_TEXT = re.compile(
     r"\bknowledge_boundaries\b|\bcreation_ledger\b|\brelationship_map\b|"
     r"\bdashboard_state\b|\bcheck_state\b|\bcheck_dashboard\b)"
 )
-ASSET_KEYS = {"image", "portrait", "src", "asset", "thumbnail", "background_image"}
+ASSET_KEYS = {"image", "portrait", "src", "asset", "thumbnail", "background_image", "catalog_path"}
 STRUCTURAL_KEYS = {
     "id",
     "type",
     "status",
     "current_node_id",
+    "current_feature_id",
     "from",
     "to",
     "mode",
     "scene_id",
+    "origin",
+    "style_role",
+    "knowledge_state",
+    "access_state",
+    "risk_state",
 }
-FORBIDDEN_KEYS = {"gm_only", "secret", "hidden_truth", "protected_name", "unrevealed"}
+FORBIDDEN_KEYS = {
+    "gm_only", "secret", "hidden_truth", "protected_name", "unrevealed",
+    "epistemic_basis", "claim_basis", "claim_class", "fact_id", "fact_ids",
+    "actual_provenance", "operation_id", "source_event_ref", "holders",
+}
 
 
 def _add(findings: list[dict], severity: str, rule: str, message: str, path: str) -> None:
@@ -182,10 +213,9 @@ def _check_stats(stats: Any, path: str, findings: list[dict]) -> None:
             _add(findings, "error", "dashboard_stat_value", "Stat values must be finite numbers.", f"{path}.{name}")
 
 
-def _check_map(map_data: Any, path: str, findings: list[dict]) -> None:
-    if not isinstance(map_data, dict):
-        _add(findings, "error", "dashboard_map", "Map tile data must be an object.", path)
-        return
+def _check_legacy_map(map_data: dict, path: str, findings: list[dict]) -> None:
+    """Validate the original Dashboard V2/V3 node-and-edge map contract."""
+
     bounds = map_data.get("bounds")
     if not isinstance(bounds, dict):
         _add(findings, "error", "dashboard_map_bounds", "Map bounds must be an object.", f"{path}.bounds")
@@ -241,9 +271,346 @@ def _check_map(map_data: Any, path: str, findings: list[dict]) -> None:
         seen_edges.add(key)
 
 
+def _atlas_coordinate(
+    value: Any,
+    path: str,
+    findings: list[dict],
+    width: float | int | None,
+    height: float | int | None,
+) -> bool:
+    if not isinstance(value, list) or len(value) != 2 or not all(_is_number(item) for item in value):
+        _add(
+            findings,
+            "error",
+            "dashboard_atlas_coordinate",
+            "Atlas coordinates must be finite [x, y] number pairs.",
+            path,
+        )
+        return False
+    x, y = value
+    if width is not None and height is not None and not (0 <= x <= width and 0 <= y <= height):
+        _add(
+            findings,
+            "error",
+            "dashboard_atlas_out_of_bounds",
+            "Atlas coordinate lies outside the declared coordinate space.",
+            path,
+        )
+        return False
+    return True
+
+
+def _check_atlas_map(map_data: dict, path: str, findings: list[dict]) -> None:
+    coordinate_space = map_data.get("coordinate_space")
+    width: float | int | None = None
+    height: float | int | None = None
+    if not isinstance(coordinate_space, dict):
+        _add(
+            findings,
+            "error",
+            "dashboard_atlas_coordinate_space",
+            "Atlas coordinate_space must be an object.",
+            f"{path}.coordinate_space",
+        )
+    else:
+        if coordinate_space.get("type") != "cartesian":
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_coordinate_space",
+                "Atlas coordinate_space.type must be cartesian.",
+                f"{path}.coordinate_space.type",
+            )
+        if coordinate_space.get("origin") != "top_left":
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_coordinate_space",
+                "Atlas coordinate_space.origin must be top_left.",
+                f"{path}.coordinate_space.origin",
+            )
+        candidate_width, candidate_height = coordinate_space.get("width"), coordinate_space.get("height")
+        if not _is_number(candidate_width) or candidate_width <= 0:
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_coordinate_bounds",
+                "Atlas coordinate_space.width must be a positive finite number.",
+                f"{path}.coordinate_space.width",
+            )
+        else:
+            width = candidate_width
+        if not _is_number(candidate_height) or candidate_height <= 0:
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_coordinate_bounds",
+                "Atlas coordinate_space.height must be a positive finite number.",
+                f"{path}.coordinate_space.height",
+            )
+        else:
+            height = candidate_height
+
+    for key, allowed, rule in (
+        ("scale_mode", ATLAS_SCALE_MODES, "dashboard_atlas_scale_mode"),
+        ("projection", ATLAS_PROJECTIONS, "dashboard_atlas_projection"),
+        ("skin", ATLAS_SKINS, "dashboard_atlas_skin"),
+    ):
+        if map_data.get(key) not in allowed:
+            _add(
+                findings,
+                "error",
+                rule,
+                f"Atlas {key} must be one of: {', '.join(sorted(allowed))}.",
+                f"{path}.{key}",
+            )
+
+    features = map_data.get("features")
+    if not isinstance(features, list):
+        _add(
+            findings,
+            "error",
+            "dashboard_atlas_features",
+            "Atlas features must be a list.",
+            f"{path}.features",
+        )
+        return
+
+    ids: set[str] = set()
+    geometry_types: dict[str, str] = {}
+    route_refs: list[tuple[str, Any, Any]] = []
+    for index, feature in enumerate(features):
+        feature_path = f"{path}.features[{index}]"
+        if not isinstance(feature, dict):
+            _add(findings, "error", "dashboard_atlas_feature", "Atlas features must be objects.", feature_path)
+            continue
+
+        feature_id = feature.get("id")
+        valid_id = isinstance(feature_id, str) and bool(feature_id.strip())
+        if not valid_id:
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_feature_id",
+                "Atlas features need a non-empty id.",
+                f"{feature_path}.id",
+            )
+        elif feature_id in ids:
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_duplicate_feature",
+                "Atlas feature ids must be unique.",
+                f"{feature_path}.id",
+            )
+        else:
+            ids.add(feature_id)
+
+        presentation_value = feature.get("presentation_only", False)
+        presentation_only = presentation_value is True
+        if "presentation_only" in feature and not isinstance(presentation_value, bool):
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_presentation_only",
+                "Atlas presentation_only must be true or false.",
+                f"{feature_path}.presentation_only",
+            )
+        if presentation_only and feature.get("style_role") != "neutral":
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_presentation_only",
+                "Presentation-only Atlas features must use the neutral style_role.",
+                f"{feature_path}.style_role",
+            )
+        label_visible = isinstance(feature.get("label"), str) and bool(feature.get("label", "").strip())
+        if not label_visible and not (presentation_only and feature.get("style_role") == "neutral"):
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_feature_label",
+                "Atlas features need a visible label.",
+                f"{feature_path}.label",
+            )
+
+        if "style_role" in feature and feature.get("style_role") not in ATLAS_STYLE_ROLES:
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_style_role",
+                f"Atlas style_role must be one of: {', '.join(sorted(ATLAS_STYLE_ROLES))}.",
+                f"{feature_path}.style_role",
+            )
+        for key, allowed, rule in (
+            ("knowledge_state", ATLAS_KNOWLEDGE_STATES, "dashboard_atlas_knowledge_state"),
+            ("access_state", ATLAS_ACCESS_STATES, "dashboard_atlas_access_state"),
+            ("risk_state", ATLAS_RISK_STATES, "dashboard_atlas_risk_state"),
+        ):
+            if key in feature and feature.get(key) not in allowed:
+                _add(
+                    findings,
+                    "error",
+                    rule,
+                    f"Atlas {key} must be one of: {', '.join(sorted(allowed))}.",
+                    f"{feature_path}.{key}",
+                )
+        if feature.get("knowledge_state") == "unknown":
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_unknown_feature",
+                "Features with unknown knowledge must be omitted from the player Atlas.",
+                f"{feature_path}.knowledge_state",
+            )
+
+        geometry = feature.get("geometry")
+        if not isinstance(geometry, dict):
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_geometry",
+                "Atlas feature geometry must be an object.",
+                f"{feature_path}.geometry",
+            )
+            continue
+        geometry_type = geometry.get("type")
+        if geometry_type not in ATLAS_GEOMETRY_TYPES:
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_geometry_type",
+                "Atlas geometry.type must be point, line, or area.",
+                f"{feature_path}.geometry.type",
+            )
+            continue
+        if valid_id and feature_id not in geometry_types:
+            geometry_types[feature_id] = geometry_type
+        coordinates = geometry.get("coordinates")
+        if geometry_type == "point":
+            _atlas_coordinate(coordinates, f"{feature_path}.geometry.coordinates", findings, width, height)
+        else:
+            minimum = 2 if geometry_type == "line" else 3
+            if not isinstance(coordinates, list) or len(coordinates) < minimum:
+                _add(
+                    findings,
+                    "error",
+                    "dashboard_atlas_geometry_coordinates",
+                    f"Atlas {geometry_type} geometry needs at least {minimum} coordinate pairs.",
+                    f"{feature_path}.geometry.coordinates",
+                )
+            else:
+                for coordinate_index, coordinate in enumerate(coordinates):
+                    _atlas_coordinate(
+                        coordinate,
+                        f"{feature_path}.geometry.coordinates[{coordinate_index}]",
+                        findings,
+                        width,
+                        height,
+                    )
+
+        has_from, has_to = "from" in feature, "to" in feature
+        if presentation_only and (has_from or has_to):
+            _add(
+                findings,
+                "error",
+                "dashboard_atlas_presentation_route",
+                "Presentation-only Atlas features cannot have route endpoints.",
+                feature_path,
+            )
+        elif has_from or has_to:
+            if geometry_type != "line" or not has_from or not has_to:
+                _add(
+                    findings,
+                    "error",
+                    "dashboard_atlas_route_refs",
+                    "Atlas route from/to references must appear together on a line feature.",
+                    feature_path,
+                )
+            else:
+                route_refs.append((feature_path, feature.get("from"), feature.get("to")))
+
+    current = map_data.get("current_feature_id", "")
+    if not isinstance(current, str):
+        _add(
+            findings,
+            "error",
+            "dashboard_atlas_current_feature",
+            "current_feature_id must be text when provided.",
+            f"{path}.current_feature_id",
+        )
+    elif current and current not in ids:
+        _add(
+            findings,
+            "error",
+            "dashboard_atlas_current_feature",
+            "current_feature_id must reference an Atlas feature.",
+            f"{path}.current_feature_id",
+        )
+    elif current and geometry_types.get(current) != "point":
+        _add(
+            findings,
+            "error",
+            "dashboard_atlas_current_feature_geometry",
+            "current_feature_id must reference a point feature.",
+            f"{path}.current_feature_id",
+        )
+
+    for feature_path, start, end in route_refs:
+        for key, endpoint in (("from", start), ("to", end)):
+            if not isinstance(endpoint, str) or not endpoint.strip() or endpoint not in ids:
+                _add(
+                    findings,
+                    "error",
+                    "dashboard_atlas_route_endpoint",
+                    "Atlas route endpoints must reference existing features.",
+                    f"{feature_path}.{key}",
+                )
+            elif geometry_types.get(endpoint) != "point":
+                _add(
+                    findings,
+                    "error",
+                    "dashboard_atlas_route_endpoint_geometry",
+                    "Atlas route endpoints must reference point features.",
+                    f"{feature_path}.{key}",
+                )
+
+
+def _check_map(map_data: Any, path: str, findings: list[dict]) -> None:
+    if not isinstance(map_data, dict):
+        _add(findings, "error", "dashboard_map", "Map tile data must be an object.", path)
+        return
+    if "atlas_version" not in map_data:
+        _check_legacy_map(map_data, path, findings)
+        return
+    atlas_version = map_data.get("atlas_version")
+    if isinstance(atlas_version, bool) or atlas_version != 1:
+        _add(
+            findings,
+            "error",
+            "dashboard_atlas_version",
+            "atlas_version must be the integer 1.",
+            f"{path}.atlas_version",
+        )
+        return
+    _check_atlas_map(map_data, path, findings)
+
+
 def _check_items(items: Any, path: str, findings: list[dict]) -> None:
     if not isinstance(items, list):
         _add(findings, "error", "dashboard_tile_items", "Tile data.items must be a list.", path)
+
+
+def _check_documents(data: dict, path: str, findings: list[dict]) -> None:
+    allowed = {"catalog_path", "summary", "default_view"}
+    if set(data) - allowed:
+        _add(findings, "error", "dashboard_documents_contract", "Documents tile contains unsupported fields.", path)
+    if data.get("catalog_path") != "assets/world_voices/catalog.json":
+        _add(findings, "error", "dashboard_documents_catalog", "Documents tile must use the bounded player-safe World Voices catalog.", f"{path}.catalog_path")
+    if data.get("default_view", "inbox") not in {"inbox", "public", "archive", "threads"}:
+        _add(findings, "error", "dashboard_documents_default_view", "Documents default_view must be inbox, public, archive, or threads.", f"{path}.default_view")
+    if "summary" in data and (not isinstance(data["summary"], str) or len(data["summary"]) > 500):
+        _add(findings, "error", "dashboard_documents_summary", "Documents summary must be bounded text.", f"{path}.summary")
 
 
 def _check_v3(data: dict, findings: list[dict]) -> None:
@@ -313,6 +680,8 @@ def _check_v3(data: dict, findings: list[dict]) -> None:
             _check_stats(tile_data.get("stats"), f"{tile_path}.data.stats", findings)
         elif tile_type == "map":
             _check_map(tile_data, f"{tile_path}.data", findings)
+        elif tile_type == "documents":
+            _check_documents(tile_data, f"{tile_path}.data", findings)
         elif tile_type in {"resources", "clocks", "conditions", "companions", "people", "threads", "clues", "inventory", "gallery"}:
             _check_items(tile_data.get("items"), f"{tile_path}.data.items", findings)
         if tile_type == "gallery" and isinstance(tile_data.get("items"), list):
@@ -403,6 +772,19 @@ def check_dashboard(
             _walk_protected(data, "", _protected_names(campaign_path.resolve()), findings)
         except OSError as exc:
             _add(findings, "error", "dashboard_knowledge_read_failed", str(exc), str(campaign_path))
+        if any(isinstance(tile, dict) and tile.get("type") == "documents" for tile in data.get("tiles", [])):
+            checker_path = Path(__file__).with_name("check_world_voices.py")
+            try:
+                spec = importlib.util.spec_from_file_location("repog_dashboard_world_voices_check", checker_path)
+                if spec is None or spec.loader is None:
+                    raise RuntimeError("World Voices projection checker could not be loaded")
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                projection_findings = module.validate_projection(campaign_path.resolve(), full=False)
+                for finding in projection_findings:
+                    findings.append(finding)
+            except Exception as exc:
+                _add(findings, "error", "dashboard_documents_validation_failed", str(exc), str(checker_path))
     return _result(path, findings)
 
 

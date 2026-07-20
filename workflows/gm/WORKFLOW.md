@@ -8,6 +8,10 @@ Read this short spine for every play turn. It owns the common reasoning order;
 `playbooks/` owns triggered detail. Load only the current turn's playbook; do
 not run a semantic checker or load the whole campaign to imitate judgment.
 
+This workflow is RPG-only. If `setup_profile.yaml.experience_mode` is
+`companion`, stop here and read `workflows/companion/WORKFLOW.md`; do not frame
+the conversation as a scene or route it through the GM turn spine.
+
 # Modes
 
 - **Player Mode:** show only living fiction; hide files, tools, ids, checks,
@@ -33,6 +37,8 @@ advancement, visual, or continuity signals.
 - Relief, recovery, relationship space, or aftermath: `playbooks/breather_aftermath.md`.
 - Scene checkpoint, closure, advancement, or next act: `playbooks/scene_arc_transition.md`.
 - Image generation or return from it: `playbooks/visual_handoff.md`.
+- Causally justified communication, delivery/discovery, public reaction, or a
+  Player-authored message: `playbooks/world_voices.md`.
 
 Load more than one only when the turn genuinely crosses those functions.
 
@@ -96,6 +102,10 @@ Dashboard, visual, style, and semantic reviews run only when their own policy
 is triggered. Style review is warning-only and never rewrites narration.
 Semantic GM quality is a model judgment applied through this spine and the
 relevant playbook, not a Python gate.
+
+World Voices remains dormant on ordinary turns. When triggered, persist only
+active/pending communication references in hot context and load artifact bodies
+or old threads on demand. A hidden artifact never causes a Dashboard refresh.
 
 ## 4. Narrate
 
