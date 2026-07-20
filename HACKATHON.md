@@ -1,4 +1,4 @@
-# OpenAI Build Week — RePoG RPG Core
+# OpenAI Build Week — RePoG Continuity Workspace
 
 This file separates the pre-existing RePoG baseline from work completed for
 OpenAI Build Week. It is an evidence index, not campaign memory and is never
@@ -15,15 +15,16 @@ Only commits after this baseline are claimed as Build Week work.
 
 ## Build Week Goal
 
-Build a focused RPG-core upgrade that uses GPT-5.6 for semantic work while
-keeping hard invariants deterministic:
+Meaningfully extend the existing RPG workspace with GPT-5.6 Sol in Codex while
+keeping hard invariants deterministic and the public product local,
+human-readable, and fast enough for natural conversation:
 
 - contextual Session 0 choices and composable setting/play lenses;
 - a compact materialized play profile;
 - bounded dice and mechanical helpers;
 - a validated visual interruption/return lifecycle;
 - an adaptive, revision-aware Dashboard V3 with a setting-neutral Atlas V1;
-- an AI Companion branch that reuses human-readable continuity without
+- an AI Companion mode that reuses human-readable continuity without
   pretending to run a background person-simulation.
 
 RePoG remains a local workspace. It does not require API keys and does not
@@ -71,7 +72,9 @@ Latest implementation verification on July 20, 2026:
 - browser smoke: an update arriving after an unchanged polling cycle rendered,
   unrelated tile updates preserved map zoom and the open text atlas, and the
   visual dialog restored keyboard focus after Escape;
-- Build Week range: `7ccfd90..HEAD` (baseline excluded by Git range syntax).
+- product implementation range: `7ccfd90..6ae9430` (baseline excluded by Git
+  range syntax); submission-document refinements follow that implementation
+  range without being claimed as additional product features.
 
 The development test harness remains outside the clean player ZIP. The public
 workspace carries its own dependency-free verifier and all runtime guardrails.
@@ -123,16 +126,25 @@ workspace carries its own dependency-free verifier and all runtime guardrails.
 - development suite: `317 passed` with only the existing pytest-asyncio
   deprecation notice.
 
-## Submission Evidence To Record
+## Completed Submission Evidence
 
-- Codex task/session id: `019f4afe-8604-74e1-b604-5eace6fb6b9c`.
-- `/feedback` submission reference: pending submission from this task.
-- Final test counts and exact verification commands.
-- Before/after screenshots of the same dashboard states and viewports.
-- A public video shorter than three minutes with audio, showing a mixed
-  fantasy-survival setup, explicit mechanic approval, a roll, visual approval,
-  dashboard placement, and return to the interrupted scene.
-- The final commit range beginning after `7ccfd90`.
+- Pre-existing product baseline: commit `7ccfd90`, with 249 passing tests and
+  Dashboard V2 validation recorded before the Build Week implementation.
+- Build Week product range: `7ccfd90..6ae9430`, covering contextual Session 0,
+  the causal GM contract, deterministic mechanics, visual transactions,
+  Dashboard V3, Atlas V1, World Voices, and AI Companion mode.
+- Primary Codex task/session id:
+  `019f4afe-8604-74e1-b604-5eace6fb6b9c`.
+- `/feedback` submitted from the primary Codex task before final entry.
+- Development acceptance suite: `317 passed`.
+- Public dependency-free verification: 0 errors, 0 warnings, and one expected
+  `location_blank` information result for the untouched campaign template.
+- World Voices lifecycle, hidden-projection, deliberate-falsehood, responsive
+  reader, and focus-management checks recorded above.
+- AI Companion clock, idempotency, disclosure, boundary, memory-consent,
+  migration, mode-routing, and Companion View privacy checks recorded above.
+- Public Apache-2.0 repository with ZIP-first setup instructions, a
+  self-contained verifier, and the short judge path in `JUDGING.md`.
 
 Private campaigns, demo rehearsal notes, generated drafts, and user game data
 must not be added to this repository.

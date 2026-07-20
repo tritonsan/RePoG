@@ -5,11 +5,74 @@ RPG Game Master or a persistent AI Companion with a coherent fictional life.
 This repository is the ready-to-use workspace: download the ZIP, open the
 extracted folder, and start a new conversation.
 
-## Watch the Demo
+## Full Walkthrough
+
+This walkthrough shows the earlier public RPG flow. It predates the latest
+Build Week additions, including World Voices, Atlas V1, the rebuilt GM
+contract, and AI Companion mode; the Build Week evidence below documents those
+extensions separately.
 
 [![Watch the RePoG demo](https://img.youtube.com/vi/jpXtyfrd5k0/maxresdefault.jpg)](https://youtu.be/jpXtyfrd5k0)
 
 ▶ **[Watch the full RePoG demo on YouTube](https://youtu.be/jpXtyfrd5k0)**
+
+## OpenAI Build Week
+
+RePoG entered OpenAI Build Week as an existing, playable RPG workspace. Commit
+`7ccfd90` records that baseline: a single-campaign product with a basic Session
+0, campaign memory, Dashboard V2, and 249 passing tests. The Build Week work is
+a documented, meaningful extension of that foundation rather than a claim that
+the entire repository was created during the competition.
+
+I used **GPT-5.6 Sol inside OpenAI Codex** as the primary development model. I
+set the product constraints: keep the workspace local and readable, preserve
+creative model judgment, avoid a second narrative engine, protect player
+authorship and private information, and do not make ordinary turns pay for
+checks they do not need. GPT-5.6 Sol then helped audit the existing repository,
+compare architectures, turn those decisions into implementation plans, edit
+interdependent Markdown, YAML, JSON, Python, HTML, CSS, and JavaScript files,
+run focused and full tests, inspect browser behavior, and revise features after
+play and interface audits.
+
+The resulting Build Week upgrade has seven connected parts:
+
+1. **Adaptive setup:** separate RPG Campaign and AI Companion routes; Quick,
+   Standard, and Deep depth; contextual Starter Bundles; composable lenses;
+   research gates; and compact runtime profiles.
+2. **Causal GM and continuity:** player-authorship protection, bounded
+   character knowledge, natural NPC presence, independent trajectories,
+   resumable scene frames, conditional persistence, advancement, and playable
+   breathing room.
+3. **Safe mechanics and transactions:** reproducible dice, strict resource and
+   condition changes, revisions, monotonic operation identity, replay
+   protection, atomic visual approval, rollback, and return to the interrupted
+   scene.
+4. **Dashboard, Atlas, and visuals:** adaptive player-safe tiles,
+   revision-aware refreshes, responsive and accessible interaction, multi-scale
+   setting-neutral maps, and approved visual continuity.
+5. **World Voices:** letters, newspapers, reports, rumors, and institutional
+   documents whose authors remain bounded by their own knowledge, motives, and
+   communication channels. An artifact can exist without making its claims
+   objective truth.
+6. **AI Companion:** a separate lightweight experience with persistent
+   identity, routines, social context, conservative elapsed-time development,
+   gradual disclosure, consent-aware user memory, qualitative relationship
+   evidence, and a privacy-safe Companion View.
+7. **Reliability and privacy:** migrations, stale-write rejection, protected
+   projections, browser smoke coverage, dependency-free verification, and 317
+   passing development tests.
+
+The value of GPT-5.6 Sol was not simply producing code faster. Many changes
+crossed Session 0, runtime instructions, campaign authority, validators,
+migrations, privacy rules, and browser interfaces at the same time. Codex made
+it possible to reason across those contracts as one product and then verify
+that the resulting workspace still remained usable as a simple downloaded
+folder.
+
+The public distribution does not embed or require a separate GPT-5.6 API call.
+The Build Week contribution is the product and engineering work completed with
+GPT-5.6 Sol in Codex. See [`HACKATHON.md`](HACKATHON.md) for the evidence ledger
+and [`JUDGING.md`](JUDGING.md) for the shortest testing path.
 
 ## Start
 
