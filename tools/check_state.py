@@ -177,6 +177,7 @@ STYLE_REVIEW_POLICIES = {
     "every_durable",
 }
 LATENCY_NOTICE_POLICIES = {"exceptional_only", "always", "off"}
+SEMANTIC_PARALLELISM_POLICIES = {"off", "selective_structural", "aggressive_structural"}
 SETTING_LENSES = {"fantasy", "realistic", "cyberpunk"}
 PLAY_LENSES = {"survival"}
 MECHANIC_MODULES = {
@@ -346,7 +347,12 @@ def _yaml_list(value: str) -> list[str]:
     return [_clean_scalar(item) for item in value[1:-1].split(",") if _clean_scalar(item)]
 
 
-def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
+def _check_setup_profile(
+    campaign_path: Path,
+    findings: list[dict],
+    *,
+    preflight_ready: bool = False,
+) -> None:
     path = campaign_path / "setup_profile.yaml"
     if not path.is_file():
         return
@@ -356,6 +362,7 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
     experience_mode = _clean_scalar(values.get("experience_mode", ""))
     mode = _clean_scalar(values.get("session_zero_mode", ""))
     ready = _clean_scalar(values.get("ready_for_play", "false")).lower() == "true"
+    content_ready = ready or preflight_ready
     workspace_mode = _clean_scalar(values.get("workspace_mode", ""))
     activated = set(_parse_block_list(text, "activated_packs"))
     completed = set(_parse_block_list(text, "completed_packs"))
@@ -391,7 +398,7 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
             _add(findings, "error", "session_depth_before_experience", "Choose RPG or Companion before Session 0 depth.", path)
         if status != "pending" and not experience_mode:
             _add(findings, "error", "experience_mode_missing", "An active setup must select RPG or Companion.", path)
-        if ready and not experience_mode:
+        if content_ready and not experience_mode:
             _add(findings, "error", "experience_mode_missing", "Ready play requires an experience_mode.", path)
         if not experience_mode and (questions_completed > 0 or activated or completed or defaulted):
             _add(findings, "error", "setup_content_before_experience", "Do not begin Session 0 content before the RPG/Companion experience gate.", path)
@@ -408,16 +415,25 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
         _add(findings, "error", "setup_workspace_mode_invalid", "workspace_mode must be standalone or repository.", path)
     if status not in {"pending", "in_progress", "complete"}:
         _add(findings, "error", "setup_status_invalid", "status must be pending, in_progress, or complete.", path)
-    if status == "pending" and mode:
+    if preflight_ready and (status != "in_progress" or ready):
+        _add(
+            findings,
+            "error",
+            "preflight_requires_in_progress",
+            "Readiness preflight requires status: in_progress and ready_for_play: false.",
+            path,
+        )
+    if status == "pending" and mode and not preflight_ready:
         _add(findings, "error", "setup_pending_has_mode", "A pending profile must not preselect Session 0 depth.", path)
-    if status != "pending" and mode not in {"quick", "standard", "deep"}:
+    if (status != "pending" or preflight_ready) and mode not in {"quick", "standard", "deep"}:
         _add(findings, "error", "setup_mode_invalid", "Choose quick, standard, or deep before setup continues.", path)
-    if ready and status != "complete":
-        _add(findings, "error", "setup_ready_mismatch", "ready_for_play requires status: complete.", path)
-    if status == "complete" and not ready:
-        _add(findings, "error", "setup_ready_mismatch", "Completed Session 0 must set ready_for_play: true.", path)
+    if not preflight_ready:
+        if ready and status != "complete":
+            _add(findings, "error", "setup_ready_mismatch", "ready_for_play requires status: complete.", path)
+        if status == "complete" and not ready:
+            _add(findings, "error", "setup_ready_mismatch", "Completed Session 0 must set ready_for_play: true.", path)
     session_zero = campaign_path / "session_zero.md"
-    if ready and session_zero.is_file():
+    if content_ready and session_zero.is_file():
         session_zero_text = _read(session_zero, findings)
         selected_status_heading = "Companion Module Status" if experience_mode == "companion" else "Module Status"
         selected_status = _markdown_section(session_zero_text, selected_status_heading)
@@ -426,7 +442,7 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
     if mode == "deep" and not activated <= (completed | defaulted):
         missing = ", ".join(sorted(activated - completed - defaulted))
         _add(findings, "error", "deep_pack_incomplete", f"Activated Deep packs remain unresolved: {missing}", path)
-    if mode == "quick" and status == "complete" and not defaulted:
+    if mode == "quick" and content_ready and not defaulted:
         _add(findings, "error", "quick_defaults_missing", "Completed Quick setup must record visible defaults.", path)
     resolved_without_activation = (completed | defaulted) - activated
     if resolved_without_activation:
@@ -437,16 +453,16 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
             f"Completed/defaulted packs were not activated: {', '.join(sorted(resolved_without_activation))}",
             path,
         )
-    if mode == "quick" and status == "complete":
+    if mode == "quick" and content_ready:
         if experience_mode == "companion" and questions_completed != 7:
             _add(findings, "error", "quick_question_target", "Completed Companion Quick setup must record exactly 7 content decisions; routing gates do not count.", path)
         elif experience_mode != "companion" and not 6 <= questions_completed <= 8:
             _add(findings, "error", "quick_question_target", "Completed RPG Quick setup must record 6–8 decisions.", path)
-    if mode == "standard" and status == "complete":
+    if mode == "standard" and content_ready:
         minimum = 15 if experience_mode == "companion" else 17
         if questions_completed < minimum:
             _add(findings, "error", "setup_question_target", f"Completed Standard setup needs at least {minimum} content decisions.", path)
-    if mode == "deep" and status == "complete":
+    if mode == "deep" and content_ready:
         minimum = 30 if experience_mode == "companion" else 17
         if questions_completed < minimum:
             _add(findings, "error", "setup_question_target", f"Completed Deep setup needs at least {minimum} content decisions.", path)
@@ -532,9 +548,9 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
             "turn_protocol must be fast, balanced, maximum_continuity, or custom.",
             path,
         )
-    if ready and not turn_protocol:
+    if content_ready and not turn_protocol:
         _add(findings, "error", "turn_protocol_missing", "Ready campaigns must select a Turn Protocol.", path)
-    if ready and not estimate_acknowledged:
+    if content_ready and not estimate_acknowledged:
         _add(
             findings,
             "error",
@@ -574,7 +590,7 @@ def _check_setup_profile(campaign_path: Path, findings: list[dict]) -> None:
                     path,
                 )
 
-    if ready:
+    if content_ready:
         system_fit_path = campaign_path / "system_fit.md"
         session_zero_path = campaign_path / "session_zero.md"
         system_fit = _read(system_fit_path, findings) if system_fit_path.is_file() else ""
@@ -628,16 +644,23 @@ def _setup_context(campaign_path: Path, findings: list[dict]) -> dict[str, objec
     }
 
 
-def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, object]:
+def _check_play_profile(
+    campaign_path: Path,
+    findings: list[dict],
+    *,
+    preflight_ready: bool = False,
+) -> dict[str, object]:
     path = campaign_path / "play_profile.yaml"
     if not path.is_file():
         return {}
     text = _read(path, findings)
     top = _top_level_values(text)
+    parallelism = _check_semantic_parallelism(path, findings, text=text)
     setup = _setup_context(campaign_path, findings)
     ready = bool(setup["ready"])
+    content_ready = ready or preflight_ready
     experience_mode = str(setup["experience_mode"])
-    required = ready and experience_mode != "companion"
+    required = content_ready and experience_mode != "companion"
 
     try:
         schema_version = int(_clean_scalar(top.get("schema_version", "0")))
@@ -669,11 +692,11 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
         setup_revision = int(_clean_scalar(_top_level_values(setup_text).get("setup_revision", "0")))
     except ValueError:
         setup_revision = -1
-    if ready and experience_mode == "companion" and profile_status != "inactive":
+    if ready and not preflight_ready and experience_mode == "companion" and profile_status != "inactive":
         _add(findings, "error", "play_profile_not_inactive", "Ready Companion mode requires play_profile profile_status: inactive.", path)
-    if required and profile_status != "locked":
+    if ready and not preflight_ready and experience_mode != "companion" and profile_status != "locked":
         _add(findings, "error", "play_profile_not_locked", "Ready play requires profile_status: locked.", path)
-    if ready and source_setup_revision != setup_revision:
+    if content_ready and source_setup_revision != setup_revision:
         _add(
             findings,
             "error",
@@ -685,6 +708,7 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
     if profile_status == "inactive":
         return {
             "ready": ready,
+            "content_ready": content_ready,
             "schema_version": schema_version,
             "experience_mode": experience_mode,
             "resolution_grounding": "fictional",
@@ -701,6 +725,7 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
             "advancement_presentation": "none",
             "world_voices_mode": "off",
             "world_voices_dashboard_policy": "off",
+            **parallelism,
         }
 
     setting_lenses = _parse_block_list(text, "setting_lenses")
@@ -787,7 +812,7 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
                 _add(findings, "error", "narrative_signature_list_too_long", f"{context} allows at most {maximum} entries.", path)
             if any(not value.strip() for value in values):
                 _add(findings, "error", "narrative_signature_entry_blank", f"{context} contains a blank entry.", path)
-        if ready and (
+        if required and (
             len(anchors) != 3
             or any(not _meaningful_contract_value(value) for value in anchors)
         ):
@@ -968,6 +993,7 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
 
     return {
         "ready": ready,
+        "content_ready": content_ready,
         "experience_mode": experience_mode,
         "schema_version": schema_version,
         "setting_lenses": setting_lenses,
@@ -990,6 +1016,7 @@ def _check_play_profile(campaign_path: Path, findings: list[dict]) -> dict[str, 
         "advancement_presentation": _clean_scalar(advancement.get("presentation", "")),
         "world_voices_mode": world_voices_mode,
         "world_voices_dashboard_policy": world_voices_dashboard,
+        **parallelism,
     }
 
 
@@ -1060,15 +1087,118 @@ def _section_enum_value(text: str, heading: str, allowed: set[str]) -> str:
     return match.group(1).lower() if match else ""
 
 
+def _ready_snapshot_identity(
+    campaign_path: Path,
+    setup: dict[str, object],
+    findings: list[dict],
+) -> dict[str, object]:
+    state_path = campaign_path / "current_state.yaml"
+    state_text = _read(state_path, findings) if state_path.is_file() else ""
+    state = _top_level_values(state_text)
+    campaign_id = _clean_scalar(state.get("campaign_id", ""))
+    try:
+        continuity_revision = int(_clean_scalar(state.get("continuity_revision", "0")))
+    except ValueError:
+        continuity_revision = -1
+
+    experience_mode = str(setup.get("experience_mode", ""))
+    if experience_mode == "companion":
+        companion_state_path = campaign_path / "companion_state.json"
+        try:
+            companion_state = json.loads(companion_state_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            companion_state = {}
+        if isinstance(companion_state, dict):
+            value = companion_state.get("continuity_revision")
+            if type(value) is int:
+                continuity_revision = value
+
+    return {
+        "manifest_version": 2,
+        "campaign_id": campaign_id,
+        "setup_revision": setup.get("setup_revision"),
+        "continuity_revision": continuity_revision,
+        "ready_for_play": True,
+        "setup_status": "complete",
+        "experience_mode": experience_mode,
+    }
+
+
+def _check_ready_snapshot(
+    campaign_path: Path,
+    *,
+    setup: dict[str, object],
+    findings: list[dict],
+) -> None:
+    """Require a revision-bound v2 start snapshot once readiness is live."""
+
+    snapshot_root = campaign_path / "snapshots"
+    manifests = sorted(snapshot_root.glob("*/snapshot_manifest.json")) if snapshot_root.is_dir() else []
+    if not manifests:
+        _add(findings, "error", "ready_snapshot_missing", "Ready campaign needs a starting snapshot.", snapshot_root)
+        return
+
+    expected = _ready_snapshot_identity(campaign_path, setup, findings)
+    v2_manifests: list[tuple[Path, dict[str, object]]] = []
+    legacy_count = 0
+    for manifest_path in manifests:
+        try:
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            _add(findings, "error", "snapshot_manifest_unreadable", str(exc), manifest_path)
+            continue
+        if not isinstance(data, dict):
+            _add(findings, "error", "snapshot_manifest_unreadable", "Snapshot manifest must be a JSON object.", manifest_path)
+            continue
+        version = data.get("manifest_version", 1)
+        if type(version) is not int or version not in {1, 2}:
+            _add(
+                findings,
+                "error",
+                "snapshot_manifest_version_invalid",
+                "Snapshot manifest_version must be 1 or 2.",
+                manifest_path,
+            )
+            continue
+        if version == 1:
+            legacy_count += 1
+        else:
+            v2_manifests.append((manifest_path, data))
+
+    if v2_manifests:
+        if not any(all(data.get(key) == value and type(data.get(key)) is type(value) for key, value in expected.items()) for _, data in v2_manifests):
+            _add(
+                findings,
+                "error",
+                "ready_snapshot_stale",
+                "No v2 snapshot matches the current campaign, setup revision, continuity revision, experience, and ready state.",
+                snapshot_root,
+            )
+        return
+
+    if legacy_count:
+        _add(
+            findings,
+            "warning",
+            "snapshot_revision_unverified",
+            "Only legacy snapshots are available; their setup and continuity revisions cannot be verified.",
+            snapshot_root,
+        )
+
+
 def _check_ready_for_play(
     campaign_path: Path,
     state_text: str,
     *,
-    ready: bool,
+    content_ready: bool | None = None,
+    require_derived: bool = True,
+    ready: bool | None = None,
     dashboard_mode: str,
     findings: list[dict],
 ) -> None:
-    if not ready:
+    if content_ready is None:
+        content_ready = bool(ready)
+    if not content_ready:
         return
     state_path = campaign_path / "current_state.yaml"
     top = _top_level_values(state_text)
@@ -1103,7 +1233,11 @@ def _check_ready_for_play(
     opening_path = campaign_path / "opening_brief.md"
     opening = _read(opening_path, findings) if opening_path.is_file() else ""
     opening_status = _markdown_field(opening, "Opening status").lower()
-    opening_is_live = opening_status == "active" or not opening_status
+    opening_is_live = (
+        opening_status == "active"
+        or not opening_status
+        or (content_ready and not require_derived and opening_status == "pending")
+    )
     if opening_is_live:
         opening_mode = _section_enum_value(opening, "Scene Mode", SCENE_MODES)
         for heading in (
@@ -1121,18 +1255,13 @@ def _check_ready_for_play(
             if _section_is_template(opening, heading):
                 _add(findings, "error", "ready_opening_incomplete", f"Opening section is incomplete: {heading}", opening_path)
 
-    snapshot_root = campaign_path / "snapshots"
-    manifests = list(snapshot_root.glob("*/snapshot_manifest.json")) if snapshot_root.is_dir() else []
-    if not manifests:
-        _add(findings, "error", "ready_snapshot_missing", "Ready campaign needs a starting snapshot.", snapshot_root)
-
     world_path = campaign_path / "world.md"
     world_text = _read(world_path, findings) if world_path.is_file() else ""
     operating_model = _meaningful_text(_markdown_section(world_text, "World Operating Model"))
     if not operating_model or operating_model.lower().startswith("record the"):
         _add(findings, "error", "world_operating_model_missing", "Ready campaign needs a World Operating Model.", world_path)
 
-    if dashboard_mode == "on" and not (campaign_path / "dashboard" / "dashboard_state.json").is_file():
+    if require_derived and dashboard_mode == "on" and not (campaign_path / "dashboard" / "dashboard_state.json").is_file():
         _add(findings, "error", "ready_dashboard_missing", "Enabled dashboard is not prepared.", campaign_path / "dashboard")
 
 
@@ -1189,6 +1318,7 @@ def _check_opening_coherence(
     *,
     current_location: str,
     present_npcs: list[str],
+    preflight_ready: bool = False,
     findings: list[dict],
 ) -> None:
     path = campaign_path / "opening_brief.md"
@@ -1207,7 +1337,7 @@ def _check_opening_coherence(
     elif opening_status not in {"pending", "active", "consumed"}:
         _add(findings, "error", "opening_status_invalid", f"Invalid Opening status: {opening_status}", path)
         return
-    elif opening_status in {"pending", "consumed"}:
+    elif opening_status == "consumed" or (opening_status == "pending" and not preflight_ready):
         return
     where = _markdown_section(text, "Where")
     opening_location = _markdown_field(where, "Location")
@@ -1419,7 +1549,13 @@ def _run_world_voices_check(campaign_path: Path, findings: list[dict]) -> None:
         )
 
 
-def _run_companion_check(campaign_path: Path, *, scope: str, findings: list[dict]) -> None:
+def _run_companion_check(
+    campaign_path: Path,
+    *,
+    scope: str,
+    preflight_ready: bool,
+    findings: list[dict],
+) -> None:
     checker_path = Path(__file__).with_name("check_companion.py")
     if not checker_path.is_file():
         _add(findings, "error", "companion_checker_missing", "Companion mode requires tools/check_companion.py.", checker_path)
@@ -1430,7 +1566,11 @@ def _run_companion_check(campaign_path: Path, *, scope: str, findings: list[dict
             raise RuntimeError("Companion checker could not be loaded")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        result = module.check_companion(campaign_path, scope=scope)
+        result = module.check_companion(
+            campaign_path,
+            scope=scope,
+            preflight_ready=preflight_ready,
+        )
     except Exception as exc:  # pragma: no cover - defensive integration guard
         _add(findings, "error", "companion_checker_failed", str(exc), checker_path)
         return
@@ -1676,6 +1816,113 @@ def _enum_field(
         return
     if value not in allowed:
         _add(findings, "error", "play_profile_field_invalid", f"Invalid {context}: {value}", path)
+
+
+def _check_semantic_parallelism(
+    path: Path,
+    findings: list[dict],
+    *,
+    text: str | None = None,
+) -> dict[str, object]:
+    """Validate optional cross-harness delegation limits.
+
+    Profiles written before this contract omit both fields. They remain valid
+    and behave as ``off`` with a single-agent effective limit. Once either
+    field is present, require the complete pair so a partially edited profile
+    cannot silently enable an unintended policy.
+    """
+
+    if text is None:
+        if not path.is_file():
+            return {"semantic_parallelism": "off", "max_parallel_workers": 1}
+        text = _read(path, findings)
+
+    lines = text.splitlines()
+    performance_ranges: list[tuple[int, int]] = []
+    for index, line in enumerate(lines):
+        if not re.match(r"^performance:\s*$", line):
+            continue
+        end = len(lines)
+        for candidate in range(index + 1, len(lines)):
+            if re.match(r"^[A-Za-z_][A-Za-z0-9_-]*:", lines[candidate]):
+                end = candidate
+                break
+        performance_ranges.append((index + 1, end))
+
+    occurrences: dict[str, list[tuple[int, int]]] = {
+        "semantic_parallelism": [],
+        "max_parallel_workers": [],
+    }
+    for index, line in enumerate(lines):
+        match = re.match(r"^(\s*)(semantic_parallelism|max_parallel_workers):\s*", line)
+        if match:
+            occurrences[match.group(2)].append((index, len(match.group(1))))
+
+    for key, positions in occurrences.items():
+        for index, indent in positions:
+            inside_performance = any(start <= index < end for start, end in performance_ranges)
+            if indent != 2 or not inside_performance:
+                _add(
+                    findings,
+                    "error",
+                    "semantic_parallelism_misplaced",
+                    f"{key} must be a direct child of performance (two-space indentation).",
+                    path,
+                )
+        if len(positions) > 1:
+            _add(
+                findings,
+                "error",
+                "semantic_parallelism_duplicate",
+                f"{key} must appear at most once.",
+                path,
+            )
+
+    performance = _nested_values(_block(text, "performance"))
+    policy_raw = _clean_scalar(performance.get("semantic_parallelism", ""))
+    workers_raw = _clean_scalar(performance.get("max_parallel_workers", ""))
+
+    if not policy_raw and not workers_raw:
+        return {"semantic_parallelism": "off", "max_parallel_workers": 1}
+
+    if not policy_raw or not workers_raw:
+        missing = "performance.semantic_parallelism" if not policy_raw else "performance.max_parallel_workers"
+        _add(
+            findings,
+            "error",
+            "semantic_parallelism_incomplete",
+            f"Delegation configuration requires both fields; missing {missing}.",
+            path,
+        )
+
+    if policy_raw and policy_raw not in SEMANTIC_PARALLELISM_POLICIES:
+        _add(
+            findings,
+            "error",
+            "semantic_parallelism_invalid",
+            "performance.semantic_parallelism must be off, selective_structural, or aggressive_structural.",
+            path,
+        )
+
+    workers = -1
+    if workers_raw:
+        try:
+            workers = int(workers_raw)
+        except ValueError:
+            workers = -1
+        if workers not in {1, 2, 3}:
+            _add(
+                findings,
+                "error",
+                "max_parallel_workers_invalid",
+                "performance.max_parallel_workers must be an integer from 1 through 3.",
+                path,
+            )
+
+    return {
+        "semantic_parallelism": policy_raw or "off",
+        "max_parallel_workers": workers if workers in {1, 2, 3} else 1,
+    }
 
 
 def _check_persistence(
@@ -3212,7 +3459,12 @@ def _check_player_state(
         )
 
 
-def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
+def check_campaign(
+    campaign_path: Path,
+    *,
+    scope: str = "full",
+    preflight_ready: bool = False,
+) -> dict:
     campaign_path = campaign_path.resolve()
     findings: list[dict] = []
 
@@ -3256,34 +3508,57 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
         if setup_schema >= 3 and not path.is_file():
             _add(findings, "error", "v3_file_missing", f"Session contract v3 requires: {relative}", path)
 
-    _check_setup_profile(campaign_path, findings)
     setup = _setup_context(campaign_path, findings)
+    setup_ready = bool(setup.get("ready", False))
+    draft_preflight = bool(preflight_ready and not setup_ready)
+    _check_setup_profile(campaign_path, findings, preflight_ready=draft_preflight)
     experience_mode = str(setup.get("experience_mode", ""))
-    profile = _check_play_profile(campaign_path, findings)
+    profile = _check_play_profile(campaign_path, findings, preflight_ready=draft_preflight)
     if setup_schema >= 4:
-        _run_companion_check(campaign_path, scope=scope, findings=findings)
-    ready = bool(setup.get("ready", False))
+        _run_companion_check(
+            campaign_path,
+            scope=scope,
+            preflight_ready=draft_preflight,
+            findings=findings,
+        )
+    actual_ready = setup_ready
+    content_ready = actual_ready or draft_preflight
+    if actual_ready:
+        _check_ready_snapshot(campaign_path, setup=setup, findings=findings)
 
     # Companion mode has its own hot state and readiness contract. Keep the RPG
     # scaffold in the distribution for reversible mode choice, but do not apply
     # player-character, opening-scene, mechanics, arc, dashboard, or World
     # Voices readiness rules to a Companion conversation.
     if experience_mode == "companion":
-        _check_research_gate(campaign_path, findings, ready=ready)
+        if content_ready:
+            state_path = campaign_path / "current_state.yaml"
+            state_text = _read(state_path, findings) if state_path.is_file() else ""
+            campaign_id = _clean_scalar(_top_level_values(state_text).get("campaign_id", ""))
+            if campaign_id in {"", "new_campaign", "replace_me"}:
+                _add(
+                    findings,
+                    "error",
+                    "ready_campaign_id_placeholder",
+                    "Ready Companion setup needs a permanent current_state campaign_id.",
+                    state_path,
+                )
+        _check_research_gate(campaign_path, findings, ready=content_ready)
         if scope == "full":
             _check_visual_handoff(campaign_path, findings)
             _check_visual_state(campaign_path, findings)
         return _result(campaign_path, findings, scope=scope)
 
     _check_advancement_contract(campaign_path, profile, findings)
-    ready = bool(profile.get("ready"))
+    actual_ready = bool(profile.get("ready"))
+    content_ready = bool(profile.get("content_ready", actual_ready or draft_preflight))
     _check_first_session_lifecycle(
         campaign_path,
-        ready=ready,
+        ready=content_ready,
         contract_v2=int(profile.get("schema_version", 0) or 0) >= 2,
         findings=findings,
     )
-    _check_research_gate(campaign_path, findings, ready=ready)
+    _check_research_gate(campaign_path, findings, ready=content_ready)
     if scope == "full":
         _check_visual_handoff(campaign_path, findings)
         _check_visual_state(campaign_path, findings)
@@ -3347,8 +3622,12 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
         if scope == "full" and (campaign_path / "dashboard" / "dashboard_state.json").is_file():
             _run_dashboard_check(
                 campaign_path,
-                expected_revision=(continuity_revision if profile.get("dashboard_mode") == "on" else None),
-                require_current=ready and profile.get("dashboard_mode") == "on",
+                expected_revision=(
+                    None
+                    if draft_preflight
+                    else (continuity_revision if profile.get("dashboard_mode") == "on" else None)
+                ),
+                require_current=actual_ready and profile.get("dashboard_mode") == "on",
                 findings=findings,
             )
 
@@ -3400,7 +3679,7 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
         state_text,
         state_path,
         memory_version=memory_version,
-        ready=ready,
+        ready=content_ready,
         findings=findings,
     )
 
@@ -3410,7 +3689,7 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
             level_band,
             findings,
             resolution_grounding=resolution_grounding,
-            ready=ready,
+            ready=content_ready,
             contract_v3=memory_version >= 3 and int(profile.get("schema_version", 0) or 0) >= 2,
         )
         _check_knowledge_authority(campaign_path, findings)
@@ -3430,13 +3709,15 @@ def check_campaign(campaign_path: Path, *, scope: str = "full") -> dict:
         campaign_path,
         current_location=location,
         present_npcs=present_npcs,
+        preflight_ready=draft_preflight,
         findings=findings,
     )
 
     _check_ready_for_play(
         campaign_path,
         state_text,
-        ready=ready,
+        content_ready=content_ready,
+        require_derived=actual_ready,
         dashboard_mode=str(profile.get("dashboard_mode", "")),
         findings=findings,
     )
@@ -3468,9 +3749,18 @@ def main(argv: list[str] | None = None) -> int:
         default="full",
         help="Use hot for per-durable-turn checks or full at distill/audit boundaries.",
     )
+    parser.add_argument(
+        "--preflight-ready",
+        action="store_true",
+        help="Validate readiness content before setting complete/ready flags or materializing derived views.",
+    )
     args = parser.parse_args(argv)
 
-    result = check_campaign(Path(args.campaign_path), scope=args.scope)
+    result = check_campaign(
+        Path(args.campaign_path),
+        scope=args.scope,
+        preflight_ready=args.preflight_ready,
+    )
     print(json.dumps(result, indent=2, ensure_ascii=True))
     return 0 if result["ok"] else 2
 

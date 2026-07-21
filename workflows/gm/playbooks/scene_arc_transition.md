@@ -43,6 +43,36 @@ Run the Distill workflow when:
 A scene end alone is not on this list. Before changing away from a batching
 profile, reconcile all pending cold targets.
 
+## Structural Parallelism
+
+Scene exits, scene checkpoints, beat-closure reasoning, and session-closure
+reasoning stay serial. They are not large enough to justify splitting causal
+and voice ownership. A session stop may still leave a heavy cold-target
+distill that independently qualifies under the Distill thresholds. A scenario,
+arc, or campaign closure may use selective structural delegation only under
+`workflows/orchestration/WORKFLOW.md` and the Distill workflow.
+
+At an eligible major closure, the primary agent freezes the closing revision,
+closure evidence, known facts, and entity ids. It may request at most these
+read-only proposal lanes:
+
+1. **Closure evidence and reward:** achievement tags, quality, budget, and
+   fiction-grounded options. This lane cannot select or apply a reward.
+2. **World and cast consequences:** only causally supported changes to NPCs,
+   factions, relationships, places, knowledge, and pressure.
+3. **Carry-forward and opening:** next-act classifications and possible
+   reaction points, but only after every required reward choice that can affect
+   the next act has been resolved.
+
+The first two independent lanes may run together. The third is dependency
+ordered: when a reward choice is required, do not start next-act preparation
+or opening work until the Player chooses or the choice is explicitly deferred
+as non-blocking. The primary agent alone writes `arc_closure.md`,
+`next_act_prep.md`, `opening_brief.md`, current state, knowledge, revisions,
+and logs; validates the consolidated result once; and presents it to the
+Player. Stale, conflicting, incomplete, or failed proposals are discarded and
+completed serially.
+
 ## Source Of Current Truth
 
 - live scene and resume: `current_state.yaml.scene_frame`;

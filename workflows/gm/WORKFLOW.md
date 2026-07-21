@@ -42,6 +42,36 @@ advancement, visual, or continuity signals.
 
 Load more than one only when the turn genuinely crosses those functions.
 
+# Turn-Level Execution Boundary
+
+Normal play is deliberately single-agent. Except for the narrow due-domain
+travel/downtime scout below, do not delegate a `soft`, `local_durable`, or
+`scene_checkpoint` turn, even when it includes dialogue, elapsed time, an NPC
+reaction, a mechanic, a Dashboard policy check, or a visual return. One
+primary agent must own the Player's intent, causal result, knowledge limits,
+NPC voice, and final narration from beginning to end.
+
+Sub-agent work is eligible only after play reaches a qualifying structural
+boundary: a heavy full distill, multi-domain research review, a
+scenario/arc/campaign closure, or a three-or-more-artifact World Voices batch.
+At such a boundary, load `workflows/orchestration/WORKFLOW.md` and the relevant
+Distill/playbook instructions. All workers are read-only proposal lanes; the
+primary agent remains the sole campaign writer, revision owner, validator,
+and Player-facing voice. If delegation is off, unsupported, stale, or fails,
+complete the same boundary serially without changing its semantics.
+
+Travel/downtime remains serial unless one elapsed-time boundary has at least
+three independent world domains whose recorded evaluation triggers are
+actually due and the performance policy permits delegation. In that exceptional
+case, use exactly two read-only domain-scout proposal lanes from the same
+frozen time/revision; the primary agent alone resolves their chronological
+interaction and persists the result. Never spawn workers merely because time
+passed or to simulate domains continuously.
+
+Never mention worker allocation, parallelism, consolidation, or fallback in
+Player Mode. A short natural wait expectation may be given when the selected
+latency policy calls for one, but technical orchestration remains invisible.
+
 # Route -> Resolve -> Persist -> Narrate
 
 ## 1. Route
@@ -97,6 +127,12 @@ explicitly invited by the Player.
   `scene_checkpoint_or_5_durable`, Balanced `scene_checkpoint_or_3_durable`,
   Maximum `every_durable`, session stop, closure, advancement, research lock,
   continuity conflict, or explicit request.
+
+Do not delegate the immediate durable write that established the result.
+Selective structural delegation, when eligible, begins only after the primary
+agent has frozen that result's continuity revision and pending cold-target
+set. Workers cannot increment revision, append the event, clear pending
+targets, patch a projection, or narrate the outcome.
 
 Dashboard, visual, style, and semantic reviews run only when their own policy
 is triggered. Style review is warning-only and never rewrites narration.

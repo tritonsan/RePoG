@@ -1,20 +1,23 @@
 # Campaign Creation Interview
 
-## Depth Gate
+## Routing Gates
 
-If `setup_profile.yaml.status` is `pending`, ask only which setup depth the
-Designer wants and wait:
+If `setup_profile.yaml.status` is `pending` and `experience_mode` is blank,
+ask only whether the Designer wants an RPG Campaign or an AI Companion and
+wait. Persist the choice before asking anything else. Then, if
+`session_zero_mode` is blank, ask only which setup depth the Designer wants:
 
 - Quick: 6–8 decisions, about 10–15 minutes.
 - Standard: the 17 core modules, about 30–60 minutes.
 - Deep: the core plus relevant adaptive packs, about 60–120 minutes and
   normally 30–45 decisions.
 
-After persisting the choice, ask the campaign pitch. Ask one decision per
-message in every mode. A skipped, defaulted, deferred, or answered decision is
-never asked again. A Starter Bundle is one decision because the Designer
-chooses one coherent option; do not hide unrelated follow-up decisions inside
-the same message.
+The experience and depth gates do not count toward content-decision totals.
+After persisting both choices, route to the relevant interview and ask its
+pitch or premise. Ask one decision per message in every mode. A skipped,
+defaulted, deferred, or answered decision is never asked again. A Starter
+Bundle is one decision because the Designer chooses one coherent option; do
+not hide unrelated follow-up decisions inside the same message.
 
 Quick combines related modules into a playable core and records its visible
 assumptions. Standard follows all modules below. Deep activates only the packs
@@ -46,10 +49,30 @@ Do not activate Group / Company for a solo character without a persistent
 collective. Do not activate World Fabric merely because every campaign has a
 world. Record each trigger and activated pack in `setup_profile.yaml`.
 
-Every depth includes one explicit Turn Protocol choice. `fast` is the
+Every RPG depth includes one explicit Turn Protocol choice. `fast` is the
 recommended default, but do not select it silently: show the timing/freshness
-tradeoffs and record the answer. Quick keeps its 6–8 target by treating
+tradeoffs and record the answer. Companion uses its fixed lightweight
+persistence contract instead. RPG Quick keeps its 6–8 target by treating
 research as conditional and combining related mechanics decisions.
+
+Use the same performance card to explain semantic parallelism without adding
+a separate Quick decision. Recommend `selective_structural` for a new
+workspace: it may shorten eligible research and finalization boundaries but
+can use more model allowance. `off` stays serial; `aggressive_structural` uses
+lower eligibility thresholds. Quick has a hard cap of two supporting agents;
+Standard and Deep have a cap of three. If the harness has no sub-agent support,
+run the same work serially with identical readiness requirements.
+
+After final approval, keep `ready_for_play: false`, freeze the accepted setup
+revision, and use only read-only proposal workers. The coordinating agent owns
+all campaign writes, ids, knowledge/disclosure classification, profiles,
+current state, opening/final Companion voice, readiness, snapshots, and checks.
+Run `python tools/check_state.py campaign --scope full --preflight-ready`
+while draft. Then set final fields, materialize enabled Dashboard/Atlas or
+Companion View projections at the final revision, take the starting snapshot,
+and run one final aggregate check before entering play or Companion
+conversation. On failure, restore draft state and repeat the whole sequence
+after correction.
 
 Use this interview when starting a Lite campaign from scratch.
 
@@ -85,7 +108,7 @@ question should be only:
 
 > What is the campaign pitch: the universe, tone, and player fantasy you want?
 
-After that answer, inspect `lenses/INDEX.md` and only the candidate lens briefs
+After that answer, inspect `briefs/lenses/INDEX.md` and only the candidate lens briefs
 suggested by the pitch. Offer 2 to 4 Starter Bundles. Each option must state:
 
 - the intended feel;
@@ -119,18 +142,24 @@ Model. Do not load lens briefs during ordinary play.
 
 Keep Quick within 6–8 decisions by using this sequence:
 
-1. depth;
-2. pitch;
-3. Starter Bundle;
-4. boundaries plus agency/consequence stance;
-5. character concept plus defining capability/flaw;
-6. starting world pressure and place;
-7. Turn Protocol plus dashboard/visual cost acknowledgement;
+1. pitch;
+2. Starter Bundle;
+3. boundaries plus agency/consequence stance;
+4. character concept plus defining capability/flaw;
+5. starting world pressure and place;
+6. mechanics/progression/failure plus Turn Protocol and semantic parallelism;
+7. narration plus Dashboard/visual choices and cost acknowledgement;
 8. final summary approval, including every defaulted or deferred item.
 
 The Starter Bundle carries the Quick resolution, Narrative Signature,
-interiority, and breather choices inside decision 3; do not add separate Quick
+interiority, and breather choices inside decision 2; do not add separate Quick
 decisions for them.
+
+Persist every accepted Session 0 answer immediately in its semantic owner,
+then update `session_zero.md`, increment the setup revision, and sync the
+active runtime profile's source revision on the same turn. Final materialization
+fills coherent defaults and derived projections; it must not be the first time
+earlier decisions are written.
 
 Research becomes a separate decision only when the Research Gate is needed;
 combine it with the final approval by reducing optional detail, never by

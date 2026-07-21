@@ -32,6 +32,8 @@ workflow before doing that kind of work:
   travel, breather, transition, visual, and World Voices guidance; load only
   what the turn needs.
 - `workflows/worldbuild/WORKFLOW.md` - campaign creation interview.
+- `workflows/orchestration/WORKFLOW.md` - optional bounded sub-agent work at
+  eligible structural boundaries; never load it for an ordinary turn.
 - `workflows/companion/WORKFLOW.md` - persistent Companion conversation and
   elapsed-time reconciliation.
 - `workflows/distill/WORKFLOW.md` - session and arc memory condensation.
@@ -203,7 +205,8 @@ The memory model is intentionally small:
 - `play_profile.yaml` is the materialized runtime contract for lenses,
   player-approved mechanics, resolution grounding, tracking and dice,
   Narrative Signature, interiority, breather pacing, advancement, dashboard,
-  visuals, and turn-performance policy.
+  visuals, turn-performance policy, and optional structural semantic
+  parallelism.
 - `companion_profile.yaml` schema v2 is the Companion runtime contract for identity
   transparency, fictional/real-city grounding, asynchronous conversation,
   causal life autonomy, qualitative relationship scope, consent-based user
@@ -398,6 +401,15 @@ dashboard refresh may add about 1–2 minutes, an image draft about 1–3+ minut
 and accepted-image gallery/dashboard placement about 1–2 minutes. Do not mark
 Session 0 complete until the estimate caveat is acknowledged.
 
+New workspaces default to `performance.semantic_parallelism:
+selective_structural`. This may shorten independent structural work while
+using more model allowance. It is not per-turn parallelism: ordinary RPG and
+Companion messages remain single-agent. Quick shows this in the existing
+performance summary without adding another question. When a structural
+boundary qualifies, read `workflows/orchestration/WORKFLOW.md`; if the harness
+has no sub-agent support, complete the identical lanes serially. The
+coordinator remains the only campaign writer and player-facing voice.
+
 # Bounded Improvisation
 
 Codex may freely add color, sensory texture, NPC phrasing, body language, minor
@@ -480,6 +492,13 @@ message, allow at most one due self-originated beat, and call one semantic
 transaction only if durable truth changed. It never invokes RPG opening,
 scene, player-character, mechanics, advancement, RPG Dashboard, or World
 Voices gates.
+
+Sub-agent work never changes the Route -> Resolve -> Persist -> Narrate order.
+It may prepare read-only proposals at eligible Session 0 materialization,
+multi-domain research, large full-distill, major closure, or multi-document
+World Voices boundaries. It must not parallelize authoritative writes,
+revision increments, Dashboard/Atlas patches, visual transactions, mechanics,
+or final narration.
 
 Advancement follows both cadence and presentation. `none` opens no automatic
 gate. `automatic_fictional` never forces an OOC interlude unless a Player

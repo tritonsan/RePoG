@@ -28,6 +28,56 @@ def _iter_campaign_files(root: Path, snapshots_dir: Path) -> list[Path]:
     return sorted(files)
 
 
+def _yaml_top_values(text: str) -> dict[str, str]:
+    """Read the small top-level scalar subset used by snapshot identity."""
+
+    values: dict[str, str] = {}
+    for line in text.splitlines():
+        match = re.match(r"^([A-Za-z_][A-Za-z0-9_-]*):\s*(.*?)\s*$", line)
+        if match:
+            values[match.group(1)] = match.group(2).strip().strip("'\"`")
+    return values
+
+
+def _integer(value: object, *, default: int = 0) -> int:
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def _snapshot_identity(campaign_path: Path) -> dict[str, object]:
+    setup_path = campaign_path / "setup_profile.yaml"
+    setup = _yaml_top_values(setup_path.read_text(encoding="utf-8")) if setup_path.is_file() else {}
+    setup_schema = _integer(setup.get("schema_version"), default=1)
+    experience_mode = str(setup.get("experience_mode", "")).strip()
+    if setup_schema < 4 and not experience_mode:
+        experience_mode = "rpg"
+
+    state_path = campaign_path / "current_state.yaml"
+    state = _yaml_top_values(state_path.read_text(encoding="utf-8")) if state_path.is_file() else {}
+    continuity_revision = _integer(state.get("continuity_revision"), default=0)
+    if experience_mode == "companion":
+        companion_state_path = campaign_path / "companion_state.json"
+        if companion_state_path.is_file():
+            try:
+                companion_state = json.loads(companion_state_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                companion_state = {}
+            if isinstance(companion_state, dict):
+                continuity_revision = _integer(companion_state.get("continuity_revision"), default=continuity_revision)
+
+    return {
+        "manifest_version": 2,
+        "campaign_id": str(state.get("campaign_id", "")).strip(),
+        "setup_revision": _integer(setup.get("setup_revision"), default=0),
+        "continuity_revision": continuity_revision,
+        "ready_for_play": str(setup.get("ready_for_play", "false")).lower() in {"true", "yes"},
+        "setup_status": str(setup.get("status", "")).strip(),
+        "experience_mode": experience_mode,
+    }
+
+
 def create_snapshot(campaign_path: Path, label: str) -> dict:
     campaign_path = campaign_path.resolve()
     if not campaign_path.exists() or not campaign_path.is_dir():
@@ -63,6 +113,7 @@ def create_snapshot(campaign_path: Path, label: str) -> dict:
         copied.append(relative.as_posix())
 
     manifest = {
+        **_snapshot_identity(campaign_path),
         "created_at": stamp,
         "source": str(campaign_path),
         "label": label,
@@ -98,4 +149,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

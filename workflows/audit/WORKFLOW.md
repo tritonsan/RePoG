@@ -84,6 +84,15 @@ For RPG, check:
 - `play_profile.yaml` is locked to the same setup revision before play and owns
   valid lenses, approved mechanics, narration, advancement, dashboard,
   visual, and performance policy;
+- semantic parallelism is `off`, `selective_structural`, or
+  `aggressive_structural`, its worker cap is `1–3`, and a missing legacy value
+  remains `off` rather than silently increasing usage;
+- supporting agents, when used, only return revision-bound read-only proposals;
+  the coordinator remains the sole campaign writer, final voice, revision
+  owner, and knowledge/disclosure authority;
+- ordinary RPG turns, ordinary Companion exchanges, mechanics, validation,
+  snapshots, visual transactions, and Dashboard/Atlas/View patches never use
+  sub-agent delegation;
 - lens combinations are deduplicated, documented conflicts are resolved, and
   no lens silently enables a mechanic such as HP, mana, wounds, or inventory;
 - Custom protocols keep authoritative state, knowledge boundaries, durable

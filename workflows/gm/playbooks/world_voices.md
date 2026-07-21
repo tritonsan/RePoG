@@ -78,6 +78,43 @@ review:
 Revise or reject unsafe work. Never expose claim classifications, fact ids, or
 this review in Player Mode.
 
+### Optional Multi-Artifact Drafting
+
+World Voices may use structural delegation only when all of these conditions
+hold:
+
+- `play_profile.yaml.performance.semantic_parallelism` is not `off` and the
+  host supports delegation;
+- one already-resolved trigger or an explicit Player-requested montage calls
+  for at least three genuinely independent artifacts;
+- each artifact has its own source/author, audience, channel, purpose, and
+  bounded knowable claims;
+- the artifacts can be drafted without one depending on receipt of another.
+
+Use no more than three read-only workers and never exceed
+`performance.max_parallel_workers`. The primary agent first resolves whether
+each artifact exists, traces information reach, assigns stable artifact and
+operation ids, and builds a bounded author packet containing only allowed
+facts, evidence, beliefs, motives, relationships, timing, voice constraints,
+protected facts, forbidden implications, and the required output shape. One
+worker receives one packet and returns one non-canon draft plus an explicit
+claim/evidence list. It must not browse unrelated campaign memory, invent
+objective truth, write files, schedule or complete delivery, update knowledge,
+project a catalog, patch the Dashboard, or speak to the Player.
+
+The primary agent remains the sole semantic reviewer and persistence owner. It
+checks each proposal against current knowledge and visibility, resolves
+cross-artifact contradictions that are not intentional in-world disagreement,
+and applies canon/review/distribution policy serially. `review_each` drafts
+remain non-canon until Designer approval. A failed, unsafe, conflicting, or
+stale proposal is discarded and redrafted serially; no partial batch is
+reported as complete.
+
+Two artifacts, a reply that depends on another artifact, a Player-authored
+message awaiting approval, and all ordinary single-document events remain
+serial. Parallel drafting never authorizes a second reaction layer in the same
+turn.
+
 ## 7. Review, Canon, And Distribution
 
 Follow `play_profile.yaml.world_voices`:
@@ -133,3 +170,6 @@ may react only after it reaches them through a believable channel.
 - Hidden changes never refresh the Dashboard. Player-visible delivery may
   project and patch the documents tile according to dashboard refresh policy.
 - Store the same operation id forever; retries must not duplicate work.
+- Worker drafts are transient proposals. Only the primary agent may persist an
+  artifact, assign its final claim positions, update holders, advance
+  distribution, increment continuity, or expose a player-safe projection.

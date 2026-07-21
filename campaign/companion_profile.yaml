@@ -62,6 +62,11 @@ visuals:
   dashboard: off
 
 performance:
+  semantic_parallelism: selective_structural
+  max_parallel_workers: 3
+  # Shown inside the existing Starter Bundle/performance summary. It is not a
+  # separate Quick question; set true with the player's final setup approval.
+  parallelism_notice_acknowledged: false
   exchange_persistence: single_begin_exchange
   semantic_persistence: meaningful_change_only
   full_distill: trigger_or_session_stop
@@ -81,3 +86,7 @@ performance:
 # memory.user_policy: off | ask_before_save | contextual_low_risk
 # visuals.portrait_policy: off | optional_manual | setup_once
 # visuals.companion_view: off | light
+# performance.semantic_parallelism: off | selective_structural |
+#   aggressive_structural
+# performance.max_parallel_workers: 1 | 2 | 3
+# performance.parallelism_notice_acknowledged: false | true

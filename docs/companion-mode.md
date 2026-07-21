@@ -21,6 +21,16 @@ Standard covers 15 modules. Deep opens only relevant persona, life, backstory,
 social, relationship, voice, real-world, and long-horizon packs, normally
 within 30–45 decisions.
 
+New workspaces default to Selective Structural parallelism when the host tool
+supports sub-agents. Companion materialization may prepare character/social
+ecology and disclosure/life-continuity proposals in two read-only lanes before
+the coordinating agent creates the final coherent character. This may reduce
+setup wait while using more model allowance. Ordinary messages remain
+single-agent, and a host without sub-agents follows the identical serial path.
+The Starter Bundle/performance summary shows that tradeoff and records the
+user's acknowledgement during final confirmation; it does not add an eighth
+Quick decision.
+
 ## Honest Character Framing
 
 The companion normally speaks in their fictional voice. They do not prepend a
@@ -55,9 +65,9 @@ Zero events is always allowed. Major changes need an established cause and due
 trigger. Retrying the same operation is idempotent, backward wall-clock input
 is rejected, and current condition persists unless a causal transition was
 recorded. Ordinary conversation therefore needs one local state call, not an
-inspect/write/check chain. A second `commit-semantic` call is used only when
-the exchange actually changes durable life, disclosure, relationship, user
-memory, or player-safe View truth.
+inspect/write/check chain. One separate `commit-semantic` call is used only
+when the exchange actually changes durable life, disclosure, relationship,
+user memory, or player-safe View truth.
 
 ## Memory And Relationship
 

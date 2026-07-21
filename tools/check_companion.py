@@ -22,12 +22,12 @@ LIFE_DENSITIES = {"quiet", "grounded", "eventful"}
 RELATIONSHIP_SCOPES = {"friendship", "friendship_and_romance", "broad_adult_relationships"}
 PORTRAIT_POLICIES = {"off", "optional_manual", "setup_once"}
 COMPANION_VIEW_POLICIES = {"off", "light"}
-COMPANION_VIEW_POLICIES = {"off", "light"}
 MEMORY_KINDS = {"preference", "durable_event", "promise", "upcoming_date", "callback"}
 MEMORY_SOURCES = {"explicit_user_statement", "explicit_user_request_to_remember"}
 MEMORY_CONSENTS = {"contextual", "explicit"}
 MEMORY_POLICIES = {"off", "ask_before_save", "contextual_low_risk"}
 DECEPTION_POLICIES = {"no_direct_lies", "character_consistent_opt_in"}
+SEMANTIC_PARALLELISM_POLICIES = {"off", "selective_structural", "aggressive_structural"}
 DISCLOSURE_STAGES = {"private", "hinted", "partial", "shared", "corrected"}
 DISCLOSURE_POSTURES = {"open", "contextual", "guarded", "refuses_now"}
 ACCOUNT_TRUTHFULNESS = {"not_disclosed", "truthful", "incomplete", "false", "corrected"}
@@ -185,6 +185,45 @@ def _nested_values(text: str, key: str) -> dict[str, str]:
     return result
 
 
+def _check_misplaced_parallelism_keys(
+    text: str,
+    path: Path,
+    findings: list[dict[str, str]],
+) -> None:
+    """Keep the delegation contract under the single performance authority."""
+
+    current_top = ""
+    reserved = {"semantic_parallelism", "max_parallel_workers"}
+    seen: set[str] = set()
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        top_match = re.match(r"^([A-Za-z_][A-Za-z0-9_-]*):", line)
+        if top_match:
+            current_top = top_match.group(1)
+        key_match = re.match(r"^(\s*)(semantic_parallelism|max_parallel_workers):", line)
+        if key_match is None:
+            continue
+        indent, key = key_match.groups()
+        if key in seen:
+            findings.append(
+                _finding(
+                    "error",
+                    "semantic_parallelism_duplicate",
+                    f"{key} may appear only once (duplicate at line {line_number}).",
+                    path,
+                )
+            )
+        seen.add(key)
+        if key in reserved and not (current_top == "performance" and indent == "  "):
+            findings.append(
+                _finding(
+                    "error",
+                    "semantic_parallelism_misplaced",
+                    f"{key} must appear only as a direct child of performance (line {line_number}).",
+                    path,
+                )
+            )
+
+
 def _yaml_list(text: str, key: str) -> list[str]:
     inline = re.search(rf"(?m)^{re.escape(key)}:[ \t]*\[(.*?)\][ \t]*$", text)
     if inline:
@@ -289,12 +328,14 @@ def _validate_profile(
     setup_ready: bool,
     setup_revision: int,
     findings: list[dict[str, str]],
+    preflight_ready: bool = False,
 ) -> dict[str, Any]:
     path = campaign / "companion_profile.yaml"
     if not path.is_file():
         findings.append(_finding("error", "companion_profile_missing", "Companion contract file is missing.", path))
         return {}
     text = _read(path, findings)
+    _check_misplaced_parallelism_keys(text, path, findings)
     top = _top_values(text)
     schema = _int(top.get("schema_version"))
     status = _clean(top.get("profile_status", ""))
@@ -311,10 +352,10 @@ def _validate_profile(
             findings.append(_finding("error", "companion_profile_not_locked", "Ready Companion mode requires profile_status: locked.", path))
     if experience_mode == "rpg" and setup_ready and status != "inactive":
         findings.append(_finding("error", "companion_profile_not_inactive", "Ready RPG mode requires companion_profile profile_status: inactive.", path))
-    if setup_ready and source_revision != setup_revision:
+    if (setup_ready or preflight_ready) and source_revision != setup_revision:
         findings.append(_finding("error", "companion_profile_revision_stale", "Companion profile revision does not match setup revision.", path))
 
-    required = experience_mode == "companion" and setup_ready
+    required = experience_mode == "companion" and (setup_ready or preflight_ready)
     identity = _nested_values(text, "identity")
     setting = _nested_values(text, "setting")
     communication = _nested_values(text, "communication")
@@ -323,6 +364,59 @@ def _validate_profile(
     memory = _nested_values(text, "memory")
     visuals = _nested_values(text, "visuals")
     performance = _nested_values(text, "performance")
+
+    parallelism = _clean(performance.get("semantic_parallelism", ""))
+    workers_raw = _clean(performance.get("max_parallel_workers", ""))
+    acknowledgement_raw = _clean(performance.get("parallelism_notice_acknowledged", ""))
+    acknowledgement = _bool(acknowledgement_raw)
+    parallelism_configured = bool(parallelism or workers_raw)
+    if parallelism_configured:
+        if not parallelism or not workers_raw:
+            missing = "performance.semantic_parallelism" if not parallelism else "performance.max_parallel_workers"
+            findings.append(
+                _finding(
+                    "error",
+                    "semantic_parallelism_incomplete",
+                    f"Delegation configuration requires both fields; missing {missing}.",
+                    path,
+                )
+            )
+        if parallelism and parallelism not in SEMANTIC_PARALLELISM_POLICIES:
+            findings.append(
+                _finding(
+                    "error",
+                    "semantic_parallelism_invalid",
+                    "performance.semantic_parallelism must be off, selective_structural, or aggressive_structural.",
+                    path,
+                )
+            )
+        if workers_raw and _int(workers_raw) not in {1, 2, 3}:
+            findings.append(
+                _finding(
+                    "error",
+                    "max_parallel_workers_invalid",
+                    "performance.max_parallel_workers must be an integer from 1 through 3.",
+                    path,
+                )
+            )
+    if acknowledgement_raw and acknowledgement is None:
+        findings.append(
+            _finding(
+                "error",
+                "companion_parallelism_acknowledgement_invalid",
+                "performance.parallelism_notice_acknowledged must be true or false.",
+                path,
+            )
+        )
+    elif required and parallelism_configured and acknowledgement is not True:
+        findings.append(
+            _finding(
+                "error",
+                "companion_parallelism_unacknowledged",
+                "Ready Companion setup requires acknowledgement of the parallelism and model-usage notice.",
+                path,
+            )
+        )
 
     def enum(section: str, values: dict[str, str], key: str, allowed: set[str], *, needed: bool = required) -> None:
         value = _clean(values.get(key, ""))
@@ -1067,10 +1161,43 @@ def _validate_visual_policy(campaign: Path, *, experience_mode: str, findings: l
             findings.append(_finding("error", "companion_dashboard_visual_forbidden", "Companion visual history cannot claim Dashboard placement.", path))
 
 
+def _validate_parallelism_notice(
+    campaign: Path,
+    *,
+    required: bool,
+    findings: list[dict[str, str]],
+) -> None:
+    if not required:
+        return
+    path = campaign / "session_zero.md"
+    if not path.is_file():
+        findings.append(
+            _finding(
+                "error",
+                "companion_parallelism_summary_missing",
+                "Ready Companion setup needs the Session 0 performance summary.",
+                path,
+            )
+        )
+        return
+    text = _read(path, findings)
+    acknowledged = _bool(_field(text, "Companion parallelism usage notice acknowledged"))
+    if acknowledged is not True:
+        findings.append(
+            _finding(
+                "error",
+                "companion_parallelism_summary_unacknowledged",
+                "Session 0 must record acknowledgement of Companion parallelism and model-usage tradeoffs.",
+                path,
+            )
+        )
+
+
 def _validate_companion_view(
     campaign: Path,
     *,
     ready: bool,
+    draft_preflight: bool,
     policy: str,
     state: dict[str, Any],
     findings: list[dict[str, str]],
@@ -1096,14 +1223,21 @@ def _validate_companion_view(
         projection = json.loads(state_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return
-    expected_enabled = ready and policy == "light"
+    # A draft preflight checks the bundled projection's shape and player-safe
+    # contents, but activation is a finalization step after the profile locks.
+    expected_enabled = ready and not draft_preflight and policy == "light"
     if projection.get("enabled") is not expected_enabled:
         findings.append(_finding("error", "companion_view_policy_mismatch", f"Companion View enabled must be {str(expected_enabled).lower()} for the current profile/readiness state.", state_path))
-    if projection.get("public_surface_revision") != state.get("public_surface_revision"):
+    if not draft_preflight and projection.get("public_surface_revision") != state.get("public_surface_revision"):
         findings.append(_finding("error", "companion_view_revision_stale", "Companion View public revision does not match Companion state.", state_path))
 
 
-def check_companion(campaign_path: Path, *, scope: str = "full") -> dict[str, Any]:
+def check_companion(
+    campaign_path: Path,
+    *,
+    scope: str = "full",
+    preflight_ready: bool = False,
+) -> dict[str, Any]:
     campaign = campaign_path.resolve()
     findings: list[dict[str, str]] = []
     if scope not in {"hot", "full"}:
@@ -1120,16 +1254,31 @@ def check_companion(campaign_path: Path, *, scope: str = "full") -> dict[str, An
     if schema < 4 and not experience_mode:
         experience_mode = "rpg"
     ready = _bool(setup.get("ready_for_play", "false")) is True
+    draft_preflight = bool(preflight_ready and not ready)
+    content_ready = bool(ready or draft_preflight)
     setup_revision = _int(setup.get("setup_revision"), default=0)
     profile = _validate_profile(
         campaign,
         experience_mode=experience_mode,
         setup_ready=ready,
+        preflight_ready=draft_preflight,
         setup_revision=setup_revision,
         findings=findings,
     )
+    _validate_parallelism_notice(
+        campaign,
+        required=(
+            content_ready
+            and experience_mode == "companion"
+            and bool(
+                _clean(profile.get("performance", {}).get("semantic_parallelism", ""))
+                or _clean(profile.get("performance", {}).get("max_parallel_workers", ""))
+            )
+        ),
+        findings=findings,
+    )
     if (
-        ready
+        content_ready
         and experience_mode == "companion"
         and _clean(setup.get("session_zero_mode", "")) == "deep"
         and _clean(profile.get("setting", {}).get("mode", "")) == "real_city_fictional_private"
@@ -1140,14 +1289,14 @@ def check_companion(campaign_path: Path, *, scope: str = "full") -> dict[str, An
     _validate_persona(
         campaign,
         primary_id=primary_id,
-        ready=ready and experience_mode == "companion",
+        ready=content_ready and experience_mode == "companion",
         scope=scope,
         relationship=profile.get("relationship", {}),
         findings=findings,
     )
     state = _validate_state(
         campaign,
-        ready=ready and experience_mode == "companion",
+        ready=content_ready and experience_mode == "companion",
         primary_id=primary_id,
         profile_setting=profile.get("setting", {}),
         findings=findings,
@@ -1155,7 +1304,7 @@ def check_companion(campaign_path: Path, *, scope: str = "full") -> dict[str, An
     if scope == "full":
         _validate_user_context(
             campaign,
-            ready=ready and experience_mode == "companion",
+            ready=content_ready and experience_mode == "companion",
             memory_policy=_clean(profile.get("memory", {}).get("user_policy", "")),
             profile_schema=_int(profile.get("schema_version"), default=1),
             findings=findings,
@@ -1168,14 +1317,14 @@ def check_companion(campaign_path: Path, *, scope: str = "full") -> dict[str, An
         )
         _validate_companion_boundaries(
             campaign,
-            ready=ready and experience_mode == "companion",
+            ready=content_ready and experience_mode == "companion",
             relationship=profile.get("relationship", {}),
             state=state,
             findings=findings,
         )
         _validate_disclosure_ledger(
             campaign,
-            ready=ready and experience_mode == "companion",
+            ready=content_ready and experience_mode == "companion",
             primary_id=primary_id,
             deception_policy=_clean(profile.get("relationship", {}).get("deception_policy", "no_direct_lies")),
             profile_schema=_int(profile.get("schema_version"), default=1),
@@ -1183,13 +1332,13 @@ def check_companion(campaign_path: Path, *, scope: str = "full") -> dict[str, An
         )
         _validate_life_authorities(
             campaign,
-            ready=ready and experience_mode == "companion",
+            ready=content_ready and experience_mode == "companion",
             primary_id=primary_id,
             findings=findings,
         )
         _validate_real_city_research(
             campaign,
-            ready=ready and experience_mode == "companion",
+            ready=content_ready and experience_mode == "companion",
             setting=profile.get("setting", {}),
             findings=findings,
         )
@@ -1198,6 +1347,7 @@ def check_companion(campaign_path: Path, *, scope: str = "full") -> dict[str, An
             _validate_companion_view(
                 campaign,
                 ready=ready,
+                draft_preflight=draft_preflight,
                 policy=_clean(profile.get("visuals", {}).get("companion_view", "off")),
                 state=state,
                 findings=findings,
@@ -1222,8 +1372,17 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("campaign_path")
     parser.add_argument("--scope", choices=("hot", "full"), default="full")
+    parser.add_argument(
+        "--preflight-ready",
+        action="store_true",
+        help="Validate draft Companion content as ready without requiring final lock/View activation.",
+    )
     args = parser.parse_args(argv)
-    result = check_companion(Path(args.campaign_path), scope=args.scope)
+    result = check_companion(
+        Path(args.campaign_path),
+        scope=args.scope,
+        preflight_ready=args.preflight_ready,
+    )
     print(json.dumps(result, indent=2, ensure_ascii=True))
     return 0 if result["ok"] else 2
 

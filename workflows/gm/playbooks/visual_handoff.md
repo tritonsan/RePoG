@@ -21,6 +21,13 @@ transaction may be pending.
 
 Do not ask for acceptance before the Player has seen the image.
 
+Visual work stays serial. Do not delegate image generation, draft attachment,
+acceptance, revision, cancellation, gallery updates, Dashboard placement, or
+return-anchor restoration to a sub-agent. The primary agent must retain the
+single transaction and interrupted context through every outcome; parallel
+semantic proposals cannot shorten the external generation call and must never
+race the atomic accept operation.
+
 ## Draft And Revision
 
 Generate drafts under `visuals/_drafts/` and register the actual output with

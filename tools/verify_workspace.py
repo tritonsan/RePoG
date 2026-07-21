@@ -57,6 +57,7 @@ REQUIRED_FILES = (
     "tools/world_voices.py",
     "tools/resolve_mechanic.py",
     "tools/check_style.py",
+    "tools/snapshot.py",
     "tools/migrate_companion_contract.py",
     "tools/migrate_gm_contract.py",
     "tools/gm_replay_suite.json",
@@ -84,8 +85,16 @@ REQUIRED_FILES = (
     "workflows/companion/playbooks/conflict_repair.md",
     "workflows/companion/playbooks/callback_initiative.md",
     "workflows/companion/playbooks/identity_ooc_safety.md",
+    "workflows/orchestration/WORKFLOW.md",
     "workflows/worldbuild/WORKFLOW.md",
+    "workflows/worldbuild/playbooks/companion_setup.md",
+    "workflows/worldbuild/playbooks/finalization.md",
+    "workflows/worldbuild/playbooks/full_reference.md",
+    "workflows/worldbuild/playbooks/research_gate.md",
+    "workflows/worldbuild/playbooks/rpg_quick.md",
+    "workflows/worldbuild/playbooks/rpg_standard_deep.md",
     "docs/companion-mode.md",
+    "docs/semantic-parallelism.md",
 )
 
 REQUIRED_DIRS = (
@@ -104,6 +113,8 @@ REQUIRED_DIRS = (
     "workflows/gm/playbooks",
     "workflows/companion",
     "workflows/companion/playbooks",
+    "workflows/orchestration",
+    "workflows/worldbuild/playbooks",
 )
 
 REQUIRED_LENSES = ("INDEX.md", "fantasy.md", "realistic.md", "cyberpunk.md", "survival.md")
@@ -323,6 +334,163 @@ def _campaign_check(workspace: Path, campaign: Path, scope: str) -> list[dict[st
     return _normalise_findings(result.get("findings"), check="campaign")
 
 
+def _parallelism_profile_text(
+    source: str,
+    *,
+    policy: str | None,
+    workers: str | None,
+    misplaced: bool = False,
+    duplicate_policy: bool = False,
+) -> str:
+    """Return a profile fixture with an exact delegation-field arrangement."""
+
+    text = re.sub(r"(?m)^\s+semantic_parallelism:\s*.*\n?", "", source)
+    text = re.sub(r"(?m)^\s+max_parallel_workers:\s*.*\n?", "", text)
+    fields: list[str] = []
+    if policy is not None:
+        fields.append(f"semantic_parallelism: {policy}")
+        if duplicate_policy:
+            fields.append(f"semantic_parallelism: {policy}")
+    if workers is not None:
+        fields.append(f"max_parallel_workers: {workers}")
+    if not fields:
+        return text
+    if misplaced:
+        return text.rstrip() + "\n" + "\n".join(fields) + "\n"
+    indented = "".join(f"  {field}\n" for field in fields)
+    return text.replace("performance:\n", f"performance:\n{indented}", 1)
+
+
+def _semantic_parallelism_contract_check(workspace: Path) -> list[dict[str, Any]]:
+    """Self-test the public profile parser without pytest or third-party YAML."""
+
+    findings: list[dict[str, Any]] = []
+    state_path = workspace / "tools" / "check_state.py"
+    companion_path = workspace / "tools" / "check_companion.py"
+    play_template = workspace / "campaign" / "play_profile.yaml"
+    companion_template = workspace / "campaign" / "companion_profile.yaml"
+    if not all(path.is_file() for path in (state_path, companion_path, play_template, companion_template)):
+        return findings
+
+    cases = (
+        ("bundled_default", "selective_structural", "3", False, False, set()),
+        ("legacy_omitted", None, None, False, False, set()),
+        ("incomplete", "selective_structural", None, False, False, {"semantic_parallelism_incomplete"}),
+        ("invalid_policy", "always_spawn", "3", False, False, {"semantic_parallelism_invalid"}),
+        ("workers_zero", "selective_structural", "0", False, False, {"max_parallel_workers_invalid"}),
+        ("workers_four", "selective_structural", "4", False, False, {"max_parallel_workers_invalid"}),
+        ("workers_text", "selective_structural", "many", False, False, {"max_parallel_workers_invalid"}),
+        ("misplaced", "selective_structural", "3", True, False, {"semantic_parallelism_misplaced"}),
+        ("duplicate", "selective_structural", "3", False, True, {"semantic_parallelism_duplicate"}),
+    )
+    semantic_rules = {
+        "semantic_parallelism_incomplete",
+        "semantic_parallelism_invalid",
+        "max_parallel_workers_invalid",
+        "semantic_parallelism_misplaced",
+        "semantic_parallelism_duplicate",
+        "companion_parallelism_acknowledgement_invalid",
+        "companion_parallelism_unacknowledged",
+    }
+    try:
+        state_module = _load_module("repog_verify_parallelism_state", state_path)
+        companion_module = _load_module("repog_verify_parallelism_companion", companion_path)
+        templates = {
+            "play": play_template.read_text(encoding="utf-8"),
+            "companion": companion_template.read_text(encoding="utf-8"),
+        }
+        with tempfile.TemporaryDirectory(prefix="repog-parallelism-check-") as temp_root:
+            root = Path(temp_root)
+            for profile_kind, source in templates.items():
+                for case_id, policy, workers, misplaced, duplicate_policy, expected in cases:
+                    case_path = root / profile_kind / case_id
+                    case_path.mkdir(parents=True, exist_ok=True)
+                    text = _parallelism_profile_text(
+                        source,
+                        policy=policy,
+                        workers=workers,
+                        misplaced=misplaced,
+                        duplicate_policy=duplicate_policy,
+                    )
+                    if profile_kind == "companion" and case_id == "legacy_omitted":
+                        text = re.sub(
+                            r"(?m)^\s+parallelism_notice_acknowledged:\s*.*\n?",
+                            "",
+                            text,
+                        )
+                    profile_name = "play_profile.yaml" if profile_kind == "play" else "companion_profile.yaml"
+                    profile_path = case_path / profile_name
+                    profile_path.write_text(text, encoding="utf-8")
+
+                    parser_findings: list[dict[str, Any]] = []
+                    effective = state_module._check_semantic_parallelism(
+                        profile_path,
+                        parser_findings,
+                        text=text,
+                    )
+                    actual = {item.get("rule") for item in parser_findings} & semantic_rules
+
+                    if profile_kind == "companion":
+                        companion_findings: list[dict[str, str]] = []
+                        companion_module._validate_profile(
+                            case_path,
+                            experience_mode="",
+                            setup_ready=False,
+                            preflight_ready=False,
+                            setup_revision=0,
+                            findings=companion_findings,
+                        )
+                        actual |= {item.get("rule") for item in companion_findings} & semantic_rules
+
+                    if actual != expected:
+                        findings.append(
+                            _finding(
+                                "error",
+                                "semantic_parallelism_self_test_failed",
+                                f"{profile_kind}/{case_id} expected {sorted(expected)} but found {sorted(actual)}.",
+                                profile_path,
+                                check="parallelism",
+                            )
+                        )
+                    if case_id == "bundled_default" and effective != {
+                        "semantic_parallelism": "selective_structural",
+                        "max_parallel_workers": 3,
+                    }:
+                        findings.append(
+                            _finding(
+                                "error",
+                                "semantic_parallelism_default_failed",
+                                f"{profile_kind} bundled default did not resolve to selective_structural/3.",
+                                profile_path,
+                                check="parallelism",
+                            )
+                        )
+                    if case_id == "legacy_omitted" and effective != {
+                        "semantic_parallelism": "off",
+                        "max_parallel_workers": 1,
+                    }:
+                        findings.append(
+                            _finding(
+                                "error",
+                                "semantic_parallelism_legacy_failed",
+                                f"{profile_kind} omitted fields did not resolve to legacy off/1.",
+                                profile_path,
+                                check="parallelism",
+                            )
+                        )
+    except Exception as exc:
+        findings.append(
+            _finding(
+                "error",
+                "semantic_parallelism_self_test_crashed",
+                str(exc),
+                state_path,
+                check="parallelism",
+            )
+        )
+    return findings
+
+
 def _dashboard_check(workspace: Path, campaign: Path) -> list[dict[str, Any]]:
     check_path = workspace / "tools" / "check_dashboard.py"
     state_path = campaign / "dashboard" / "dashboard_state.json"
@@ -346,13 +514,18 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
     campaign_checker = workspace / "tools" / "check_state.py"
     view_checker = workspace / "tools" / "check_companion_view.py"
     migration_tool = workspace / "tools" / "migrate_companion_contract.py"
-    if not state_tool.is_file() or not campaign_checker.is_file() or not view_checker.is_file() or not migration_tool.is_file():
+    snapshot_tool = workspace / "tools" / "snapshot.py"
+    if not all(
+        path.is_file()
+        for path in (state_tool, campaign_checker, view_checker, migration_tool, snapshot_tool)
+    ):
         return findings
     try:
         state_module = _load_module("repog_verify_companion_state", state_tool)
         check_module = _load_module("repog_verify_companion_route", campaign_checker)
         view_module = _load_module("repog_verify_companion_view", view_checker)
         migration_module = _load_module("repog_verify_companion_migration", migration_tool)
+        snapshot_module = _load_module("repog_verify_snapshot", snapshot_tool)
         with tempfile.TemporaryDirectory(prefix="repog-companion-check-") as temp_root:
             root = Path(temp_root)
             clock_campaign = root / "clock"
@@ -684,6 +857,7 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
                 ('  allowed_scope: ""', "  allowed_scope: friendship"),
                 ("  primary_companion_is_adult: false", "  primary_companion_is_adult: true"),
                 ("  boundaries_confirmed: false", "  boundaries_confirmed: true"),
+                ("  parallelism_notice_acknowledged: false", "  parallelism_notice_acknowledged: true"),
             )
             for old, new in replacements:
                 profile_text = profile_text.replace(old, new, 1)
@@ -756,7 +930,13 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
             relationship_path = ready_campaign / "relationship_map.md"
             relationship_path.write_text("""# Relationship Map\n\nAs of revision: 0\n\n| From | Direction | To | Relation | Status | Trust / debt / tension | Knowledge asymmetry | Player-known | Last changed | Revision |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: |\n| Alex | <-> | Jamie | work friends | active | familiar trust | Jamie knows the project pressure | yes | setup | 0 |\n""", encoding="utf-8")
             session_zero_path = ready_campaign / "session_zero.md"
-            session_zero_path.write_text(session_zero_path.read_text(encoding="utf-8").replace(": open", ": defaulted"), encoding="utf-8")
+            session_zero_text = session_zero_path.read_text(encoding="utf-8").replace(": open", ": defaulted")
+            session_zero_text = session_zero_text.replace(
+                "- Companion parallelism usage notice acknowledged: no",
+                "- Companion parallelism usage notice acknowledged: yes",
+                1,
+            )
+            session_zero_path.write_text(session_zero_text, encoding="utf-8")
             research_path = ready_campaign / "research_dossier.md"
             research_text = research_path.read_text(encoding="utf-8").replace("- Status: `needed_pending`", "- Status: `not_needed`", 1).replace("- Current-scale lock permitted: no", "- Current-scale lock permitted: yes", 1)
             research_path.write_text(research_text, encoding="utf-8")
@@ -767,6 +947,27 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
             ready_view = json.loads(view_path.read_text(encoding="utf-8"))
             ready_view.update({"enabled": True, "identity": {"name": "Alex", "pronouns": "they/them", "tagline": "Coffee first, presentation later."}, "local_clock": {"label": "Alex's local time", "timezone": "UTC"}})
             view_path.write_text(json.dumps(ready_view, indent=2) + "\n", encoding="utf-8")
+
+            current_state_path = ready_campaign / "current_state.yaml"
+            current_state_path.write_text(
+                current_state_path.read_text(encoding="utf-8").replace(
+                    "campaign_id: new_campaign",
+                    "campaign_id: companion_fixture",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            snapshot_result = snapshot_module.create_snapshot(ready_campaign, "verify-ready")
+            if not snapshot_result.get("ok"):
+                findings.append(
+                    _finding(
+                        "error",
+                        "companion_ready_snapshot_failed",
+                        "The public snapshot helper could not create a ready Companion snapshot.",
+                        snapshot_tool,
+                        check="companion",
+                    )
+                )
 
             ready_result = check_module.check_campaign(ready_campaign, scope="full")
             if ready_result.get("error_count") != 0:
@@ -896,6 +1097,7 @@ def verify_workspace(workspace: Path, *, campaign: Path | None = None, scope: st
     workspace = workspace.resolve()
     campaign_path = (campaign or workspace / "campaign").resolve()
     campaign_findings = _campaign_check(workspace, campaign_path, scope)
+    campaign_findings.extend(_semantic_parallelism_contract_check(workspace))
     campaign_findings.extend(_companion_contract_check(workspace, campaign_path))
     grouped = {
         "layout": _check_layout(workspace),

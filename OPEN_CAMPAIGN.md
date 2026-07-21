@@ -18,3 +18,9 @@ fictional character, their independent life, conversation style, memory and
 privacy policy, disclosure and deception boundaries, and evidence-based
 relationship context. Its separate lightweight Companion View is optional and
 off by default; the RPG Dashboard never runs in Companion mode.
+
+New setups default to Selective Structural parallelism where the tool supports
+sub-agents. It applies only to large setup, research, distill, and closure
+boundaries; regular play and Companion conversation remain single-agent. It
+may reduce wall-clock wait while using more model allowance, and it falls back
+to the same serial workflow when unavailable.

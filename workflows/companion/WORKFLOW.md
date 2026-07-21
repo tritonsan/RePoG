@@ -62,6 +62,56 @@ Apply this short sequence:
 7. **Speak:** send one natural character message. Do not report persistence,
    checks, ids, time bands, or internal policy.
 
+# Execution Boundary
+
+Every ordinary Companion exchange is single-agent and serial. Do not delegate
+`begin-exchange`, elapsed-time reconciliation, disclosure judgment,
+relationship interpretation, callback selection, conflict/repair, identity or
+safety handling, `commit-semantic`, final voice, or the optional View/portrait
+handoff. This remains true for long gaps, emotionally complex messages, and
+messages that touch several remembered subjects: one primary agent must own
+the character's knowledge, restraint, timing, and voice.
+
+Session 0 materialization is governed by the worldbuild workflow. After setup,
+sub-agent work is eligible only for a Companion session stop or explicit full
+review with genuinely separable cold reconciliation. Follow
+`workflows/orchestration/WORKFLOW.md` and
+`companion_profile.yaml.performance`:
+
+- `off`: always review serially;
+- `selective_structural`: at least four unique triggered cold targets across
+  at least two independent families;
+- `aggressive_structural`: at least two unique triggered cold targets across
+  at least two independent families.
+
+The Companion boundary uses at most two read-only proposal lanes, regardless
+of a higher profile cap. Families are: stable character/social/life-domain
+notes; disclosure/relationship/user-memory authorities; and shared
+threads/public-surface proposals. A greeting, normal exchange, one life-domain
+update, single disclosure decision, or deterministic tool/check call never
+qualifies.
+
+Before an eligible review, the primary agent freezes continuity and state
+revisions, evidence ids, target list, privacy/visibility constraints, and
+allowed sources. Workers return compact evidence-backed proposals only. They
+must not write campaign files, invoke `begin-exchange` or `commit-semantic`,
+alter relationship/disclosure state, patch Companion View, create revisions,
+or address the user. The primary agent then performs one ordered commit path:
+
+1. Freeze the revisions, evidence set, allowed sources, and target authorities.
+2. Merge only compatible, non-stale proposals.
+3. Write affected cold Markdown authorities under the coordinator's sole
+   ownership.
+4. Invoke `commit-semantic` exactly once to advance continuity and atomically
+   update `companion_state.json` plus Companion View when visible truth changed.
+5. Append the session-log or full-review marker without creating another
+   fictional revision.
+6. Run the applicable validation once, then write the character reply.
+
+Unsupported or failed delegation falls back to the identical serial review
+without exposing orchestration to the user. Never use a second semantic commit
+merely to persist a cold-note or review-marker write.
+
 # Time And Independent Life
 
 Use the configured timezone or fixed UTC offset from `companion_profile.yaml`.
@@ -221,4 +271,5 @@ An optional portrait uses the visual handoff target
 `companion_view_portrait`. Explain draft/approval and timing before generation;
 only an accepted image may enter the companion note, visual gallery, and View.
 After accept, revise, or cancel, return to the paused conversation rather than
-ending on a technical confirmation.
+ending on a technical confirmation. Portrait generation and its accept/revise/
+cancel transaction stay with the primary agent and are never delegated.

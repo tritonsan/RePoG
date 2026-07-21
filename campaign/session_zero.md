@@ -24,6 +24,11 @@ Keep each module short, current, and useful at the table.
 - Expected routine turn: pending
 - Expected durable turn: pending
 - Expected structural / boundary turn: pending
+- Semantic parallelism: selective_structural (default; structural boundaries
+  only, when supported)
+- Maximum parallel workers: 3 (Quick materialization is capped at 2)
+- Parallelism tradeoff: potentially shorter structural waits with higher model
+  usage; unsupported tools use the same serial workflow
 - Dashboard refresh cost: approximately +1–2 minutes when run
 - Companion View cost: no ordinary-message refresh; a small local update only
   when already-shared visible truth changes
@@ -87,6 +92,9 @@ RPG Module Status block participates in readiness.
 - Companion View: off | light
 - RPG Dashboard: off
 - Exchange persistence: single_begin_exchange
+- Semantic parallelism: off | selective_structural | aggressive_structural
+- Maximum parallel workers: 1–3
+- Companion parallelism usage notice acknowledged: no
 - Defaulted persona/life decisions:
 - Deferred decisions:
 
@@ -234,6 +242,8 @@ See `research_dossier.md`.
 - Dashboard refresh policy:
 - Style review policy:
 - Latency notice policy:
+- Semantic parallelism: off | selective_structural | aggressive_structural
+- Maximum parallel workers: 1–3
 - Performance estimate acknowledged:
 
 Materialize accepted runtime choices in `play_profile.yaml`. Keep

@@ -197,6 +197,55 @@ second continuity revision. If the distill itself establishes a new closure,
 reward, world reaction, or other durable fiction, first create one matching
 durable revision event, then distill through that revision.
 
+## Selective Structural Delegation
+
+Read `play_profile.yaml.performance.semantic_parallelism` and
+`max_parallel_workers`, then follow
+`workflows/orchestration/WORKFLOW.md`. Delegation changes wall-clock
+coordination only; it does not change sources of truth, persistence cadence,
+revision semantics, or the final validation gate.
+
+Count unique pending cold targets after deduplication and group them into these
+independent authority families:
+
+- world pressure and ecology: world truths, issues, dynamics, and factions;
+- cast and social state: character notes, active cast, and relationships;
+- place and spatial state: place notes, routes, location graph, and Atlas input;
+- information and source state: knowledge, clues, research, and canon limits;
+- presentation and carry-forward: threads, briefs, style, World Voices archive,
+  and player-safe projection proposals.
+
+Use these exact eligibility thresholds:
+
+- `off`: always distill serially;
+- `selective_structural`: two read-only lanes at four or more cold targets
+  spanning at least two authority families; up to three lanes only at eight or
+  more targets spanning at least three families;
+- `aggressive_structural`: two read-only lanes at two or more cold targets
+  spanning at least two authority families; up to three lanes at six or more
+  targets spanning at least three families.
+
+Never exceed the profile cap, three workers, or the number of genuinely
+independent families. A scene checkpoint, ordinary session summary, single
+authority-family reconciliation, or one deterministic tool/check call remains
+serial regardless of policy.
+
+Before delegation, the primary agent freezes the base continuity revision,
+pending event range, deduplicated targets, entity ids, visibility constraints,
+and allowed sources. Assign disjoint authority families and request compact
+evidence-backed proposals only. Workers must not write files, call mutating
+campaign tools, create revisions/events, clear targets, mark work distilled,
+patch Dashboard/Atlas/View state, or speak to the Player.
+
+The primary agent waits for the requested lanes, rejects any result whose base
+revision is stale, resolves cross-family conflicts, and applies the smallest
+coherent update. It alone owns `current_state.yaml`, `session_log.md`,
+`knowledge_boundaries.md`, continuity revision, distilled-through markers,
+pending-target clearing, projections, and final narration. Run the relevant
+full check once after consolidation, not once per worker. If delegation is
+unsupported or any lane fails, conflicts, or arrives stale, complete that lane
+serially and never claim partial completion.
+
 # Deferred Note Enrichment
 
 A T2/T3 element created during play may begin as a small playable card rather
@@ -276,8 +325,10 @@ profile's presentation policy:
   next act that depends on the choice; a calm aftermath or breather may
   continue.
 
-A post-arc opening may be drafted while a choice waits, but dependent next-act
-play must not begin.
+When a reward choice is required, do not begin `next_act_prep.md` or draft the
+post-arc opening while it waits. A calm aftermath/breather may continue, but
+next-act preparation starts only after the Player chooses or explicitly
+defers a choice confirmed not to affect that next act.
 
 # Carry-Forward Review
 
@@ -312,6 +363,14 @@ questions are answered/defaulted and any advancement choice on which the next
 act depends is cleared. Automatic fictional advancement does not require a
 separate OOC clearance. After narration uses the opening, mark it `consumed`;
 do not change the already historical `first_session.md` lifecycle.
+
+For a scenario, arc, or campaign closure eligible for structural delegation,
+use the dependency order from the GM scene/arc playbook: closure/reward
+evidence and world/cast consequences may be proposed in parallel first; a
+carry-forward/opening lane may start only after any required reward choice is
+resolved. Beat and session closure stay serial. The primary agent alone
+records the closure, applies the reward, writes next-act memory, activates the
+opening, and exposes the result to the Player.
 
 # Memory Hygiene
 
@@ -490,6 +549,14 @@ Corrections, replies, retractions, and superseding editions append and link new
 history; never rewrite or delete the original body. Player-authored wording is
 persisted only after explicit approval. Later reactions wait for a believable
 receipt trigger and do not recursively cascade in the same turn.
+
+When one trigger produces at least three independent artifacts and the
+performance policy permits structural delegation, their bounded prose drafts
+may follow the World Voices playbook's read-only author lanes. The primary
+agent still performs every existence, claim, canon, knowledge, distribution,
+revision, archive, catalog, and Dashboard decision serially. Parallel artifact
+drafting is not permission to parallelize persistence or to combine hidden and
+player-visible state in one worker packet.
 
 # Dashboard Distill
 

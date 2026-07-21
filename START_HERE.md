@@ -25,6 +25,12 @@ resolution is fictional, band-based, or numeric, and how often the campaign
 should offer calm breather scenes. Quick uses visible recommended defaults, so
 these additions do not create extra setup questions.
 
+Quick also defaults to Selective Structural parallelism when the agentic tool
+supports it. This can reduce the wait at world materialization and other large
+boundaries by preparing independent proposals in parallel, at the cost of
+potentially higher model usage. It never parallelizes ordinary RPG or
+Companion replies, and unsupported tools fall back to the same serial flow.
+
 Session 0 may combine fantasy, realistic, cyberpunk, and survival lenses, but a
 lens never activates mechanics by itself. Dice, strict inventory, wounds,
 clocks, structured travel, and other tracked rules are used only after you

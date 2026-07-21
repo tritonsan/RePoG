@@ -224,6 +224,23 @@ The setup interview shows typical wait ranges and separately explains the
 extra time for dashboard refreshes and generated images. These are planning
 estimates rather than guarantees.
 
+### Selective structural parallelism
+
+New workspaces also use **Selective Structural** parallelism when the active
+agentic tool supports sub-agents. RePoG may split independent proposal work at
+Session 0 completion, multi-domain research, a large full distill, or a major
+arc closure, then let the coordinating agent merge and validate it once. This
+can shorten those exceptional waits, but it may use more model allowance.
+
+Ordinary RPG turns and Companion messages stay single-agent so their intent,
+voice, and immediate continuity remain coherent. Supporting agents never
+write campaign state or speak to the player. Tools without sub-agent support
+run the same work serially, with no missing features. Existing campaigns keep
+parallelism off until it is explicitly migrated or selected.
+
+See [Selective Structural Parallelism](docs/semantic-parallelism.md) for the
+exact boundaries, provisional timing ranges, and repeatable benchmark method.
+
 ## What RePoG Keeps Coherent
 
 - current scene, fictional time, character state, inventory, and pressure;

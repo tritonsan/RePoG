@@ -4,6 +4,8 @@ source_setup_revision: 0
 # profile_status: pending | locked | inactive
 # Set inactive when setup_profile.experience_mode is companion.
 performance:
+  semantic_parallelism: selective_structural
+  max_parallel_workers: 3
   turn_protocol: ""
   cold_distill_policy: ""
   validation_policy: ""
@@ -127,3 +129,6 @@ visuals:
 # performance.cold_distill_policy: every_durable |
 #   scene_checkpoint_or_3_durable | scene_checkpoint_or_5_durable |
 #   scene_checkpoint_only
+# performance.semantic_parallelism: off | selective_structural |
+#   aggressive_structural
+# performance.max_parallel_workers: 1 | 2 | 3
