@@ -7,34 +7,18 @@ extracted folder, and start a new conversation.
 
 ## Full Walkthrough
 
-This walkthrough shows the earlier public RPG flow. It predates the latest
-Build Week additions, including World Voices, Atlas V1, the rebuilt GM
-contract, and AI Companion mode; the Build Week evidence below documents those
-extensions separately.
+This walkthrough shows the earlier public RPG flow. The current workspace also
+includes World Voices, Atlas V1, the rebuilt GM contract, and AI Companion
+mode.
 
 [![Watch the RePoG demo](https://img.youtube.com/vi/jpXtyfrd5k0/maxresdefault.jpg)](https://youtu.be/jpXtyfrd5k0)
 
 ▶ **[Watch the full RePoG demo on YouTube](https://youtu.be/jpXtyfrd5k0)**
 
-## OpenAI Build Week
+## What RePoG Includes
 
-RePoG entered OpenAI Build Week as an existing, playable RPG workspace. Commit
-`7ccfd90` records that baseline: a single-campaign product with a basic Session
-0, campaign memory, Dashboard V2, and 249 passing tests. The Build Week work is
-a documented, meaningful extension of that foundation rather than a claim that
-the entire repository was created during the competition.
-
-I used **GPT-5.6 Sol inside OpenAI Codex** as the primary development model. I
-set the product constraints: keep the workspace local and readable, preserve
-creative model judgment, avoid a second narrative engine, protect player
-authorship and private information, and do not make ordinary turns pay for
-checks they do not need. GPT-5.6 Sol then helped audit the existing repository,
-compare architectures, turn those decisions into implementation plans, edit
-interdependent Markdown, YAML, JSON, Python, HTML, CSS, and JavaScript files,
-run focused and full tests, inspect browser behavior, and revise features after
-play and interface audits.
-
-The resulting Build Week upgrade has seven connected parts:
+RePoG combines seven connected systems while keeping the workspace local,
+readable, and usable as a downloaded folder:
 
 1. **Adaptive setup:** separate RPG Campaign and AI Companion routes; Quick,
    Standard, and Deep depth; contextual Starter Bundles; composable lenses;
@@ -62,17 +46,10 @@ The resulting Build Week upgrade has seven connected parts:
    projections, browser smoke coverage, dependency-free verification, and 317
    passing development tests.
 
-The value of GPT-5.6 Sol was not simply producing code faster. Many changes
-crossed Session 0, runtime instructions, campaign authority, validators,
-migrations, privacy rules, and browser interfaces at the same time. Codex made
-it possible to reason across those contracts as one product and then verify
-that the resulting workspace still remained usable as a simple downloaded
-folder.
-
-The public distribution does not embed or require a separate GPT-5.6 API call.
-The Build Week contribution is the product and engineering work completed with
-GPT-5.6 Sol in Codex. See [`HACKATHON.md`](HACKATHON.md) for the evidence ledger
-and [`JUDGING.md`](JUDGING.md) for the shortest testing path.
+The public distribution does not embed or require a separate model API call.
+It uses the capabilities already available in the agentic tool where the
+workspace is opened, while deterministic local helpers protect hard state and
+continuity rules.
 
 ## Start
 
