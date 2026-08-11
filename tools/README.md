@@ -17,6 +17,80 @@ session stop, closure, advancement, migration, and audit boundaries. A scene
 checkpoint alone persists its small handoff contract and does not force a full
 distill.
 
+## Deep Session 0 v8 State
+
+Schema-v8 RPG Deep keeps its canonical interview ledger separate from the
+human-readable `session_zero.md` projection:
+
+```bash
+python tools/session_zero_state.py campaign status
+python tools/session_zero_state.py campaign record-decision --operation-id s0-001 --expected-revision 0 --decision-id 01_campaign_frame_and_reach --stage-id 01_north_star_authority --status locked --source player --value-json '{"campaign_promise":"A grounded frontier mystery","reach":"contained"}'
+python tools/session_zero_state.py campaign complete-stage --operation-id s0-stage-01 --expected-revision 6 --stage-id 01_north_star_authority --output-refs-json '["campaign_one_pager.md","world.md","boundaries.md","creation_ledger.md"]' --output-digest sha256:replace_with_current_digest
+python tools/session_zero_state.py campaign record-gate --operation-id s0-gate-research --expected-revision 12 --gate-id research_scope_locked --input-digest sha256:replace_with_input_digest --output-digest sha256:replace_with_output_digest --decided-by coordinator
+python tools/session_zero_state.py campaign render-summary
+```
+
+The mutation lines are schematic: use `status` to read the current revision and
+replace each digest placeholder with the digest of the exact materialized input
+or output set. Stage completion evidence is owner-bounded. For example, Stage 1
+must cover its non-deferred campaign-promise, world, boundary, and
+creation-ledger owners shown above; the helper rejects missing or unrelated
+references. The world-independent character core is materialized in Stage 3,
+and `player.md` remains a Stage 5 output rather than an early authority artifact.
+
+After `draft_preflight_passed`, use its resulting revision for the locked
+profiles and both commands below. First create the snapshot with
+`python tools/snapshot.py campaign --label session-zero-start`. Append
+`snapshot_manifest.json` to its returned `snapshot_path`, convert that file to a
+campaign-relative ref, and pass it to the evidence helper:
+
+```bash
+python tools/session_zero_state.py campaign prepare-ready-evidence --operation-id s0-ready-evidence-001 --expected-revision REPLACE_WITH_CURRENT_REVISION --snapshot-ref snapshots/REPLACE_session-zero-start/snapshot_manifest.json --aggregate-check-ref snapshots/deep-v8-readiness.json
+python tools/session_zero_state.py campaign record-gate --operation-id s0-ready-001 --expected-revision REPLACE_WITH_CURRENT_REVISION --gate-id ready_and_snapshotted --input-digest REPLACE_WITH_DRAFT_PREFLIGHT_OUTPUT_DIGEST --output-digest REPLACE_WITH_EVIDENCE_SNAPSHOT_DIGEST --decided-by coordinator --evidence-json 'REPLACE_WITH_EXACT_EVIDENCE_OBJECT'
+```
+
+These readiness lines are schematic only in their `REPLACE_...` values; the
+command names and arguments are exact. `prepare-ready-evidence` runs
+`check_state.py --scope full --preflight-ready`, writes and validates the
+manifest-authorized aggregate report, and returns the complete `evidence`
+object. Pass that object unchanged to the final gate. The profiles are already
+locked, but `setup_profile.yaml` remains `in_progress` and not ready while the
+evidence is produced. `ready_and_snapshotted` is revision-neutral and is the
+only operation that atomically projects `complete` / `ready_for_play: true`.
+
+Every mutation requires a stable operation id and the current expected setup
+revision. The helper atomically advances the ledger and the three progress
+mirrors in `setup_profile.yaml`; retries are idempotent and stale revisions are
+rejected. It does not interpret answers, invent world truth, or activate an
+extension from free text. The coordinator supplies only trigger tags listed in
+the Deep manifest and materializes semantic owner files before closing a stage.
+
+## RPG Durable Transactions
+
+```bash
+python tools/rpg_state.py campaign commit-durable --input-json "{...}"
+python tools/rpg_state.py campaign commit-checkpoint --input-json "{...}"
+```
+
+`rpg_state.py` is a semantic-free writer, not a narrative checker. The GM
+supplies the established durable changes, their immediate owner paths, exact
+model-authored mutations, and any deferred secondary targets. One
+`commit-durable` call stages all candidates before writing, appends one
+structured revision event, advances continuity and the durable counter once,
+and either commits every target or restores their byte-exact prior contents.
+Operation ids and payload hashes make the latest retry idempotent. An
+interrupted write leaves a local `.repog-transactions/` recovery journal; a
+subsequent RPG transaction restores an unfinished commit before accepting new
+work, while ambiguous recovery blocks further mutation.
+
+`commit-checkpoint` is only for a resumability-only handoff with no new durable
+fiction; it updates the scene frame and optional active-cast handoff without a
+continuity revision. A successful durable response with
+`full_distill_required: true` has safely stored current truth but sets
+`narration_allowed: false` until the routed full distill completes. Neither
+command decides whether a turn was soft, what happened in the fiction, which
+facts matter, or what the Player should be told.
+
 For AI Companion workspaces, the shared state checker routes automatically and
 does not apply RPG player/opening/arc readiness rules. The focused commands
 are:
@@ -53,6 +127,18 @@ Run the dependency-free distributable smoke check with:
 python tools/verify_workspace.py
 python tools/verify_workspace.py --json
 ```
+
+Maintainers can also enforce the public-package boundary and build a clean
+release from the committed canonical source:
+
+```bash
+python -B tools/build_distribution.py --target ../RePoG-release --archive ../RePoG-release.zip
+python -B ../RePoG-release/tools/verify_workspace.py ../RePoG-release --distribution
+```
+
+The builder packages `HEAD`, not the mutable working tree, then writes a
+SHA-256 manifest. See `DISTRIBUTION.md` for the canonical-source and vendor
+license contract.
 
 ## Dashboard, Companion View, And Visual Transactions
 
@@ -123,6 +209,22 @@ idempotent, preserves fiction prose, maps legacy scene-boundary persistence
 names to scene-checkpoint policies, and marks uncertain NPC agency/offscreen,
 opening-lifecycle, faction-motion, relationship, and knowledge ownership for
 review rather than inventing answers.
+
+## Deep Session 0 v7-to-v8 Migration
+
+```bash
+python tools/migrate_session_zero_v8.py --campaign campaign --dry-run
+python tools/snapshot.py campaign --label before_session_zero_v8
+python tools/migrate_session_zero_v8.py --campaign campaign --apply --json
+```
+
+Pending or routing-only schema-v7 setups can move to the v8 shell without a
+snapshot. Applying a migration to an in-progress RPG Deep setup requires an
+existing full campaign snapshot. Reliable legacy decisions are preserved;
+cross-stage pack and approval assumptions are reopened as `needs_review`
+instead of being claimed as valid v8 evidence. Completed v7 campaigns and
+Quick, Standard, or Companion routes remain untouched. Dry-run is read-only and
+a second apply is idempotent.
 
 ## Companion Contract Migration
 

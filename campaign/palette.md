@@ -5,6 +5,13 @@ Campaign id: `new_campaign`
 Use the palette to keep tone and worldbuilding coherent. This is a Yes / No /
 Maybe list, not a full setting bible.
 
+Those three words are the internal record. Never ask the Player to answer in
+them: describe each element in plain language, in the Player's own language,
+saying what it would mean at the table, then file the answer here. "Maybe" is
+never a sentence to say out loud—phrase it as what it actually means, such as
+appearing rarely, staying at the edges, or being asked about before it enters a
+scene.
+
 ## Yes
 
 Elements, themes, tropes, motifs, powers, factions, problems, and storytelling

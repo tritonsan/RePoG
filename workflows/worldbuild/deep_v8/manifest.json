@@ -1,0 +1,1069 @@
+{
+  "schema_version": 8,
+  "workflow_id": "rpg_deep_v8",
+  "title": "RPG Deep Session 0 v8",
+  "entry_conditions": [
+    "experience_mode == rpg",
+    "session_zero_mode == deep",
+    "ready_for_play == false"
+  ],
+  "statuses": {
+    "stage": [
+      "not_started",
+      "active",
+      "needs_review",
+      "complete",
+      "stale"
+    ],
+    "decision": [
+      "locked",
+      "defaulted",
+      "deferred"
+    ],
+    "extension": [
+      "not_applicable",
+      "active",
+      "complete",
+      "defaulted"
+    ]
+  },
+  "invariants": {
+    "one_decision_per_message": true,
+    "critical_owner_write_is_immediate": true,
+    "stage_completion_requires_materialized_owners": true,
+    "fixed_plot_before_stage_09": false,
+    "player_approval_ids": [
+      "09_design_direction_review",
+      "09_preparation_approval"
+    ],
+    "integrated_review_and_preparation_approval_share_one_player_decision": true,
+    "unlisted_trigger_tags_may_activate_extensions": false
+  },
+  "owner_refs": {
+    "setup_progress": "campaign/setup_profile.yaml",
+    "decision_log": "campaign/session_zero.md",
+    "campaign_promise": "campaign/campaign_one_pager.md",
+    "research": "campaign/research_dossier.md",
+    "boundaries": "campaign/boundaries.md",
+    "palette": "campaign/palette.md",
+    "character_core": "campaign/character_foundation.md",
+    "player": "campaign/player.md",
+    "appearance": "campaign/appearance_guide.md",
+    "world": "campaign/world.md",
+    "world_truths": "campaign/world_truths.md",
+    "issues": "campaign/issues.md",
+    "world_dynamics": "campaign/world_dynamics.md",
+    "play_profile": "campaign/play_profile.yaml",
+    "system_fit": "campaign/system_fit.md",
+    "rules": "campaign/rules.md",
+    "progression": "campaign/progression.md",
+    "faces_places": "campaign/faces_and_places.md",
+    "characters": "campaign/characters/",
+    "places": "campaign/places/",
+    "factions": "campaign/factions/",
+    "creation_ledger": "campaign/creation_ledger.md",
+    "location_graph": "campaign/location_graph.md",
+    "relationships": "campaign/relationship_map.md",
+    "knowledge": "campaign/knowledge_boundaries.md",
+    "player_ties": "campaign/player_ties.md",
+    "threads": "campaign/threads.md",
+    "storytelling": "campaign/storytelling.md",
+    "visual_policy": "campaign/visual_style.md",
+    "first_session": "campaign/first_session.md",
+    "opening": "campaign/opening_brief.md",
+    "current_state": "campaign/current_state.yaml",
+    "active_cast": "campaign/active_cast.md",
+    "mechanics_state": "campaign/mechanics_state.json",
+    "snapshot": "campaign/snapshots/"
+  },
+  "topologies": {
+    "exploration_survival": {
+      "activation_trigger": "play_focus.exploration",
+      "build_order": [
+        "places_and_routes",
+        "independent_pressures",
+        "institutions",
+        "npcs"
+      ]
+    },
+    "political_intrigue": {
+      "activation_trigger": "play_focus.political_intrigue",
+      "build_order": [
+        "independent_pressures",
+        "institutions",
+        "reach_and_places",
+        "representatives"
+      ]
+    },
+    "personal_drama": {
+      "activation_trigger": "character.deep_personal_integration",
+      "build_order": [
+        "everyday_places",
+        "institutions",
+        "npc_relationships",
+        "independent_pressures"
+      ]
+    },
+    "mixed": {
+      "build_order": [
+        "stage_01_primary_topology",
+        "primary_prerequisites_complete",
+        "one_secondary_topology"
+      ],
+      "secondary_limit": 1
+    }
+  },
+  "structured_contracts": {
+    "creation_authority": {
+      "decision_id": "01_creation_authority",
+      "modes": {
+        "approval_first": {
+          "allow_derived_world_generation": false
+        },
+        "bounded_inference": {
+          "allow_derived_world_generation": true
+        },
+        "broad_world_preparation": {
+          "allow_derived_world_generation": true
+        }
+      },
+      "world_generative_decision_ids": [
+        "04_world_operating_model",
+        "04_macro_frame_and_local_channels",
+        "04_starting_aperture",
+        "04_world_palette",
+        "04_independent_pressures",
+        "04_everyday_life_and_open_unknowns",
+        "06_salient_ecology",
+        "06_relationship_pattern",
+        "08_two_way_reciprocity",
+        "08_campaign_horizon",
+        "09_first_act_frame",
+        "09_opening_shape"
+      ]
+    },
+    "research": {
+      "status_decision_id": "02_research_need_and_permission",
+      "lock_decision_id": "02_current_scale_lock",
+      "statuses": [
+        "not_needed",
+        "needed_pending",
+        "partial_complete",
+        "complete",
+        "unavailable_risk_accepted"
+      ],
+      "permissions": [
+        "not_needed",
+        "approved",
+        "declined"
+      ]
+    },
+    "topology": {
+      "intent_decision_id": "01_primary_topology_intent",
+      "activation_decision_id": "06_topology_activation"
+    }
+  },
+  "final_readiness_contract": {
+    "snapshot_owner_ref": "snapshot",
+    "snapshot_label": "session-zero-start",
+    "snapshot_manifest_patterns": [
+      "snapshots/*_session-zero-start/snapshot_manifest.json"
+    ],
+    "selected_profile_ref": "campaign/play_profile.yaml",
+    "unused_profile_ref": "campaign/companion_profile.yaml",
+    "aggregate_report_patterns": [
+      "snapshots/*readiness*.json"
+    ],
+    "aggregate_report_kind": "deep-v8-aggregate-check"
+  },
+  "extensions": {
+    "character_interior": {
+      "stages": [
+        "03_character_core"
+      ],
+      "owner_refs": [
+        "character_core",
+        "boundaries",
+        "decision_log"
+      ]
+    },
+    "world_fabric": {
+      "stages": [
+        "04_thin_world_kernel"
+      ],
+      "owner_refs": [
+        "world",
+        "world_truths",
+        "issues",
+        "world_dynamics"
+      ]
+    },
+    "mechanics_detail": {
+      "stages": [
+        "05_character_realization_mechanics"
+      ],
+      "owner_refs": [
+        "play_profile",
+        "system_fit",
+        "rules",
+        "mechanics_state"
+      ]
+    },
+    "location_network": {
+      "stages": [
+        "06_living_world_ecology"
+      ],
+      "owner_refs": [
+        "location_graph",
+        "places",
+        "world_dynamics",
+        "active_cast"
+      ]
+    },
+    "faction_information": {
+      "stages": [
+        "06_living_world_ecology"
+      ],
+      "owner_refs": [
+        "factions",
+        "knowledge",
+        "relationships",
+        "issues",
+        "world_dynamics"
+      ]
+    },
+    "group": {
+      "stages": [
+        "06_living_world_ecology"
+      ],
+      "owner_refs": [
+        "player_ties",
+        "characters",
+        "places",
+        "relationships"
+      ]
+    },
+    "character_embedding": {
+      "stages": [
+        "06_living_world_ecology"
+      ],
+      "owner_refs": [
+        "player_ties",
+        "relationships",
+        "threads",
+        "places",
+        "characters"
+      ]
+    },
+    "advancement_detail": {
+      "stages": [
+        "08_reciprocity_campaign_horizon"
+      ],
+      "owner_refs": [
+        "progression",
+        "play_profile",
+        "rules",
+        "threads"
+      ]
+    },
+    "campaign_architecture": {
+      "stages": [
+        "08_reciprocity_campaign_horizon",
+        "09_first_act_preparation"
+      ],
+      "owner_refs": [
+        "threads",
+        "progression",
+        "world",
+        "first_session"
+      ],
+      "stage_owner_refs": {
+        "08_reciprocity_campaign_horizon": [
+          "threads",
+          "progression",
+          "world"
+        ],
+        "09_first_act_preparation": [
+          "first_session"
+        ]
+      }
+    }
+  },
+  "controlled_trigger_tags": {
+    "character.inner_life_requested": {
+      "depth": "baseline",
+      "activate": [
+        "character_interior"
+      ]
+    },
+    "character.formative_history_load_bearing": {
+      "depth": "deep",
+      "activate": [
+        "character_interior"
+      ]
+    },
+    "character.change_arc_deep": {
+      "depth": "deep",
+      "activate": [
+        "character_interior"
+      ]
+    },
+    "world.original_operating_model": {
+      "depth": "baseline",
+      "activate": [
+        "world_fabric"
+      ]
+    },
+    "world.novel_society": {
+      "depth": "deep",
+      "activate": [
+        "world_fabric"
+      ]
+    },
+    "world.metaphysics_load_bearing": {
+      "depth": "deep",
+      "activate": [
+        "world_fabric"
+      ]
+    },
+    "mechanics.tactical_depth": {
+      "depth": "deep",
+      "activate": [
+        "mechanics_detail"
+      ]
+    },
+    "mechanics.multiple_stateful_modules": {
+      "depth": "deep",
+      "activate": [
+        "mechanics_detail"
+      ]
+    },
+    "mechanics.special_ability_economy": {
+      "depth": "baseline",
+      "activate": [
+        "mechanics_detail"
+      ]
+    },
+    "play_focus.exploration": {
+      "depth": "baseline",
+      "activate": [
+        "location_network"
+      ]
+    },
+    "play_focus.survival": {
+      "depth": "deep",
+      "activate": [
+        "location_network"
+      ]
+    },
+    "reach.long_journey": {
+      "depth": "baseline",
+      "activate": [
+        "location_network",
+        "campaign_architecture"
+      ]
+    },
+    "travel.consequential": {
+      "depth": "deep",
+      "activate": [
+        "location_network"
+      ]
+    },
+    "play_focus.political_intrigue": {
+      "depth": "baseline",
+      "activate": [
+        "faction_information"
+      ]
+    },
+    "information.contested": {
+      "depth": "deep",
+      "activate": [
+        "faction_information"
+      ]
+    },
+    "institutions.primary_pressure": {
+      "depth": "baseline",
+      "activate": [
+        "faction_information"
+      ]
+    },
+    "group.persistent_collective": {
+      "depth": "baseline",
+      "activate": [
+        "group"
+      ]
+    },
+    "group.base_or_vessel": {
+      "depth": "deep",
+      "activate": [
+        "group"
+      ]
+    },
+    "group.companions_expected": {
+      "depth": "baseline",
+      "activate": [
+        "group"
+      ]
+    },
+    "character.deep_personal_integration": {
+      "depth": "deep",
+      "activate": [
+        "character_embedding"
+      ]
+    },
+    "character.long_horizon": {
+      "depth": "baseline",
+      "activate": [
+        "character_embedding"
+      ]
+    },
+    "character.dense_originated_anchors": {
+      "depth": "deep",
+      "activate": [
+        "character_embedding"
+      ]
+    },
+    "advancement.detailed_growth": {
+      "depth": "deep",
+      "activate": [
+        "advancement_detail"
+      ]
+    },
+    "advancement.multitrack": {
+      "depth": "deep",
+      "activate": [
+        "advancement_detail"
+      ]
+    },
+    "advancement.companion_growth": {
+      "depth": "baseline",
+      "activate": [
+        "advancement_detail"
+      ]
+    },
+    "reach.episodic": {
+      "depth": "baseline",
+      "activate": [
+        "campaign_architecture"
+      ]
+    },
+    "campaign.setup_payoff": {
+      "depth": "deep",
+      "activate": [
+        "campaign_architecture"
+      ]
+    },
+    "campaign.ending_horizon": {
+      "depth": "deep",
+      "activate": [
+        "campaign_architecture"
+      ]
+    }
+  },
+  "stages": [
+    {
+      "id": "01_north_star_authority",
+      "title": "North Star And Authority",
+      "playbook": "01_north_star_authority.md",
+      "prerequisites": [],
+      "decisions": [
+        {
+          "id": "01_campaign_frame_and_reach",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "campaign_promise",
+            "world",
+            "setup_progress"
+          ]
+        },
+        {
+          "id": "01_player_fantasy_tone_and_non_goals",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "campaign_promise",
+            "world"
+          ]
+        },
+        {
+          "id": "01_content_boundaries",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "boundaries"
+          ]
+        },
+        {
+          "id": "01_agency_authorship_and_consequence",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "boundaries"
+          ]
+        },
+        {
+          "id": "01_creation_authority",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "boundaries",
+            "creation_ledger"
+          ]
+        },
+        {
+          "id": "01_primary_topology_intent",
+          "critical": false,
+          "defer_allowed": false,
+          "owner_refs": [
+            "decision_log",
+            "world"
+          ]
+        }
+      ],
+      "extensions": []
+    },
+    {
+      "id": "02_research_canon_grounding",
+      "title": "Research, Canon, And Grounding",
+      "playbook": "02_research_canon_grounding.md",
+      "prerequisites": [
+        "01_north_star_authority"
+      ],
+      "decisions": [
+        {
+          "id": "02_research_need_and_permission",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "research"
+          ]
+        },
+        {
+          "id": "02_source_and_cast_scope",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "research",
+            "boundaries"
+          ]
+        },
+        {
+          "id": "02_canon_divergence_and_native_register",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "research",
+            "boundaries"
+          ]
+        },
+        {
+          "id": "02_current_scale_lock",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "research",
+            "setup_progress"
+          ]
+        }
+      ],
+      "extensions": []
+    },
+    {
+      "id": "03_character_core",
+      "title": "Character Core",
+      "playbook": "03_character_core.md",
+      "prerequisites": [
+        "02_research_canon_grounding",
+        "research_scope_locked"
+      ],
+      "decisions": [
+        {
+          "id": "03_identity_seed",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "character_core"
+          ]
+        },
+        {
+          "id": "03_current_desire_and_why_now",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "character_core"
+          ]
+        },
+        {
+          "id": "03_tested_direction_and_protected_growth",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "character_core",
+            "boundaries"
+          ]
+        },
+        {
+          "id": "03_protected_past_and_relationship_authorship",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "character_core",
+            "boundaries"
+          ]
+        }
+      ],
+      "extensions": [
+        "character_interior"
+      ]
+    },
+    {
+      "id": "04_thin_world_kernel",
+      "title": "Thin World Kernel",
+      "playbook": "04_thin_world_kernel.md",
+      "prerequisites": [
+        "03_character_core",
+        "research_scope_locked"
+      ],
+      "decisions": [
+        {
+          "id": "04_world_operating_model",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "world",
+            "world_truths"
+          ]
+        },
+        {
+          "id": "04_macro_frame_and_local_channels",
+          "critical": false,
+          "defer_allowed": true,
+          "owner_refs": [
+            "world",
+            "world_dynamics"
+          ]
+        },
+        {
+          "id": "04_starting_aperture",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "world",
+            "issues"
+          ]
+        },
+        {
+          "id": "04_world_palette",
+          "critical": false,
+          "defer_allowed": true,
+          "owner_refs": [
+            "palette"
+          ]
+        },
+        {
+          "id": "04_independent_pressures",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "issues",
+            "world_dynamics"
+          ]
+        },
+        {
+          "id": "04_everyday_life_and_open_unknowns",
+          "critical": false,
+          "defer_allowed": true,
+          "owner_refs": [
+            "world_truths",
+            "research"
+          ]
+        }
+      ],
+      "extensions": [
+        "world_fabric"
+      ]
+    },
+    {
+      "id": "05_character_realization_mechanics",
+      "title": "Character Realization And Mechanics",
+      "playbook": "05_character_realization_mechanics.md",
+      "prerequisites": [
+        "04_thin_world_kernel"
+      ],
+      "decisions": [
+        {
+          "id": "05_character_surface_and_world_read",
+          "critical": false,
+          "defer_allowed": true,
+          "owner_refs": [
+            "player",
+            "appearance"
+          ]
+        },
+        {
+          "id": "05_social_position_access_and_belonging",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "player",
+            "player_ties"
+          ]
+        },
+        {
+          "id": "05_resolution_grounding",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "play_profile",
+            "system_fit",
+            "rules"
+          ]
+        },
+        {
+          "id": "05_reliable_competence_and_special_capabilities",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "player",
+            "rules"
+          ]
+        },
+        {
+          "id": "05_limitation_cost_and_counterplay",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "player",
+            "rules"
+          ]
+        },
+        {
+          "id": "05_simulation_fidelity",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "play_profile",
+            "system_fit",
+            "rules"
+          ]
+        }
+      ],
+      "extensions": [
+        "mechanics_detail"
+      ]
+    },
+    {
+      "id": "06_living_world_ecology",
+      "title": "Living World Ecology",
+      "playbook": "06_living_world_ecology.md",
+      "prerequisites": [
+        "05_character_realization_mechanics"
+      ],
+      "decisions": [
+        {
+          "id": "06_topology_activation",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "decision_log",
+            "world"
+          ]
+        },
+        {
+          "id": "06_salient_ecology",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "faces_places",
+            "issues",
+            "places",
+            "characters"
+          ]
+        },
+        {
+          "id": "06_relationship_pattern",
+          "critical": false,
+          "defer_allowed": true,
+          "owner_refs": [
+            "relationships",
+            "knowledge",
+            "player_ties"
+          ]
+        }
+      ],
+      "extensions": [
+        "location_network",
+        "faction_information",
+        "group",
+        "character_embedding"
+      ]
+    },
+    {
+      "id": "07_runtime_experience_contract",
+      "title": "Runtime Experience Contract",
+      "playbook": "07_runtime_experience_contract.md",
+      "prerequisites": [
+        "06_living_world_ecology"
+      ],
+      "decisions": [
+        {
+          "id": "07_play_mix_and_failure_stance",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "play_profile",
+            "system_fit",
+            "storytelling"
+          ]
+        },
+        {
+          "id": "07_narration_voice",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "play_profile",
+            "storytelling"
+          ]
+        },
+        {
+          "id": "07_wanted_and_unwanted_gm_behavior",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "boundaries",
+            "storytelling"
+          ]
+        },
+        {
+          "id": "07_optional_layers",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "play_profile",
+            "visual_policy"
+          ]
+        },
+        {
+          "id": "07_turn_protocol_and_performance",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "play_profile",
+            "system_fit"
+          ]
+        }
+      ],
+      "extensions": []
+    },
+    {
+      "id": "08_reciprocity_campaign_horizon",
+      "title": "Reciprocity And Campaign Horizon",
+      "playbook": "08_reciprocity_campaign_horizon.md",
+      "prerequisites": [
+        "07_runtime_experience_contract"
+      ],
+      "decisions": [
+        {
+          "id": "08_two_way_reciprocity",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "player_ties",
+            "issues",
+            "relationships"
+          ]
+        },
+        {
+          "id": "08_anchor_or_explicit_isolation",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "player_ties",
+            "boundaries"
+          ]
+        },
+        {
+          "id": "08_advancement_and_reward_rhythm",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "progression",
+            "play_profile",
+            "rules"
+          ]
+        },
+        {
+          "id": "08_campaign_horizon",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "threads",
+            "progression",
+            "world"
+          ]
+        },
+        {
+          "id": "08_continuity_and_preparation_contract",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "boundaries",
+            "knowledge",
+            "rules"
+          ]
+        }
+      ],
+      "extensions": [
+        "advancement_detail",
+        "campaign_architecture"
+      ]
+    },
+    {
+      "id": "09_first_act_preparation",
+      "title": "First Act Preparation",
+      "playbook": "09_first_act_preparation.md",
+      "prerequisites": [
+        "08_reciprocity_campaign_horizon",
+        "stages_1_8_complete"
+      ],
+      "decisions": [
+        {
+          "id": "09_first_act_frame",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "threads",
+            "first_session"
+          ]
+        },
+        {
+          "id": "09_opening_shape",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "first_session",
+            "opening",
+            "storytelling"
+          ]
+        },
+        {
+          "id": "09_design_direction_review",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "setup_progress",
+            "decision_log",
+            "player_ties"
+          ]
+        },
+        {
+          "id": "09_preparation_approval",
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "setup_progress",
+            "decision_log",
+            "player_ties"
+          ]
+        }
+      ],
+      "extensions": [
+        "campaign_architecture"
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "id": "research_scope_locked",
+      "prerequisites": [
+        "02_current_scale_lock locked",
+        "research status is not needed_pending",
+        "current-scale lock permission is explicit"
+      ]
+    },
+    {
+      "id": "stages_1_8_complete",
+      "prerequisites": [
+        "stages 01 through 08 are complete",
+        "every decision has an allowed terminal status",
+        "every controlled trigger tag was evaluated",
+        "every active extension is complete or explicitly defaulted",
+        "all stage owner writes are materialized"
+      ]
+    },
+    {
+      "id": "first_act_design_complete",
+      "prerequisites": [
+        "stages_1_8_complete",
+        "09_first_act_frame locked",
+        "09_opening_shape locked",
+        "first act remains a pressure-and-affordance frame rather than a fixed plot"
+      ]
+    },
+    {
+      "id": "design_direction_approved",
+      "prerequisites": [
+        "first_act_design_complete",
+        "09_design_direction_review locked by the Player",
+        "design digest recorded at the resulting setup revision"
+      ]
+    },
+    {
+      "id": "preparation_materialized",
+      "prerequisites": [
+        "design_direction_approved",
+        "opening-scale owner files materialized while ready_for_play is false",
+        "materialization digest references the approved design digest"
+      ]
+    },
+    {
+      "id": "cross_read_passed",
+      "prerequisites": [
+        "preparation_materialized",
+        "cross-owner audit has zero blocking findings",
+        "player-facing leakage check passes",
+        "audit digest matches the materialization digest"
+      ]
+    },
+    {
+      "id": "integrated_review_accepted",
+      "prerequisites": [
+        "cross_read_passed",
+        "09_preparation_approval locked by the Player after the integrated factual review",
+        "review digest matches the audited materialization digest"
+      ]
+    },
+    {
+      "id": "preparation_approved",
+      "prerequisites": [
+        "integrated_review_accepted",
+        "09_preparation_approval locked by the Player",
+        "all defaults and deferrals were visible",
+        "no content changed after integrated review"
+      ]
+    },
+    {
+      "id": "draft_preflight_passed",
+      "prerequisites": [
+        "preparation_approved",
+        "setup status is in_progress",
+        "selected profile status is pending",
+        "ready_for_play is false",
+        "full readiness preflight reports zero errors"
+      ]
+    },
+    {
+      "id": "ready_and_snapshotted",
+      "prerequisites": [
+        "draft_preflight_passed",
+        "selected profile locked at the approved revision",
+        "unused profile inactive",
+        "final gate atomically projects complete and ready_for_play true without revision advance",
+        "approved derived projections built",
+        "session-zero-start snapshot digest matches current owner files",
+        "final aggregate check reports zero errors"
+      ]
+    }
+  ]
+}

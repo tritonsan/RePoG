@@ -23,7 +23,7 @@ player:
   stat_budget_note: ""
   condition: ready
   current_goal: ""
-  # Fill eight numeric stats only when
+  # Fill one entry per declared axis in rules.md, only when
   # play_profile.yaml.mechanics.resolution_grounding is numeric. Fictional
   # campaigns use capabilities and limits; bands campaigns may store only the
   # broad bands they actually use.

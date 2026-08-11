@@ -66,20 +66,15 @@ scorecard, and do not add a semantic checker for this pass.
 
 ## Stats (Numeric Grounding Only)
 
-Fill the eight numeric stats only when
+Fill one entry per declared axis in `rules.md` only when
 `play_profile.yaml.mechanics.resolution_grounding` is `numeric`. Under
 `fictional`, describe competence, limits, leverage, and counterplay in prose.
 Under `bands`, record only setting-appropriate broad bands; do not backfill
-numbers merely because this template offers them.
+numbers merely because this template offers them. The axis names come from the
+campaign's declared set, never from a fixed generic list, and numbers are only
+needed where this figure's capability is actually contested in play.
 
-- Power:
-- Agility:
-- Endurance:
-- Technique:
-- Perception:
-- Wits:
-- Presence:
-- Will:
+- Axis: value
 
 ## Key Capabilities
 

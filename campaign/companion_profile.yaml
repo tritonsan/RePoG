@@ -63,7 +63,7 @@ visuals:
 
 performance:
   semantic_parallelism: selective_structural
-  max_parallel_workers: 3
+  max_parallel_workers: 2
   # Shown inside the existing Starter Bundle/performance summary. It is not a
   # separate Quick question; set true with the player's final setup approval.
   parallelism_notice_acknowledged: false

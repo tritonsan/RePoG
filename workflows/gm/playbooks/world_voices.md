@@ -160,8 +160,12 @@ may react only after it reaches them through a believable channel.
 - Artifact creation, approval, distribution changes, Player acquisition,
   retraction, supersession, and approved Player responses are durable when they
   matter later.
-- Increment continuity once and append one matching durable event; cold archive
-  reconciliation does not create another revision.
+- Persist private artifact/distribution state through its owning World Voices
+  tool with a stable operation id. When the change also affects general RPG
+  current truth, model-capture every affected allowed owner and submit one
+  `tools/rpg_state.py commit-durable` transaction; let that writer advance
+  continuity and append the matching structured receipt. Cold archive
+  reconciliation creates no additional revision.
 - Pair human-readable authored, scheduled, and completed times with coarse
   non-negative time indices so delay and ordering remain deterministic without
   implying a continuous clock.
@@ -169,7 +173,10 @@ may react only after it reaches them through a believable channel.
   old threads on demand.
 - Hidden changes never refresh the Dashboard. Player-visible delivery may
   project and patch the documents tile according to dashboard refresh policy.
-- Store the same operation id forever; retries must not duplicate work.
+- Store each operation id forever; retries must not duplicate private or RPG
+  authority work.
 - Worker drafts are transient proposals. Only the primary agent may persist an
   artifact, assign its final claim positions, update holders, advance
-  distribution, increment continuity, or expose a player-safe projection.
+  distribution, submit the correlated RPG authority transaction, or expose a
+  player-safe projection. It never increments continuity or appends the RPG
+  receipt manually.

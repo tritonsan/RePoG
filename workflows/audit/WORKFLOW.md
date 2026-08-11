@@ -7,6 +7,12 @@ RePoG Lite Audit
 Use this workflow when checking a Lite campaign for continuity, player-facing
 leakage, missing memory, stale threads, file health, or readiness for play.
 
+Its RPG section is also the pre-review cross-read: Session 0 runs it against the
+prepared campaign before the integrated preparation review, so the Player is not
+the first reader of a corpus that does not hold together. That call is part of the
+setup sequence rather than a Designer request, and correcting what it finds is free
+at that point because preparation approval has not happened yet.
+
 Audit asks whether the campaign can support natural play, not whether every
 narrative fact is schema-normalized.
 
@@ -67,7 +73,8 @@ per-message checker.
 
 For RPG, check:
 
-- `session_zero.md` exists and tracks the Session 0 module decisions;
+- `session_zero.md` exists and tracks the selected legacy route or renders the
+  managed schema-v8 Deep summary without becoming a second state owner;
 - `research_dossier.md` exists and records research status, mode, source scope,
   canon/realism policy, hard boundaries, and open source questions;
 - `research_dossier.md` has explicit `Risk accepted` and
@@ -79,8 +86,10 @@ For RPG, check:
 - `campaign_one_pager.md` is player-safe and does not reveal GM-only secrets;
 - `system_fit.md` explains the expected play activity mix and mechanics
   weight;
-- `setup_profile.yaml` stores only Session 0 progress, activated/defaulted/
-  completed packs, and readiness; a ready Deep pack has its required output;
+- `setup_profile.yaml` stores only routing, high-level progress mirrors, and
+  readiness. Legacy routes retain their pack accounting; schema-v8 RPG Deep
+  keeps `session_zero_state.json` as its sole decision/stage/extension/gate
+  ledger, with current output references, digests, and no stale readiness gate;
 - `play_profile.yaml` is locked to the same setup revision before play and owns
   valid lenses, approved mechanics, narration, advancement, dashboard,
   visual, and performance policy;
@@ -95,8 +104,9 @@ For RPG, check:
   sub-agent delegation;
 - lens combinations are deduplicated, documented conflicts are resolved, and
   no lens silently enables a mechanic such as HP, mana, wounds, or inventory;
-- Custom protocols keep authoritative state, knowledge boundaries, durable
-  revision events, and hot validation mandatory;
+- Custom protocols keep immediate authority writes, durable revision evidence,
+  atomic candidate validation, and aggregate full validation at the selected
+  boundary mandatory;
 - `palette.md` has Yes / No / Maybe boundaries that do not conflict with
   `boundaries.md`;
 - `appearance_guide.md` exists and defines middle-detail appearance rules,

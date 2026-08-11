@@ -38,12 +38,38 @@ force ordinary conversation into dramatic pressure or a climax structure.
 
 RPG-only. Leave inactive in Companion mode.
 
+Every RPG campaign fills this at Session 0 for its first act. The
+`campaign_architecture` pack deepens it with multi-arc promises and endings; it is
+not what creates it. An act with no compass has nothing to close against, and the
+first act is the one act no closure prep ever covers: `next_act_prep.md` frames
+acts two and onward, and `first_session.md` covers only the opening scene.
+
+- Act name:
 - Dramatic question:
 - Active pressures:
 - Setups awaiting payoff:
 - Climax availability conditions:
 - Closure conditions:
 - Player interest signals:
+
+### Act Scope
+
+The concrete extent of the current act, in names rather than categories. This is
+what makes an act a place instead of an intention: one location and one person is
+an opening, not an act.
+
+- Places this act can reach:
+- People who belong to it:
+- What is already in motion as it opens:
+- What stays true if the character does nothing:
+
+### Closure Record
+
+Filled when the act actually closes, never in advance.
+
+- Closing action:
+- Condition met or foreclosed:
+- Recorded at revision:
 
 ## Active Threads
 

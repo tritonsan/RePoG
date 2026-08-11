@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import shutil
 import sys
@@ -19,9 +21,15 @@ def _slug(value: str) -> str:
 
 
 def _iter_campaign_files(root: Path, snapshots_dir: Path) -> list[Path]:
+    transaction_dir = root / ".repog-transactions"
     files: list[Path] = []
     for path in root.rglob("*"):
-        if path == snapshots_dir or snapshots_dir in path.parents:
+        if (
+            path == snapshots_dir
+            or snapshots_dir in path.parents
+            or path == transaction_dir
+            or transaction_dir in path.parents
+        ):
             continue
         if path.is_file():
             files.append(path)
@@ -78,14 +86,8 @@ def _snapshot_identity(campaign_path: Path) -> dict[str, object]:
     }
 
 
-def create_snapshot(campaign_path: Path, label: str) -> dict:
-    campaign_path = campaign_path.resolve()
-    if not campaign_path.exists() or not campaign_path.is_dir():
-        return {
-            "ok": False,
-            "error": "campaign_path_not_found",
-            "campaign_path": str(campaign_path),
-        }
+def _create_snapshot_locked(campaign_path: Path, label: str) -> dict:
+    """Copy one snapshot while the shared RPG transaction lock is held."""
 
     snapshots_dir = campaign_path / "snapshots"
     snapshots_dir.mkdir(exist_ok=True)
@@ -105,12 +107,26 @@ def create_snapshot(campaign_path: Path, label: str) -> dict:
 
     files = _iter_campaign_files(campaign_path, snapshots_dir)
     copied: list[str] = []
+    file_records: list[dict[str, object]] = []
     for source in files:
         relative = source.relative_to(campaign_path)
         target = snapshot_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
-        copied.append(relative.as_posix())
+        relative_posix = relative.as_posix()
+        payload = target.read_bytes()
+        copied.append(relative_posix)
+        file_records.append(
+            {
+                "path": relative_posix,
+                "size": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+            }
+        )
+
+    content_digest = hashlib.sha256(
+        json.dumps(file_records, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
 
     manifest = {
         **_snapshot_identity(campaign_path),
@@ -118,6 +134,8 @@ def create_snapshot(campaign_path: Path, label: str) -> dict:
         "source": str(campaign_path),
         "label": label,
         "files": copied,
+        "file_records": file_records,
+        "content_digest": f"sha256:{content_digest}",
     }
     (snapshot_path / "snapshot_manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=True) + "\n",
@@ -130,6 +148,73 @@ def create_snapshot(campaign_path: Path, label: str) -> dict:
         "snapshot_path": str(snapshot_path),
         "files_copied": len(copied),
     }
+
+
+def create_snapshot(campaign_path: Path, label: str) -> dict:
+    campaign_path = campaign_path.resolve()
+    if not campaign_path.exists() or not campaign_path.is_dir():
+        return {
+            "ok": False,
+            "error": "campaign_path_not_found",
+            "campaign_path": str(campaign_path),
+        }
+
+    transaction_dir = campaign_path / ".repog-transactions"
+    lock_path = transaction_dir / ".lock"
+    try:
+        transaction_dir.mkdir(exist_ok=True)
+        descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        try:
+            entries = sorted(path.name for path in transaction_dir.iterdir())
+        except OSError:
+            entries = [".lock"]
+        return {
+            "ok": False,
+            "error": "rpg_transaction_pending",
+            "transaction_path": str(transaction_dir),
+            "entries": entries,
+        }
+    except OSError as exc:
+        return {
+            "ok": False,
+            "error": "rpg_transaction_unreadable",
+            "transaction_path": str(transaction_dir),
+            "reason": str(exc),
+        }
+
+    try:
+        with os.fdopen(descriptor, "w", encoding="ascii", newline="\n") as stream:
+            stream.write(f"{os.getpid()}\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            pending_entries = sorted(
+                path.name for path in transaction_dir.iterdir() if path != lock_path
+            )
+        except OSError as exc:
+            return {
+                "ok": False,
+                "error": "rpg_transaction_unreadable",
+                "transaction_path": str(transaction_dir),
+                "reason": str(exc),
+            }
+        if pending_entries:
+            return {
+                "ok": False,
+                "error": "rpg_transaction_pending",
+                "transaction_path": str(transaction_dir),
+                "entries": pending_entries,
+            }
+        return _create_snapshot_locked(campaign_path, label)
+    finally:
+        try:
+            lock_path.unlink(missing_ok=True)
+        finally:
+            try:
+                transaction_dir.rmdir()
+            except OSError:
+                pass
 
 
 def main(argv: list[str] | None = None) -> int:

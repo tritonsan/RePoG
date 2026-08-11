@@ -5,6 +5,16 @@ Campaign id: `new_campaign`
 Use this file for closure reviews, upgrade decisions, and the world reaction
 that follows. It is not a session transcript.
 
+Progression runs on three tracks: stat points, special ability points where the
+setting has a layer outside the axes, and fictional capabilities. Every offer takes
+one of three shapes—points to spend, a capability earned in play, or points plus an
+ability recognized from how the Player has been playing. Under fictional grounding
+the same shapes are recorded in prose without numbers.
+
+Nothing on those tracks is lost. Unspent points and unrealized capabilities stay in
+the live state below and are surfaced at the next closure; a closure is not complete
+while points sit unspent unless the Player deferred them and the amount is recorded.
+
 ## Current Progression State
 
 - Current closure level:
@@ -18,6 +28,10 @@ that follows. It is not a session transcript.
 - Achievement quality:
 - Reward budget:
 - Player motivation signals:
+- Unspent stat points:
+- Unspent special ability points:
+- Deferred by Player, with amount:
+- Pending capability, with its realization condition:
 - Companion/NPCs eligible for advancement:
 - Companion / ally advancement reviewed: no
 - GM-awarded perk: none
@@ -68,26 +82,42 @@ use `not_applicable` and never lock continuation.
 
 ## Upgrade Offer
 
+The three options must differ in kind—one capability, one access or relationship,
+one standing or identity—and each is written in the Player's language rather than by
+category. Offer one only when a single direction is honest, and say why. Every option
+stays inside the accepted system: declared axes and scale under numeric grounding,
+named bands under banded, recorded competence under fictional, and no mechanic the
+campaign has not enabled.
+
 - Option 1:
   - Type:
   - Fiction source:
-  - Benefit:
+  - What becomes possible:
   - Cost, limit, or risk:
   - Who notices:
+  - Attention cost, when recognition is tracked:
+  - What it opens next:
+  - Realization condition, if it needs training, downtime, travel, or a scene:
 
 - Option 2:
   - Type:
   - Fiction source:
-  - Benefit:
+  - What becomes possible:
   - Cost, limit, or risk:
   - Who notices:
+  - Attention cost, when recognition is tracked:
+  - What it opens next:
+  - Realization condition, if it needs training, downtime, travel, or a scene:
 
 - Option 3:
   - Type:
   - Fiction source:
-  - Benefit:
+  - What becomes possible:
   - Cost, limit, or risk:
   - Who notices:
+  - Attention cost, when recognition is tracked:
+  - What it opens next:
+  - Realization condition, if it needs training, downtime, travel, or a scene:
 
 ## Chosen Upgrade
 
@@ -95,6 +125,17 @@ use `not_applicable` and never lock continuation.
 - Final form:
 - Files updated:
 - Next pressure:
+
+## Pending Realization
+
+A chosen upgrade that needs training, downtime, travel, crafting, or a scene waits
+here until the fiction delivers it. It is not applied to the sheet in advance and it
+is not dropped.
+
+- Pending upgrade:
+- Condition that realizes it:
+- Recorded at revision:
+- Realized: no
 
 ## GM-Awarded Perk
 

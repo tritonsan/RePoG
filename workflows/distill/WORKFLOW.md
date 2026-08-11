@@ -6,7 +6,10 @@ RePoG Lite Distill
 
 Use this workflow only at a full-distill trigger to reconcile pending durable
 events into compact campaign memory. A scene checkpoint is defined below but
-does not by itself invoke full distillation.
+does not by itself invoke full distillation. Any turn-established durable truth
+must already have a successful `tools/rpg_state.py commit-durable` receipt and
+current owner mutation before this workflow begins; Distill does not reconstruct
+or judge a missing semantic capture from prose.
 
 Distill is not a technical changelog. It is the GM's memory becoming sharper.
 
@@ -65,63 +68,65 @@ named by those events or required by the trigger. Relevant inputs may include:
 
 # Distill Outputs
 
-Update the smallest necessary files:
+Distill propagates already committed truth and closes a structural boundary; it
+does not repair a skipped immediate owner from event prose.
 
-- append a concise session or arc summary to `session_log.md`;
-- append `### Distilled Through Revision N` after every pending durable event
-  through N has been propagated;
-- update `issues.md` when current or impending pressures changed, resolved, or
-  became visible;
-- update `faces_and_places.md` when an issue gained or lost a useful NPC/place
-  handle;
-- update `world_truths.md` only when play establishes a durable setting truth;
-- update `research_dossier.md` when source scope, canon/realism assumptions,
-  source uncertainty, or open research questions changed;
-- update `palette.md` only when the Designer explicitly changes a Yes / No /
-  Maybe boundary;
-- update `appearance_guide.md` only when the campaign changes appearance
-  detail level, visual continuity rules, or appearance boundaries;
-- update `arc_closure.md` when a beat, session, scenario, arc, or campaign
-  closure is reviewed;
+## Immediate-Authority Precondition
+
+When their truth changed, these surfaces must already have been mutated by the
+originating `commit-durable` transaction and must not appear only as cold work:
+
+- `current_state.yaml`, including player position, inventory, conditions,
+  scene truth, and arc/advancement gates;
+- `active_cast.md` for relevant whereabouts, activity, objective,
+  availability, presence reason, and next move;
+- `knowledge_boundaries.md`, `relationship_map.md`, `mechanics_state.json`,
+  `threads.md`, `world_dynamics.md`, `issues.md`, `location_graph.md`,
+  `creation_ledger.md`, `world_truths.md`, and `rules.md` when their owned truth
+  changed;
+- `player.md`, `player_ties.md`, and relevant `characters/*.md`, `places/*.md`,
+  or `factions/*.md` for durable facts they uniquely own;
+- `arc_closure.md` when a closure, advancement status, reward, or continuation
+  gate became established truth.
+
+If a pending event names one of these as an immediate authority but the change
+is absent, stop and treat it as failed capture or recovery, not as deferred
+propagation. If Distill reasoning itself establishes new truth in one of these
+surfaces, first create one semantic capture and commit it atomically with
+boundary `full_distill`.
+
+## Eligible Secondary Propagation
+
+Update only the smallest listed deferred targets or boundary records:
+
+- append a concise session/arc summary and one
+  `### Distilled Through Revision N` marker to `session_log.md` after every
+  event through N has actually been propagated;
+- update `faces_and_places.md` when an already committed issue gained or lost a
+  useful NPC/place handle;
+- update `research_dossier.md`, `system_fit.md`, `palette.md`, or
+  `appearance_guide.md` only when the triggering source, fit, explicit boundary,
+  or visual-continuity decision requires it;
 - update `next_act_prep.md` after scenario, arc, or campaign closure to carry
-  forward active NPCs, companions, factions, locations, items, conditions,
-  secrets, relationships, resources, and unresolved pressures;
-- update `progression.md` only when the campaign's advancement cadence or
-  reward philosophy changes;
-- update `creation_ledger.md` for new, promoted, dormant, or resolved elements;
-- update `relationship_map.md` when relationships, access, influence, or
-  location links changed;
-- update `secrets_and_clues.md` when a clue was revealed, missed, reframed, or
-  should remain available through another channel;
-- update `knowledge_boundaries.md` whenever the player character, player,
-  companion, NPC, or faction learns a protected name, hidden identity, secret
-  location, faction truth, power truth, or other GM-only fact;
-- update `session_brief.md` when preparing the next session, scene chain, or
-  arc;
-- update `threads.md` for resolved, escalated, or newly opened threads;
-- update character notes for stable Agency Card logic, ordinary speech, useful
-  voice, appearance changes, capabilities, blind spots, and durable leverage;
-  write current relationship edges to `relationship_map.md`, current knowledge
-  truth to `knowledge_boundaries.md`, and history to `session_log.md` instead
-  of copying those facts into the character note;
-- update place notes for damage, rumors, new dangers, changed access, local
-  routine, disruption, reaction point, spatial/visual changes, or obstacle
-  difficulty;
-- update faction notes only for stable desire, methods, capability, dependencies,
-  representative, or visual identity; write current offscreen motion/pressure
-  to `world_dynamics.md` and current player relationships to
-  `relationship_map.md`;
-- update `current_state.yaml` for immediate next-session state;
-- update `active_cast.md` for relevant NPC whereabouts, activity, objective,
-  availability, presence reason, and next independent move;
-- update `location_graph.md` only when route, access, travel, traffic, or
-  player-known connection truth changed;
+  forward already authoritative NPC, faction, location, item, condition,
+  secret, relationship, resource, and pressure truth;
+- update `progression.md` only when the campaign-level cadence or reward
+  philosophy changed, not for one character's newly earned result;
+- update `secrets_and_clues.md` as an archive or availability plan after the
+  corresponding knowledge truth was committed immediately;
+- update `session_brief.md` for the next session, scene chain, or arc;
+- enrich character, place, or faction notes only with secondary presentation
+  supported by their authority truth. Do not duplicate current relationship,
+  knowledge, offscreen motion, or event history, and do not invent a new stable
+  fact merely to make the note fuller;
 - update `opening_brief.md` as `post_arc_opening` with Opening status `pending`
   while drafting and `active` only after the next opening is complete; the
-  historical `first_session.md` remains `consumed`.
-- patch Dashboard V3 through `tools/update_dashboard.py` when an approved tile
-  has player-known scene, thread, clue, inventory, NPC, map, visual, or
-  character information to refresh.
+  historical `first_session.md` remains `consumed`;
+- update warning-only `style_state.json` when its policy selects the sample;
+- patch Dashboard V3 through `tools/update_dashboard.py` only when an approved
+  tile has changed player-known information and its refresh policy is due.
+
+Do not touch an unrelated file merely because a distill is running.
 
 # Summary Shape
 
@@ -143,28 +148,38 @@ mechanical bookkeeping.
 
 # Persistence Boundaries
 
-Read `current_state.yaml.persistence` and all `### Durable Revision N` entries
-after the most recent `### Distilled Through Revision N` marker. The durable
-event is recovery evidence, not a substitute for current truth; when they
-conflict, `current_state.yaml` wins and the correction is appended rather than
-rewriting history.
+Read `current_state.yaml.persistence` and every `### Durable Revision N` after
+the most recent `### Distilled Through Revision N` marker. Each structured
+event is an atomic receipt and recovery index: its `Immediate authorities`
+should already contain the established truth, while `Deferred propagation`
+names only secondary work. The event is not another truth owner; when receipt
+prose and an immediate authority conflict, the authority wins and a correction
+is appended rather than rewriting history.
 
-Soft turns write nothing and run no check. Local-durable turns update immediate
-authorities, append their single revision event, increment the durable counter,
-and run only the bounded hot structural check. Neither invokes this workflow.
+An `ordinary` soft result writes nothing and never enters this workflow. An
+ordinary durable result has already been committed once by `rpg_state.py`; do
+not replay it, increment it again, or add a separate hot check here.
 
 ## Scene Checkpoint
 
-At a scene end, interruption, or handoff, persist only:
+The GM workflow commits a checkpoint at the boundary that created it:
+
+- when the causal result is durable, checkpoint data and exact scene-frame or
+  active-cast mutations are included in that same `commit-durable` payload;
+- when no durable truth changed, one `commit-checkpoint` call persists only the
+  resumability handoff without a continuity revision.
+
+The checkpoint contains:
 
 - `current_state.yaml.scene_frame`, including the last causal beat, no more
   than three pending consequences, and the concrete resume anchor;
 - relevant current whereabouts/activity in `active_cast.md`;
-- any immediate authority and durable event already required by what changed.
+- the active-cast handoff needed to resume safely.
 
-Do not reconcile queued cold targets, reset the durable counter, append a
-distilled-through marker, or run the full check merely because a scene ended.
-Pure checkpoint propagation creates no new continuity revision.
+Do not make a second checkpoint write after a durable commit. Do not reconcile
+queued cold targets, reset the durable counter, append a distilled-through
+marker, or run the full check merely because a scene ended. Pure checkpoint
+persistence creates no continuity revision.
 
 ## Full Distill
 
@@ -180,10 +195,10 @@ Full distill is mandatory at the first applicable trigger:
 
 For each pending event:
 
-1. Reconcile every listed cold target against authoritative current state and
-   the event summary.
-2. Update only affected secondary notes; do not touch unrelated campaign
-   files merely because a distill is running.
+1. Verify that every immediate owner reflects the committed established change,
+   then reconcile only its listed deferred targets from those authorities.
+2. Update only affected secondary notes; do not touch unrelated campaign files
+   merely because a distill is running.
 3. Apply `play_profile.yaml.dashboard.refresh_policy` using player-safe
    information and an expected-revision Dashboard V3 tile patch.
 4. Append the distilled-through marker with trigger and reconciled files.
@@ -192,10 +207,21 @@ For each pending event:
 6. Run `python tools/check_state.py campaign --scope full`; run the dashboard
    checker only if dashboard state changed.
 
-If this pass only propagates an already recorded durable event, do not create a
-second continuity revision. If the distill itself establishes a new closure,
-reward, world reaction, or other durable fiction, first create one matching
-durable revision event, then distill through that revision.
+If this pass only propagates already committed events, do not call
+`commit-durable` and do not create another continuity revision. If Distill
+itself establishes a new closure, reward, world reaction, or other durable
+fact, the primary agent first performs the same model-authored semantic capture
+as the GM workflow and invokes one `commit-durable` transaction with boundary
+`full_distill`. Include any coincident checkpoint in that payload, then
+propagate through the returned revision. Never increment persistence fields or
+append its durable event by hand.
+
+A durable transaction may return `narration_allowed: false` because this gate
+is due; that means immediate truth is safe, not that it should be committed
+again. Complete the propagation and final full check before narration. The
+full check validates structure and consistency; it does not judge whether the
+model selected the right semantic changes, and no second semantic model call is
+added.
 
 ## Selective Structural Delegation
 
@@ -206,23 +232,31 @@ coordination only; it does not change sources of truth, persistence cadence,
 revision semantics, or the final validation gate.
 
 Count unique pending cold targets after deduplication and group them into these
-independent authority families:
+independent secondary-output families:
 
-- world pressure and ecology: world truths, issues, dynamics, and factions;
-- cast and social state: character notes, active cast, and relationships;
-- place and spatial state: place notes, routes, location graph, and Atlas input;
-- information and source state: knowledge, clues, research, and canon limits;
-- presentation and carry-forward: threads, briefs, style, World Voices archive,
+- entity-note enrichment: already supported character, place, and faction
+  presentation that does not replace their immediate owner mutation;
+- world and source summaries: `world.md`, `faces_and_places.md`, research
+  summaries, and other non-authoritative overviews;
+- place and spatial presentation: place-note enrichment, Atlas input, and map
+  presentation derived from an already committed route/access truth;
+- information and archive: clue archives, research questions, source notes, and
+  historical World Voices material;
+- presentation and carry-forward: briefs, next-act prep, style, opening prep,
   and player-safe projection proposals.
+
+Never classify `current_state.yaml`, active-cast truth, knowledge,
+relationships, mechanics, threads, world dynamics, issues, location graph,
+creation ledger, or another changed fact's sole owner as a cold lane.
 
 Use these exact eligibility thresholds:
 
 - `off`: always distill serially;
 - `selective_structural`: two read-only lanes at four or more cold targets
-  spanning at least two authority families; up to three lanes only at eight or
+  spanning at least two secondary-output families; up to three lanes only at eight or
   more targets spanning at least three families;
 - `aggressive_structural`: two read-only lanes at two or more cold targets
-  spanning at least two authority families; up to three lanes at six or more
+  spanning at least two secondary-output families; up to three lanes at six or more
   targets spanning at least three families.
 
 Never exceed the profile cap, three workers, or the number of genuinely
@@ -232,7 +266,7 @@ serial regardless of policy.
 
 Before delegation, the primary agent freezes the base continuity revision,
 pending event range, deduplicated targets, entity ids, visibility constraints,
-and allowed sources. Assign disjoint authority families and request compact
+and allowed sources. Assign disjoint secondary-output families and request compact
 evidence-backed proposals only. Workers must not write files, call mutating
 campaign tools, create revisions/events, clear targets, mark work distilled,
 patch Dashboard/Atlas/View state, or speak to the Player.
@@ -260,6 +294,13 @@ promoted elements that remain relevant:
   `world_dynamics.md` domain reference; current move, visibility channel, and
   next evaluation remain in the referenced domain.
 
+Enrichment may condense or present only facts already supported by committed
+authorities without another revision. If the review chooses a new stable aim,
+capability, routine, relationship, knowledge limit, route, or domain truth,
+that choice is a new durable semantic result: the primary agent must commit its
+owner mutation once with boundary `full_distill` before clearing the cold
+target.
+
 Do not expand an incidental element merely to fill a template. Clear the
 pending cold target once the smallest complete note is validated.
 
@@ -279,8 +320,11 @@ appearance memory:
 - Accepted images should update text appearance notes only for details the
   Player accepted as canon.
 
-Do not bloat notes. Add the smallest appearance detail that preserves future
-continuity and useful staging.
+Do not bloat notes. Condense the smallest already established or explicitly
+accepted appearance detail that preserves future continuity and useful staging.
+If the review selects a new stable canonical detail rather than summarizing
+existing evidence, treat it as new durable truth and commit the affected entity
+owner; keep private visual transaction state in its owning visual tool.
 
 # Closure And Advancement Review
 
@@ -308,7 +352,13 @@ finalizing memory:
 10. Decide whether repeated player behavior earned a GM-awarded perk.
 11. Bind each reward and perk to a fiction source, cost, limit, risk, and future
    pressure.
-12. Record the review and advancement status in `arc_closure.md`.
+12. Prepare the exact `arc_closure.md` and other immediate-owner mutations for
+   the resulting review and advancement status.
+
+A newly due/deferred/applied advancement state, selected reward, earned perk,
+or world consequence is durable truth. Commit the complete owner set once with
+boundary `full_distill` before writing dependent carry-forward or opening prep;
+do not record the status, reward, or continuity revision piecemeal.
 
 Major arc closure should usually change both character capability and world
 state. Do not reduce every reward to a stat increase.
@@ -368,9 +418,10 @@ For a scenario, arc, or campaign closure eligible for structural delegation,
 use the dependency order from the GM scene/arc playbook: closure/reward
 evidence and world/cast consequences may be proposed in parallel first; a
 carry-forward/opening lane may start only after any required reward choice is
-resolved. Beat and session closure stay serial. The primary agent alone
-records the closure, applies the reward, writes next-act memory, activates the
-opening, and exposes the result to the Player.
+resolved. Beat and session closure stay serial. The primary agent alone commits
+new closure/reward authority truth through `rpg_state.py`, then writes
+secondary next-act memory, activates the prepared opening at the correct
+lifecycle point, and exposes the validated result to the Player.
 
 # Memory Hygiene
 
@@ -378,12 +429,14 @@ Keep old facts only if they still matter. Mark resolved threads clearly. Do not
 delete meaningful history from `session_log.md`; append corrections or
 clarifications instead.
 
-Every new durable fictional result increments
-`current_state.yaml.continuity_revision` once and receives a matching durable
-event. Pure propagation of an existing event does not increment it again.
-Record the current revision in `active_cast.md`, `relationship_map.md`, and each
-hot or offscreen domain actually reviewed. Current state wins every conflict;
-relationship history stays in `session_log.md`.
+Every new durable fictional result must pass the semantic restart-loss test and
+one `commit-durable` transaction. The writer increments
+`current_state.yaml.continuity_revision` and appends the matching receipt; never
+do either manually. Pure propagation of an existing event creates no revision.
+Include revision metadata in the same immediate-owner mutation when that
+owner's truth changes; do not bump `active_cast.md`, `relationship_map.md`, or
+a world domain merely because Distill read it. Current authority wins every
+conflict, and relationship history stays in `session_log.md`.
 
 When a note becomes too long, compress it into:
 
@@ -403,8 +456,13 @@ At the end of a session or arc, review every important discovery:
   NPC-known, or revealed?
 - Which protected proper nouns must still stay out of Player Mode?
 
-Update `knowledge_boundaries.md` before the next play turn. If only evidence
-was found, record safe wording and do not mark the proper noun as revealed.
+`knowledge_boundaries.md` should already contain every discovery established
+during play. Use this review to verify holder and reveal status against the
+committed evidence. If the review itself establishes a new holder or protected
+name transition, include its exact mutation in one `commit-durable` transaction
+with boundary `full_distill` before the next play turn; do not treat it as a
+cold correction. If only evidence was found, preserve safe wording and do not
+mark the proper noun as revealed.
 
 # Source Consistency Distill
 
@@ -418,9 +476,12 @@ source-sensitive fact:
 - power scale or capability limits;
 - genre expectations that should become a durable boundary.
 
-If the fact is established and compatible with `research_dossier.md`, summarize
-it in the smallest relevant file. If it conflicts or remains uncertain, record
-an open question in `research_dossier.md` instead of silently normalizing it.
+If the fact was established during play, verify that its immediate owner already
+contains it and summarize only into a listed secondary target. If this review
+establishes a new canon, rule, or world truth, commit the relevant
+`world_truths.md`, `rules.md`, entity, or other allowed owner before secondary
+summary. If it conflicts or remains uncertain, record an open question in
+`research_dossier.md` instead of silently normalizing it.
 
 # Creation Promotion Check
 
@@ -430,12 +491,16 @@ Promote an element when the Player spends time with it, returns to it, asks
 about it, trusts it, suspects it, depends on it, or treats it as emotionally
 important.
 
-- T1 -> T2: create or update the matching note file.
-- T2 -> T3: add thread relevance, stronger relationship edges, and active
-  pressure.
+- T1 -> T2: prepare the matching entity note plus required ledger and current
+  relationship mutations.
+- T2 -> T3: prepare the promoted note, thread relevance, stronger current
+  relationship edges, and active pressure owners actually changed.
 
-When an element is no longer active, move or mark it as dormant/resolved in
-`creation_ledger.md` while preserving the continuity consequence.
+Promotion, dormancy, transformation, and resolution are durable classification
+changes. Commit their complete immediate-owner set once with boundary
+`full_distill`; do not create the note first and leave its ledger, relationship,
+or thread truth for a later write. Preserve historical consequence when an
+element becomes dormant or resolved.
 
 # NPC Agency And Naturalism Review
 
@@ -455,6 +520,12 @@ At the end of a session or arc, review recurring NPCs:
   method, next decision, evaluation trigger/time horizon, and visible result
   channel without evaluating it until a relevant trigger occurs.
 
+A wording sample or condensation may remain secondary when it only expresses
+committed identity. A newly chosen agenda, capability, knowledge limit,
+offscreen trajectory, clue ownership, or relationship fact is durable; capture
+and commit every affected immediate owner before treating the review as
+complete.
+
 # Stat And Difficulty Review
 
 At the end of a session or arc, review capability grounding according to
@@ -471,6 +542,11 @@ At the end of a session or arc, review capability grounding according to
   update the note instead of letting future play drift.
 - Under `numeric`, if too many early-stage NPCs have 4 or 5 stats, lower
   ordinary characters or explain why they are exceptional.
+
+Any accepted capability, stat, difficulty, cost, or rule change is new durable
+mechanical truth. Put the affected entity/rule mutations and approved mechanic
+operations into one `commit-durable` payload with boundary `full_distill`;
+never adjust a note while leaving its mechanical authority or receipt stale.
 
 # Next Session Brief
 
@@ -492,14 +568,20 @@ Also rebuild the selective context fields:
 
 # World Dynamics Review
 
-Review only domains touched by elapsed time or play:
+Review only domains whose recorded elapsed-time, return, news, relationship, or
+other fictional trigger is actually due:
 
-- record durable notable changes in `world_dynamics.md`;
-- update last-evaluated time and the next likely pressure;
-- preserve hidden events as GM-only until a believable channel exposes them;
+- identify the causal domain result and its believable visibility channel;
+- preserve hidden results as GM-only until that channel exposes them;
 - do not advance unrelated domains for completeness;
-- move consequences into faction, character, place, thread, or knowledge notes
-  only when they became durable.
+- distinguish a secondary summary from a new faction, character, place,
+  thread, knowledge, issue, or dynamics authority change.
+
+When this review resolves a due trigger, its result is new durable world truth.
+Capture `world_dynamics.md` and every other affected immediate owner in one
+`commit-durable` transaction with boundary `full_distill`, including updated
+evaluation identity/time. If no trigger resolved and no owner truth changed,
+do not mutate the domain merely because it was reviewed.
 
 # Narration Variety Review
 
@@ -531,13 +613,22 @@ response are durable when they change world or knowledge state.
 
 For one such change:
 
-1. update the private artifact/distribution memory with a stable operation id;
-2. update `knowledge_boundaries.md` immediately when holders or protected-name
-   access change;
-3. increment continuity once and append exactly one matching durable revision;
+1. update the private artifact/distribution memory through its owning tool with
+   a stable operation id;
+2. model-capture the resulting RPG authority deltas, including immediate
+   `knowledge_boundaries.md` changes when holders or protected-name access
+   changed, plus exact owner mutations and deferred secondary targets;
+3. invoke one `tools/rpg_state.py commit-durable` transaction and let it advance
+   continuity and append exactly one matching structured revision receipt;
 4. keep only active/pending artifact and thread references hot;
 5. project and patch the documents tile only when player-visible state changed
    and refresh policy calls for it.
+
+Do not manually increment the revision or append the event, and do not copy a
+private artifact body into an unrelated RPG owner merely to fit the
+transaction. The World Voices tool remains authority for its private artifact
+state; `rpg_state.py` atomically owns the affected general RPG authorities and
+continuity receipt.
 
 Do not add a second revision for cold propagation. Fast and Balanced may defer
 voice enrichment, old-thread summaries, archive reconciliation, and stable
@@ -574,10 +665,11 @@ dashboard's expected source revision and the new continuity revision. Update
 the scene id, refresh status, and reason. A stale revision is a conflict to
 reconcile, never permission to overwrite newer player-facing state.
 
-If player-known geography, access, or route knowledge changed, update its
-authoritative campaign source first, then run `tools/compile_map_atlas.py` once
-to produce the Atlas V1 tile. Preserve stable geometry and the selected view;
-do not re-layout an unchanged atlas or compile it for map-neutral turns.
+If player-known geography, access, or route knowledge changed, verify that its
+campaign authority was already committed; if this review establishes the
+change, commit that owner first. Then run `tools/compile_map_atlas.py` once to
+produce the Atlas V1 tile. Preserve stable geometry and the selected view; do
+not re-layout an unchanged atlas or compile it for map-neutral turns.
 
 Do not use the dashboard to preserve GM-only truth. Keep hidden facts in
 campaign memory and knowledge boundaries until play reveals them.

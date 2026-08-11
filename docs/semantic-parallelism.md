@@ -21,7 +21,7 @@ The active RPG or Companion profile stores:
 ```yaml
 performance:
   semantic_parallelism: selective_structural
-  max_parallel_workers: 3
+  max_parallel_workers: 2
 ```
 
 - `off`: lowest model usage; all work is serial.
@@ -30,13 +30,17 @@ performance:
 - `aggressive_structural`: uses lower workload thresholds and may consume more
   model allowance.
 
-Quick materialization is always capped at two supporting agents. All other
-boundaries are capped at three, even if the host tool permits more. Existing
-profiles without these fields remain `off` for compatibility.
+Quick materialization and all Companion Session 0 materialization are capped at
+two supporting agents. RPG Standard/Deep materialization and other eligible
+boundaries are capped at three, even if the host tool permits more. The safe
+new-workspace default is two; RPG Standard/Deep may explicitly raise it to
+three. Existing profiles without these fields remain `off` for compatibility.
 
 ## Eligible Boundaries
 
-- Session 0 materialization after final approval;
+- Session 0 materialization after its design direction is frozen: schema-v8
+  RPG Deep does this in Stage 9 before the second preparation approval; legacy
+  routes keep their existing approved materialization boundary;
 - research with at least two independent source domains;
 - full distill with at least four cold targets across two authority families;
 - scenario, arc, or campaign closure;

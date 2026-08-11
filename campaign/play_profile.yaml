@@ -5,7 +5,7 @@ source_setup_revision: 0
 # Set inactive when setup_profile.experience_mode is companion.
 performance:
   semantic_parallelism: selective_structural
-  max_parallel_workers: 3
+  max_parallel_workers: 2
   turn_protocol: ""
   cold_distill_policy: ""
   validation_policy: ""

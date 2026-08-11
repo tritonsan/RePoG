@@ -1,6 +1,8 @@
 # Claude Code Instructions
 
-Read `AGENTS.md`, then follow `workflows/worldbuild/WORKFLOW.md`. The active
-memory is `campaign/`. After the experience gate, use the RPG GM workflow or
-the Companion workflow selected there. Keep technical work out of
-player/user-facing conversation.
+Read `AGENTS.md` and follow its Workflow Routing contract. Route from
+`campaign/setup_profile.yaml` instead of assuming setup: use the worldbuild
+workflow while the workspace is not ready, otherwise use the RPG GM or
+Companion workflow selected by `experience_mode`. The active memory is
+`campaign/`. Keep technical operations out of player- and user-facing
+conversation.

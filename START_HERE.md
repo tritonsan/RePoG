@@ -1,87 +1,28 @@
 # Start Here
 
-This ZIP is already a clean RePoG campaign workspace.
+This extracted folder is already a ready-to-use RePoG workspace.
 
-1. Extract it into a new folder.
-2. Rename the folder if you want.
-3. Open the extracted folder in Codex, Claude Code, or another agentic coding
-   tool.
-4. Start a new conversation.
-5. Send:
+1. If the workspace is still inside a ZIP archive, extract it into a new
+   folder first.
+2. Open the extracted folder in Codex, Claude Code, or another compatible
+   agentic coding tool.
+3. Start a new conversation in that workspace.
+4. Send exactly:
 
 ```text
 Start RePoG and guide me through setup.
 ```
 
-The first question asks whether you want an RPG Campaign or an AI Companion.
-The next asks whether you want Quick, Standard, or Deep setup. After your
-pitch, the agent presents 2–4 contextual Starter Bundle options. You can
-accept one, mix parts, ask for changes, use the recommended default, or defer a
-non-critical choice. The agent then maintains `campaign/` privately while you
+RePoG first asks whether you want an **RPG Campaign** or an **AI Companion**.
+It then asks whether you want Quick, Standard, or Deep setup.
+
+RPG Deep uses nine dependency-gated stages: it establishes authority and
+research before the character/world loop, then builds the living world,
+runtime contract, campaign horizon, and first Act without a fixed plot.
+
+You do not need to copy templates, edit `campaign/`, run an installer, or use
+a campaign-creation command. RePoG prepares and maintains the workspace as you
 answer and play.
 
-For RPG, the Starter Bundle also sets a compact narrative signature, whether action
-resolution is fictional, band-based, or numeric, and how often the campaign
-should offer calm breather scenes. Quick uses visible recommended defaults, so
-these additions do not create extra setup questions.
-
-Quick also defaults to Selective Structural parallelism when the agentic tool
-supports it. This can reduce the wait at world materialization and other large
-boundaries by preparing independent proposals in parallel, at the cost of
-potentially higher model usage. It never parallelizes ordinary RPG or
-Companion replies, and unsupported tools fall back to the same serial flow.
-
-Session 0 may combine fantasy, realistic, cyberpunk, and survival lenses, but a
-lens never activates mechanics by itself. Dice, strict inventory, wounds,
-clocks, structured travel, and other tracked rules are used only after you
-approve them. During System Fit the agent also asks whether turns should use
-Fast (recommended), Balanced, Maximum Continuity, or Custom maintenance and
-shows expected wait ranges before you choose.
-
-For AI Companion, Quick uses seven decisions while Standard and Deep let you
-shape more of the character. RePoG creates one adult fictional companion with
-a stable voice, home, routine, work, social circle, obligations, projects,
-boundaries, private facts, and a causal life beyond the user. It stores user
-context only under the chosen memory policy, uses no relationship meter, and
-does not run in the background. When you return, one local exchange call
-reconciles elapsed time conservatively from the saved clock. If directly asked
-whether they are real, the character clearly identifies as an AI portraying a
-fictional companion.
-
-During RPG play, Fast uses no file work or checker for a purely soft turn. It uses
-a small checkpoint when a scene needs a reliable return point and performs a
-full distillation only at its durable-turn limit or a real structural boundary.
-Breather scenes may continue as long as you want; RePoG does not manufacture a
-new threat simply to end a quiet moment.
-
-Do not open the ZIP archive itself; open the extracted folder. No installation,
-repository clone, template copy, or campaign-creation command is required.
-
-Optional RPG Dashboard after RPG setup:
-
-```bash
-python tools/serve_dashboard.py campaign/dashboard
-```
-
-Then open `http://localhost:8787/`.
-
-If Companion Session 0 enabled the separate light Companion View, start it
-instead with:
-
-```bash
-python tools/serve_companion_view.py campaign/companion_view
-```
-
-The Companion View is off by default and never contains private relationship,
-memory, disclosure, or precise-presence state.
-
-Optional dependency-free workspace check:
-
-```bash
-python tools/verify_workspace.py
-```
-
-Use `python tools/verify_workspace.py --json` when an agent needs structured
-results. Visual generation is also optional: RePoG preserves the current
-question or scene, waits for your approval before treating a draft as canon,
-then returns to the preserved point.
+For the feature overview, optional Dashboard and Companion View instructions,
+and local verification commands, see [`README.md`](README.md).

@@ -33,6 +33,18 @@ One paragraph that tells the player what kind of campaign this is.
 
 What kinds of player characters naturally belong in this campaign.
 
+## This Character–World Promise
+
+Keep this player-safe and specific to the approved character.
+
+- What the character brings into the world:
+- What the world already does without the character:
+- Where they intersect:
+- How the character's competence can matter:
+- How the limitation can meet pressure or counterplay:
+- Why this starting place and relationship fit:
+- What remains open to the Player rather than prewritten:
+
 ## Known Starting Context
 
 Only facts the character/player can know at the start.

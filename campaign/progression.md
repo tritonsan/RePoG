@@ -45,6 +45,13 @@ A closure level establishes what changed and what could be earned; it never
 creates an interlude or lock by itself. Treat each `Default reward` below as a
 candidate only when cadence and presentation allow it.
 
+Calibrate these levels from the declared reach in `world.md` rather than asking
+for campaign length again. A `contained` reach tops out at scenario closure, a
+`regional` reach at arc closure, and `long_journey` or `episodic` reaches use
+campaign closure—`long_journey` toward its stated ambition, `episodic` as
+repeating closures with no destination. A declared reach never promises that its
+ambition is reached.
+
 ### Beat
 
 - Trigger: a small scene beat, clue, bargain, fight, or consequence resolves.
@@ -189,6 +196,115 @@ Do not assume the motivation forever. Infer it from repeated player choices.
 Ask during an OOC upgrade check-in only when presentation is `explicit_ooc`;
 otherwise defer uncertain player-authored advancement without blocking play.
 
+## Three Progression Tracks
+
+Progression runs on three tracks and nothing else. Keeping the structure this small
+is what makes it consistent across settings and easy for a Player to hold in mind.
+
+1. **Stat points** — spent on the campaign's declared axes under numeric grounding,
+   or taken as a band step under banded grounding. The scale bounds each value and
+   there is no per-axis cap.
+2. **Special ability points** — a separate pool, and only when the setting carries
+   capabilities the axes cannot describe. It is instantiated per setting in
+   `rules.md`; where the setting has no such layer, the pool does not exist.
+3. **Fictional capability** — a named ability, permission, or standing earned in
+   play, with a source and a limit and no numbers attached.
+
+The third shape combines the first and the last: stat points together with an
+ability the GM chooses from what the Player has actually been doing. That choice is
+not a menu item and is not exchangeable, because it recognizes a pattern rather
+than paying for a purchase.
+
+So every offer at a closure takes one of three shapes: points to spend, a capability
+earned in the fiction, or points plus a recognized ability. Special ability points
+join the first or third shape whenever the fiction supplies a source for them.
+
+Under fictional grounding all three shapes remain, recorded in prose rather than in
+numbers, and the Player still chooses between them.
+
+Nothing on these tracks may be lost. Unspent points and unrealized capabilities are
+recorded in `arc_closure.md` and surfaced at the next closure; a closure is not
+filed as complete while points sit unspent unless the Player deferred them, and the
+deferral records the amount. The calibration tables below decide how much a closure
+is worth, not whether it is remembered.
+
+## Reward Offer Contract
+
+A reward the Player cannot compare is a reward they cannot choose. Every offer
+follows this contract, whatever the setting.
+
+Offer exactly three directions and make them differ in kind: one changes what the
+character can do, one changes who or what they can reach, and one changes their
+standing, identity, or place in the world. Three costumes on the same reward is not
+a choice. When only one direction is honest in the fiction, offer one and say why
+rather than padding the list.
+
+Describe each in the Player's language, never by category name, in the same four
+lines so they stay comparable:
+
+- what becomes possible—what was contested and is now routine, or what door opens;
+- what it costs or where it does not work;
+- who notices, who is pleased, and who tightens;
+- what it opens next, as one concrete affordance rather than a plan.
+
+Name where it comes from. A reward with no source in the fiction is a prize, and
+this system does not hand out prizes.
+
+When a reward needs training, downtime, travel, crafting, or a scene, record it as
+pending with that condition instead of applying it at once. It then arrives through
+play, and it cannot be quietly forgotten.
+
+When the campaign tracks recognition, state each option's attention cost. For a
+hunted character a loud reward is itself a price, and that belongs in the choice.
+
+Under a short-pause presentation the three directions are offered and the Player
+chooses or defers. Under fiction-carried presentation there is no menu, but the
+same four lines are still owed in fictional language: what became possible, what it
+cost, who noticed, what it opened. A sheet that changes without the Player
+understanding why is the failure this contract exists to prevent. Under no
+advancement, offer nothing and still record the world and relationship results.
+
+At every closure, record which direction the Player actually took under
+`arc_closure.md` player motivation signals, and calibrate later offers from that
+rather than from an assumption.
+
+## Rewards Follow The Accepted System
+
+Reward vocabulary is bounded by the system contract the Player accepted. Parallel
+structure is not decoration: a reward expressed outside the accepted system is not
+a reward the campaign can apply.
+
+- Under numeric grounding, mechanical rewards move the campaign's declared axes on
+  their declared scale, and they respect the declared cap. Raising the cap is a
+  separate revision, not an arc reward.
+- Under banded grounding, they move a named band in the band vocabulary.
+- Under fictional grounding, they change recorded competence, permission, limit, or
+  counterplay in prose. Never introduce a number as a reward.
+- A reward may only use instruments the campaign enabled. If a candidate needs a
+  mechanic that is off—a reroll, a resource pool, a clock, an encumbrance
+  allowance—reshape it into an enabled kind or drop it. Do not invent a mechanic to
+  carry a reward.
+- Enabled instruments open their own reward space: clocks allow pressure relief or
+  delay, tracked supplies allow security or capacity, conditions allow resistance or
+  recovery, ability costs allow cheaper or faster use, tracked travel allows route
+  access.
+- A new capability attaches to a declared axis. A genuinely new axis belongs to a
+  stage boundary and is asked there as a revision, never granted as an arc reward.
+
+## Setting-Instantiated Reward Pool
+
+The pool below is a list of categories, and categories are not rewards. Record this
+campaign's concrete instances of them here during the progression decision, drawn
+from the researched setting and the established world. When this section is empty,
+rewards come out generic and the campaign feels borrowed.
+
+- Capability instances in this setting:
+- Access and relationship instances:
+- Standing, identity, and reputation instances:
+- Equipment, resource, and base instances:
+- Knowledge and route instances:
+- World-state instances:
+
 ## Reward Pool
 
 Pick rewards from the fiction first, then fit the category.
@@ -253,6 +369,21 @@ Before presenting upgrade choices:
 - Does it overshadow existing capabilities?
 - Does the next threat or social pressure need to respond?
 - Does it make the game richer instead of shorter?
+
+## Companion Control Policy
+
+The Player chooses how much they steer investment in a companion, and the accepted
+policy is recorded with the company contract.
+
+- Deciding: the Player chooses whether a reward goes to a companion and in which
+  direction, within what the companion would accept.
+- Suggesting: the Player offers a direction and the companion's own history and
+  motive resolve it.
+- Leaving it: companions grow from their own participation without Player input.
+
+No policy extends to their will. What a companion wants, fears, refuses, or leaves
+over is theirs under every setting, and a reward they would not accept is not applied
+because it was chosen for them.
 
 ## Companion And Ally Advancement
 

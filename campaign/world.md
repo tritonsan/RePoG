@@ -57,6 +57,35 @@ Genre lenses may suggest pressures or questions, but only accepted Session 0
 decisions become world truth. Record the accepted runtime contract in
 `play_profile.yaml`; do not consult lens briefs during ordinary play.
 
+## Macro Frame And Powers
+
+Decide the world at macro scale even when play stays local. Keep each entry to a
+few lines; this is a frame, not an encyclopedia, and it must not require the
+player character to matter to it.
+
+- Era anchor: what is happening at large scale right now
+- Who holds large-scale power, and what could upset it
+- Large movements running without the character:
+- Visible channels that carry the macro into the local slice: news, prices,
+  patrols, migration, levies, rumor
+- Local link: the one legible connection between this frame and the starting
+  slice
+
+### Macro Roster
+
+Named occupants for the macro seats the setting implies, at roster detail only:
+name and title, seat, one line of disposition and method, current large-scale
+movement, and where their reach could touch the local slice. Keep it small.
+Under an original-cast scope the seats come from the source and the occupants are
+original. A roster figure graduates to a character note with a filled Agency Card
+before it appears onstage or speaks.
+
+| Figure | Seat | Disposition and method | Current movement | Possible local reach |
+| --- | --- | --- | --- | --- |
+| Example Figure | Example seat | Example stance | Example movement | Example contact point |
+
+Remove the example row once real entries exist.
+
 ## Initial Scale
 
 What is onstage at campaign start, what stays offscreen, and how far play can
@@ -84,7 +113,20 @@ investigation, survival, travel, intrigue, or a balanced mix.
 
 ## Game Length
 
-Expected length: one-shot, short arc, medium campaign, long saga, or open-ended.
+- Declared reach: `contained` | `regional` | `long_journey` | `episodic`
+- Stated destination or ambition, when there is one:
+- Highest closure level in play: scenario, arc, or campaign
+
+`contained` is one place or one situation. `regional` is a bounded region across
+several arcs. `long_journey` names a distant destination or ambition and may
+never arrive there. `episodic` is ongoing life with no destination and repeating
+closures.
+
+The declared reach is an intent, not a guarantee. It sets how deep preparation
+goes and how later questions are framed; it never obliges the world to deliver
+the destination, and no scene bends to keep the ambition on schedule. Extending
+the reach later is a revision that deepens the macro frame and may trigger new
+research passes rather than starting a new campaign.
 
 ## Starting Level
 

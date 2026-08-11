@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 import re
 import shutil
 import sys
@@ -17,6 +18,10 @@ import tempfile
 from pathlib import Path
 from types import ModuleType
 from typing import Any
+
+# Verification dynamically imports bundled helpers.  A read-only verification
+# must not leave interpreter-specific cache files in a player workspace.
+sys.dont_write_bytecode = True
 
 
 REQUIRED_FILES = (
@@ -26,7 +31,11 @@ REQUIRED_FILES = (
     "README.md",
     "START_HERE.md",
     "LICENSE",
+    "DISTRIBUTION.md",
+    "THIRD_PARTY_NOTICES.md",
     "campaign/setup_profile.yaml",
+    "campaign/session_zero_state.json",
+    "campaign/character_foundation.md",
     "campaign/play_profile.yaml",
     "campaign/companion_profile.yaml",
     "campaign/companion_state.json",
@@ -47,9 +56,11 @@ REQUIRED_FILES = (
     "campaign/dashboard/dashboard_state.json",
     "campaign/dashboard/index.html",
     "tools/check_state.py",
+    "tools/build_distribution.py",
     "tools/check_companion.py",
     "tools/check_companion_view.py",
     "tools/companion_state.py",
+    "tools/rpg_state.py",
     "tools/companion_acceptance_suite.json",
     "tools/check_dashboard.py",
     "tools/compile_map_atlas.py",
@@ -60,6 +71,8 @@ REQUIRED_FILES = (
     "tools/snapshot.py",
     "tools/migrate_companion_contract.py",
     "tools/migrate_gm_contract.py",
+    "tools/migrate_session_zero_v8.py",
+    "tools/session_zero_state.py",
     "tools/gm_replay_suite.json",
     "tools/roll_dice.py",
     "tools/serve_companion_view.py",
@@ -93,9 +106,156 @@ REQUIRED_FILES = (
     "workflows/worldbuild/playbooks/research_gate.md",
     "workflows/worldbuild/playbooks/rpg_quick.md",
     "workflows/worldbuild/playbooks/rpg_standard_deep.md",
+    "workflows/worldbuild/deep_v8/README.md",
+    "workflows/worldbuild/deep_v8/manifest.json",
+    "workflows/worldbuild/deep_v8/01_north_star_authority.md",
+    "workflows/worldbuild/deep_v8/02_research_canon_grounding.md",
+    "workflows/worldbuild/deep_v8/03_character_core.md",
+    "workflows/worldbuild/deep_v8/04_thin_world_kernel.md",
+    "workflows/worldbuild/deep_v8/05_character_realization_mechanics.md",
+    "workflows/worldbuild/deep_v8/06_living_world_ecology.md",
+    "workflows/worldbuild/deep_v8/07_runtime_experience_contract.md",
+    "workflows/worldbuild/deep_v8/08_reciprocity_campaign_horizon.md",
+    "workflows/worldbuild/deep_v8/09_first_act_preparation.md",
     "docs/companion-mode.md",
     "docs/semantic-parallelism.md",
 )
+
+FORBIDDEN_DISTRIBUTION_DIRS = {
+    ".git",
+    ".github",
+    ".hypothesis",
+    ".idea",
+    ".pytest_cache",
+    ".venv",
+    ".vscode",
+    "__pycache__",
+    "development",
+    "campaigns",
+    "examples",
+    "htmlcov",
+    "tests",
+}
+FORBIDDEN_DISTRIBUTION_SUFFIXES = {".pyc", ".pyo"}
+
+# The release boundary is intentionally narrower than "whatever happens to be
+# tracked".  The public repository is the canonical source, but a mistakenly
+# committed campaign, fixture, or maintainer note must still not become part of
+# a player workspace.  Product trees are allowed wholesale; the mutable
+# campaign template is restricted to its known blank owners and fixed assets.
+DISTRIBUTION_ROOT_FILES = {
+    ".gitignore",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "DISTRIBUTION.md",
+    "DISTRIBUTION_MANIFEST.json",
+    "LICENSE",
+    "OPEN_CAMPAIGN.md",
+    "README.md",
+    "START_HERE.md",
+    "THIRD_PARTY_NOTICES.md",
+}
+DISTRIBUTION_PRODUCT_TREES = {"assets", "briefs", "docs", "tools", "workflows"}
+DISTRIBUTION_CAMPAIGN_ROOT_FILES = {
+    "active_cast.md",
+    "appearance_guide.md",
+    "arc_closure.md",
+    "boundaries.md",
+    "campaign_one_pager.md",
+    "character_foundation.md",
+    "companion_profile.yaml",
+    "companion_state.json",
+    "creation_ledger.md",
+    "current_state.yaml",
+    "faces_and_places.md",
+    "first_session.md",
+    "issues.md",
+    "knowledge_boundaries.md",
+    "location_graph.md",
+    "map_atlas.json",
+    "mechanics_state.json",
+    "next_act_prep.md",
+    "opening_brief.md",
+    "palette.md",
+    "play_profile.yaml",
+    "player.md",
+    "player_ties.md",
+    "progression.md",
+    "relationship_map.md",
+    "research_dossier.md",
+    "rules.md",
+    "secrets_and_clues.md",
+    "session_brief.md",
+    "session_log.md",
+    "session_zero.md",
+    "session_zero_state.json",
+    "setup_profile.yaml",
+    "storytelling.md",
+    "style_state.json",
+    "system_fit.md",
+    "threads.md",
+    "user_context.md",
+    "visual_gallery.md",
+    "visual_state.json",
+    "visual_style.md",
+    "world.md",
+    "world_dynamics.md",
+    "world_truths.md",
+}
+DISTRIBUTION_CAMPAIGN_EXACT_FILES = {
+    "campaign/characters/_companion_template.md",
+    "campaign/characters/_template.md",
+    "campaign/companion_view/app.js",
+    "campaign/companion_view/assets/README.md",
+    "campaign/companion_view/companion_view_state.json",
+    "campaign/companion_view/index.html",
+    "campaign/companion_view/style.css",
+    "campaign/dashboard/assets/README.md",
+    "campaign/dashboard/assets/world_voices/catalog.json",
+    "campaign/dashboard/dashboard_state.json",
+    "campaign/dashboard/index.html",
+    "campaign/factions/_template.md",
+    "campaign/places/_template.md",
+    "campaign/snapshots/README.md",
+    "campaign/visuals/README.md",
+    "campaign/visuals/_drafts/README.md",
+    "campaign/visuals/characters/README.md",
+    "campaign/visuals/factions/README.md",
+    "campaign/visuals/items/README.md",
+    "campaign/visuals/places/README.md",
+    "campaign/visuals/scenes/README.md",
+    "campaign/world_voices/README.md",
+    "campaign/world_voices/artifacts/README.md",
+    "campaign/world_voices/index.json",
+}
+DISTRIBUTION_CAMPAIGN_PRODUCT_TREES = {"campaign/dashboard/vendor/leaflet"}
+
+
+def distribution_path_allowed(relative: str | Path) -> bool:
+    """Return whether a repository path belongs in a clean player package."""
+
+    normalized = Path(str(relative).replace("\\", "/")).as_posix()
+    if normalized.startswith("./"):
+        normalized = normalized[2:]
+    if not normalized or normalized.startswith("../"):
+        return False
+    parts = Path(normalized).parts
+    if any(part in FORBIDDEN_DISTRIBUTION_DIRS for part in parts):
+        return False
+    if Path(normalized).suffix.lower() in FORBIDDEN_DISTRIBUTION_SUFFIXES:
+        return False
+    if len(parts) == 1:
+        return normalized in DISTRIBUTION_ROOT_FILES
+    if parts[0] in DISTRIBUTION_PRODUCT_TREES:
+        return True
+    if normalized in DISTRIBUTION_CAMPAIGN_EXACT_FILES:
+        return True
+    if any(
+        normalized == prefix or normalized.startswith(prefix + "/")
+        for prefix in DISTRIBUTION_CAMPAIGN_PRODUCT_TREES
+    ):
+        return True
+    return len(parts) == 2 and parts[0] == "campaign" and parts[1] in DISTRIBUTION_CAMPAIGN_ROOT_FILES
 
 REQUIRED_DIRS = (
     "briefs",
@@ -115,6 +275,7 @@ REQUIRED_DIRS = (
     "workflows/companion/playbooks",
     "workflows/orchestration",
     "workflows/worldbuild/playbooks",
+    "workflows/worldbuild/deep_v8",
 )
 
 REQUIRED_LENSES = ("INDEX.md", "fantasy.md", "realistic.md", "cyberpunk.md", "survival.md")
@@ -213,6 +374,143 @@ def _check_layout(workspace: Path) -> list[dict[str, Any]]:
             )
     findings.extend(_check_gm_replay_fixture(workspace / "tools" / "gm_replay_suite.json"))
     findings.extend(_check_companion_acceptance_fixture(workspace / "tools" / "companion_acceptance_suite.json"))
+    return findings
+
+
+def _check_distribution_boundary(workspace: Path) -> list[dict[str, Any]]:
+    """Reject development and machine-local artifacts from a release tree."""
+
+    findings: list[dict[str, Any]] = []
+    for current, directories, filenames in os.walk(workspace):
+        current_path = Path(current)
+        for directory in sorted(list(directories)):
+            if directory in FORBIDDEN_DISTRIBUTION_DIRS:
+                path = current_path / directory
+                relative = path.relative_to(workspace)
+                findings.append(
+                    _finding(
+                        "error",
+                        "distribution_artifact_forbidden",
+                        f"Development or machine-local artifact is not allowed in a public package: {relative.as_posix()}",
+                        path,
+                        check="distribution",
+                    )
+                )
+                directories.remove(directory)
+        for filename in sorted(filenames):
+            path = current_path / filename
+            relative = path.relative_to(workspace).as_posix()
+            if not distribution_path_allowed(relative):
+                findings.append(
+                    _finding(
+                        "error",
+                        "distribution_path_not_allowed",
+                        f"Package file is outside the public allowlist: {relative}",
+                        path,
+                        check="distribution",
+                    )
+                )
+            if path.suffix.lower() in FORBIDDEN_DISTRIBUTION_SUFFIXES:
+                findings.append(
+                    _finding(
+                        "error",
+                        "distribution_bytecode_forbidden",
+                        f"Python bytecode is not allowed in a public package: {relative}",
+                        path,
+                        check="distribution",
+                    )
+                )
+
+    notices_path = workspace / "THIRD_PARTY_NOTICES.md"
+    notices = notices_path.read_text(encoding="utf-8").lower() if notices_path.is_file() else ""
+    vendor_roots = sorted(path for path in workspace.rglob("vendor") if path.is_dir())
+    for vendor_root in vendor_roots:
+        for package in sorted(path for path in vendor_root.iterdir() if path.is_dir()):
+            license_files = [
+                path
+                for path in package.iterdir()
+                if path.is_file() and path.name.lower() in {"license", "license.txt", "license.md", "copying"}
+            ]
+            if not license_files:
+                findings.append(
+                    _finding(
+                        "error",
+                        "vendor_license_missing",
+                        f"Vendored package has no adjacent license file: {package.name}",
+                        package,
+                        check="distribution",
+                    )
+                )
+            if package.name.lower() not in notices:
+                findings.append(
+                    _finding(
+                        "error",
+                        "vendor_notice_missing",
+                        f"Vendored package is absent from THIRD_PARTY_NOTICES.md: {package.name}",
+                        package,
+                        check="distribution",
+                    )
+                )
+
+    manifest_path = workspace / "DISTRIBUTION_MANIFEST.json"
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            files = manifest.get("files") if isinstance(manifest, dict) else None
+            if not isinstance(files, list):
+                raise ValueError("files must be a list")
+            import hashlib
+
+            expected_paths: set[str] = set()
+            for record in files:
+                if not isinstance(record, dict) or not isinstance(record.get("path"), str) or not isinstance(record.get("sha256"), str):
+                    raise ValueError("each file record needs path and sha256 strings")
+                if not re.fullmatch(r"[0-9a-f]{64}", record["sha256"]):
+                    raise ValueError(f"invalid SHA-256 value for {record['path']}")
+                if record["path"] in expected_paths:
+                    raise ValueError(f"duplicate manifest path: {record['path']}")
+                expected_paths.add(record["path"])
+                candidate = (workspace / record["path"]).resolve()
+                if workspace not in candidate.parents or not candidate.is_file():
+                    raise ValueError(f"manifest path is missing or escapes the package: {record['path']}")
+                digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+                if digest != record["sha256"]:
+                    findings.append(
+                        _finding(
+                            "error",
+                            "distribution_manifest_hash_mismatch",
+                            f"Manifest hash does not match: {record['path']}",
+                            candidate,
+                            check="distribution",
+                        )
+                    )
+            actual_paths = {
+                path.relative_to(workspace).as_posix()
+                for path in workspace.rglob("*")
+                if path.is_file() and path != manifest_path
+            }
+            if manifest.get("file_count") != len(files):
+                raise ValueError("file_count does not match the manifest file list")
+            for extra in sorted(actual_paths - expected_paths):
+                findings.append(
+                    _finding(
+                        "error",
+                        "distribution_manifest_extra_file",
+                        f"Package file is not recorded in the manifest: {extra}",
+                        workspace / extra,
+                        check="distribution",
+                    )
+                )
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            findings.append(
+                _finding(
+                    "error",
+                    "distribution_manifest_invalid",
+                    str(exc),
+                    manifest_path,
+                    check="distribution",
+                )
+            )
     return findings
 
 
@@ -789,12 +1087,21 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
 
             source_setup_text = (campaign / "setup_profile.yaml").read_text(encoding="utf-8")
             pristine_setup = (
-                re.search(r"(?m)^schema_version:\s*4\s*$", source_setup_text) is not None
+                re.search(r"(?m)^schema_version:\s*8\s*$", source_setup_text) is not None
                 and re.search(r"(?m)^status:\s*pending\s*$", source_setup_text) is not None
                 and re.search(r'(?m)^experience_mode:\s*""\s*$', source_setup_text) is not None
                 and re.search(r'(?m)^session_zero_mode:\s*""\s*$', source_setup_text) is not None
             )
             if not pristine_setup:
+                findings.append(
+                    _finding(
+                        "error",
+                        "workspace_template_precondition_failed",
+                        "The bundled setup_profile.yaml is not the pristine schema-v8 routing template; route regression checks cannot run safely.",
+                        campaign / "setup_profile.yaml",
+                        check="companion",
+                    )
+                )
                 return findings
 
             bad_gate_campaign = root / "bad_gate"
@@ -830,8 +1137,8 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
                 ('session_zero_mode: ""', "session_zero_mode: quick"),
                 ('question_target: ""', 'question_target: "7"'),
                 ("questions_completed: 0", "questions_completed: 7"),
-                ("activated_packs: []", "activated_packs: [companion_persona]"),
-                ("defaulted_packs: []", "defaulted_packs: [companion_persona]"),
+                ("defaulted_decisions: []", "defaulted_decisions: [inferred_persona_and_life]"),
+                ("defaults_reviewed: false", "defaults_reviewed: true"),
                 ("ready_for_play: false", "ready_for_play: true"),
             ):
                 setup_text = setup_text.replace(old, new, 1)
@@ -1078,7 +1385,24 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
 
             legacy_campaign = root / "legacy_rpg"
             shutil.copytree(campaign, legacy_campaign)
-            legacy_setup = (legacy_campaign / "setup_profile.yaml").read_text(encoding="utf-8").replace("schema_version: 4", "schema_version: 3", 1)
+            legacy_source = (legacy_campaign / "setup_profile.yaml").read_text(encoding="utf-8")
+            legacy_setup, legacy_schema_edits = re.subn(
+                r"(?m)^schema_version:\s*8\s*$",
+                "schema_version: 3",
+                legacy_source,
+                count=1,
+            )
+            if legacy_schema_edits != 1:
+                findings.append(
+                    _finding(
+                        "error",
+                        "legacy_route_fixture_schema_failed",
+                        "Could not derive the schema-v3 RPG compatibility fixture from the schema-v8 template.",
+                        legacy_campaign / "setup_profile.yaml",
+                        check="companion",
+                    )
+                )
+                return findings
             legacy_setup = re.sub(r'(?m)^experience_mode:.*\n', "", legacy_setup, count=1)
             (legacy_campaign / "setup_profile.yaml").write_text(legacy_setup, encoding="utf-8")
             for filename in ("companion_profile.yaml", "companion_state.json", "user_context.md"):
@@ -1091,7 +1415,13 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
     return findings
 
 
-def verify_workspace(workspace: Path, *, campaign: Path | None = None, scope: str = "full") -> dict[str, Any]:
+def verify_workspace(
+    workspace: Path,
+    *,
+    campaign: Path | None = None,
+    scope: str = "full",
+    distribution: bool = False,
+) -> dict[str, Any]:
     """Return a structured, read-only verification report."""
 
     workspace = workspace.resolve()
@@ -1105,6 +1435,8 @@ def verify_workspace(workspace: Path, *, campaign: Path | None = None, scope: st
         "campaign": campaign_findings,
         "dashboard": _dashboard_check(workspace, campaign_path),
     }
+    if distribution:
+        grouped["distribution"] = _check_distribution_boundary(workspace)
     checks: list[dict[str, Any]] = []
     findings: list[dict[str, Any]] = []
     for check_id, check_findings in grouped.items():
@@ -1129,6 +1461,7 @@ def verify_workspace(workspace: Path, *, campaign: Path | None = None, scope: st
         "workspace_path": str(workspace),
         "campaign_path": str(campaign_path),
         "scope": scope,
+        "distribution": distribution,
         "error_count": errors,
         "warning_count": warnings,
         "info_count": infos,
@@ -1164,12 +1497,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--campaign", help="Campaign directory. Defaults to <workspace>/campaign.")
     parser.add_argument("--scope", choices=("hot", "full"), default="full")
+    parser.add_argument(
+        "--distribution",
+        action="store_true",
+        help="Reject Git metadata, caches, tests, development files, bytecode, and unlicensed vendor bundles.",
+    )
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON instead of the human summary.")
     args = parser.parse_args(argv)
     result = verify_workspace(
         Path(args.workspace),
         campaign=Path(args.campaign) if args.campaign else None,
         scope=args.scope,
+        distribution=args.distribution,
     )
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=True))

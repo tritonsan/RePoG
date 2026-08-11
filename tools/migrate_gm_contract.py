@@ -23,6 +23,10 @@ POLICY_MIGRATIONS = {
     "scene_only": "scene_checkpoint_only",
 }
 
+VALIDATION_POLICY_MIGRATIONS = {
+    "hot_each_durable_full_on_distill": "full_on_distill",
+}
+
 AGENCY_CARD = """## At-The-Table Agency Card
 
 - Local role:
@@ -142,6 +146,16 @@ def _migrate_profile(text: str, state_text: str) -> tuple[str, list[str]]:
         )
         if updated != result:
             actions.append(f"map cold_distill_policy {old} -> {new}")
+            result = updated
+
+    for old, new in VALIDATION_POLICY_MIGRATIONS.items():
+        updated = re.sub(
+            rf"(?m)^(\s*validation_policy:\s*){re.escape(old)}\s*$",
+            rf"\g<1>{new}",
+            result,
+        )
+        if updated != result:
+            actions.append(f"map validation_policy {old} -> {new}")
             result = updated
 
     if not re.search(r"(?m)^\s{2}resolution_grounding:\s*", result):

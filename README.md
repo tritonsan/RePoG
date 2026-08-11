@@ -5,6 +5,25 @@ RPG Game Master or a persistent AI Companion with a coherent fictional life.
 This repository is the ready-to-use workspace: download the ZIP, open the
 extracted folder, and start a new conversation.
 
+## Start in 60 Seconds
+
+1. Download this workspace as a ZIP and extract it into a new folder.
+2. Open the extracted folder in Codex, Claude Code, or another compatible
+   agentic coding tool.
+3. Start a new conversation in that workspace.
+4. Send exactly:
+
+```text
+Start RePoG and guide me through setup.
+```
+
+RePoG first asks whether you want an **RPG Campaign** or an **AI Companion**,
+then whether you want Quick, Standard, or Deep setup. Do not open the ZIP
+archive itself, and do not copy templates or run a campaign-creation command.
+
+For the compact offline setup card, see [`START_HERE.md`](START_HERE.md). The
+illustrated installation walkthrough is included below.
+
 ## Full Walkthrough
 
 This walkthrough shows the earlier public RPG flow. The current workspace also
@@ -67,6 +86,9 @@ On GitHub, select **Code → Download ZIP**.
 
 The current repository file list may look simpler than the recording because
 the public download has since been reduced to the clean player workspace.
+GitHub's ZIP contains only the public repository's tracked files; it does not
+contain Git history, development tests, local caches, or private campaign
+folders.
 
 ### 2. Extract the ZIP
 
@@ -122,15 +144,16 @@ facts.
 
 ## Session 0 Depth
 
-- **Quick:** RPG uses 6–8 decisions; Companion uses exactly 7. Roughly 10–15
-  minutes.
-- **Standard:** RPG uses 17 core modules; Companion uses 15. Roughly 30–60
-  minutes.
-- **Deep:** adaptive detail packs, normally 30–45 decisions and 60–120 minutes.
+- **Quick:** current RPG setup uses 10 compact decisions; Companion uses 7.
+- **Standard:** current RPG setup uses 21–30 decisions; Companion uses 15.
+- **Deep:** new RPG campaigns use nine dependency-gated stages and stage-local
+  extensions; the decision count is a fatigue signal rather than a completion
+  quota. Companion and legacy RPG Deep retain their 30–45 planning range.
 
 All modes use the same continuity model. Quick records visible defaults;
-Standard gives a balanced setup; Deep opens only the detail packages relevant
-to the chosen campaign.
+Standard gives a balanced setup; Deep opens only the stage extensions relevant
+to the chosen campaign. Existing completed RPG Deep campaigns remain on their
+compatible legacy contract unless explicitly migrated.
 
 ## AI Companion Continuity
 
@@ -328,7 +351,8 @@ second game engine.
 
 - `AGENTS.md`: durable GM and continuity rules.
 - `CLAUDE.md`: compatibility bridge for Claude Code.
-- `OPEN_CAMPAIGN.md`: first-conversation instructions.
+- `START_HERE.md`: the primary offline installation and first-run card.
+- `OPEN_CAMPAIGN.md`: a compact quick-launch card that points to `START_HERE.md`.
 - `workflows/`: worldbuilding, RPG GM, Companion conversation, distill, and
   audit procedures.
 - `briefs/`: Session 0 interview guidance and composable genre lenses.
@@ -337,3 +361,6 @@ second game engine.
 - `tools/`: small local checks, snapshots, mechanics, and style helpers.
 
 RePoG is licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
+Bundled third-party components and their retained licenses are listed in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Maintainer-facing canonical
+source and release rules are documented in [`DISTRIBUTION.md`](DISTRIBUTION.md).

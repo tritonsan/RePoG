@@ -21,98 +21,286 @@ universe; then derive fitting choices from that universe.
 
 # Interview Principle
 
-Default to a modular Session 0 interview.
+Default to a modular Session 0 interview. Ask one question at a time and never
+dump the full checklist in one response. For each decision, name the current
+module or slot, ask exactly one question, explain why it matters, give two to
+four contextual options when useful, then stop and wait.
 
-Ask one question at a time. Never dump the full checklist in one response.
+Record accepted answers immediately. If the Designer answers future decisions
+at once, persist them and resume at the next missing decision. Never repeat a
+locked, defaulted, skipped, deferred, or already answered decision. Revising an
+existing decision advances `setup_revision` without increasing
+`questions_completed`.
 
-For each question:
+For current schema-v7 RPG routes, the Campaign Promise and Character Seed feed
+contextual system and presentation bundles. Accept system choices in the
+Play/System module and presentation choices in the Presentation/Visual module;
+one bundle response must not silently approve both. Schema-v6+ RPG Quick uses
+the same split across slots 5 and 6. Legacy RPG and Companion retain their
+existing bundle decision.
 
-- name the current module;
-- ask exactly one decision question;
-- explain why it matters in one or two sentences;
-- give 2 to 4 setting-neutral examples or options;
-- stop and wait for the Designer's answer.
+A displayed bundle may preview `fictional|bands|numeric` grounding, optional
+mechanics awaiting approval, three short Narrative Signature anchors, up to
+three avoid habits, interiority, up to two sensory priorities, dialogue,
+humor, distance, breathers, tracking load, and expected speed effect. Accepted
+runtime values belong in the active profile; lens briefs remain setup inputs,
+not hot play context.
 
-Do not ask the next question until the current one is answered. If the Designer
-answers multiple future questions at once, record those answers and continue
-with the next missing question only.
-
-At the end of each module, summarize the locked answer briefly, record whether
-the module is locked, open, or defaulted, then ask the first question of the
-next missing module.
-
-After the Campaign Pitch, infer a contextual Starter Bundle. Present 2–4
-campaign-specific choices, not generic genre menus. Each choice must state its
-play effect, tracking/latency effect when relevant, and why it is recommended.
-Accept `accept`, `mix`, `change`, `default`, `defer`, or a free-form answer.
-Materialize the accepted result in `play_profile.yaml`; lens briefs are setup
-inputs and are not hot play context.
-
-Every Starter Bundle also materializes the runtime GM contract without opening
-extra Quick questions:
-
-- resolution grounding: `fictional`, `bands`, or `numeric`;
-- three short campaign-specific Narrative Signature anchors and no more than
-  three avoid habits;
-- interiority policy, up to two sensory priorities, dialogue balance, humor,
-  and emotional distance;
-- breather frequency and exit policy.
-
-When a Quick Designer accepts defaults, use `fictional`, `player_owned`,
-`balanced` breather frequency, and
-`player_led_with_established_triggers`. Use `balanced` dialogue,
-`situational` humor, and `close` emotional distance unless the pitch clearly
-calls for another value. Derive signature anchors and sensory priorities from
-the pitch; if it supplies no signal, use concrete sensory evidence, plain
-character-specific dialogue, and causal consequences before exposition as the
-three anchors. Avoid default cryptic aphorisms, recycled stock
-gestures/metaphors, and manufactured tension after clean success. Do not ask a
-separate question for any of these Quick defaults; show them in the Starter
-Bundle and final summary.
-
-If the Designer says "use defaults", choose coherent defaults, show the
-assumptions in Designer Mode, and then create files.
+When Quick defaults are accepted, use `fictional`, `player_owned`, balanced
+dialogue and breathers, situational humor, close distance, and
+`player_led_with_established_triggers`, unless the established promise clearly
+requires another value. Derive signature and sensory choices from the promise
+and character. Show every inferred choice in the review and give it a stable
+ordinary-default label.
 
 # First Question: Experience Gate
 
-For schema-v4 workspaces with a blank `experience_mode`, ask only:
+When `experience_mode` is blank, ask only:
 
 > What would you like to create: an RPG Campaign with RePoG as the Game
 > Master, or an AI Companion—a persistent fictional character with an
 > independent, grounded life?
 
 Persist `rpg` or `companion` before asking anything else. Do not combine this
-with Session 0 depth or a pitch. This routing choice does not count toward the
-Quick, Standard, or Deep content-decision target. Legacy schema-v1–v3
-campaigns without this field remain RPG campaigns and must not be sent back to
-this gate.
+with depth or pitch. Legacy schema-v1–v3 campaigns without the field remain
+RPG and are not sent back through the gate.
 
 # Second Question: Session 0 Depth Gate
 
-After `experience_mode` is selected and `session_zero_mode` is blank, ask only:
+When experience is selected and `session_zero_mode` is blank, ask only:
 
-> Which Session 0 depth do you want: Quick (10–15 minutes), Standard (30–60
-> minutes), or Deep (60–120 minutes, normally 30–45 decisions)?
+> Which Session 0 depth do you want: Quick (compact), Standard (expanded
+> core), or Deep (adaptive core plus triggered depth packs)?
 
-Persist the selection before asking the campaign pitch. Do not reopen this gate
-for an active or completed campaign. When depth is persisted, change setup
-status from `pending` to `in_progress`; `pending` is reserved for the two
-routing gates.
+Use these content-decision contracts:
 
-If `experience_mode` is `companion`, continue with Companion Session 0 below
-and materialize `companion_profile.yaml`; set `play_profile.yaml` to
-`profile_status: inactive` and treat the RPG module-status block as inactive.
-If it is `rpg`, use the RPG interview below, treat the Companion module-status
-block as inactive, and set `companion_profile.yaml` to
-`profile_status: inactive` when setup is completed.
+- schema-v6+ RPG Quick: exactly 10;
+- schema-v7 RPG Standard: 21–30;
+- schema-v7 RPG Deep: 30–45;
+- Companion Quick: exactly 7;
+- Companion Standard: exactly 15;
+- Companion Deep: 30–45;
+- legacy schema-v1–v5 RPG Quick: 6–8;
+- legacy schema-v1–v6 RPG Standard: 17–25.
+
+Do not invent a replacement duration for redesigned RPG Quick or Standard
+until measured. Persist depth before the pitch, change status from `pending` to
+`in_progress`, and do not reopen this gate for an active or completed campaign.
+An active legacy Standard/Deep route preserves its 17-module sequence unless
+the Player explicitly approves migration.
 
 # Shared Interview Rules
 
-- Ask exactly one decision per message and write the answer immediately.
-- Never repeat a locked, defaulted, skipped, or deferred decision.
-- Accept "use the default", "skip this", "go deeper", and "that is enough".
-- At completion, summarize locked, defaulted, and deferred decisions for final
-  confirmation.
+- Ask exactly one decision per message and write accepted truth immediately.
+- Treat each slot or module as one decision boundary: the Player chooses a
+  consequential preference or permission, the coordinator realizes the
+  operational and causal fields it implies, and the named reviews show the
+  accepted choices, ordinary defaults, and player-safe prepared result.
+- An accepted card enables only the stateful mechanics and optional layers it
+  states explicitly; omitted layers stay off and none enables another by
+  implication.
+- An inherited decision is never re-asked or quietly weakened; a requested
+  change is a revision of its owning module.
+- Ask the content boundary alone, never inside a card, using the same standard
+  categories in every route and setting, with open/fade/avoid per category and
+  "everything open" as a real answer. Say both guarantees: a limit may be added
+  at any time including mid-play, and adding one is never a cost. A bare "is
+  there anything?" is not enough, since silence would be recorded as consent.
+- Keep authorship breadth and consequence weight independent, and settle
+  character-specific authorship limits when the character exists rather than
+  asking the stance twice. Clarification is a default, not an interview axis.
+- Progression runs on three tracks: stat points, special ability points where the
+  setting has a layer outside the axes, and fictional capabilities. Offers take one
+  of three shapes—points, a capability, or points plus a recognized ability—recorded
+  in prose under fictional grounding. Unspent points and unrealized capabilities are
+  never lost. Starting distribution requires at least one point in every axis and
+  imposes no per-axis cap.
+- Progression asks two separate things—at which closure growth arrives, in the
+  setting's own unit, and how it arrives—and then instantiates the reward pool for
+  the setting. Reward offers give three directions differing in kind, each in the
+  Player's language with what becomes possible, its cost, who notices, its attention
+  cost, and what it opens next; rewards stay inside the accepted grounding and use no
+  disabled mechanic, and a new axis waits for a stage boundary.
+- The character module asks what should be tested and what must be left alone, not
+  what growth is permitted. Cadence and delivery belong to progression, permanent
+  change permission is inherited from the consequence stance, and a later axis
+  addition is a stage-boundary revision. The "do not touch here" half is a
+  thematic limit no content category records.
+- Never ask the Player to restate an accepted distribution. Derive the mechanical
+  limit, cost, and counterplay from the sheet's low end, and ask only for a limit
+  it cannot express—an obligation, a vow, a condition, a fear, or the cost of
+  recognition—skipping the question when there is none. Fictional grounding asks
+  the limitation contract directly.
+- Author what every stat axis means—coverage, exclusions, and what low, middle,
+  and defining values look like—before any distribution, and show it to the
+  Player. The accepted capability model stays binding in play and hot in context;
+  resolution names the axis an action leans on, reads the opposition on the same
+  scale, and narration never contradicts the sheet. The same applies to fictional
+  grounding through the recorded competence, limit, cost, and counterplay.
+- Say the host dependency before a layer is accepted: image generation requires a
+  running tool or model that can produce images, and a dashboard's viewer requires
+  the local server even though its data is written anyway. A missing capability is
+  recorded as unavailable, never as enabled.
+- Choose narration voice by ear rather than by craft vocabulary: sample the same
+  moment in each candidate voice, derive the selectors from the accepted one, ask
+  the Player what they dislike to fill the avoid-list, and derive the three
+  required signature anchors and sensory focus from the sample and the setting's
+  register. Keep the operative values in the profile, which is hot each turn.
+  Dashboard, images, and World Voices stay separate authorizations with stated
+  costs.
+- Include the consolidated default/defer record in the design review rather than
+  holding it for final approval, keep the reviewed flag at final approval, and group
+  interacting decisions together instead of following module order.
+- State the out-of-game channel once at handoff: an `OOC` mark steps outside the
+  story and covers limits, stopping or redoing a moment, changing tracking or dice
+  use, and calling a thread long enough. The tag is never required and never a cost.
+- Materialize pack outputs: an operating model of how consequences are produced rather
+  than a restated premise, factions only where coordination was established and always
+  with knowledge and withheld knowledge recorded, a resolved research gate that keeps
+  silence marked as silence, and an advancement cadence written into the play profile
+  as a concrete value.
+- Cross-read the prepared corpus before the preparation review by running the audit
+  workflow's RPG section: mapped owners actually written, named places present and
+  reachable, opening cast and routines consistent with the scene, faction reach and
+  knowledge boundaries agreeing with the threads, relationship edges resolving, and
+  the player-facing checker clean. Correcting is free before preparation approval; a
+  design-level correction returns to the design review.
+- Ask the starting aperture, not a list of scale fields: how much world is live at
+  the start, and whether reaching past it opens smoothly or costs something.
+- Fill the wanted and unwanted GM behavior records when the voice is accepted,
+  using what the accepted sample did and the samples the Player rejected.
+- Frame the first act during setup, since closure prep frames every later act and
+  the opening situation covers only one scene. Fill the Arc Compass and give the
+  act a scope in names—places, people, what is already in motion, what holds
+  without the character. An act closes when its condition is satisfied or made
+  unreachable, and the action that did it is recorded as decisive at that moment.
+- Derive arc architecture from what the Player wants to find out and put to the test
+  rather than from compass field names: a dramatic question whose opposite answer
+  still leaves a campaign worth playing, referenced rather than restated pressures,
+  planted setups with unscheduled payoffs, climax conditions the Player can move
+  toward, closure aligned with the real close trigger, and interest signals recorded
+  rather than predicted.
+- Translate accepted mechanical answers into approved modules and the tracking field
+  each one requires before design approval, enable mechanics state for any stateful
+  module, record unmapped promises as narrative commitments, and take any conflict
+  between an answer and a module requirement back to the Player.
+- Resolve the route layer by splitting ownership: the coordinator fills graph edges
+  from accepted answers and place notes, and the Player decides whether distance
+  costs anything, whether the map is known or discovered, and whether movement can be
+  traced. Derive the setting's movement logic before offering those choices, and
+  record at least one asymmetry unless friction was deliberately removed.
+- A company is assembled over the course of play, so the decision fixes intent and
+  shape rather than a membership list. On a long or episodic reach an empty seat is
+  runway, not a gap to fill at setup, and starting with one companion or none is a
+  complete answer.
+- Treat companions as a contract rather than a roster: kinds wanted and unwanted,
+  whether a limit applies and who sets it, how members arrive over time with room for
+  an unplanned one, and how much the Player steers investment. A company need not
+  form in one place, and control never extends to a companion's own will.
+- Scan depth-pack triggers while persisting each accepted answer, and name each pack
+  dependency at the module that consumes it rather than only in the pack section.
+  Character foundation precedes personal places and relationships, location network
+  precedes settled routes, group follows a crew intent, and mechanics progression
+  resolves at the progression decision.
+- Run the 8–10 decision checkpoint before the next content question, not as an
+  optional summary: it is the only place an overdue pack surfaces by itself. Resolve
+  a due pack before continuing, and checkpoint before design approval when one is
+  outstanding.
+- Check the world before naming people: the dossier's character grammar and its
+  stage-and-place record of peoples govern names, titles, culture, and species, and
+  a thin record triggers a narrow research pass first. A people the world contains
+  somewhere is not therefore present here; exclusions carry their reason. Titles
+  follow the source's rule for who earns them.
+- A selection narrows attention, not the world. Keep unselected candidates dormant
+  with their surfacing trigger, give each selected element three or four side
+  conditions and one counter-current that seems to contradict it while fitting the
+  setting, and record no predetermined resolution.
+- Ask in plain language, never in internal labels. Palette classifications, policy
+  names, and profile enums are recorded after the answer, not offered as the
+  choice; describe what each option would mean at the table instead.
+- Derive every offered option set from the established world, stage, dossier, and
+  prior answers, named in the setting's own terms. Generic taxonomies are a
+  fallback only before anything is established. This applies to play mix, pace,
+  palette, factions, faces, opening shapes, and rewards as much as to stat axes.
+- Split the play/system module by kind: simulation fidelity, play mix, and pace
+  and pressure. Fidelity is a set of tracking settings, each binding an instrument
+  and a turn obligation, and it never implies tension. A setting left off licenses
+  no invented precision. Offer fidelity with its cost—heavier tracking roughly
+  doubles turn length, a dashboard adds one to two minutes per refresh—and keep
+  tracked values out of narration. Standard may merge play mix with pace; Deep asks
+  all three.
+- Settle resolution grounding before asking how competence is expressed; the
+  play/system module inherits it. Design stat axes for the setting and starting
+  stage rather than importing a generic set, offer two to four candidates, derive
+  the point total and bands from the accepted axis count, record the axes with the
+  campaign rules so validation follows them, and derive competence from the
+  distribution. A competence that contradicts the distribution is a legitimate
+  Player choice.
+- Build the character as a short ordered sequence sized by route: identity core,
+  character surface, desire and why-now, competence, limit, position, and change
+  appetite. The surface includes the concrete physical basics—gender or
+  presentation, age, height, weight or frame, body type, distinguishing
+  features—asked plainly, because they settle physical resolution, concealment,
+  and visual continuity. Every character question must feed a world reaction, an opening
+  affordance, a pressure channel, or a progression gate. Deep adds
+  `character_foundation` when a long or episodic reach is declared.
+- Ask the Player about the character; derive how the world perceives them. Never
+  ask who warms to them, who distrusts them, what strangers assume, or how a room
+  treats them. `player.md` keeps the described surface and the derived read apart,
+  and the derivation is revised as the Player adds to the character.
+- Express the world-side creation authority as a creation-tier threshold the ledger
+  tracks, asked in plain language rather than in tier codes, and keep that threshold
+  and the content limits hot during play. Incidental colour is free, named creations
+  are logged with their tier, supporting and major figures need full notes before
+  speaking, and nothing above the threshold is created silently.
+- Derive character-side approval triggers from those two axes; ask only the
+  world-side creation authority, once, and let it inherit the character-side set.
+  `boundaries.md` records both, and its standing improvisation list is only the
+  fallback default. Pre-authorizing permanent loss never widens a content
+  boundary.
+- The first design question is the frame: which universe, real place and period,
+  original world, or supplied homebrew; which slice of it we start in; and the
+  declared reach—`contained`, `regional`, `long_journey`, or `episodic`. Tone,
+  promised play, and player fantasy are a separate experience decision asked
+  after the frame.
+- Reach is an intent, not a guarantee. It calibrates macro depth, staged research,
+  closure levels, and Deep pack activation; the progression module inherits it
+  instead of asking for campaign length again.
+- Write example options in the Player's language and frame of reference, or use
+  globally recognizable references when no local frame exists.
+- Never present an unverified source claim as settled fact; run the Research
+  Gate before offering source-dependent options, and record the cast scope
+  stance that decides research scope. Source dependency covers real places,
+  periods, professions, and science, not only fictional canon.
+- Settle an in-play research policy—`off`, `ask_first`, or `bounded_auto`—for
+  source questions that surface during play, alongside canon policy. The lookup
+  stays narrow, is appended as a research pass, and never invents an answer; state
+  that it adds roughly ten to forty seconds to that turn.
+- Ask the source permission immediately after the anchor, then run research as
+  bounded passes: an anchor pass for the structural layer, and a narrow triggered
+  pass whenever a later answer opens a source-dependent question. Append each
+  pass with what was verified and what stays open.
+- Decide the world at macro scale even when the character is local: era anchor,
+  large-scale power and what could upset it, a few movements that run without the
+  character, the channels that carry them into the local slice, and named
+  occupants for the implied macro seats at roster detail.
+- A follow-up counts only when it varies independently, materially changes
+  Player experience or permission, cannot be a displayed default, is explicitly
+  accepted as a separate decision, and the route still has budget; fixed-count
+  Quick routes never add one.
+- Experience/depth gates, research work, Deep checkpoints, and extension
+  permission do not consume content decisions.
+- Every ordinary inferred choice gets a stable `defaulted_decisions` label and
+  readable mirror; `defaulted_packs` is only for an activated Deep pack
+  resolved through displayed and accepted defaults.
+- Schema-v6+ Quick and every schema-v7 RPG route use revision-bound design and
+  preparation approvals.
+- Quick slots 8/9/10 and schema-v7 Standard/Deep modules 19/20/21 respectively
+  perform design approval, actual materialized-preparation review, and
+  preparation approval.
+- Schema-v7 Deep resolves every activated pack before design approval.
+- Legacy Standard/Deep and Companion keep their existing final-summary
+  approval unless explicitly migrated.
 - Do not begin play until `setup_profile.yaml.ready_for_play` is true.
 
 # Companion Session 0
@@ -175,8 +363,9 @@ count:
 7. final confirmation of locked and visible defaulted assumptions.
 
 Infer the remaining required persona, life, backstory, and social-ecology
-details coherently from those answers. Show all non-user choices as defaults in
-`session_zero.md` and `setup_profile.yaml.defaulted_packs`; do not make Quick
+details coherently from those answers. Give each non-user choice a stable label
+in `setup_profile.yaml.defaulted_decisions` and readable detail in
+`session_zero.md`; keep all pack lifecycle fields empty. Do not make Quick
 answer a hidden 40-field form.
 
 ## Companion Standard
@@ -291,8 +480,8 @@ progress only:
 
 | Profile | Cold distill | Validation | Dashboard | Style review |
 | --- | --- | --- | --- | --- |
-| `fast` | `scene_checkpoint_or_5_durable` | `hot_each_durable_full_on_distill` | `scene_and_major_visible_change` | `sampled_and_distill` |
-| `balanced` | `scene_checkpoint_or_3_durable` | `hot_each_durable_full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
+| `fast` | `scene_checkpoint_or_5_durable` | `full_on_distill` | `scene_and_major_visible_change` | `sampled_and_distill` |
+| `balanced` | `scene_checkpoint_or_3_durable` | `full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
 | `maximum_continuity` | `every_durable` | `full_each_durable` | `every_visible_change` | `every_durable` |
 
 Use `exceptional_only` latency notices by default. This gives a brief OOC time
@@ -305,9 +494,11 @@ per message. Allowed cold policies are `every_durable`,
 `scene_checkpoint_or_3_durable`, `scene_checkpoint_or_5_durable`, and
 `scene_checkpoint_only`. The legacy values `scene_or_3_durable` and
 `scene_or_5_durable` are migration inputs only and must not be written by a
-new Session 0. Allowed
-validation policies are `hot_each_durable_full_on_distill` and
-`full_each_durable`; hot validation cannot be disabled. Dashboard may be
+new Session 0. Current validation policies are `full_on_distill` and
+`full_each_durable`. The legacy `hot_each_durable_full_on_distill` name remains
+an explicit migration input only and must not be written by a new Session 0.
+Atomic candidate validation cannot be disabled, and the aggregate full check
+must run at the selected boundary. Dashboard may be
 `scene_and_major_visible_change`, `every_visible_change`, `scene_only`, or
 `manual`. Style review may be `sampled_and_distill`,
 `every_2_durable_and_distill`, or `every_durable`.
@@ -319,58 +510,85 @@ and caveat in the final confirmation.
 
 # Quick Session 0
 
-Use 6–8 decisions: pitch plus contextual Starter Bundle;
-boundaries/agency/consequence; character concept,
-defining competence and weakness; starting world/problem/place; mechanics,
-progression and failure; the explicit Turn Protocol choice;
-narration/options/visuals; research if needed; and final confirmation. The
-Starter Bundle already carries resolution grounding, Narrative Signature,
-interiority, and breather defaults; do not create extra Quick questions for
-them. Keep the
-6–8 target by treating research as conditional and combining closely related
-mechanics decisions. Fill the current templates with a small playable core and
-record every inferred answer in `defaulted_packs` or the defaulted decisions
-section of `session_zero.md`. "Use defaults" selects Fast.
+Schema-v6+ RPG Quick uses exactly 10 unique decision slots. The routing gates and
+triggered Research Gate work do not count; revising a completed slot increments
+`setup_revision` but never `questions_completed`:
+
+1. Campaign Promise And Player Fantasy;
+2. Character Identity, Current Desire, And Why Now;
+3. Competence, Limitation, And Social Position;
+4. Agency, Authorship, And Boundaries;
+5. Play And System Contract, including Turn Protocol;
+6. Presentation Contract, including narration, Dashboard/visual choices, and
+   cost acknowledgement;
+7. Character–World Relationship Pattern;
+8. Reciprocity Design Review and revision-bound design approval;
+9. Integrated Preparation Review of actual player-safe preparation;
+10. Preparation Approval at the current setup revision.
+
+Slots 5 and 6 each accept one coherent card rather than a list of profile
+fields. Slot 7 asks the Player for the anchor-or-isolation stance and the
+desired entanglement shape; the coordinator then realizes the relationship
+pattern so it provides a character-originated anchor or explicit isolation, a
+world-independent issue/domain, their playable intersection, a place/routine
+anchor, an independently motivated person or faction, and a causally compatible
+opening with neutral action space. Slot 8 approves the direction; it does not
+approve unseen preparation. Materialize the opening scale while not ready, then
+show the actual character/world/place/relationship/opening preparation at slot 9
+and ask whether it is accurate, complete, and faithful to that direction. Slot 10
+is a separate readiness go/no-go on the same unchanged preparation, introduces no
+new truth, and is the only slot that may authorize preflight.
+
+Keep all pack lifecycle lists empty. Give every inferred answer a stable label
+in `defaulted_decisions` and mirror readable detail in `session_zero.md`.
+Research permissions remain budget-exempt separate turns and are never folded
+into either approval. Use `workflows/worldbuild/playbooks/rpg_quick.md` as the
+authoritative compact procedure. Companion Quick remains exactly seven
+content decisions; schema-v1–v5 RPG Quick remains legacy-compatible at 6–8.
 
 # Standard Session 0
 
-Use the 17-module pipeline below, normally 17–25 decisions. Short follow-ups
-are allowed when a module contains more than one real decision. Do not open
-Deep packs.
+Schema-v7 RPG Standard uses the 21-module Character–World Reciprocity core in
+21–30 content decisions. It establishes the character before the world
+scaffold, revises that scaffold through a two-way reciprocity pass, approves
+design at module 19, reviews actual materialized preparation at module 20, and
+approves that preparation at module 21. Keep every Deep pack lifecycle field
+empty. Active schema-v1–v6 Standard campaigns retain the legacy 17-module,
+17–25-decision route documented later in this cold reference.
 
 # Deep Session 0
 
-Complete the Standard core, then activate only relevant packs. Activation is
-deterministic: persistent crew/company opens `group`; personal-depth play opens
-`character_foundation`; a substantially original/altered society opens
-`world_fabric`; exploration/travel/sandbox play opens `location_network`;
-politics/intrigue opens `faction_information`; explicit arc/endgame design
-opens `campaign_architecture`; tactical resource/progression play opens
-`mechanics_progression`; canon or specific real-world grounding opens
-`source_grounding`:
+Schema-v7 RPG Deep uses the same 21-module core plus only triggered packs, with
+an initial 30–45 content-decision target. Trigger meanings remain:
 
-- `character_foundation`: identity, inner life, daily life, voice, resources,
-  personal places, relationships, and change line. Create
-  `character_foundation.md` when activated.
-- `group`: persistent crew, party, company, cult, team, or organization. Create
-  `group.md` when activated.
-- `world_fabric`: original or locally altered society, law, economy, powers,
-  daily life, belief, history, geography, and ecology.
-- `location_network`: travel, exploration, sandbox routes, access, routines,
-  danger, and news flow.
-- `faction_information`: political dependencies, representatives, moves,
-  sources, verification, and pressure chains.
-- `campaign_architecture`: themes, dramatic question, arc promises,
-  setup/payoff, climax, closure, pacing, and possible endings.
-- `mechanics_progression`: stats, costs, counterplay, resources, downtime,
-  injury, growth, and companion advancement.
-- `source_grounding`: canon or real-world scope, uncertainty, and immutable
-  boundaries.
+- persistent crew/company/base -> `group`;
+- detailed identity/inner life/change arc -> `character_foundation`;
+- substantially original society/law/economy/culture/metaphysics/history ->
+  `world_fabric`;
+- exploration/travel/routes/sandbox/survival logistics -> `location_network`;
+- politics/intrigue/contested information -> `faction_information`;
+- explicit multi-arc promises/setup-payoff/climax/endings ->
+  `campaign_architecture`;
+- tactical resources/stats/conditions/clocks/detailed growth ->
+  `mechanics_progression`;
+- canon/real-world/hard-science source sensitivity -> `source_grounding`.
 
-Checkpoint after every 8–10 completed decisions. Show locked decisions, open
-packs, defaults, and an approximate remainder; offer continue, deepen one pack,
-or default the rest. At 30–45 decisions, ask permission before opening another
-branch. Route world detail into existing files; do not create separate society,
+Activate a pack immediately when an accepted answer establishes its trigger.
+Resolve it at the earliest dependency-safe boundary: source grounding before
+dependent truth; character foundation before dependent personal world design;
+world/location/faction packs after their scaffold inputs; mechanics after
+system and progression inputs; architecture after issue/progression inputs.
+Normally finish active packs before module 16; absolutely every active pack
+must be completed or defaulted before module-19 design approval.
+
+Append to `completed_packs` only after accepted pack decisions are persisted in
+semantic owners and their readable completion summary is shown. Use
+`defaulted_packs` only after displayed and accepted pack defaults. Checkpoint
+every 8–10 decisions. Ask explicit permission before exceeding 45; only that
+permission sets `deep_extension_approved: true` and expands the target.
+
+Route pack truth into existing owners; create `character_foundation.md` or
+`group.md` only when those packs activate. Do not create separate society,
 history, economy, or geography notebooks.
 
 # Lens And Mechanic Composition
@@ -394,37 +612,89 @@ during normal play.
 
 # Completion Gate
 
-Before setting `status: complete` and `ready_for_play: true`, ensure every core
-module is locked, defaulted, or deliberately deferred; every activated Deep
-pack is completed or defaulted; the research gate permits durable truth; and
-the character, starting place, one pressure or mode-appropriate affordance,
-actionable opening, memory-v3 state with a resumable `scene_frame`, active cast,
-location graph, knowledge boundaries, dashboard, and starting snapshot are
-ready and checked.
+Before final readiness, every selected route must satisfy its budget and status
+block, persist every ordinary inferred choice with a stable label and readable
+mirror, resolve research permission, review defaults/deferrals, lock the active
+runtime profile at the current setup revision, prepare the opening/current
+state/cast/routes/knowledge required by that route, and pass draft preflight.
+Every activated Deep pack must be completed or defaulted.
 
-A ready profile must have three meaningful Narrative Signature anchors, no
-more than three avoid habits, no more than two sensory priorities, and valid
-interiority/breather policies. A ready scene frame needs a stable scene id,
-ongoing local process, returned-control point, and resume anchor; blank values
-remain valid only while setup is still draft.
+Current reciprocity RPG routes add revision-bound requirements:
 
-Immediately before first play, `first_session.md` must be `materialized` and
-`opening_brief.md` must be `active`. After that opening is narrated, mark both
-`consumed`; consumed opening/prep text is historical and no longer participates
-in live scene-coherence comparison.
+- schema-v6+ Quick has exactly 10 slots, design approval from slot 8, actual
+  player-safe preparation review at slot 9, and preparation approval from slot
+  10 equal to current `setup_revision`;
+- schema-v7 Standard has 21–30 decisions and schema-v7 Deep has 30–45 unless an
+  explicit extension is recorded;
+- schema-v7 Standard/Deep use modules 19, 20, and 21 for design approval,
+  actual preparation review, and current-revision preparation approval;
+- schema-v7 Deep cannot approve design with an unresolved active pack;
+- `first_session.md` is `materialized` and `opening_brief.md` is `active`
+  before the preparation review;
+- substantive design changes clear both approvals; preparation-only changes
+  clear preparation approval and repeat review/approval;
+- finalization may not first synthesize substantive reviewed truth.
 
-Also require a valid Turn Protocol in `play_profile.yaml`, all preset policies materialized (or a
-safe complete Custom policy), `performance_estimate_acknowledged: true`, and a
-matching readable summary in `system_fit.md` and `session_zero.md`.
+The player-safe preparation review must demonstrate current desire,
+competence/affordance, limitation/counterplay, social position and authorship
+boundaries; a character-originated anchor or explicit approved isolation; an
+independently moving issue/domain; their playable intersection; causal
+place/routine/access/arrival fit; independently motivated relationships;
+natural present cast; visible opening context; and neutral action space.
 
-Do not complete Session 0 while `visual_style.md` contains a pending visual
-review. A generated but unaccepted opening image may remain a draft only if the
-Player explicitly chooses to proceed without it; clear the return anchor and
-keep the draft out of the dashboard.
+Legacy Standard/Deep and Companion retain their existing final-summary gate
+unless explicitly migrated. All ready RPG profiles still require valid
+Narrative Signature, interiority/breather policies, Turn Protocol,
+performance acknowledgement, resumable scene frame, approved optional
+projections, and a successful starting snapshot. Pending visual review blocks
+completion unless the Player explicitly proceeds without that draft.
 
-# Session 0 Module Pipeline
+# Schema-V7 RPG Standard / Deep Module Pipeline
 
-Use these modules as the default campaign-architect path.
+The compact `rpg_standard_deep.md` playbook is authoritative. Its order is:
+
+1. Campaign Promise And Player Fantasy
+2. Research Need And Source Boundary
+3. Agency, Authorship, And Content Boundaries
+4. Character Identity, Current Desire, And Why Now
+5. Competence, Limitation, Social Position, And Change Appetite
+6. Play And System Contract
+7. Presentation And Visual Contract
+8. Canon Policy
+9. Palette
+10. World Truths And Operating Model
+11. Scale, Everyday Life, Access, And Routes
+12. Independent Issues And World Dynamics
+13. Factions And Institutions
+14. Faces, Places, And Independent Relationships
+15. Progression And Rewards
+16. Character–World Reciprocity Pass
+17. Starting Situation Design
+18. Continuity, Ownership, And Preparation Contract
+19. Reciprocity Design Review
+20. Integrated Materialized Preparation Review
+21. Preparation Approval
+
+Modules 1–9 form the Character Seed and contracts; 10–15 build a
+character-aware world scaffold; 16 runs the two-way pass; 17–18 design the
+opening and ownership contract; 19 approves the complete design; materialized
+preparation is created while not ready; 20 reviews the actual player-safe
+result; and 21 grants current-revision preparation approval.
+
+Throughout that pipeline the Player chooses governing truths, salient forces,
+which faces/places/relationships matter, the intersection pattern, the opening
+shape, and the ongoing creation authority. The coordinator authors the operating
+model, faction and NPC/place cards, routines, availability, routes, gated
+knowledge, ownership, and source precedence. Module 20 is a factual accuracy and
+completeness review; module 21 is a separate readiness go/no-go that introduces
+no new truth.
+
+# Legacy 17-Module Semantic Reference
+
+The detailed headings below preserve schema-v1–v6 Standard/Deep meaning and
+remain useful as semantic guidance. They are not the ordering or approval
+contract for schema-v7 Standard/Deep. When current and legacy headings differ,
+map the durable subject to the schema-v7 owner named in the compact playbook.
 
 ## 1. Campaign Pitch
 
@@ -446,6 +716,10 @@ Ask:
 
 - whether the campaign uses an existing canon, real-world specificity,
   user-supplied homebrew, genre-adjacent inspiration, or a fully original world;
+- which cast scope applies: `full_canon`, `canon_world_original_cast`, or
+  `genre_adjacent_original`. This decides research scope, and Canon Policy
+  inherits it. A canon world with an original cast still needs the source's
+  character grammar so new people feel native, but not canon biographies;
 - whether web search should be used now, deferred, skipped, or replaced by
   Designer-provided sources;
 - what source scope matters: canon rules, physical rules, social structure,
@@ -1036,13 +1310,19 @@ When starting the blank Lite campaign included in this workspace:
    folder.
 3. Run the selected experience's Quick, Standard, or adaptive Deep interview.
    From the premise, derive a short readable `campaign_id` unless the user
-   supplies one; do not add an id-only question to Quick. Replace the
-   `new_campaign` placeholder as answers are materialized.
-4. Fill `session_zero.md` as the module index and decision log. For RPG,
-   materialize accepted runtime choices into `play_profile.yaml`; for
-   Companion, materialize them into `companion_profile.yaml`. Mark the unused
-   runtime profile `inactive`; keep
-   `setup_profile.yaml` limited to interview progress.
+   supplies one; do not add an id-only question. Current RPG routes follow
+   Character Seed -> character-aware World Scaffold -> Reciprocity -> Design
+   Approval -> Materialized Preparation -> Preparation Review -> Preparation
+   Approval. Schema-v7 Standard uses 21–30 decisions; schema-v7 Deep uses
+   30–45 and resolves every active pack before module 19. Active schema-v1–v6
+   Standard/Deep routes preserve their legacy 17-module behavior.
+4. Fill `session_zero.md` as the selected route's module/slot index and decision
+   log. For RPG, materialize accepted runtime choices into `play_profile.yaml`;
+   for Companion, use `companion_profile.yaml`. Mark the unused runtime profile
+   `inactive`; keep `setup_profile.yaml` limited to interview progress,
+   approvals, and readiness. Current reciprocity RPG routes record design
+   approval, create actual preparation while not ready, review it player-safe,
+   then record current-revision preparation approval before finalization.
 5. For Companion, create the primary T3 character note, current presence,
    consent-based user-memory policy, life domains, knowledge/disclosure entry,
    and only the social contacts and places needed for a coherent starting life.
@@ -1064,7 +1344,10 @@ When starting the blank Lite campaign included in this workspace:
    make the first session playable.
 9. Fill `first_session.md` as `drafting` and `opening_brief.md` as `pending`;
    materialize `first_campaign_opening` by changing them to `materialized` and
-   `active`, then mark both `consumed` after the first player-facing use.
+   `active`. Every current reciprocity RPG route does this before its integrated
+   preparation review so the actual opening can be reviewed player-safe.
+   Legacy RPG and Companion retain their existing finalization timing. Mark
+   both sources `consumed` after the first player-facing use.
 10. Draft the first player-facing scene from `opening_brief.md`, then check it
    for leakage.
 11. If the campaign uses the optional dashboard, create a Dashboard V3 state
@@ -1080,11 +1363,15 @@ When starting the blank Lite campaign included in this workspace:
 12. Record the used opening as the matching durable revision entry in
     `session_log.md`; if setup fully reconciled it, append the matching
     distilled-through marker and reset persistence counters.
-13. Load `finalization.md` and follow its exact order: frozen seed and optional
-    read-only proposals; draft-state preflight while not ready; final readiness
-    fields; starting snapshot; then one final aggregate check. This focused
-    playbook overrides older completion-order wording elsewhere in this cold
-    reference.
+13. Load `finalization.md` and follow its exact route-aware order. Current
+    reciprocity RPG routes reach it only after actual preparation review and
+    current-revision preparation approval; no substantive synthesis may first
+    occur there. Legacy RPG and Companion retain their frozen-seed and eligible
+    read-only proposal behavior. Shared completion is draft-state preflight
+    while not ready; final readiness fields at the approved revision; derived
+    projections; starting snapshot; then one final aggregate check. This
+    focused playbook overrides older completion-order wording elsewhere in this
+    cold reference.
 
 Do not require an existing campaign. A port from another project is an optional
 comparison exercise, not the default workflow.

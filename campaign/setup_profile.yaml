@@ -1,18 +1,39 @@
-schema_version: 4
+schema_version: 8
 workspace_mode: standalone
 status: pending
 setup_revision: 0
+# Legacy revision-bound RPG reciprocity approvals. Schema-v6+ Quick and
+# schema-v7 Standard/Deep use both fields; schema-v8 Deep records its gate
+# revisions in session_zero_state.json, and Companion leaves them null.
+design_direction_approved_revision: null
+preparation_approved_revision: null
 # First gate. Leave blank only before the user chooses an experience.
 # Allowed: rpg | companion
 experience_mode: ""
-# Ask Session 0 depth only after experience_mode is set. The experience and
-# depth gates do not increment questions_completed.
+# Ask Session 0 depth only after experience_mode is set. Experience/depth
+# routing and triggered Research Gate work do not increment questions_completed.
 session_zero_mode: ""
+# Deep v8 uses the stage ledger instead of a readiness question quota. Quick
+# and Standard still set their existing numeric target when depth is chosen.
 question_target: ""
+# Deep v8 derives this mirror from session_zero_state.json. Quick, Standard,
+# Companion, and legacy routes retain their existing accounting behavior.
 questions_completed: 0
+# Decision-level accounting. Use short stable labels here and keep readable
+# detail in session_zero.md.
+defaulted_decisions: []
+deferred_decisions: []
+defaults_reviewed: false
+# Legacy Deep pack lifecycle. Schema-v8 Deep keeps these empty and records
+# stage-local extensions in session_zero_state.json instead.
 activated_packs: []
 completed_packs: []
 defaulted_packs: []
-deferred_decisions: []
+# Set true only after explicit permission to continue beyond 45 Deep content
+# decisions. Do not pre-authorize an extension.
+deep_extension_approved: false
 last_checkpoint: 0
+# Canonical Deep-v8 interview state. It is dormant outside RPG Deep.
+deep_flow_id: rpg_deep_v8
+session_zero_state_path: session_zero_state.json
 ready_for_play: false

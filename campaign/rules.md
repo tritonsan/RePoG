@@ -15,7 +15,9 @@ resolution basis:
   opposition, and consequences decide outcomes in the fiction;
 - `bands`: broad setting-appropriate capability bands support comparison
   without requiring a full stat block;
-- `numeric`: the eight-stat 1–5 model and budgets below are active.
+- `numeric`: the declared axis set below, the 1–5 scale, and the budgets are
+  active. The axis count comes from the campaign's own declared set, not from a
+  fixed number.
 
 Do not require numeric player, NPC, faction, or obstacle stats unless the
 selected grounding is `numeric`.
@@ -30,7 +32,22 @@ When numeric grounding is active, stats use a 1 to 5 scale:
 - 4: exceptional.
 - 5: elite or defining.
 
-Default stats:
+### Declared Stat Axes
+
+Derive these axes from the researched world and the declared starting stage
+instead of importing a generic set. Leave out capabilities the campaign's stage
+has not reached, and add setting-specific axes when the stage warrants them.
+Offer the Player two to four candidate sets and record the accepted one here; the
+count may differ from the default of eight, and validation follows this list.
+
+Give every axis a meaning before the Player distributes anything. One line each,
+in this shape, so the block stays small enough to keep in hot context during
+play:
+
+`Axis — covers X; does not cover Y; at 1 …, at 3 …, at 5 … in this setting.`
+
+An axis with a name but no meaning is decorative. The Player chooses numbers only
+after reading what those numbers will do.
 
 - Power
 - Agility
@@ -43,13 +60,100 @@ Default stats:
 
 ## Numeric Starting Level Budgets
 
-- Beginner: 16 points, recommended max 3.
-- Competent: 20 points, recommended max 4.
-- Advanced: 24 points, recommended max 4.
-- Elite: 28 points, recommended max 5.
+Starting distribution has one constraint: every declared axis receives at least
+one point. There is no per-axis cap. A Player who wants a defining strength at
+the top of the scale from the first scene may have it, and pays for it in the
+axes they left low.
+
+The totals below assume eight axes. With a different declared set, derive the
+total from the axis count—roughly twice the number of axes places ordinary axes
+near the middle of the scale—state it, and let the Player accept or change it.
+
+- Beginner: 16 points.
+- Competent: 20 points.
+- Advanced: 24 points.
+- Elite: 28 points.
 
 Campaigns may rename tiers to match the setting. These budgets do not apply to
-fictional or banded grounding.
+fictional grounding, and banded grounding uses band steps instead of points.
+
+The 1 to 5 scale still bounds every value. Unnamed world figures are a separate
+matter: giving an ordinary opponent elite numbers without declaring a high power
+band remains a flagged inconsistency.
+
+## Special Ability Points
+
+Some settings carry capabilities the stat axes cannot describe—a fruit power, a
+force discipline, a school of signs or spells, a bloodline. When the campaign has
+such a layer and grounding is numeric or banded, it gets its own pool, separate
+from stat points, so a special power never competes with ordinary competence for
+the same currency.
+
+- Does this setting have capabilities outside the axes: yes / no
+- What the layer is called here:
+- Starting special ability points:
+- What one point buys, in this setting's terms:
+- How a new power is acquired in the fiction:
+
+When the setting has no such layer, this pool does not exist and is not invented.
+Under fictional grounding, the same capabilities are recorded in prose with their
+source, cost, and limit, and carry no points.
+
+## Simulation Fidelity Obligations
+
+Each tracking setting names an instrument and a turn obligation. A setting that
+changes nothing about behavior is decoration, so treat this table as binding.
+
+| Setting | Obligation during play |
+| --- | --- |
+| `dice_mode` other than `judgment_only` | A contested outcome comes from a recorded roll, not from narration. A durable change that records a contested result carries its roll reference; the durable writer rejects one that does not. Who rolls and whether it is open follows the selected mode |
+| `dice_resolution` module | Contested resolution runs through the mechanic resolver where it applies |
+| `inventory_tracking: quantified` or `encumbrance` | Gaining or spending an item is a mechanic operation inside the durable commit, never prose alone |
+| `strict_consumables` | Supplies decrease when used, and running out is a state fact rather than a narrative flourish |
+| `wounds`, or `wound_tracking: conditions` | An injury becomes a recorded condition with the criteria for clearing it |
+| `clocks` | Named clocks advance only on their declared trigger, through a mechanic operation |
+| `time_tracking: scene` or `step` | Fictional time advances in that unit as part of the turn's write |
+| `travel_tracking: route_time`, `structured_travel` | Travel consumes recorded legs and time |
+| `bounded_resources`, `abilities_costs` | Using an ability spends its cost or sets its cooldown |
+
+The inverse is equally binding: when a setting is abstract or off, invent no
+precision. Do not report counts, distances, clock positions, or wound values the
+campaign does not track.
+
+Fidelity is not tension. A fully tracked campaign may spend a quiet month in
+port, and dice do not oblige danger. Pace, challenge density, and breathers are
+separate settings and stay under their own policy.
+
+Keep tracking out of the prose. Changed values belong in state; narration carries
+only their fictional weight, such as the last two bottles of water rather than a
+table. When a dashboard is enabled the numbers live there instead.
+
+Changing fidelity mid-campaign is a stage-boundary revision: crossing into
+waters that demand supplies and route discipline is a reason to turn those
+settings on, recorded as a revision rather than a silent drift.
+
+## Capability Model In Play
+
+Whatever capability model the campaign accepted stays binding during play, and
+the GM keeps it in hot context rather than recalling it. Under numeric or banded
+grounding that is the declared axis block with its band meanings; under fictional
+grounding it is the recorded competence, limit, cost, and counterplay.
+
+Each turn, before deciding the world's response:
+
+- name which axis or recorded capability the action leans on;
+- read its value or band to decide whether this is routine competence that
+  succeeds cleanly, a genuine contest, or beyond reach for now;
+- read the opposition on the same scale, so a contest is between two known
+  quantities rather than a feeling;
+- treat a low value as a pressure, cost, or counterplay channel instead of
+  automatic failure.
+
+Narration may not contradict the sheet. A character weak in an axis does not
+outperform someone strong in it because the moment wants drama, and a strong axis
+is not quietly ignored to keep a scene tense. If the fiction demands an outcome
+the sheet does not support, change the route to that outcome or let the sheet
+stand—do not narrate past it.
 
 ## Stat Use And Opposition Model
 

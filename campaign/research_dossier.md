@@ -15,6 +15,13 @@ which rules Codex must respect during worldbuilding and play.
 - Risk accepted: no
 - Current-scale lock permitted: no
 - Risk acceptance notes:
+- In-play research: `off`
+
+Allowed in-play research policies: `off`, `ask_first`, `bounded_auto`. This
+governs what happens when a scene reaches a source question the dossier never
+settled. Under every policy the lookup stays narrow, the result is appended as a
+research pass with references, and an unresolved answer stays open instead of
+becoming invented canon.
 
 Allowed statuses:
 
@@ -57,10 +64,98 @@ What is being researched: canon setting, real-world period/place/profession,
 genre reference, science/technology basis, cultural model, or user-provided
 homebrew material.
 
+Bound research to the initial playable scale. Anything beyond it belongs in
+Open Questions instead of being invented.
+
 ## Canon Or Realism Policy
 
 How close the campaign should stay to source material, real-world constraints,
 or player-provided facts.
+
+## Cast Scope And Closeness
+
+- Cast scope: `full_canon` | `canon_world_original_cast` |
+  `genre_adjacent_original`
+- Timeline anchor: where this campaign sits relative to source events
+- Canon figures allowed onstage:
+- Canon events treated as fixed:
+
+`full_canon` puts source characters and events in play. `canon_world_original_cast`
+keeps the era, structure, and rules while the people are original.
+`genre_adjacent_original` borrows conventions only. Canon Policy inherits this
+stance instead of asking for it again.
+
+## Absent Or Impossible
+
+What this world does not have and what cannot happen in it. Missing
+infrastructure matters as much as present rules: how messages travel, what
+cannot be healed, what cannot be bought, where no authority reaches.
+
+## Native Register
+
+The source's own tonal logic: how much absurdity, spectacle, comedy, brutality,
+or procedural detail is native, and what narration would feel foreign even when
+every fact is correct. Native register is the default.
+
+- Accepted divergence from native register:
+
+Record a divergence only when the Player deliberately chose it. Their choice
+wins, and the record keeps later turns from drifting back or sliding further.
+
+## Character Grammar
+
+How characters are built in this world: recurring archetypes, how ability,
+rank, and reputation are expressed, naming conventions, and what an ordinary,
+dangerous, or legendary figure looks like at the chosen scale. Required when the
+cast is original, so new characters still feel native.
+
+Fill this before proposing any face. When it is thin, run a narrow research pass
+first; inventing names and peoples ahead of the grammar produces a cast that
+belongs to no world.
+
+- Naming patterns, with what they encode:
+- How titles, ranks, and reputational names are earned and who carries them:
+- Cultural mix of the chosen location, and how names differ across it:
+- Ordinary, dangerous, and legendary figures at this scale:
+
+### Peoples Present At This Stage And Place
+
+Populations are gated by stage and location, not only by whether the world
+contains them. Record which are plausible here, on what footing, and which are
+excluded with the reason, so nothing unlikely appears merely because the setting
+has it somewhere.
+
+- Default majority population:
+- Present but uncommon, and on what footing—native, migrant, outlaw, labor:
+- Socially marked or discriminated against here:
+- Excluded at this stage or place, with the reason:
+
+Check every proposed face against this section, the accepted world structure, the
+chosen location, and the live issue before naming it.
+
+## Protected Source Facts
+
+Source truths the player character should not know yet. Current holders and
+fact ids stay in `knowledge_boundaries.md`; keep only the source reference here.
+
+## Research Passes
+
+Append one entry per pass. Keep verified entries as written; a later answer adds
+a new pass instead of rewriting an earlier finding.
+
+### Pass 1 — anchor
+
+- Triggered by: the accepted world anchor
+- Question:
+- Verified, with references:
+- Still open:
+
+### Pass N — triggered
+
+- Triggered by: the accepted answer that raised the question
+- Question:
+- Verified, with references:
+- Still open:
 
 ## Story Affordances
 

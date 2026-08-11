@@ -49,7 +49,7 @@ never set either before the user has seen and accepted the tradeoff.
 
 # Quick
 
-Use exactly seven content decisions:
+Use exactly seven content decisions and set `question_target: 7`:
 
 1. premise, world, and desired feel;
 2. contextual Starter Bundle;
@@ -60,8 +60,11 @@ Use exactly seven content decisions:
 7. final confirmation of locked and visibly defaulted assumptions.
 
 Infer the remaining persona, life, backstory, and ecology coherently. Record
-every non-user choice as a visible default; never turn Quick into a hidden
-forty-field questionnaire.
+every non-user choice with a stable label in
+`setup_profile.yaml.defaulted_decisions` and readable detail in
+`session_zero.md`; set `defaults_reviewed: true` only when decision 7 approves
+that display. Keep every pack lifecycle list empty. Never turn Quick into a
+hidden forty-field questionnaire.
 
 ## Quick Immediate Persistence
 
@@ -77,11 +80,12 @@ increment `setup_profile.yaml.setup_revision`, and sync
 | 4. Conversation style | profile conversation contract and primary character voice/behavior |
 | 5. Time and independent life | profile time/autonomy, draft Companion state, home/place and persona routine, obligations/goals in domains/threads |
 | 6. Memory/disclosure/visuals | profile policies, policy-only `user_context.md`, disclosure ledger/versioned boundaries, visual style/state; derived light View waits for finalization |
-| 7. Final confirmation | approval/default/deferred records, performance-notice acknowledgement and Companion module statuses; it does not first persist earlier answers |
+| 7. Final confirmation | approval plus readable default/deferred records, stable ordinary labels in `setup_profile.yaml.defaulted_decisions`, `defaults_reviewed: true`, performance-notice acknowledgement, and Companion module statuses; it does not first persist earlier answers |
 
 # Standard
 
-Use these 15 modules, normally one decision each:
+Use these 15 modules, normally one decision each. Set `question_target: 15`
+and keep every pack lifecycle list empty:
 
 1. premise/world; 2. identity/appearance; 3. home/city/work/economics;
 4. routine/hobbies/obligations; 5. values/moral lines; 6. psychology and
@@ -115,14 +119,20 @@ Use the same per-answer revision rule for all 15 modules:
 
 # Deep
 
-Target 30–45 decisions and checkpoint every 8–10. Activate only supported
-packs: `companion_persona`, `life_fabric`, `backstory_and_turning_points`,
-`social_ecology`, `relationship_and_intimacy`, `conversation_voice`,
-`real_world_grounding`, and `long_horizon_development`. At 30–45 decisions,
-ask before opening another branch.
+Target 30–45 content decisions, set an initial `question_target` in that range,
+and checkpoint every 8–10 by updating `last_checkpoint` to the current count.
+Activate only supported packs: `companion_persona`, `life_fabric`,
+`backstory_and_turning_points`, `social_ecology`,
+`relationship_and_intimacy`, `conversation_voice`,
+`real_world_grounding`, and `long_horizon_development`. Between 30 and 45,
+ask before opening work that would exceed 45; only an explicit yes sets
+`deep_extension_approved: true`, and the revised target must cover it.
 
 A real city deterministically activates `real_world_grounding` and the
-Research Gate. Public geography and timezone may be real; home, work, family,
+Research Gate. Triggered research execution, evidence review, and explicit
+source-scope or unavailable-source risk permissions do not increment the
+content-decision count, but each unresolved permission gets its own turn and
+setup revision. Public geography and timezone may be real; home, work, family,
 friends, and private social networks remain fictional. Never impersonate a
 real person or research live weather/news on each message.
 
@@ -142,8 +152,10 @@ Write pack activation immediately, then persist each accepted pack decision:
 | `long_horizon_development` | bounded goals/pressures/triggers in persona, domains and threads |
 
 Every pack answer also updates `session_zero.md`, completed/defaulted state,
-setup revision, and profile source revision. No full checker runs after an
-ordinary Session 0 answer.
+setup revision, and profile source revision. `defaulted_packs` means that an
+already activated Deep pack was resolved through displayed defaults; ordinary
+inferred choices still belong in `defaulted_decisions`. No full checker runs
+after an ordinary Session 0 answer.
 
 # Disclosure And Relationship Safety
 
@@ -160,8 +172,9 @@ identity, but must answer directly and clearly when asked.
 
 # Companion Finalization
 
-After final approval, load `finalization.md`. At most two read-only workers may
-prepare persona/life and relationship/privacy proposals. The coordinator owns
-the final voice, state, disclosure classification, profile, readiness,
-snapshot, and validation. Ordinary Companion exchanges never use this setup
-parallelism.
+After final approval, set `defaults_reviewed: true` only after the displayed
+defaults and deferrals are accepted, then load `finalization.md`. At most two
+read-only workers may prepare persona/life and relationship/privacy proposals.
+The coordinator owns the final voice, state, disclosure classification,
+profile, readiness, snapshot, and validation. Ordinary Companion exchanges
+never use this setup parallelism.

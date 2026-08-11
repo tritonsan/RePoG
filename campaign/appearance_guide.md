@@ -23,6 +23,12 @@ stage scenes, and write image prompts without overloading play.
 
 Use these fields for the player, companions, and important NPCs:
 
+- Concrete basics: gender or presentation, age, height, weight or frame mass,
+  body type and condition, and distinguishing physical features. Record these
+  plainly rather than as impressions; they settle reach and leverage in a
+  physical contest, whether a crowd or borrowed clothing conceals the person,
+  how strangers guess age and standing, and whether a written description
+  matches.
 - First-glance read: what someone notices in three seconds.
 - Silhouette and build: height impression, frame, posture, movement.
 - Face, hair, and eyes: only the details that matter at the table.

@@ -16,7 +16,12 @@ Keep each module short, current, and useful at the table.
 - Locked decisions: none
 - Defaulted decisions: none
 - Deferred decisions: none
-- Starter Bundle: pending
+- Defaults reviewed at final summary/preparation approval: no
+- RPG design direction approved revision: pending
+- RPG integrated materialized preparation review: pending
+- RPG preparation approved revision: pending
+- Deep extension beyond 45 approved: no
+- Starter Bundle: pending, route-split, or legacy-single-decision
 - Accepted setting lenses: none
 - Accepted play lenses: none
 - Runtime profile: pending (`play_profile.yaml` for RPG,
@@ -26,7 +31,7 @@ Keep each module short, current, and useful at the table.
 - Expected structural / boundary turn: pending
 - Semantic parallelism: selective_structural (default; structural boundaries
   only, when supported)
-- Maximum parallel workers: 3 (Quick materialization is capped at 2)
+- Maximum parallel workers: 2 (safe default; RPG Standard/Deep may choose 3)
 - Parallelism tradeoff: potentially shorter structural waits with higher model
   usage; unsupported tools use the same serial workflow
 - Dashboard refresh cost: approximately +1–2 minutes when run
@@ -34,17 +39,163 @@ Keep each module short, current, and useful at the table.
   when already-shared visible truth changes
 - Image generation cost: approximately +1–3+ minutes per draft
 - Performance estimate acknowledged: no
-- Final player confirmation: pending
+- Legacy Standard/Deep/Companion final confirmation: pending
+- Current RPG preparation approval: pending
 
-The experience gate and depth gate are routing questions and do not count in
-the content-decision total.
+The experience and depth gates are routing questions and do not count in the
+content-decision total. Triggered research execution/evidence review and any
+explicit source-scope or unavailable-source risk permission are also budget-
+exempt, but each unresolved permission still receives its own turn and setup
+revision. Deep checkpoints and extension permission are control turns. The
+first accepted completion of a decision increments `questions_completed`;
+revising that completed decision increments `setup_revision` only.
+
+A recorded decision is a consequential Player choice. Operational fields the
+coordinator materializes to honor that choice are not decisions and never
+increase the count. A value mechanically entailed by an accepted answer is not
+an inferred default either; only a coordinator choice among plausible ordinary
+alternatives receives a stable label here.
+
+Current RPG reciprocity routes use two revision-bound approvals. Schema-v6+
+Quick records design approval at slot 8, reviews actual materialized
+preparation at slot 9, and records preparation approval at slot 10. Schema-v7
+Standard/Deep uses modules 19, 20, and 21 for the same boundaries. Preparation
+is materialized while not ready; design changes clear both approvals and
+preparation-only changes clear preparation approval. Schema-v7 Deep resolves
+all activated packs before module-19 approval.
+
+Schema-v8 Deep instead records decisions, stage extensions, output digests,
+and both approvals in `session_zero_state.json`. Its decision count is a
+fatigue signal rather than a readiness quota, and this file only displays the
+managed summary below.
+
+Quick and schema-v7 Standard/Deep use a factual integrated review followed by a
+separate readiness go/no-go. Schema-v8 Deep combines those functions in its
+second and final Player approval: show the audited preparation once and ask the
+Player to request a correction or `lock and start`. No route may introduce new
+campaign truth during readiness approval.
+
+## RPG Quick Decision Slot Status
+
+Use this block only for schema-v6+ `rpg + quick`. Standard/Deep use their
+schema-appropriate status block; Companion uses its own block. A revised
+completed slot keeps its completed count and receives a newer setup revision.
+
+- 1. Campaign Promise And Player Fantasy: open
+- 2. Character Identity, Current Desire, And Why Now: open
+- 3. Competence, Limitation, And Social Position: open
+- 4. Agency, Authorship, And Boundaries: open
+- 5. Play And System Contract: open
+- 6. Presentation Contract: open
+- 7. Character–World Relationship Pattern: open
+- 8. Reciprocity Design Review: open
+- 9. Integrated Preparation Review: open
+- 10. Preparation Approval: open
+
+### Quick Approval References
+
+- Design direction approved revision: null
+- Preparation materialized while ready_for_play false: no
+- Integrated preparation reviewed player-safe: no
+- Preparation approved revision: null
+- Approval invalidation notes:
+
+## RPG Standard / Deep Reciprocity Module Status
+
+Use this block only for schema-v7 `rpg + standard|deep`. Quick uses its 10-slot
+block; schema-v1–v6 Standard/Deep and legacy Quick use the legacy Module Status
+block. A revised completed module keeps its completed count and receives a
+newer setup revision.
+
+- 1. Campaign Promise And Player Fantasy: open
+- 2. Research Need And Source Boundary: open
+- 3. Agency, Authorship, And Content Boundaries: open
+- 4. Character Identity, Current Desire, And Why Now: open
+- 5. Competence, Limitation, Social Position, And Change Appetite: open
+- 6. Play And System Contract: open
+- 7. Presentation And Visual Contract: open
+- 8. Canon Policy: open
+- 9. Palette: open
+- 10. World Truths And Operating Model: open
+- 11. Scale, Everyday Life, Access, And Routes: open
+- 12. Independent Issues And World Dynamics: open
+- 13. Factions And Institutions: open
+- 14. Faces, Places, And Independent Relationships: open
+- 15. Progression And Rewards: open
+- 16. Character–World Reciprocity Pass: open
+- 17. Starting Situation Design: open
+- 18. Continuity, Ownership, And Preparation Contract: open
+- 19. Reciprocity Design Review: open
+- 20. Integrated Materialized Preparation Review: open
+- 21. Preparation Approval: open
+
+### Standard / Deep Approval References
+
+- Design direction approved revision: null
+- Activated Deep packs resolved before design approval: not-applicable | no |
+  yes
+- Preparation materialized while ready_for_play false: no
+- Integrated preparation reviewed player-safe: no
+- Integrated preparation accepted revision: null
+- Preparation approved revision: null
+- Approval invalidation notes:
+
+## RPG Deep v8 Stage Summary
+
+- Flow: `rpg_deep_v8`
+- Setup revision: 0
+- Current stage: North Star And Authority (`01_north_star_authority`)
+- Decisions recorded: 0
+
+### Deep v8 Stages
+
+| Stage | Status | Decisions |
+| --- | --- | ---: |
+| North Star And Authority | active | 0 |
+| Research, Canon, And Grounding | not_started | 0 |
+| Character Core | not_started | 0 |
+| Thin World Kernel | not_started | 0 |
+| Character Realization And Mechanics | not_started | 0 |
+| Living World Ecology | not_started | 0 |
+| Runtime Experience Contract | not_started | 0 |
+| Reciprocity And Campaign Horizon | not_started | 0 |
+| First Act Preparation | not_started | 0 |
+
+### Deep v8 Extensions
+
+- `character_interior`: not_applicable
+- `world_fabric`: not_applicable
+- `mechanics_detail`: not_applicable
+- `location_network`: not_applicable
+- `faction_information`: not_applicable
+- `group`: not_applicable
+- `character_embedding`: not_applicable
+- `advancement_detail`: not_applicable
+- `campaign_architecture`: not_applicable
+
+### Defaults And Deferrals
+
+- None
+
+### Deep v8 Gates
+
+- `research_scope_locked`: pending
+- `stages_1_8_complete`: pending
+- `first_act_design_complete`: pending
+- `design_direction_approved`: pending
+- `preparation_materialized`: pending
+- `cross_read_passed`: pending
+- `integrated_review_accepted`: pending
+- `preparation_approved`: pending
+- `draft_preflight_passed`: pending
+- `ready_and_snapshotted`: pending
 
 ## Companion Module Status
 
-Use this section only when Experience is `companion`. Leave the RPG Module
-Status below as an inactive template; only this selected block participates in
-Companion readiness. For RPG, this block is an inactive template and only the
-RPG Module Status block participates in readiness.
+Use this section only when Experience is `companion`. Leave both RPG status
+blocks as inactive templates; only this selected block participates in
+Companion readiness. For RPG, this block is inactive and the schema-selected
+RPG status block participates in readiness.
 
 - Premise And World: open
 - Identity And Appearance: open
@@ -93,7 +244,7 @@ RPG Module Status block participates in readiness.
 - RPG Dashboard: off
 - Exchange persistence: single_begin_exchange
 - Semantic parallelism: off | selective_structural | aggressive_structural
-- Maximum parallel workers: 1–3
+- Maximum parallel workers: 1–2 for every Companion depth
 - Companion parallelism usage notice acknowledged: no
 - Defaulted persona/life decisions:
 - Deferred decisions:
@@ -110,6 +261,10 @@ RPG Module Status block participates in readiness.
 - long_horizon_development: inactive
 
 ## Module Status
+
+Use this block for schema-v1–v6 RPG Standard/Deep and legacy RPG Quick. For
+schema-v6+ Quick and schema-v7 Standard/Deep it is a semantic reference only;
+readiness follows the route-selected status block above.
 
 - Campaign Pitch: open
 - Research Need Gate: open
@@ -141,8 +296,14 @@ Status terms:
 
 ## Starter Bundle Decision
 
-After the pitch, offer 2 to 4 contextual bundles and ask the Designer to choose
-one bundle as a single decision. Each option must state:
+After the campaign promise, prepare two to four contextual options. Current
+schema-v7 RPG routes use them as support but accept system values in module 6
+and presentation values in module 7; schema-v6+ Quick accepts those sides in
+slots 5 and 6. One response never silently accepts both. An accepted option
+enables only the stateful mechanics and optional Dashboard, visual, or World
+Voices layers it states explicitly; anything omitted stays off, and no layer
+enables another by implication. Legacy Standard/Deep and Companion may retain
+their existing single bundle decision. Each option must state:
 
 - how the campaign should feel;
 - proposed setting and play lenses;
@@ -181,6 +342,13 @@ records every assumption as defaulted. `defer` postpones only non-critical
 details; it cannot bypass safety, research, readiness, or an active Deep-pack
 critical decision.
 
+## Legacy 17-Module Decision Detail
+
+The numbered sections below preserve schema-v1–v6 Standard/Deep semantic
+prompts. Schema-v7 Standard/Deep records the same durable subjects through its
+21-module status block and authoritative compact playbook; these headings do
+not change its order or approval boundaries.
+
 ## 1. Campaign Pitch
 
 - Universe or genre:
@@ -196,12 +364,17 @@ See `research_dossier.md`.
 
 - Research mode:
 - Setting classification:
+- Cast scope: full_canon | canon_world_original_cast | genre_adjacent_original
+- Timeline anchor:
+- Native register and accepted divergence:
 - Research status:
 - Web search decision:
-- Source scope:
+- Source scope, bounded to the initial playable scale:
 - Open source questions:
 - Risk accepted: no
 - Current-scale lock permitted: no
+- Budget accounting: gate work and explicit scope/risk permission turns do not
+  increment questions_completed
 - Risk acceptance notes:
 
 ## 3. Group Contract
@@ -243,7 +416,7 @@ See `research_dossier.md`.
 - Style review policy:
 - Latency notice policy:
 - Semantic parallelism: off | selective_structural | aggressive_structural
-- Maximum parallel workers: 1–3
+- Maximum parallel workers: 1–2 in Quick; 1–3 in Standard/Deep
 - Performance estimate acknowledged:
 
 Materialize accepted runtime choices in `play_profile.yaml`. Keep
@@ -367,6 +540,61 @@ See `opening_brief.md` and `first_session.md`.
 - Maximum durable turns before cold distill:
 - Mandatory structural/boundary triggers:
 - Durable event log and recovery policy:
+
+## RPG Reciprocity Design Review
+
+Complete this player-safe design display before the selected route's design
+approval—Quick slot 8 or schema-v7 Standard/Deep module 19. It is a coherent
+direction, not a claim that preparation is already finished. Deep must have no
+unresolved activated pack.
+
+- Character seed: identity, current desire, why now, social position
+- Competence and world affordance:
+- Limitation, cost, pressure, and counterplay:
+- Character-originated anchor or explicit approved isolation:
+- World-independent issue/domain/process:
+- Playable intersection:
+- Place/routine/belonging or arrival pattern:
+- Independent NPC/faction relationship and its own agenda:
+- Opening causal fit:
+- Neutral action-space promise:
+- Backstory invention boundaries:
+- Player-known design summary:
+- Hidden material excluded from review:
+- Design direction approved: no
+- Design direction approved revision: null
+
+## RPG Integrated Materialized Preparation Review
+
+Complete this only after design approval and after actual opening-scale
+preparation has been written while `ready_for_play: false`. Quick performs this
+at slot 9; schema-v7 Standard/Deep performs it at module 20. Show player-safe
+prepared truth, not placeholders or a second abstract proposal, and ask whether
+it is accurate, complete at the promised scale, and faithful to the approved
+direction. The following preparation approval is a separate go/no-go on that same
+unchanged preparation; it must not show a default or prepared fact for the first
+time.
+
+- Prepared character summary and current desire:
+- Prepared competence affordance:
+- Prepared limitation/counterplay:
+- Prepared character-originated anchor or explicit isolation:
+- Prepared independent issue/domain/process and next movement:
+- Prepared intersection:
+- Prepared starting place, routine, access, and arrival:
+- Prepared relationship/NPC/faction with independent work and obligation:
+- Prepared visible opening situation:
+- Naturally present people and why they are present:
+- Neutral actions available without accepting a quest:
+- Backstory facts used and invention boundaries honored:
+- Player-safe defaults and deferrals shown:
+- Hidden truths intentionally excluded:
+- First-session prep status: materialized
+- Opening status: active
+- Integrated preparation accepted at route review: no
+- Preparation approved at route approval: no
+- Preparation approved revision: null
+- Requested revisions and resulting world impact:
 
 ## Runtime Narration Contract
 

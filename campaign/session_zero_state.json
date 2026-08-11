@@ -1,0 +1,345 @@
+{
+  "schema_version": 1,
+  "flow_id": "rpg_deep_v8",
+  "setup_revision": 0,
+  "current_stage": "01_north_star_authority",
+  "stages": {
+    "01_north_star_authority": {
+      "status": "active",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    },
+    "02_research_canon_grounding": {
+      "status": "not_started",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    },
+    "03_character_core": {
+      "status": "not_started",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    },
+    "04_thin_world_kernel": {
+      "status": "not_started",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    },
+    "05_character_realization_mechanics": {
+      "status": "not_started",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    },
+    "06_living_world_ecology": {
+      "status": "not_started",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    },
+    "07_runtime_experience_contract": {
+      "status": "not_started",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    },
+    "08_reciprocity_campaign_horizon": {
+      "status": "not_started",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    },
+    "09_first_act_preparation": {
+      "status": "not_started",
+      "completed_revision": null,
+      "output_refs": [],
+      "output_digest": "",
+      "invalidation_reason": ""
+    }
+  },
+  "decisions": [],
+  "extensions": {
+    "character_interior": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "03_character_core"
+      ],
+      "activated_by": [],
+      "stages": {
+        "03_character_core": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    },
+    "world_fabric": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "04_thin_world_kernel"
+      ],
+      "activated_by": [],
+      "stages": {
+        "04_thin_world_kernel": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    },
+    "mechanics_detail": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "05_character_realization_mechanics"
+      ],
+      "activated_by": [],
+      "stages": {
+        "05_character_realization_mechanics": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    },
+    "location_network": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "06_living_world_ecology"
+      ],
+      "activated_by": [],
+      "stages": {
+        "06_living_world_ecology": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    },
+    "faction_information": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "06_living_world_ecology"
+      ],
+      "activated_by": [],
+      "stages": {
+        "06_living_world_ecology": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    },
+    "group": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "06_living_world_ecology"
+      ],
+      "activated_by": [],
+      "stages": {
+        "06_living_world_ecology": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    },
+    "character_embedding": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "06_living_world_ecology"
+      ],
+      "activated_by": [],
+      "stages": {
+        "06_living_world_ecology": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    },
+    "advancement_detail": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "08_reciprocity_campaign_horizon"
+      ],
+      "activated_by": [],
+      "stages": {
+        "08_reciprocity_campaign_horizon": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    },
+    "campaign_architecture": {
+      "status": "not_applicable",
+      "depth": "not_applicable",
+      "stage_ids": [
+        "08_reciprocity_campaign_horizon",
+        "09_first_act_preparation"
+      ],
+      "activated_by": [],
+      "stages": {
+        "08_reciprocity_campaign_horizon": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        },
+        "09_first_act_preparation": {
+          "status": "not_applicable",
+          "revision": null,
+          "output_refs": [],
+          "output_digest": "",
+          "acceptance_decision_id": "",
+          "invalidation_reason": ""
+        }
+      }
+    }
+  },
+  "gates": {
+    "research_scope_locked": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "stages_1_8_complete": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "first_act_design_complete": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "design_direction_approved": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "preparation_materialized": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "cross_read_passed": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "integrated_review_accepted": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "preparation_approved": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "draft_preflight_passed": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    },
+    "ready_and_snapshotted": {
+      "status": "pending",
+      "revision": null,
+      "input_digest": "",
+      "output_digest": "",
+      "decided_by": "",
+      "evidence": {},
+      "invalidation_reason": ""
+    }
+  },
+  "operation_registry": {},
+  "last_operation": null,
+  "fatigue": {
+    "decision_count": 0,
+    "decisions_since_checkpoint": 0,
+    "last_checkpoint_revision": 0,
+    "last_checkpoint_decision_count": 0
+  }
+}

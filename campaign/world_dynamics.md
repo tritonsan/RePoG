@@ -39,6 +39,10 @@ bandwidth, emotional weather, and active preoccupation. Its bounded
   believable source.
 - Record notable changes, not routine noise.
 
+`dormant` is also where a candidate the Player did not select belongs. Record it
+with the trigger that would bring it forward instead of discarding it, so the
+world keeps latitude the selection did not remove.
+
 ## Active Domains
 
 ### Domain Name

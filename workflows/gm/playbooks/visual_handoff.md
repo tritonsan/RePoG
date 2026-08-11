@@ -6,6 +6,10 @@ of the surrounding task.
 
 ## Before Generation
 
+Confirm first that the running tool or model can actually generate images. If it
+cannot, say so instead of beginning a transaction, leave the visual layer recorded
+as unavailable, and continue the scene without promising a picture.
+
 Tell the Player, before calling image generation:
 
 - the next result will be the draft image by itself;
