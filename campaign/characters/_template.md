@@ -64,6 +64,33 @@ tactic, voice rhythm, and hard boundary. If four or more axes substantially
 match, redesign at least two axes. Persist the differentiated character, not a
 scorecard, and do not add a semantic checker for this pass.
 
+## Agent Playability Card
+
+Fill this only for an RPG T3 character considered for an Agent Seat. T3 is an
+eligibility threshold, not automatic permission. Locations, factions,
+GM-controlled antagonists, and characters without an explicit party-capable
+role remain ineligible. `agent_roster.json` owns machine-readable readiness
+and binding policy; this card owns the character-specific play contract.
+
+- Candidate role: party_companion | party_member | persistent_ally | guest | ineligible
+- Prioritized values:
+- Short-term goal:
+- Long-term goal:
+- Decision rules under pressure:
+- Contradictions and recurring mistakes:
+- Self-authority: speech, movement, owned items, personal commitments, or narrower
+- Forbidden authority: other characters, GM truth, world outcomes, or broader
+- Knowledge-boundary refs:
+- Relationship-map refs:
+- Voice calibration examples:
+- Stop/replan conditions:
+- Readiness status: candidate | preparing | ready | paused | revoked | ineligible
+- Prepared at continuity revision:
+
+`bounded_full` autonomy never grants outcome authority. The character may
+choose freely inside Self-authority. An out-of-authority proposal is rejected
+and replanned; it is never silently converted into established fiction.
+
 ## Stats (Numeric Grounding Only)
 
 Fill one entry per declared axis in `rules.md` only when

@@ -1,0 +1,44 @@
+{
+  "schema_version": "2.0",
+  "seat_revision": 0,
+  "updated_at": "",
+  "session": {
+    "session_id": "",
+    "status": "idle",
+    "session_revision": 0,
+    "current_turn_number": 0,
+    "started_at": "",
+    "paused_at": ""
+  },
+  "seat": {
+    "seat_id": "",
+    "character_ref": "",
+    "display_name": "",
+    "role": "",
+    "status": "unconfigured",
+    "persona": {
+      "goals": [],
+      "voice_anchors": [],
+      "boundaries": []
+    }
+  },
+  "beat": {
+    "beat_id": "",
+    "scene_id": "",
+    "source_revision": 0,
+    "status": "closed",
+    "opened_at": ""
+  },
+  "projection": {
+    "summary": "",
+    "perceivable_facts": [],
+    "self_knowledge": [],
+    "known_facts": [],
+    "party_public_facts": [],
+    "allowed_actions": []
+  },
+  "intent": null,
+  "resolution": null,
+  "turn_history": [],
+  "operation_ledger": []
+}

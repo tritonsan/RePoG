@@ -16,7 +16,10 @@ runtime and presentation behavior, not new world truth.
    Player's language, including habits rejected in the sample comparison.
 4. `07_optional_layers` — Dashboard, image generation, and World Voices receive
    independent explicit on/off decisions and cost/capability disclosure.
-5. `07_turn_protocol_and_performance` — Fast, Balanced, Maximum Continuity, or
+5. `07_agent_seats` — explicitly choose `off` or `on_demand`; when enabled,
+   use WebMCP, bounded-full autonomy, one active seat, T3 eligibility, and
+   explicit per-character activation.
+6. `07_turn_protocol_and_performance` — Fast, Balanced, Maximum Continuity, or
    Custom; validation/distill policies, semantic parallelism, worker cap, and
    estimate acknowledgement.
 
@@ -34,6 +37,5 @@ GM behavior lines, and acknowledged performance costs.
 ## Do Not
 
 - bundle narration voice with optional feature consent;
-- enable mechanics, visuals, Dashboard, or World Voices by implication;
+- enable mechanics, visuals, Dashboard, World Voices, or Agent Seats by implication;
 - add world entities, opening facts, or first-act events here.
-

@@ -127,7 +127,11 @@ using a disabled mechanic.
    the accepted card. The coordinator materializes the resulting mechanics,
    resolution, inventory, time, travel, wound, dice, failure, advancement,
    performance, validation, and parallelism fields without asking for each
-   selector separately.
+   selector separately. The same card must explicitly ask whether optional
+   RPG Agent Seats are `off` or `on_demand`; this remains part of slot 5 and
+   never creates an eleventh Quick decision. When enabled, record WebMCP,
+   bounded-full autonomy, one active seat, T3 eligibility, and explicit
+   per-character activation in `play_profile.yaml`.
 6. **Presentation Contract** — let the Player choose the voice by ear: write the
    same short moment two to four times in different voices and ask which reads
    right, then derive point of view, tense, camera, density, and length from the

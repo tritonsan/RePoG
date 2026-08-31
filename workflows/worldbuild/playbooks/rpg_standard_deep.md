@@ -231,8 +231,12 @@ question list.
 
    In Standard, keep 6b and 6c as one decision to protect the 21–30 budget; Deep
    asks all three separately. Turn Protocol and semantic parallelism ride with 6a
-   as performance settings. Fidelity may change later at a stage boundary, recorded
-   as a revision.
+   as performance settings. Agent Seats also ride with 6a: ask explicitly for
+   `off` or `on_demand`, explain that only validated T3 party-capable characters
+   can be activated, and materialize WebMCP with bounded-full autonomy and one
+   active seat when accepted. This is not permission to expose GM truth or let
+   an agent author another character or a world outcome. Fidelity may change
+   later at a stage boundary, recorded as a revision.
 7. **Presentation And Visual Contract:** split voice from optional layers, and
    inherit rather than re-ask—interiority policy comes from module 3, breather
    settings from 6c, and the setting's native register from the dossier.

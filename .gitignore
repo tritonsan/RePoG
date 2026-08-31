@@ -24,6 +24,7 @@ Thumbs.db
 *.log
 tmp/
 temp/
+.site-artifacts/
 
 # Unaccepted generated visual drafts
 campaign/visuals/_drafts/*
@@ -36,3 +37,4 @@ campaign/dashboard/.cache/
 # Optional local secrets
 .env
 .env.*
+campaign/agent_bridge_state.json

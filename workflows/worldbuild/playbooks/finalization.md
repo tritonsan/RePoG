@@ -156,7 +156,12 @@ Use this order exactly:
    `status: in_progress` and `ready_for_play: false`; do not increment the
    revision or narrate. The schema-v8 Deep final gate owns the readiness flip.
 4. **Derived ready projections.** Serially compile approved RPG Atlas/Dashboard
-   or Companion View at that revision and run their checks.
+   or Companion View at that revision and run their checks. When RPG Agent
+   Seats are `on_demand`, validate `agent_roster.json`; every `ready` entry must
+   reference a T3 character with a complete Agent Playability Card and bounded
+   authority. Zero ready entries are allowed only when the final player-safe
+   preparation review explicitly records that no suitable party-capable T3
+   character exists yet.
 5. **Starting snapshot.** Run `tools/snapshot.py campaign --label
    session-zero-start` after candidate profiles/projections. The command returns
    `snapshot_path`; append `snapshot_manifest.json` and express that file as a

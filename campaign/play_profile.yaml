@@ -13,6 +13,18 @@ performance:
   latency_notice_policy: exceptional_only
   estimate_acknowledged: false
 
+# Optional RPG browser-agent seats. Session Zero must choose mode explicitly
+# inside the existing Play/System decision. Companion experience mode keeps
+# this inactive. A ready character is never bound without an explicit seat
+# activation, and the agent may propose only actions inside its own authority.
+agent_seats:
+  mode: off
+  transport: webmcp
+  autonomy: bounded_full
+  max_active_seats: 1
+  eligible_tiers: [T3]
+  activation_policy: explicit_per_character
+
 # Composable Session 0 lenses. A lens may suggest a mechanic, but only an
 # explicit entry under mechanics.modules enables that mechanic.
 setting_lenses: []
@@ -132,3 +144,9 @@ visuals:
 # performance.semantic_parallelism: off | selective_structural |
 #   aggressive_structural
 # performance.max_parallel_workers: 1 | 2 | 3
+# agent_seats.mode: off | on_demand
+# agent_seats.transport: webmcp
+# agent_seats.autonomy: bounded_full
+# agent_seats.max_active_seats: 1
+# agent_seats.eligible_tiers: [T3]
+# agent_seats.activation_policy: explicit_per_character

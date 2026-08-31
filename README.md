@@ -319,7 +319,7 @@ After Session 0, open the local player dashboard with:
 python tools/serve_dashboard.py campaign/dashboard
 ```
 
-Then visit `http://localhost:8787/`. The dashboard is read-only and contains
+Then visit `http://localhost:8787/`. Campaign tiles are read-only and contain
 only player-known information. Dashboard V3 uses campaign-specific tiles, so a
 mechanics-light game does not show invented stats or resources. Revision-aware
 updates reject stale data instead of silently replacing newer state. Its
@@ -327,6 +327,29 @@ optional Atlas V1 map supports regions, cities, interiors, and abstract
 networks with local, setting-neutral skins; it does not require a map service,
 API key, or generated background image. See
 [`docs/dashboard.md`](docs/dashboard.md).
+
+## RPG Agent Seat
+
+The Dashboard can also act as a shared Table surface for one active browser
+agent, with multiple T3 party-capable characters eligible in the roster.
+Session Zero explicitly chooses `off` or `on_demand`. Supported browsers can
+join, read the next bounded Character Turn Brief, recall only that character's
+knowledge, submit one pending turn, inspect its visible resolution, pause, and
+resume without resetting prior turns. A pending turn is not campaign truth and
+cannot write campaign owners; the GM resolves it with the human turn through
+the normal RPG flow.
+
+Agent Seat now uses versioned, game-independent Agent Pack, Turn Brief, Intent,
+and Resolution contracts. Capability, target, owned-resource, knowledge, stale
+revision, and outcome-authority checks are deterministic; no character name or
+genre-specific regex grants permission. A hosted relay can connect ChatGPT's
+in-app browser to a local RePoG campaign through the optional bridge while
+keeping campaign and GM-only files local. The included fantasy and
+science-fiction fixtures exercise the same contract.
+
+Agent Seat is progressive enhancement. Browsers without the current WebMCP
+draft still render the Dashboard and participant status strip normally. See
+[`docs/agent-seat.md`](docs/agent-seat.md).
 
 ## Optional Checks
 
@@ -338,6 +361,8 @@ python tools/check_companion.py campaign --scope full
 python tools/companion_state.py campaign begin-exchange --operation-id exchange-0001 --expected-state-revision 0
 python tools/check_companion_view.py campaign/companion_view/companion_view_state.json --campaign campaign
 python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
+python tools/agent_seat.py campaign/agent_seat_state.json status
+python tools/compile_agent_brief.py validate-roster campaign
 python tools/check_world_voices.py campaign
 python tools/snapshot.py campaign --label before_scene
 ```

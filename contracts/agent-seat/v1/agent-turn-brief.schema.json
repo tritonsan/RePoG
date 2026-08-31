@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://repog.dev/contracts/agent-seat/v1/agent-turn-brief.schema.json",
+  "title": "RePoG Agent Turn Brief v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "session", "seat", "scene", "epistemic_projection", "continuity"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "session": { "type": "object" },
+    "seat": { "type": "object" },
+    "scene": { "type": "object" },
+    "epistemic_projection": { "type": "object" },
+    "continuity": { "type": "object" }
+  }
+}

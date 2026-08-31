@@ -1,0 +1,1 @@
+ALTER TABLE `sessions` ADD `invite_token_hash` text DEFAULT '' NOT NULL;

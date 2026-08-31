@@ -39,6 +39,8 @@ REQUIRED_FILES = (
     "campaign/play_profile.yaml",
     "campaign/companion_profile.yaml",
     "campaign/companion_state.json",
+    "campaign/agent_seat_state.json",
+    "campaign/agent_roster.json",
     "campaign/companion_view/companion_view_state.json",
     "campaign/companion_view/index.html",
     "campaign/companion_view/app.js",
@@ -55,11 +57,15 @@ REQUIRED_FILES = (
     "campaign/visual_state.json",
     "campaign/dashboard/dashboard_state.json",
     "campaign/dashboard/index.html",
+    "campaign/dashboard/agent-table.css",
+    "campaign/dashboard/agent-table.js",
     "tools/check_state.py",
     "tools/build_distribution.py",
     "tools/check_companion.py",
     "tools/check_companion_view.py",
     "tools/companion_state.py",
+    "tools/agent_seat.py",
+    "tools/compile_agent_brief.py",
     "tools/rpg_state.py",
     "tools/companion_acceptance_suite.json",
     "tools/check_dashboard.py",
@@ -118,6 +124,7 @@ REQUIRED_FILES = (
     "workflows/worldbuild/deep_v8/08_reciprocity_campaign_horizon.md",
     "workflows/worldbuild/deep_v8/09_first_act_preparation.md",
     "docs/companion-mode.md",
+    "docs/agent-seat.md",
     "docs/semantic-parallelism.md",
 )
 
@@ -165,6 +172,8 @@ DISTRIBUTION_CAMPAIGN_ROOT_FILES = {
     "character_foundation.md",
     "companion_profile.yaml",
     "companion_state.json",
+    "agent_seat_state.json",
+    "agent_roster.json",
     "creation_ledger.md",
     "current_state.yaml",
     "faces_and_places.md",
@@ -213,6 +222,8 @@ DISTRIBUTION_CAMPAIGN_EXACT_FILES = {
     "campaign/dashboard/assets/README.md",
     "campaign/dashboard/assets/world_voices/catalog.json",
     "campaign/dashboard/dashboard_state.json",
+    "campaign/dashboard/agent-table.css",
+    "campaign/dashboard/agent-table.js",
     "campaign/dashboard/index.html",
     "campaign/factions/_template.md",
     "campaign/places/_template.md",
@@ -789,6 +800,21 @@ def _semantic_parallelism_contract_check(workspace: Path) -> list[dict[str, Any]
     return findings
 
 
+def _agent_seat_contract_check(workspace: Path, campaign: Path) -> list[dict[str, Any]]:
+    tool = workspace / "tools" / "compile_agent_brief.py"
+    if not tool.is_file():
+        return [_finding("error", "agent_brief_tool_missing", "Agent brief compiler is missing.", tool, check="agent_seat")]
+    try:
+        module = _load_module("repog_compile_agent_brief", tool)
+        result = module.validate_roster(campaign)
+    except Exception as exc:
+        return [_finding("error", "agent_roster_check_failed", str(exc), tool, check="agent_seat")]
+    return [
+        _finding("error", "agent_roster_invalid", message, campaign / "agent_roster.json", check="agent_seat")
+        for message in result.get("errors", [])
+    ]
+
+
 def _dashboard_check(workspace: Path, campaign: Path) -> list[dict[str, Any]]:
     check_path = workspace / "tools" / "check_dashboard.py"
     state_path = campaign / "dashboard" / "dashboard_state.json"
@@ -801,7 +827,27 @@ def _dashboard_check(workspace: Path, campaign: Path) -> list[dict[str, Any]]:
         return [_finding("error", "dashboard_check_failed", str(exc), check_path, check="dashboard")]
     if not isinstance(result, dict):
         return [_finding("error", "dashboard_check_invalid", "Dashboard checker returned a non-object result.", check_path, check="dashboard")]
-    return _normalise_findings(result.get("findings"), check="dashboard")
+    findings = _normalise_findings(result.get("findings"), check="dashboard")
+    agent_tool = workspace / "tools" / "agent_seat.py"
+    agent_state = campaign / "agent_seat_state.json"
+    if agent_tool.is_file() and agent_state.is_file():
+        try:
+            agent_module = _load_module("repog_verify_agent_seat", agent_tool)
+            agent_result = agent_module.check_state(agent_state)
+        except Exception as exc:
+            findings.append(_finding("error", "agent_seat_check_failed", str(exc), agent_tool, check="dashboard"))
+        else:
+            if not agent_result.get("ok"):
+                findings.append(
+                    _finding(
+                        "error",
+                        agent_result.get("failure_category", "agent_seat_invalid"),
+                        agent_result.get("failure_reason", "Agent Seat state is invalid."),
+                        agent_state,
+                        check="dashboard",
+                    )
+                )
+    return findings
 
 
 def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str, Any]]:
@@ -1429,6 +1475,7 @@ def verify_workspace(
     campaign_findings = _campaign_check(workspace, campaign_path, scope)
     campaign_findings.extend(_semantic_parallelism_contract_check(workspace))
     campaign_findings.extend(_companion_contract_check(workspace, campaign_path))
+    campaign_findings.extend(_agent_seat_contract_check(workspace, campaign_path))
     grouped = {
         "layout": _check_layout(workspace),
         "python": _check_python_sources(workspace),

@@ -256,6 +256,8 @@ campaign/
   play_profile.yaml
   companion_profile.yaml
   companion_state.json
+  agent_seat_state.json
+  agent_roster.json
   user_context.md
   companion_view/
   session_zero.md
@@ -339,6 +341,31 @@ must not silently contradict or replace them. Resolve a conflict in Designer
 Mode rather than guessing.
 
 ### Mode-Specific Runtime Stores
+
+- `agent_seat_state.json` is the optional RPG Agent Seat operation store. It
+  owns one browser-agent participant binding, the currently offered safe
+  perspective, durable session/beat/seat revisions, at most one pending turn
+  intent, its character-visible resolution, bounded prior-turn history, and
+  bounded operation identity. A submitted
+  intent is a proposal, not fictional truth: it never advances
+  `continuity_revision` or writes campaign owners. The GM resolves it together
+  with the human intent, persists any resulting world change through the
+  ordinary RPG transaction, then records only the character-visible outcome
+  here through `tools/agent_seat.py`. This store must never contain GM-only
+  facts or another participant's private projection.
+
+- `agent_roster.json` is the optional RPG Agent Seat eligibility manifest. It
+  owns only character references, candidate/readiness state, bounded authority,
+  and preparation revision. Character notes, relationship memory, and
+  `knowledge_boundaries.md` remain authoritative for fictional and epistemic
+  truth; the roster must never duplicate their fact text.
+
+- Hosted WebMCP is an optional transport adapter, never a second campaign
+  authority. Export only versioned Agent Session Packs and character-safe Turn
+  Briefs. The separate bridge may move pending intents and visible resolutions
+  but must not read or upload campaign owners, invent outcomes, or bypass the
+  ordinary RPG persistence transaction. Fixture resolution is restricted to
+  explicitly marked demonstration sessions.
 
 - `companion_state.json` is the bounded current-state and operation ledger when
   the Companion runtime is active. It owns state, continuity, and public-surface
@@ -788,6 +815,13 @@ triggered by the turn. Resolve through the Causal Turn Spine, real fictional
 resistance, NPC presence/knowledge, and approved mechanics. Persist begins
 with semantic capture only after the direct result is known.
 
+When an Agent Seat beat is open, collect its pending proposal through
+`tools/agent_seat.py` before Resolve. Do not treat submission as an action that
+already happened. Resolve the human and Agent Seat intents in one causal beat,
+persist established world truth through the same ordinary RPG writer, and
+publish only the controlled character's visible result back to the seat. A
+stale, skipped, or missing optional seat intent must not be silently invented.
+
 Make two independent decisions after resolution:
 
 1. **Semantic result — `soft | durable`:** choose `soft` only when the
@@ -891,9 +925,12 @@ semantic transaction containing a genuinely shared public-surface change. It
 must never show private presence, relationship evidence, disclosure readiness,
 hidden truth, user memory, or internal ids.
 
-In RPG, the optional
-dashboard is a local read-only player board opened through a
-browser. It may show current scene context, visible NPCs, companions,
+In RPG, the optional dashboard is a local player board opened through a
+browser. Its campaign tiles remain read-only projections. When the Agent Seat
+layer is active, the same-origin Table surface may additionally submit one
+revision-guarded operational intent through `tools/agent_seat.py`; that intent
+is not campaign truth and cannot write dashboard tiles or campaign owners.
+The board may show current scene context, visible NPCs, companions,
 player-known threads, known clues, inventory, a pan/zoom local atlas, accepted
 visuals, player character state, and legitimately acquired World Voices
 documents when that optional policy is enabled.

@@ -3,6 +3,45 @@
 These small deterministic helpers guard campaign continuity. They do not create
 narration or act as a second game engine.
 
+## Agent Seat
+
+The optional Agent Seat store keeps a browser-agent participant outside
+campaign truth. Opening a beat supplies an already-curated, character-safe
+projection; submitting a turn creates only a pending proposal. The GM resolves
+that proposal with the human turn before using the ordinary RPG writer.
+
+```bash
+python tools/agent_seat.py campaign/agent_seat_state.json status
+python tools/agent_seat.py campaign/agent_seat_state.json context
+python tools/agent_seat.py campaign/agent_seat_state.json next-turn
+python tools/agent_seat.py campaign/agent_seat_state.json open-beat --input-file open_beat.json
+python tools/agent_seat.py campaign/agent_seat_state.json turn-status --operation-id mira-turn-001
+python tools/agent_seat.py campaign/agent_seat_state.json resolve-turn --input-file resolution.json
+python tools/compile_agent_brief.py validate-roster campaign
+python tools/compile_agent_brief.py compile-pack --input-json '{...}'
+python tools/compile_agent_brief.py validate-pack --input-json '{...}'
+```
+
+Resolved beats can advance to the next beat without resetting the state.
+`pause-session`, `resume-session`, and `complete-session` preserve a durable
+session revision; `migrate` atomically upgrades legacy Agent Seat state.
+
+`tools/serve_dashboard.py` exposes the safe context and pending-turn routes to
+same-origin WebMCP tools. It never exposes the private campaign directory and
+does not expose configuration or resolution writes over HTTP.
+
+The optional hosted relay uses the same versioned envelopes under
+`contracts/agent-seat/v1/`. `tools/agent_bridge.py` is a transport adapter,
+not a second GM: it uploads only an explicitly compiled Agent Session Pack and
+Turn Brief, pulls pending intents, and returns RePoG-authored visible results.
+Its credential state is local-only and ignored by Git.
+
+```bash
+python tools/agent_bridge.py create --relay-url https://example.chatgpt.site --manifest agent-pack.json --turn turn-brief.json
+python tools/agent_bridge.py pull
+python tools/agent_bridge.py resolve --input-json '{...}' --next-turn next-turn.json
+```
+
 ## Campaign Checks
 
 ```bash
