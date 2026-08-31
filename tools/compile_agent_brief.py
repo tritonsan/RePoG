@@ -277,6 +277,7 @@ def compile_brief(request: dict[str, Any]) -> dict[str, Any]:
         },
         "seat": {
             "seat_id": _id(seat.get("seat_id"), "seat.seat_id"),
+            "character_id": _id(seat.get("character_id", seat.get("seat_id")), "seat.character_id"),
             "character_ref": _text(seat.get("character_ref"), "seat.character_ref", 180),
             "role": _text(seat.get("role"), "seat.role", 120),
             "authority": _items(seat, "authority", item_maximum=240),

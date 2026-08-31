@@ -206,6 +206,7 @@ class AgentBriefTests(unittest.TestCase):
         }
         brief = compile_brief(request)
         self.assertEqual(brief["session"]["turn_number"], 1)
+        self.assertEqual(brief["seat"]["character_id"], "mira")
         self.assertNotIn("gm_truth", json.dumps(brief).lower())
 
     def test_ready_roster_requires_t3_playability_card(self) -> None:

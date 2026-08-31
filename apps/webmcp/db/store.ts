@@ -36,7 +36,9 @@ export async function getOrCreateSession(sessionId: string, requestedScenarioId 
 
 export async function createBridgeSession(payload: { sessionId: string; bridgeTokenHash: string; inviteTokenHash: string; expiresAt: string; manifest: Record<string, unknown>; initialTurn: Record<string, unknown> }) {
   const characters = payload.manifest.characters as Array<Record<string, unknown>>;
-  const character = characters[0];
+  const turnSeat = payload.initialTurn.seat as Record<string, unknown>;
+  const character = characters.find((item) => item.character_id === turnSeat.character_id);
+  if (!character) throw new Error('The active character is not present in the session manifest.');
   const turnSession = payload.initialTurn.session as Record<string, unknown>;
   const scene = payload.initialTurn.scene as Record<string, unknown>;
   const now = new Date().toISOString();

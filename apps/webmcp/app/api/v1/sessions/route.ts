@@ -1,6 +1,7 @@
 import { createBridgeSession } from '@/db/store';
 import { hasAcceptableBodySize } from '@/lib/session';
 import { bearer, randomToken, safeEqual, tokenHash } from '@/lib/tokens';
+import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
 
 function validate(manifest: unknown, turn: unknown) {
@@ -22,7 +23,7 @@ function validate(manifest: unknown, turn: unknown) {
 export async function POST(request: NextRequest) {
   try {
     if (!hasAcceptableBodySize(request, 65_536)) return NextResponse.json({ ok: false, failure_category: 'payload_too_large' }, { status: 413 });
-    const bootstrap = process.env.REPOG_RELAY_BOOTSTRAP_KEY || '';
+    const bootstrap = String((env as unknown as Record<string, unknown>).REPOG_RELAY_BOOTSTRAP_KEY || '');
     if (!bootstrap) return NextResponse.json({ ok: false, failure_category: 'relay_not_configured' }, { status: 503 });
     if (!safeEqual(bearer(request), bootstrap)) return NextResponse.json({ ok: false, failure_category: 'unauthorized' }, { status: 401 });
     const body = await request.json();

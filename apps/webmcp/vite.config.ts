@@ -15,6 +15,9 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === 'seatbelt';
 const localBindingConfig = {
   main: 'vinext/server/app-router-entry',
   compatibility_flags: ['nodejs_compat'],
+  vars: process.env.REPOG_RELAY_BOOTSTRAP_KEY
+    ? { REPOG_RELAY_BOOTSTRAP_KEY: process.env.REPOG_RELAY_BOOTSTRAP_KEY }
+    : {},
   d1_databases: d1
     ? [
         {
