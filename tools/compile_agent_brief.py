@@ -45,6 +45,8 @@ LIST_LIMITS = {
     "perceivable_facts": 12,
     "relevant_knowledge": 12,
     "relevant_memories": 12,
+    "self_knowledge": 12,
+    "party_public_facts": 12,
     "affordances": 8,
     "voice_examples": 3,
     "decision_rules": 8,
@@ -72,6 +74,15 @@ def _id(value: Any, name: str) -> str:
 def _text(value: Any, name: str, maximum: int = 1200) -> str:
     if not isinstance(value, str) or not value.strip():
         raise BriefError(f"{name} must be non-empty text")
+    clean = value.strip()
+    if len(clean) > maximum:
+        raise BriefError(f"{name} exceeds {maximum} characters")
+    return clean
+
+
+def _optional_text(value: Any, name: str, maximum: int) -> str:
+    if not isinstance(value, str):
+        raise BriefError(f"{name} must be text")
     clean = value.strip()
     if len(clean) > maximum:
         raise BriefError(f"{name} exceeds {maximum} characters")
@@ -270,10 +281,13 @@ def compile_brief(request: dict[str, Any]) -> dict[str, Any]:
         },
         "scene": {
             "scene_id": _id(scene.get("scene_id"), "scene.scene_id"),
+            **({"title": _text(scene.get("title"), "scene.title", 300)} if scene.get("title") else {}),
             "summary": _text(scene.get("summary"), "scene.summary"),
-            "pressure": _text(scene.get("pressure"), "scene.pressure", 600),
+            "pressure": _optional_text(scene.get("pressure", ""), "scene.pressure", 600),
             "perceivable_facts": _items(scene, "perceivable_facts"),
             "affordances": _items(scene, "affordances", item_maximum=240),
+            "entity_refs": [_id(item, "scene.entity_refs") for item in scene.get("entity_refs", [])],
+            "owned_resource_refs": [_id(item, "scene.owned_resource_refs") for item in scene.get("owned_resource_refs", [])],
         },
         "seat": {
             "seat_id": _id(seat.get("seat_id"), "seat.seat_id"),
@@ -296,6 +310,8 @@ def compile_brief(request: dict[str, Any]) -> dict[str, Any]:
         "epistemic_projection": {
             "relevant_knowledge": _items(request, "relevant_knowledge"),
             "relevant_memories": _items(request, "relevant_memories"),
+            "self_knowledge": _items(request, "self_knowledge"),
+            "party_public_facts": _items(request, "party_public_facts"),
             "knowledge_index": _knowledge_items(request.get("knowledge_index", [])),
         },
         "continuity": {
@@ -305,6 +321,68 @@ def compile_brief(request: dict[str, Any]) -> dict[str, Any]:
             "unresolved_personal_business": str(request.get("unresolved_personal_business", "")).strip()[:600],
         },
     }
+
+
+def compile_state_brief(pack: dict[str, Any], next_turn: dict[str, Any]) -> dict[str, Any]:
+    """Compile a hosted Turn Brief from the bounded Agent Seat read model."""
+    if next_turn.get("status") != "ready":
+        raise BriefError("next_turn must be ready")
+    session = next_turn.get("session")
+    seat = next_turn.get("seat")
+    beat = next_turn.get("beat")
+    projection = next_turn.get("perspective")
+    characters = pack.get("characters") if isinstance(pack, dict) else None
+    if not all(isinstance(item, dict) for item in (session, seat, beat, projection)) or not isinstance(characters, list):
+        raise BriefError("bounded Agent Seat context or pack is invalid")
+    character = next((item for item in characters if isinstance(item, dict) and item.get("character_id") == seat.get("seat_id")), None)
+    if not isinstance(character, dict):
+        raise BriefError("active Agent Seat character is not present in the pack")
+    goals = character.get("goals", [])
+    request = {
+        "session": {
+            "session_id": session.get("session_id"),
+            "turn_id": beat.get("beat_id"),
+            "turn_number": session.get("current_turn_number"),
+            "revision": beat.get("source_revision"),
+        },
+        "seat": {
+            "seat_id": seat.get("seat_id"),
+            "character_id": character.get("character_id"),
+            "character_ref": seat.get("character_ref"),
+            "role": character.get("role", seat.get("role")),
+            "authority": character.get("capabilities", seat.get("capabilities", [])),
+            "forbidden_authority": character.get("forbidden_authority", []),
+            "capabilities": character.get("capabilities", seat.get("capabilities", [])),
+        },
+        "scene": {
+            "scene_id": beat.get("scene_id"),
+            "summary": projection.get("summary", ""),
+            "pressure": projection.get("pressure", ""),
+            "perceivable_facts": projection.get("perceivable_facts", []),
+            "affordances": projection.get("allowed_actions", []),
+            "entity_refs": projection.get("entity_refs", []),
+            "owned_resource_refs": projection.get("owned_resource_refs", []),
+        },
+        "character": {
+            "identity": character.get("identity", character.get("display_name", "Active character")),
+            "prioritized_values": character.get("prioritized_values", "Follow the established character values."),
+            "short_term_goal": goals[0] if goals else "Respond to the current scene.",
+            "long_term_goal": goals[1] if len(goals) > 1 else (goals[0] if goals else "Preserve character continuity."),
+            "contradictions": character.get("contradictions", "No additional contradiction supplied."),
+            "decision_rules": character.get("decision_rules", []),
+            "voice_examples": character.get("voice_examples", []),
+        },
+        "relevant_knowledge": projection.get("known_facts", []),
+        "relevant_memories": projection.get("relevant_memories", []),
+        "self_knowledge": projection.get("self_knowledge", []),
+        "party_public_facts": projection.get("party_public_facts", []),
+        "knowledge_index": projection.get("knowledge_index", []),
+        "last_action": projection.get("last_action", ""),
+        "last_visible_result": projection.get("last_visible_result", ""),
+        "current_condition": projection.get("current_condition", ""),
+        "unresolved_personal_business": projection.get("unresolved_personal_business", ""),
+    }
+    return compile_brief(request)
 
 
 def validate_roster(campaign: Path) -> dict[str, Any]:

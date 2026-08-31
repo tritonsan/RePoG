@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://repog.dev/contracts/agent-seat/v1/agent-resolution-envelope.schema.json",
+  "title": "RePoG Agent Resolution Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "intent_operation_id", "outcome", "summary", "visible_consequences", "session_revision", "next_status"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "intent_operation_id": { "type": "string" },
+    "outcome": { "enum": ["accepted", "altered", "rejected", "clarification_required", "skipped", "expired"] },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 1200 },
+    "visible_consequences": { "type": "array", "maxItems": 16, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "session_revision": { "type": "integer", "minimum": 0 },
+    "next_status": { "enum": ["ready", "waiting", "paused", "complete"] }
+  }
+}

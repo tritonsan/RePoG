@@ -1,22 +1,17 @@
 import { createBridgeSession } from '@/db/store';
 import { hasAcceptableBodySize } from '@/lib/session';
 import { bearer, randomToken, safeEqual, tokenHash } from '@/lib/tokens';
+import { assertAgentSchema } from '@/lib/schema-validation';
 import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
 
 function validate(manifest: unknown, turn: unknown) {
-  if (!manifest || typeof manifest !== 'object' || !turn || typeof turn !== 'object') throw new Error('manifest and initial_turn are required.');
+  assertAgentSchema('session_pack', manifest);
+  assertAgentSchema('turn_brief', turn);
   const pack = manifest as Record<string, unknown>;
   const brief = turn as Record<string, unknown>;
-  if (pack.schema_version !== '1.0' || typeof pack.pack_id !== 'string') throw new Error('Agent Session Pack v1 is required.');
-  const characters = pack.characters;
-  if (!Array.isArray(characters) || !characters.length) throw new Error('At least one ready character is required.');
-  const policy = pack.session_policy as Record<string, unknown> | undefined;
-  if (!policy || policy.max_active_seats !== 1) throw new Error('Only one active Agent Seat is supported.');
-  const session = brief.session as Record<string, unknown> | undefined;
-  const scene = brief.scene as Record<string, unknown> | undefined;
-  const seat = brief.seat as Record<string, unknown> | undefined;
-  if (brief.schema_version !== '1.0' || !session || !scene || !seat || typeof session.turn_id !== 'string' || !Number.isInteger(session.turn_number) || !Number.isInteger(session.revision) || typeof scene.scene_id !== 'string') throw new Error('Agent Turn Brief v1 is invalid.');
+  const characters = pack.characters as Array<Record<string, unknown>>;
+  const seat = brief.seat as Record<string, unknown>;
   if (!characters.some((character) => (character as Record<string, unknown>).character_id === seat.character_id)) throw new Error('The initial turn seat is not present in the manifest.');
 }
 

@@ -379,7 +379,10 @@ def open_beat(path: Path, request: dict[str, Any]) -> dict[str, Any]:
             "status": "open",
             "opened_at": _now(),
         }
-        projection = {"summary": _text(projection_request.get("summary", ""), "projection.summary", maximum=1200, allow_empty=True)}
+        projection = {
+            "summary": _text(projection_request.get("summary", ""), "projection.summary", maximum=1200, allow_empty=True),
+            "pressure": _text(projection_request.get("pressure", ""), "projection.pressure", maximum=600, allow_empty=True),
+        }
         for key in PROJECTION_LISTS:
             projection[key] = _text_list(projection_request.get(key, []), f"projection.{key}")
         projection["entity_refs"] = _id_list(projection_request.get("entity_refs", []), "projection.entity_refs", maximum_items=32)
@@ -564,6 +567,20 @@ def get_turn_status(path: Path, operation_id: str) -> dict[str, Any]:
     state = load_state(path.resolve())
     intent = state.get("intent")
     if not isinstance(intent, dict) or intent.get("operation_id") != operation_id:
+        for archived in reversed(state.get("turn_history", [])):
+            archived_intent = archived.get("intent") if isinstance(archived, dict) else None
+            if isinstance(archived_intent, dict) and archived_intent.get("operation_id") == operation_id:
+                result = {
+                    "ok": True,
+                    "operation_id": operation_id,
+                    "status": archived_intent["status"],
+                    "seat_revision": state["seat_revision"],
+                    "beat_id": archived_intent["beat_id"],
+                    "archived": True,
+                }
+                if isinstance(archived.get("resolution"), dict):
+                    result["resolution"] = copy.deepcopy(archived["resolution"])
+                return result
         return {"ok": True, "operation_id": operation_id, "status": "not_found", "seat_revision": state["seat_revision"]}
     result: dict[str, Any] = {
         "ok": True,

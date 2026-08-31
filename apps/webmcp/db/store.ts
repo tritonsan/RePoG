@@ -125,7 +125,7 @@ export async function listPendingIntents(sessionId: string) {
   return (await env.DB.prepare("SELECT operation_id, turn_id, intent_payload, created_at FROM intents WHERE session_id = ? AND status = 'pending' ORDER BY created_at").bind(sessionId).all<{ operation_id: string; turn_id: string; intent_payload: string; created_at: string }>()).results.map((row) => ({ operation_id: row.operation_id, turn_id: row.turn_id, intent: JSON.parse(row.intent_payload), created_at: row.created_at }));
 }
 
-export async function resolveBridgeIntent(sessionId: string, payload: { operationId: string; expectedSessionRevision: number; outcome: string; summary: string; visibleConsequences: string[]; nextTurn?: Record<string, unknown> | null }) {
+export async function resolveBridgeIntent(sessionId: string, payload: { operationId: string; expectedSessionRevision: number; outcome: string; summary: string; visibleConsequences: string[]; nextStatus?: 'ready' | 'waiting' | 'paused' | 'complete'; nextTurn?: Record<string, unknown> | null }) {
   const view = await selectView(sessionId);
   if (view.session.resolver_mode !== 'bridge') throw new Error('resolver_mode_invalid');
   if (view.session.revision !== payload.expectedSessionRevision) throw new Error('revision_conflict');
@@ -136,14 +136,44 @@ export async function resolveBridgeIntent(sessionId: string, payload: { operatio
   const next = payload.nextTurn;
   const nextSession = next?.session as Record<string, unknown> | undefined;
   const nextScene = next?.scene as Record<string, unknown> | undefined;
-  const complete = !next;
+  const nextStatus = payload.nextStatus || (next ? 'ready' : 'complete');
+  if (nextStatus === 'ready' && (!next || !nextSession || !nextScene)) throw new Error('next_turn_required');
+  if (nextStatus !== 'ready' && next) throw new Error('next_turn_not_allowed');
+  const sessionStatus = nextStatus === 'complete' ? 'complete' : nextStatus === 'paused' ? 'paused' : 'active';
+  const nextTurnNumber = nextStatus === 'ready' ? Number(nextSession?.turn_number) : view.turn.turn_number;
   const statements = [
     env.DB.prepare("UPDATE intents SET status = 'resolved', outcome = ?, resolution_summary = ?, visible_consequences = ?, resolved_at = ? WHERE session_id = ? AND operation_id = ? AND status = 'pending'").bind(payload.outcome, payload.summary, JSON.stringify(payload.visibleConsequences), now, sessionId, payload.operationId),
     env.DB.prepare("UPDATE turns SET status = 'resolved', resolved_at = ? WHERE turn_id = ? AND status = 'submitted'").bind(now, view.turn.turn_id),
-    env.DB.prepare('UPDATE sessions SET status = ?, current_turn = ?, revision = ?, updated_at = ? WHERE session_id = ? AND revision = ?').bind(complete ? 'complete' : 'active', complete ? view.turn.turn_number : Number(nextSession?.turn_number), nextRevision, now, sessionId, view.session.revision),
+    env.DB.prepare('UPDATE sessions SET status = ?, current_turn = ?, revision = ?, updated_at = ? WHERE session_id = ? AND revision = ?').bind(sessionStatus, nextTurnNumber, nextRevision, now, sessionId, view.session.revision),
+    env.DB.prepare("UPDATE session_seats SET status = ?, updated_at = ? WHERE session_id = ?").bind(nextStatus === 'paused' ? 'paused' : 'bound', now, sessionId),
     env.DB.prepare('INSERT INTO session_events (event_id, session_id, sequence, event_type, public_payload, seat_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(`${sessionId}:event-${nextRevision}`, sessionId, nextRevision, 'turn_resolved', JSON.stringify({ turn_number: view.turn.turn_number, summary: payload.summary }), JSON.stringify({ operation_id: payload.operationId, outcome: payload.outcome, visible_consequences: payload.visibleConsequences }), now),
   ];
-  if (next && nextSession && nextScene) statements.push(env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(String(nextSession.turn_id), sessionId, Number(nextSession.turn_number), String(nextScene.scene_id), Number(nextSession.revision), JSON.stringify(next), now));
+  if (nextStatus === 'ready' && next && nextSession && nextScene) statements.push(env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(String(nextSession.turn_id), sessionId, Number(nextSession.turn_number), String(nextScene.scene_id), Number(nextSession.revision), JSON.stringify(next), now));
+  await env.DB.batch(statements);
+  return selectView(sessionId);
+}
+
+export async function advanceBridgeSession(sessionId: string, payload: { expectedSessionRevision: number; nextStatus: 'ready' | 'paused' | 'complete'; nextTurn?: Record<string, unknown> | null }) {
+  const view = await selectView(sessionId);
+  if (view.session.resolver_mode !== 'bridge') throw new Error('resolver_mode_invalid');
+  if (view.session.revision !== payload.expectedSessionRevision) throw new Error('revision_conflict');
+  if (view.turn.status !== 'resolved') throw new Error('turn_not_resolved');
+  const next = payload.nextTurn;
+  const nextSession = next?.session as Record<string, unknown> | undefined;
+  const nextScene = next?.scene as Record<string, unknown> | undefined;
+  if (payload.nextStatus === 'ready' && (!next || !nextSession || !nextScene)) throw new Error('next_turn_required');
+  if (payload.nextStatus !== 'ready' && next) throw new Error('next_turn_not_allowed');
+  if (payload.nextStatus === 'ready' && Number(nextSession?.turn_number) !== view.turn.turn_number + 1) throw new Error('turn_sequence_invalid');
+  const now = new Date().toISOString();
+  const nextRevision = view.session.revision + 1;
+  const status = payload.nextStatus === 'complete' ? 'complete' : payload.nextStatus === 'paused' ? 'paused' : 'active';
+  const currentTurn = payload.nextStatus === 'ready' ? Number(nextSession?.turn_number) : view.turn.turn_number;
+  const statements = [
+    env.DB.prepare('UPDATE sessions SET status = ?, current_turn = ?, revision = ?, updated_at = ? WHERE session_id = ? AND revision = ?').bind(status, currentTurn, nextRevision, now, sessionId, view.session.revision),
+    env.DB.prepare('UPDATE session_seats SET status = ?, updated_at = ? WHERE session_id = ?').bind(payload.nextStatus === 'paused' ? 'paused' : 'bound', now, sessionId),
+    env.DB.prepare('INSERT INTO session_events (event_id, session_id, sequence, event_type, public_payload, seat_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(`${sessionId}:event-${nextRevision}`, sessionId, nextRevision, 'session_advanced', JSON.stringify({ next_status: payload.nextStatus, turn_number: currentTurn }), '{}', now),
+  ];
+  if (payload.nextStatus === 'ready' && next && nextSession && nextScene) statements.push(env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(String(nextSession.turn_id), sessionId, Number(nextSession.turn_number), String(nextScene.scene_id), Number(nextSession.revision), JSON.stringify(next), now));
   await env.DB.batch(statements);
   return selectView(sessionId);
 }

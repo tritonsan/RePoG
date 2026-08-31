@@ -27,7 +27,7 @@ from agent_seat import (  # noqa: E402
     resolve_turn,
     submit_turn,
 )
-from compile_agent_brief import compile_brief, compile_pack, validate_pack, validate_roster  # noqa: E402
+from compile_agent_brief import compile_brief, compile_pack, compile_state_brief, validate_pack, validate_roster  # noqa: E402
 from serve_dashboard import DashboardHandler  # noqa: E402
 
 
@@ -192,6 +192,9 @@ class AgentSeatStateTests(unittest.TestCase):
         self.assertEqual(get_next_turn(self.state_path)["status"], "ready")
         state = json.loads(self.state_path.read_text(encoding="utf-8"))
         self.assertEqual(len(state["turn_history"]), 1)
+        archived = get_turn_status(self.state_path, "mira-turn-001")
+        self.assertTrue(archived["archived"])
+        self.assertEqual(archived["resolution"]["outcome"], "accepted")
 
 
 class AgentBriefTests(unittest.TestCase):
@@ -208,6 +211,20 @@ class AgentBriefTests(unittest.TestCase):
         self.assertEqual(brief["session"]["turn_number"], 1)
         self.assertEqual(brief["seat"]["character_id"], "mira")
         self.assertNotIn("gm_truth", json.dumps(brief).lower())
+        self.assertEqual(brief["scene"]["entity_refs"], [])
+
+    def test_state_compiler_uses_only_bounded_next_turn(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            state_path = Path(temporary) / "seat.json"
+            state_path.write_text(json.dumps(initial_state()), encoding="utf-8")
+            open_beat(state_path, open_request())
+            pack = compile_pack({
+                "pack_id": "demo-pack", "game_contract": {"title": "Demo", "genre": "Fantasy", "tone": "Tense", "reality_rules": [], "table_boundaries": []},
+                "characters": [{"character_id": "mira", "display_name": "Mira", "role": "Scout", "identity": "A careful scout.", "prioritized_values": "Safety.", "goals": ["Open the route."], "decision_rules": ["Observe first."], "contradictions": "Cautious but bold.", "voice_examples": ["Low tide."], "capabilities": ["self.speak", "self.observe"], "forbidden_authority": ["world outcomes"], "knowledge_refs": ["black-gull-mark"], "readiness": "ready"}],
+            })
+            brief = compile_state_brief(pack, get_next_turn(state_path))
+            self.assertEqual(brief["scene"]["scene_id"], "dock-arrival")
+            self.assertEqual(brief["epistemic_projection"]["relevant_knowledge"], ["The ring resembles the Black Gull mark."])
 
     def test_ready_roster_requires_t3_playability_card(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

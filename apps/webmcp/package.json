@@ -11,10 +11,13 @@
     "start": "vinext start",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "test": "vitest run",
+    "eval:webmcp": "vitest run tests/webmcp-evals.test.ts --reporter=json --outputFile=evals/latest.json && node scripts/summarize-evals.mjs",
+    "contracts:generate": "node scripts/generate-schema-validators.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply DB --local --config wrangler.local.jsonc --persist-to .wrangler/state"
   },
   "dependencies": {
+    "ajv": "^8.17.1",
     "drizzle-orm": "0.45.2",
     "next": "^16.3.3",
     "react": "19.2.6",

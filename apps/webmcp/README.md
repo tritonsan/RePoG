@@ -24,9 +24,25 @@ browser invitation credentials.
 npm install
 npm run db:migrate:local
 npm test
+npm run eval:webmcp
 npm run lint
 npm run build
 ```
 
 The D1 schema is owned by `db/schema.ts`; generated migrations are committed
-under `drizzle/`. WebMCP tools are registered in `app/repog-table.tsx`.
+under `drizzle/`. Testable WebMCP tool definitions live in
+`lib/webmcp-tools.ts`; the page only registers them. Hosted contract copies
+are checked against the canonical repository schemas with
+`python ../../tools/sync_agent_contracts.py --check`.
+
+For a real RePoG session, create the relay with `--agent-state`, then run the
+restart-safe worker:
+
+```bash
+python tools/agent_bridge.py watch --state campaign/agent_bridge_state.json
+```
+
+The worker submits remote intents through `agent_seat.py`, waits for RePoG to
+resolve them, publishes only visible consequences, and advances the relay when
+the next bounded beat becomes ready. `--once` performs one transition for
+schedulers and diagnostics.
