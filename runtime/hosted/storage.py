@@ -80,25 +80,25 @@ def mark_window_started(session_id: str, turn_id: str, execution_arn: str) -> bo
 def reserve(session_id: str, reservation: int, day_key: str) -> None:
     table().update_item(
         Key={"pk": f"SESSION#{session_id}", "sk": "STATE"},
-        UpdateExpression="ADD spend_reserved :amount",
-        ConditionExpression="spend_settled + spend_reserved + :amount <= :limit",
-        ExpressionAttributeValues={":amount": reservation, ":limit": 1_000_000},
+        UpdateExpression="ADD spend_reserved :amount, spend_total :amount",
+        ConditionExpression="spend_total <= :ceiling",
+        ExpressionAttributeValues={":amount": reservation, ":ceiling": 1_000_000 - reservation},
     )
     try:
         table().update_item(
             Key={"pk": f"BUDGET#{day_key}", "sk": "DAILY"},
-            UpdateExpression="ADD spend_reserved :amount SET expires_at = :ttl",
-            ConditionExpression="attribute_not_exists(spend_reserved) OR spend_reserved + :amount <= :limit",
-            ExpressionAttributeValues={":amount": reservation, ":limit": 10_000_000, ":ttl": int(time.time()) + 172800},
+            UpdateExpression="ADD spend_reserved :amount, spend_total :amount SET expires_at = :ttl",
+            ConditionExpression="attribute_not_exists(spend_total) OR spend_total <= :ceiling",
+            ExpressionAttributeValues={":amount": reservation, ":ceiling": 10_000_000 - reservation, ":ttl": int(time.time()) + 172800},
         )
     except Exception:
-        table().update_item(Key={"pk": f"SESSION#{session_id}", "sk": "STATE"}, UpdateExpression="ADD spend_reserved :rollback", ExpressionAttributeValues={":rollback": -reservation})
+        table().update_item(Key={"pk": f"SESSION#{session_id}", "sk": "STATE"}, UpdateExpression="ADD spend_reserved :rollback, spend_total :rollback", ExpressionAttributeValues={":rollback": -reservation})
         raise
 
 
 def settle(session_id: str, reservation: int, actual: int, day_key: str) -> None:
     for key in ({"pk": f"SESSION#{session_id}", "sk": "STATE"}, {"pk": f"BUDGET#{day_key}", "sk": "DAILY"}):
-        table().update_item(Key=key, UpdateExpression="ADD spend_reserved :release, spend_settled :actual", ExpressionAttributeValues={":release": -reservation, ":actual": actual})
+        table().update_item(Key=key, UpdateExpression="ADD spend_reserved :release, spend_settled :actual, spend_total :delta", ExpressionAttributeValues={":release": -reservation, ":actual": actual, ":delta": actual - reservation})
 
 
 def load_golden_bootstrap() -> dict[str, Any]:

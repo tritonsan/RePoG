@@ -74,3 +74,9 @@ def test_dynamodb_boundary_normalizes_nested_json_floats():
     assert str(value["confidence"]) == "0.94"
     assert str(value["nested"][0]["score"]) == "0.76"
     assert value["turn"] == 1
+
+
+def test_budget_reservation_uses_atomic_total_without_expression_arithmetic():
+    storage_source = (ROOT / "runtime" / "hosted" / "storage.py").read_text(encoding="utf-8")
+    assert "spend_total <= :ceiling" in storage_source
+    assert "spend_settled + spend_reserved" not in storage_source

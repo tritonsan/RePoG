@@ -34,7 +34,7 @@ def create_session(payload: dict[str, Any]) -> dict[str, Any]:
         "runtime_status": "forging" if mode == "quick_forge" else "ready",
         "revision": 0, "turn_number": 1, "turn_id": bootstrap["initial_turn"]["session"]["turn_id"],
         "manifest": bootstrap["manifest"], "turn_brief": bootstrap["initial_turn"],
-        "spend_reserved": 0, "spend_settled": 0, "window_execution": "",
+        "spend_reserved": 0, "spend_settled": 0, "spend_total": 0, "window_execution": "",
         "created_at": now, "updated_at": now, "expires_at": now + SESSION_SECONDS,
     }
     storage.create_session(state)
