@@ -46,19 +46,20 @@ The ordinary downloadable RePoG distribution remains a separate package.
 
 ## Deploy
 
-From the repository root, create a 32-byte or longer random shared secret and
-run:
+From the repository root, create a 32-byte or longer random shared secret in
+AWS Secrets Manager and pass its ARN without exposing the value in shell
+history:
 
 ```powershell
 .\infra\aws\deploy.ps1 `
-  -SharedSecret $secret `
+  -SharedSecretArn $secretArn `
   -GoldenWorkspaceZip C:\path\to\workspace.zip `
   -GoldenBootstrap C:\path\to\bootstrap.json
 ```
 
 The script builds and scans the Lambda image in ECR, deploys CloudFormation,
 uploads the approved golden artifacts, and prints `RuntimeUrl`. Configure the
-Sites deployment with `REPOG_RUNTIME_URL` and the same
+Sites deployment with `REPOG_RUNTIME_URL` and the same secret value as
 `REPOG_RUNTIME_SHARED_SECRET`, apply the generated D1 migration, then publish.
 
 When a local Docker engine is unavailable, `infra/aws/image-builder.yaml`

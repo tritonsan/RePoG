@@ -3,9 +3,8 @@ Description: RePoG hosted Agent Seat runtime (serverless, bounded, Luna-only)
 Parameters:
   RuntimeImageUri:
     Type: String
-  SharedSecret:
+  SharedSecretArn:
     Type: String
-    NoEcho: true
   SiteOrigin:
     Type: String
 Resources:
@@ -85,7 +84,7 @@ Resources:
         Variables:
           REPOG_TABLE: !Ref RuntimeTable
           REPOG_WORKSPACE_BUCKET: !Ref WorkspaceBucket
-          REPOG_SHARED_SECRET: !Ref SharedSecret
+          REPOG_SHARED_SECRET: !Sub '{{resolve:secretsmanager:${SharedSecretArn}:SecretString}}'
           REPOG_SITE_ORIGIN: !Ref SiteOrigin
           REPOG_TURN_STATE_MACHINE_ARN: !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:repog-turn-coordinator'
           REPOG_FORGE_STATE_MACHINE_ARN: !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:repog-quick-forge'
