@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 from decimal import Decimal
 from datetime import datetime, timezone
@@ -11,6 +12,10 @@ from .security import AuthenticationError, verify
 from .service import create_session, resolve_joint_turn, submit_intent
 from . import storage
 from .forge import quick_forge
+
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
 
 def response(status: int, payload: dict[str, Any]) -> dict[str, Any]:
@@ -36,6 +41,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             storage.table().update_item(Key={"pk": f"SESSION#{event['session_id']}", "sk": "STATE"}, UpdateExpression="SET runtime_status = :status, manifest = :manifest, turn_brief = :turn, turn_id = :turn_id, turn_number = :turn_number", ExpressionAttributeValues={":status": "ready", ":manifest": manifest, ":turn": initial_turn, ":turn_id": turn_session["turn_id"], ":turn_number": int(turn_session["turn_number"])})
             return result
         except Exception:
+            LOGGER.exception("hosted_quick_forge_failed", extra={"session_id": str(event.get("session_id", ""))})
             if reserved:
                 storage.settle(str(event["session_id"]), reservation, 0, day_key)
             storage.table().update_item(Key={"pk": f"SESSION#{event['session_id']}", "sk": "STATE"}, UpdateExpression="SET runtime_status = :status", ExpressionAttributeValues={":status": "forge_failed"})
@@ -66,4 +72,5 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     except (KeyError, ValueError, RuntimeError) as exc:
         return response(409, {"ok": False, "failure_category": str(exc), "failure_reason": str(exc)})
     except Exception:
+        LOGGER.exception("hosted_runtime_request_failed", extra={"method": method, "path": path})
         return response(500, {"ok": False, "failure_category": "runtime_failure", "failure_reason": "The hosted runtime could not complete the request."})
