@@ -1,5 +1,17 @@
 # RePoG Living Table
 
+## Hosted runtime bindings
+
+The optional serverless jury mode requires two encrypted deployment variables:
+
+- `REPOG_RUNTIME_URL` — the `RuntimeUrl` CloudFormation output.
+- `REPOG_RUNTIME_SHARED_SECRET` — the same random secret supplied to the AWS
+  stack. Never expose it to client components or public bindings.
+
+Apply D1 migration `0004_mute_korvac.sql` before enabling these bindings. The
+six public WebMCP tool names remain unchanged; hosted mode is a resolver choice,
+not a second tool protocol.
+
 The hosted WebMCP relay and deterministic demonstration surface for RePoG
 Agent Seat. It registers generic, character-independent WebMCP tools and keeps
 durable sessions, turn briefs, structured intents, visible resolutions, and

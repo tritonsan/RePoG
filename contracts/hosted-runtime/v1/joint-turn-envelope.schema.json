@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://repog.dev/contracts/hosted-runtime/v1/joint-turn-envelope.schema.json",
+  "title": "Joint Turn Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "turn_id", "human_intent", "agent_intent", "coordination_window_ms"],
+  "properties": {
+    "session_id": { "type": "string", "minLength": 1 },
+    "turn_id": { "type": "string", "minLength": 1 },
+    "human_intent": { "type": ["object", "null"] },
+    "agent_intent": { "type": ["object", "null"] },
+    "coordination_window_ms": { "const": 15000 }
+  }
+}

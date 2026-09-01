@@ -1,4 +1,5 @@
-import { findIntent, getOrCreateSession, saveBridgeIntent, saveResolvedTurn } from '@/db/store';
+import { findIntent, getOrCreateSession, saveBridgeIntent, saveHostedIntent, saveResolvedTurn } from '@/db/store';
+import { hostedRequest } from '@/lib/hosted-runtime';
 import { normalizeIntent, validateBridgeIntentPolicy, validateIntentPolicy } from '@/lib/contracts';
 import { scenarios } from '@/lib/scenarios';
 import { hasAcceptableBodySize, isSameOrigin, sessionId, withSession } from '@/lib/session';
@@ -29,6 +30,15 @@ export async function POST(request: NextRequest) {
     if (view.session.resolver_mode === 'bridge') {
       const saved = await saveBridgeIntent(id, { payloadDigest, intent: normalized });
       return withSession(NextResponse.json({ ok: true, protocol_version: '1.1', operation_id: normalized.operation_id, status: saved.status, session_revision: saved.view.session.revision, next_status: 'waiting', next_action: 'get_intent_status', stop_reason: null, requires_human: false, retry_after_ms: 1000, idempotent: false }), id);
+    }
+    if (view.session.resolver_mode === 'hosted') {
+      try {
+        await hostedRequest(`/runtime/v1/sessions/${encodeURIComponent(view.session.runtime_session_id)}/agent-intents`, 'POST', normalized);
+      } catch (error) {
+        return withSession(NextResponse.json({ ok: false, failure_category: 'hosted_runtime_error', failure_reason: error instanceof Error ? error.message : 'Hosted runtime rejected the intent.', operation_id: normalized.operation_id }, { status: 502 }), id);
+      }
+      const saved = await saveHostedIntent(id, { payloadDigest, intent: normalized });
+      return withSession(NextResponse.json({ ok: true, protocol_version: '1.1', operation_id: normalized.operation_id, status: saved.status, session_revision: saved.view.session.revision, next_status: 'waiting', next_action: 'get_intent_status', stop_reason: null, requires_human: true, retry_after_ms: 1000, coordination_window_ms: 15000, idempotent: false }), id);
     }
     const saved = await saveResolvedTurn(id, { payloadDigest, intent: normalized });
     const nextStatus = saved.view.session.status === 'complete' ? 'complete' : 'ready';

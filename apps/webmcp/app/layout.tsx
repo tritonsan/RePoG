@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Cormorant_Garamond, Geist_Mono, Inter } from 'next/font/google';
 import { headers } from 'next/headers';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
+});
+
+const cormorant = Cormorant_Garamond({
+  variable: '--font-cormorant',
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
 });
 
 const geistMono = Geist_Mono({
@@ -21,6 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(`${protocol}://${host}`),
     title: 'RePoG Living Table',
     description: 'A WebMCP-native narrative table where humans and browser agents play from bounded character perspectives.',
+    icons: { icon: '/favicon.svg' },
     openGraph: {
       title: 'RePoG Living Table',
       description: 'Humans and browser agents. One bounded world.',
@@ -43,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${cormorant.variable} ${geistMono.variable} antialiased`}
       >
         {children}
       </body>

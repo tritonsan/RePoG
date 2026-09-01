@@ -1,8 +1,9 @@
 import { getOrCreateSession, getTurnStatus } from '@/db/store';
 import { sessionId, withSession } from '@/lib/session';
 import { NextRequest, NextResponse } from 'next/server';
+import { refreshHostedSession } from '@/lib/hosted-sync';
 export async function GET(request: NextRequest) {
-  const id = sessionId(request); await getOrCreateSession(id);
+  const id = sessionId(request); const view = await getOrCreateSession(id); if (view.session.resolver_mode === 'hosted') { try { await refreshHostedSession(id); } catch { /* report the last persisted intent status */ } }
   const operationId = request.nextUrl.searchParams.get('operation_id') || '';
   const resolution = operationId ? await getTurnStatus(id, operationId) : null;
   const status = resolution?.status || 'not_found';

@@ -6,6 +6,9 @@ __pycache__/
 .hypothesis/
 .coverage
 htmlcov/
+node_modules/
+.next/
+dist/
 
 # Virtual environments
 .venv/
@@ -25,6 +28,10 @@ Thumbs.db
 tmp/
 temp/
 .site-artifacts/
+.tmp-assets/
+
+# Local design-review captures are not release source.
+apps/webmcp/design-qa-*.png
 
 # Unaccepted generated visual drafts
 campaign/visuals/_drafts/*

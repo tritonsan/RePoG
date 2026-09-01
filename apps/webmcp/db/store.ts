@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { blackGullScenario, resolvePreparedTurn, scenarios } from '@/lib/scenarios';
 import { sessionManifest, type AgentIntentEnvelope } from '@/lib/contracts';
 
-export type SessionRow = { session_id: string; scenario_id: string; resolver_mode: 'fixture' | 'bridge'; manifest_json: string; bridge_token_hash: string; invite_token_hash: string; expires_at: string; status: 'awaiting_join' | 'active' | 'paused' | 'complete'; revision: number; current_turn: number; created_at: string; updated_at: string };
+export type SessionRow = { session_id: string; scenario_id: string; resolver_mode: 'fixture' | 'bridge' | 'hosted'; manifest_json: string; bridge_token_hash: string; invite_token_hash: string; expires_at: string; runtime_session_id: string; runtime_status: string; turn_deadline: string; status: 'awaiting_join' | 'active' | 'paused' | 'complete'; revision: number; current_turn: number; created_at: string; updated_at: string };
 export type SeatRow = { seat_id: string; session_id: string; character_id: string; status: 'ready' | 'bound' | 'paused'; bound_at: string | null; updated_at: string };
 export type TurnRow = { turn_id: string; session_id: string; turn_number: number; scene_id: string; source_revision: number; brief_json: string; status: 'queued' | 'open' | 'submitted' | 'resolved'; opened_at: string | null; resolved_at: string | null };
 export type IntentRow = { operation_id: string; payload_digest: string; intent_payload: string; status: string; outcome: string; resolution_summary: string; visible_consequences: string; turn_id: string };
@@ -54,8 +54,70 @@ export async function createBridgeSession(payload: { sessionId: string; bridgeTo
   return selectView(payload.sessionId);
 }
 
+export async function createHostedMirror(payload: { sessionId: string; runtimeSessionId: string; runtimeStatus: string; expiresAt: string; manifest: Record<string, unknown>; initialTurn: Record<string, unknown> }) {
+  const characters = payload.manifest.characters as Array<Record<string, unknown>>;
+  const turnSeat = payload.initialTurn.seat as Record<string, unknown>;
+  const character = characters.find((item) => item.character_id === turnSeat.character_id);
+  if (!character) throw new Error('The active character is not present in the session manifest.');
+  const turnSession = payload.initialTurn.session as Record<string, unknown>;
+  const scene = payload.initialTurn.scene as Record<string, unknown>;
+  const now = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO sessions (session_id, scenario_id, resolver_mode, manifest_json, expires_at, runtime_session_id, runtime_status, status, revision, current_turn, created_at, updated_at) VALUES (?, ?, 'hosted', ?, ?, ?, ?, 'awaiting_join', 0, ?, ?, ?)").bind(payload.sessionId, String(payload.manifest.pack_id), JSON.stringify(payload.manifest), payload.expiresAt, payload.runtimeSessionId, payload.runtimeStatus, Number(turnSession.turn_number), now, now),
+    env.DB.prepare("INSERT INTO session_seats (seat_id, session_id, character_id, status, updated_at) VALUES (?, ?, ?, 'ready', ?)").bind(`${payload.sessionId}:${character.character_id}`, payload.sessionId, String(character.character_id), now),
+    env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(String(turnSession.turn_id), payload.sessionId, Number(turnSession.turn_number), String(scene.scene_id), Number(turnSession.revision), JSON.stringify(payload.initialTurn), now),
+  ]);
+  return selectView(payload.sessionId);
+}
+
+export async function saveHostedIntent(sessionId: string, payload: { payloadDigest: string; intent: AgentIntentEnvelope }) {
+  const view = await selectView(sessionId);
+  if (view.session.resolver_mode !== 'hosted') throw new Error('resolver_mode_invalid');
+  if (view.session.status !== 'active') throw new Error('session_not_active');
+  if (view.turn.turn_id !== payload.intent.expected_turn_id || view.turn.source_revision !== payload.intent.expected_source_revision || !['open', 'submitted'].includes(view.turn.status)) throw new Error('stale_turn');
+  const now = new Date().toISOString();
+  const nextRevision = view.session.revision + 1;
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO intents (intent_id, session_id, turn_id, seat_id, operation_id, payload_digest, intent_payload, action, approach, speech, status, outcome, resolution_summary, visible_consequences, created_at, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', '', '', '[]', ?, '')").bind(`${sessionId}:${payload.intent.operation_id}`, sessionId, view.turn.turn_id, view.seat.seat_id, payload.intent.operation_id, payload.payloadDigest, JSON.stringify(payload.intent), payload.intent.action, payload.intent.approach, payload.intent.speech, now),
+    env.DB.prepare("UPDATE turns SET status = 'submitted' WHERE turn_id = ? AND status = 'open'").bind(view.turn.turn_id),
+    env.DB.prepare('UPDATE sessions SET revision = ?, runtime_status = ?, turn_deadline = ?, updated_at = ? WHERE session_id = ? AND revision = ?').bind(nextRevision, 'coordination_window', new Date(Date.now() + 15_000).toISOString(), now, sessionId, view.session.revision),
+    env.DB.prepare('INSERT INTO session_events (event_id, session_id, sequence, event_type, public_payload, seat_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(`${sessionId}:event-${nextRevision}`, sessionId, nextRevision, 'agent_intent_pending', JSON.stringify({ turn_number: view.turn.turn_number }), JSON.stringify({ operation_id: payload.intent.operation_id, status: 'pending' }), now),
+  ]);
+  return { view: await selectView(sessionId), status: 'pending' as const };
+}
+
 export async function bridgeSession(sessionId: string) {
   return env.DB.prepare('SELECT * FROM sessions WHERE session_id = ? AND resolver_mode = ?').bind(sessionId, 'bridge').first<SessionRow>();
+}
+
+export async function hostedSession(sessionId: string) {
+  return env.DB.prepare('SELECT * FROM sessions WHERE session_id = ? AND resolver_mode = ?').bind(sessionId, 'hosted').first<SessionRow>();
+}
+
+export async function syncHostedSession(sessionId: string, snapshot: { status: string; revision: number; turn_number: number; manifest: Record<string, unknown>; turn: Record<string, unknown> }, events: Array<Record<string, unknown>>) {
+  const view = await selectView(sessionId);
+  if (view.session.resolver_mode !== 'hosted') throw new Error('resolver_mode_invalid');
+  const turnSession = snapshot.turn.session as Record<string, unknown>;
+  const turnScene = snapshot.turn.scene as Record<string, unknown>;
+  const runtimeTurnId = String(turnSession.turn_id);
+  const now = new Date().toISOString();
+  if (runtimeTurnId === view.turn.turn_id) {
+    await env.DB.prepare('UPDATE sessions SET runtime_status = ?, manifest_json = ?, updated_at = ? WHERE session_id = ?').bind(snapshot.status, JSON.stringify(snapshot.manifest), now, sessionId).run();
+    return selectView(sessionId);
+  }
+  const resolved = [...events].reverse().find((event) => event.type === 'turn_resolved');
+  if (!resolved) throw new Error('runtime_event_missing');
+  const nextRevision = view.session.revision + 1;
+  const agentOperationId = typeof resolved.agent_operation_id === 'string' ? resolved.agent_operation_id : '';
+  const statements = [
+    env.DB.prepare("UPDATE turns SET status = 'resolved', resolved_at = ? WHERE turn_id = ? AND status IN ('open','submitted')").bind(now, view.turn.turn_id),
+    env.DB.prepare('UPDATE sessions SET runtime_status = ?, manifest_json = ?, current_turn = ?, revision = ?, turn_deadline = ?, updated_at = ? WHERE session_id = ? AND revision = ?').bind(snapshot.status, JSON.stringify(snapshot.manifest), snapshot.turn_number, nextRevision, '', now, sessionId, view.session.revision),
+    env.DB.prepare("INSERT OR IGNORE INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(runtimeTurnId, sessionId, snapshot.turn_number, String(turnScene.scene_id), Number(turnSession.revision), JSON.stringify(snapshot.turn), now),
+    env.DB.prepare('INSERT OR IGNORE INTO session_events (event_id, session_id, sequence, event_type, public_payload, seat_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(`${sessionId}:runtime-${snapshot.revision}`, sessionId, nextRevision, 'turn_resolved', JSON.stringify({ turn_number: view.turn.turn_number, summary: String(resolved.narration || '') }), JSON.stringify({ operation_id: agentOperationId, outcome: String(resolved.agent_outcome || 'skipped'), visible_consequences: resolved.visible_consequences || [] }), now),
+  ];
+  if (agentOperationId) statements.push(env.DB.prepare("UPDATE intents SET status = 'resolved', outcome = ?, resolution_summary = ?, visible_consequences = ?, resolved_at = ? WHERE session_id = ? AND operation_id = ? AND status = 'pending'").bind(String(resolved.agent_outcome || 'skipped'), String(resolved.narration || ''), JSON.stringify(resolved.visible_consequences || []), now, sessionId, agentOperationId));
+  await env.DB.batch(statements);
+  return selectView(sessionId);
 }
 
 export async function acceptBridgeInvite(sessionId: string, inviteTokenHash: string) {

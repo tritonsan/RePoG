@@ -17,6 +17,7 @@
     "db:migrate:local": "wrangler d1 migrations apply DB --local --config wrangler.local.jsonc --persist-to .wrangler/state"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "ajv": "^8.17.1",
     "drizzle-orm": "0.45.2",
     "next": "^16.3.3",

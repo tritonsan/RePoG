@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://repog.dev/contracts/hosted-runtime/v1/hosted-session-create.schema.json",
+  "title": "Hosted Session Create",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode", "site_session_id", "webmcp_opt_in"],
+  "properties": {
+    "mode": { "enum": ["prepared", "quick_forge"] },
+    "site_session_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "webmcp_opt_in": { "type": "boolean" },
+    "forge_prompt": { "type": "string", "maxLength": 2000 }
+  }
+}

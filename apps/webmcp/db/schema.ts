@@ -4,6 +4,7 @@ export const sessions = sqliteTable('sessions', {
   sessionId: text('session_id').primaryKey(), scenarioId: text('scenario_id').notNull(), status: text('status').notNull().default('awaiting_join'),
   resolverMode: text('resolver_mode').notNull().default('fixture'), manifestJson: text('manifest_json').notNull().default('{}'), bridgeTokenHash: text('bridge_token_hash').notNull().default(''), inviteTokenHash: text('invite_token_hash').notNull().default(''), expiresAt: text('expires_at').notNull().default(''),
   revision: integer('revision').notNull().default(0), currentTurn: integer('current_turn').notNull().default(1), createdAt: text('created_at').notNull(), updatedAt: text('updated_at').notNull(),
+  runtimeSessionId: text('runtime_session_id').notNull().default(''), runtimeStatus: text('runtime_status').notNull().default(''), turnDeadline: text('turn_deadline').notNull().default(''),
 }, (table) => [index('idx_sessions_status').on(table.status)]);
 
 export const sessionSeats = sqliteTable('session_seats', {
