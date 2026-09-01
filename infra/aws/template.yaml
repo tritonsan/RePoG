@@ -8,6 +8,19 @@ Parameters:
   SiteOrigin:
     Type: String
 Resources:
+  RuntimeKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: RePoG hosted runtime DynamoDB encryption key
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AccountAdministration
+            Effect: Allow
+            Principal: { AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root' }
+            Action: 'kms:*'
+            Resource: '*'
   WorkspaceBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -39,7 +52,10 @@ Resources:
         - { AttributeName: sk, KeyType: RANGE }
       TimeToLiveSpecification: { AttributeName: expires_at, Enabled: true }
       PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
-      SSESpecification: { SSEEnabled: true }
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt RuntimeKey.Arn
   RuntimeRole:
     Type: AWS::IAM::Role
     Properties:
@@ -57,6 +73,9 @@ Resources:
               - Effect: Allow
                 Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:Query]
                 Resource: !GetAtt RuntimeTable.Arn
+              - Effect: Allow
+                Action: [kms:Decrypt, kms:Encrypt, kms:GenerateDataKey, kms:DescribeKey]
+                Resource: !GetAtt RuntimeKey.Arn
               - Effect: Allow
                 Action: [s3:GetObject, s3:PutObject]
                 Resource: !Sub '${WorkspaceBucket.Arn}/*'
