@@ -1,4 +1,5 @@
 import type { SessionView } from '@/db/store';
+import { canonicalTurnId } from '@/lib/turn-identity';
 import { scenarios } from '@/lib/scenarios';
 import { sessionManifest } from '@/lib/contracts';
 
@@ -56,7 +57,7 @@ export function sessionContext(view: SessionView) {
       session: { session_id: view.session.session_id, scenario_id: view.session.scenario_id, resolver_mode: view.session.resolver_mode, status: view.session.status, revision: view.session.revision, current_turn: view.session.current_turn, total_turns: null },
       manifest: projectedManifest,
       seat: { seat_id: view.seat.seat_id, character_id: view.seat.character_id, display_name: character.display_name, role: character.role, status: view.seat.status, persona: { prioritized_values: character.prioritized_values, goals: character.goals, decision_rules: character.decision_rules, contradictions: character.contradictions, voice_examples: character.voice_examples, capabilities: character.capabilities, authority: character.capabilities, forbidden_authority: character.forbidden_authority } },
-      turn: { turn_id: view.turn.turn_id, turn_number: view.turn.turn_number, scene_id: view.turn.scene_id, source_revision: view.turn.source_revision, status: view.turn.status, title: scene.title || `Turn ${view.turn.turn_number}` },
+      turn: { turn_id: canonicalTurnId(view.turn), turn_number: view.turn.turn_number, scene_id: view.turn.scene_id, source_revision: view.turn.source_revision, status: view.turn.status, title: scene.title || `Turn ${view.turn.turn_number}` },
       brief: { summary: scene.summary, pressure: scene.pressure, perceivable_facts: scene.perceivable_facts || [], self_knowledge: epistemic.self_knowledge || [], knowledge_index: epistemic.knowledge_index || [], relevant_knowledge: (epistemic.knowledge_index as Array<{ text: string }> || []).map((fact) => fact.text), party_public_facts: epistemic.party_public_facts || [], affordances: scene.affordances || [], entity_refs: scene.entity_refs || [], owned_resource_refs: scene.owned_resource_refs || [], continuity: { ...brief.continuity, last_visible_consequences: history.at(-1)?.visible_consequences || [] } },
       visual: visualProjection(view.session.scenario_id),
       history,

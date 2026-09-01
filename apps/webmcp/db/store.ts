@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { blackGullScenario, resolvePreparedTurn, scenarios } from '@/lib/scenarios';
 import { sessionManifest, type AgentIntentEnvelope } from '@/lib/contracts';
+import { canonicalTurnId, externalTurnStorageId } from '@/lib/turn-identity';
 
 export type SessionRow = { session_id: string; scenario_id: string; resolver_mode: 'fixture' | 'bridge' | 'hosted'; manifest_json: string; bridge_token_hash: string; invite_token_hash: string; expires_at: string; runtime_session_id: string; runtime_status: string; turn_deadline: string; status: 'awaiting_join' | 'active' | 'paused' | 'complete'; revision: number; current_turn: number; created_at: string; updated_at: string };
 export type SeatRow = { seat_id: string; session_id: string; character_id: string; status: 'ready' | 'bound' | 'paused'; bound_at: string | null; updated_at: string };
@@ -49,7 +50,7 @@ export async function createBridgeSession(payload: { sessionId: string; bridgeTo
   await env.DB.batch([
     env.DB.prepare("INSERT INTO sessions (session_id, scenario_id, resolver_mode, manifest_json, bridge_token_hash, invite_token_hash, expires_at, status, revision, current_turn, created_at, updated_at) VALUES (?, ?, 'bridge', ?, ?, ?, ?, 'awaiting_join', 0, ?, ?, ?)").bind(payload.sessionId, String(payload.manifest.pack_id), JSON.stringify(payload.manifest), payload.bridgeTokenHash, payload.inviteTokenHash, payload.expiresAt, turnNumber, now, now),
     env.DB.prepare("INSERT INTO session_seats (seat_id, session_id, character_id, status, updated_at) VALUES (?, ?, ?, 'ready', ?)").bind(`${payload.sessionId}:${characterId}`, payload.sessionId, characterId, now),
-    env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(turnId, payload.sessionId, turnNumber, String(scene.scene_id), sourceRevision, JSON.stringify(payload.initialTurn), now),
+    env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(externalTurnStorageId(payload.sessionId, turnId), payload.sessionId, turnNumber, String(scene.scene_id), sourceRevision, JSON.stringify(payload.initialTurn), now),
   ]);
   return selectView(payload.sessionId);
 }
@@ -65,7 +66,7 @@ export async function createHostedMirror(payload: { sessionId: string; runtimeSe
   await env.DB.batch([
     env.DB.prepare("INSERT INTO sessions (session_id, scenario_id, resolver_mode, manifest_json, expires_at, runtime_session_id, runtime_status, status, revision, current_turn, created_at, updated_at) VALUES (?, ?, 'hosted', ?, ?, ?, ?, 'awaiting_join', 0, ?, ?, ?)").bind(payload.sessionId, String(payload.manifest.pack_id), JSON.stringify(payload.manifest), payload.expiresAt, payload.runtimeSessionId, payload.runtimeStatus, Number(turnSession.turn_number), now, now),
     env.DB.prepare("INSERT INTO session_seats (seat_id, session_id, character_id, status, updated_at) VALUES (?, ?, ?, 'ready', ?)").bind(`${payload.sessionId}:${character.character_id}`, payload.sessionId, String(character.character_id), now),
-    env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(String(turnSession.turn_id), payload.sessionId, Number(turnSession.turn_number), String(scene.scene_id), Number(turnSession.revision), JSON.stringify(payload.initialTurn), now),
+    env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(externalTurnStorageId(payload.sessionId, String(turnSession.turn_id)), payload.sessionId, Number(turnSession.turn_number), String(scene.scene_id), Number(turnSession.revision), JSON.stringify(payload.initialTurn), now),
   ]);
   return selectView(payload.sessionId);
 }
@@ -74,7 +75,7 @@ export async function saveHostedIntent(sessionId: string, payload: { payloadDige
   const view = await selectView(sessionId);
   if (view.session.resolver_mode !== 'hosted') throw new Error('resolver_mode_invalid');
   if (view.session.status !== 'active') throw new Error('session_not_active');
-  if (view.turn.turn_id !== payload.intent.expected_turn_id || view.turn.source_revision !== payload.intent.expected_source_revision || !['open', 'submitted'].includes(view.turn.status)) throw new Error('stale_turn');
+  if (canonicalTurnId(view.turn) !== payload.intent.expected_turn_id || view.turn.source_revision !== payload.intent.expected_source_revision || !['open', 'submitted'].includes(view.turn.status)) throw new Error('stale_turn');
   const now = new Date().toISOString();
   const nextRevision = view.session.revision + 1;
   await env.DB.batch([
@@ -101,7 +102,7 @@ export async function syncHostedSession(sessionId: string, snapshot: { status: s
   const turnScene = snapshot.turn.scene as Record<string, unknown>;
   const runtimeTurnId = String(turnSession.turn_id);
   const now = new Date().toISOString();
-  if (runtimeTurnId === view.turn.turn_id) {
+  if (runtimeTurnId === canonicalTurnId(view.turn)) {
     await env.DB.prepare('UPDATE sessions SET runtime_status = ?, manifest_json = ?, updated_at = ? WHERE session_id = ?').bind(snapshot.status, JSON.stringify(snapshot.manifest), now, sessionId).run();
     return selectView(sessionId);
   }
@@ -112,7 +113,7 @@ export async function syncHostedSession(sessionId: string, snapshot: { status: s
   const statements = [
     env.DB.prepare("UPDATE turns SET status = 'resolved', resolved_at = ? WHERE turn_id = ? AND status IN ('open','submitted')").bind(now, view.turn.turn_id),
     env.DB.prepare('UPDATE sessions SET runtime_status = ?, manifest_json = ?, current_turn = ?, revision = ?, turn_deadline = ?, updated_at = ? WHERE session_id = ? AND revision = ?').bind(snapshot.status, JSON.stringify(snapshot.manifest), snapshot.turn_number, nextRevision, '', now, sessionId, view.session.revision),
-    env.DB.prepare("INSERT OR IGNORE INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(runtimeTurnId, sessionId, snapshot.turn_number, String(turnScene.scene_id), Number(turnSession.revision), JSON.stringify(snapshot.turn), now),
+    env.DB.prepare("INSERT OR IGNORE INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(externalTurnStorageId(sessionId, runtimeTurnId), sessionId, snapshot.turn_number, String(turnScene.scene_id), Number(turnSession.revision), JSON.stringify(snapshot.turn), now),
     env.DB.prepare('INSERT OR IGNORE INTO session_events (event_id, session_id, sequence, event_type, public_payload, seat_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(`${sessionId}:runtime-${snapshot.revision}`, sessionId, nextRevision, 'turn_resolved', JSON.stringify({ turn_number: view.turn.turn_number, summary: String(resolved.narration || '') }), JSON.stringify({ operation_id: agentOperationId, outcome: String(resolved.agent_outcome || 'skipped'), visible_consequences: resolved.visible_consequences || [] }), now),
   ];
   if (agentOperationId) statements.push(env.DB.prepare("UPDATE intents SET status = 'resolved', outcome = ?, resolution_summary = ?, visible_consequences = ?, resolved_at = ? WHERE session_id = ? AND operation_id = ? AND status = 'pending'").bind(String(resolved.agent_outcome || 'skipped'), String(resolved.narration || ''), JSON.stringify(resolved.visible_consequences || []), now, sessionId, agentOperationId));
@@ -149,7 +150,7 @@ export async function findIntent(sessionId: string, operationId: string) { retur
 export async function saveResolvedTurn(sessionId: string, payload: { payloadDigest: string; intent: AgentIntentEnvelope }) {
   const view = await selectView(sessionId);
   if (view.session.status !== 'active') throw new Error('session_not_active');
-  if (view.turn.turn_id !== payload.intent.expected_turn_id || view.turn.source_revision !== payload.intent.expected_source_revision || view.turn.status !== 'open') throw new Error('stale_turn');
+  if (canonicalTurnId(view.turn) !== payload.intent.expected_turn_id || view.turn.source_revision !== payload.intent.expected_source_revision || view.turn.status !== 'open') throw new Error('stale_turn');
   const scenario = scenarios[view.session.scenario_id];
   const preparedTurn = scenario.turns[view.turn.turn_number - 1];
   const resolution = resolvePreparedTurn(preparedTurn, payload.intent.action, payload.intent.speech);
@@ -171,7 +172,7 @@ export async function saveBridgeIntent(sessionId: string, payload: { payloadDige
   const view = await selectView(sessionId);
   if (view.session.resolver_mode !== 'bridge') throw new Error('resolver_mode_invalid');
   if (view.session.status !== 'active') throw new Error('session_not_active');
-  if (view.turn.turn_id !== payload.intent.expected_turn_id || view.turn.source_revision !== payload.intent.expected_source_revision || view.turn.status !== 'open') throw new Error('stale_turn');
+  if (canonicalTurnId(view.turn) !== payload.intent.expected_turn_id || view.turn.source_revision !== payload.intent.expected_source_revision || view.turn.status !== 'open') throw new Error('stale_turn');
   const now = new Date().toISOString();
   const nextRevision = view.session.revision + 1;
   await env.DB.batch([
@@ -210,7 +211,7 @@ export async function resolveBridgeIntent(sessionId: string, payload: { operatio
     env.DB.prepare("UPDATE session_seats SET status = ?, updated_at = ? WHERE session_id = ?").bind(nextStatus === 'paused' ? 'paused' : 'bound', now, sessionId),
     env.DB.prepare('INSERT INTO session_events (event_id, session_id, sequence, event_type, public_payload, seat_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(`${sessionId}:event-${nextRevision}`, sessionId, nextRevision, 'turn_resolved', JSON.stringify({ turn_number: view.turn.turn_number, summary: payload.summary }), JSON.stringify({ operation_id: payload.operationId, outcome: payload.outcome, visible_consequences: payload.visibleConsequences }), now),
   ];
-  if (nextStatus === 'ready' && next && nextSession && nextScene) statements.push(env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(String(nextSession.turn_id), sessionId, Number(nextSession.turn_number), String(nextScene.scene_id), Number(nextSession.revision), JSON.stringify(next), now));
+  if (nextStatus === 'ready' && next && nextSession && nextScene) statements.push(env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(externalTurnStorageId(sessionId, String(nextSession.turn_id)), sessionId, Number(nextSession.turn_number), String(nextScene.scene_id), Number(nextSession.revision), JSON.stringify(next), now));
   await env.DB.batch(statements);
   return selectView(sessionId);
 }
@@ -235,7 +236,7 @@ export async function advanceBridgeSession(sessionId: string, payload: { expecte
     env.DB.prepare('UPDATE session_seats SET status = ?, updated_at = ? WHERE session_id = ?').bind(payload.nextStatus === 'paused' ? 'paused' : 'bound', now, sessionId),
     env.DB.prepare('INSERT INTO session_events (event_id, session_id, sequence, event_type, public_payload, seat_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(`${sessionId}:event-${nextRevision}`, sessionId, nextRevision, 'session_advanced', JSON.stringify({ next_status: payload.nextStatus, turn_number: currentTurn }), '{}', now),
   ];
-  if (payload.nextStatus === 'ready' && next && nextSession && nextScene) statements.push(env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(String(nextSession.turn_id), sessionId, Number(nextSession.turn_number), String(nextScene.scene_id), Number(nextSession.revision), JSON.stringify(next), now));
+  if (payload.nextStatus === 'ready' && next && nextSession && nextScene) statements.push(env.DB.prepare("INSERT INTO turns (turn_id, session_id, turn_number, scene_id, source_revision, brief_json, status, opened_at) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)").bind(externalTurnStorageId(sessionId, String(nextSession.turn_id)), sessionId, Number(nextSession.turn_number), String(nextScene.scene_id), Number(nextSession.revision), JSON.stringify(next), now));
   await env.DB.batch(statements);
   return selectView(sessionId);
 }
