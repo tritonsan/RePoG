@@ -7,6 +7,7 @@ from runtime.hosted.budget import Usage, ensure_within_limits, estimate_micro_us
 from runtime.hosted.security import AuthenticationError, sign, verify
 from runtime.hosted.joint import compile_joint_context
 from runtime.hosted.contracts import validate_bootstrap, validate_resolution
+from runtime.hosted.storage import ddb_value
 
 
 ROOT = Path(__file__).parents[1]
@@ -66,3 +67,10 @@ def test_next_turn_must_advance_same_session_and_character():
     next_turn["session"]["turn_id"] = bootstrap["initial_turn"]["session"]["turn_id"]
     with pytest.raises(RuntimeError, match="next_turn_id_reused"):
         validate_resolution(state, resolution)
+
+
+def test_dynamodb_boundary_normalizes_nested_json_floats():
+    value = ddb_value({"confidence": 0.94, "nested": [{"score": 0.76}], "turn": 1})
+    assert str(value["confidence"]) == "0.94"
+    assert str(value["nested"][0]["score"]) == "0.76"
+    assert value["turn"] == 1

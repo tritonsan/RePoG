@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from decimal import Decimal
 from typing import Any
 
 import boto3
@@ -11,6 +12,17 @@ from boto3.dynamodb.conditions import Key
 
 TABLE = os.environ.get("REPOG_TABLE", "")
 BUCKET = os.environ.get("REPOG_WORKSPACE_BUCKET", "")
+
+
+def ddb_value(value: Any) -> Any:
+    """Convert JSON numbers to DynamoDB's lossless Decimal representation."""
+    if isinstance(value, float):
+        return Decimal(str(value))
+    if isinstance(value, list):
+        return [ddb_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: ddb_value(item) for key, item in value.items()}
+    return value
 
 
 def table():
@@ -32,13 +44,13 @@ def claim_nonce(nonce: str, ttl_seconds: int = 600) -> None:
 
 
 def create_session(item: dict[str, Any]) -> None:
-    table().put_item(Item=item, ConditionExpression="attribute_not_exists(pk)")
+    table().put_item(Item=ddb_value(item), ConditionExpression="attribute_not_exists(pk)")
 
 
 def store_intent(session_id: str, turn_id: str, kind: str, operation_id: str, payload: dict[str, Any]) -> bool:
     key = {"pk": f"SESSION#{session_id}", "sk": f"TURN#{turn_id}#INTENT#{kind}"}
     try:
-        table().put_item(Item={**key, "operation_id": operation_id, "payload": payload, "created_at": int(time.time())}, ConditionExpression="attribute_not_exists(pk)")
+        table().put_item(Item=ddb_value({**key, "operation_id": operation_id, "payload": payload, "created_at": int(time.time())}), ConditionExpression="attribute_not_exists(pk)")
         return True
     except table().meta.client.exceptions.ConditionalCheckFailedException:
         current = table().get_item(Key=key, ConsistentRead=True).get("Item", {})
@@ -95,7 +107,7 @@ def load_golden_bootstrap() -> dict[str, Any]:
 
 
 def put_event(session_id: str, sequence: int, event: dict[str, Any]) -> None:
-    table().put_item(Item={"pk": f"SESSION#{session_id}", "sk": f"EVENT#{sequence:08d}", "payload": event, "created_at": int(time.time())}, ConditionExpression="attribute_not_exists(pk)")
+    table().put_item(Item=ddb_value({"pk": f"SESSION#{session_id}", "sk": f"EVENT#{sequence:08d}", "payload": event, "created_at": int(time.time())}), ConditionExpression="attribute_not_exists(pk)")
 
 
 def list_events(session_id: str, after: int = 0) -> list[dict[str, Any]]:
@@ -108,5 +120,5 @@ def commit_resolution(session_id: str, expected_revision: int, resolution: dict[
         Key={"pk": f"SESSION#{session_id}", "sk": "STATE"},
         UpdateExpression="SET revision = :next, turn_number = turn_number + :one, turn_id = :turn, turn_brief = :brief, runtime_status = :ready, window_execution = :empty, updated_at = :now",
         ConditionExpression="revision = :expected AND runtime_status = :resolving",
-        ExpressionAttributeValues={":next": expected_revision + 1, ":one": 1, ":turn": resolution["next_turn"]["session"]["turn_id"], ":brief": resolution["next_turn"], ":ready": "ready", ":empty": "", ":now": int(time.time()), ":expected": expected_revision, ":resolving": "resolving"},
+        ExpressionAttributeValues=ddb_value({":next": expected_revision + 1, ":one": 1, ":turn": resolution["next_turn"]["session"]["turn_id"], ":brief": resolution["next_turn"], ":ready": "ready", ":empty": "", ":now": int(time.time()), ":expected": expected_revision, ":resolving": "resolving"}),
     )
