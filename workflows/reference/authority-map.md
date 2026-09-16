@@ -409,4 +409,3 @@ projection never outranks its owning artifact and never writes truth back into
 it. Rebuild stale derived material from the owner. Resolve owner conflicts by
 role and explicit repair, not by modification time, file detail, or whichever
 copy is easier to load.
-

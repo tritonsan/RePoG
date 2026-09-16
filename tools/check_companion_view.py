@@ -252,11 +252,13 @@ def check_companion_view_data(
             _unknown_keys(clock, {"label", "timezone"}, "local_clock", findings)
             _text(clock.get("label"), label="Clock label", path="local_clock.label", findings=findings, required=True, maximum=80)
             timezone = _text(clock.get("timezone"), label="IANA timezone", path="local_clock.timezone", findings=findings, required=True, maximum=80)
-            if timezone:
+            # These standard zero-offset names need no OS IANA database.
+            # Clean Windows Python installs may have no zoneinfo data at all.
+            if timezone and timezone not in {"UTC", "Etc/UTC", "GMT", "Etc/GMT"}:
                 try:
                     ZoneInfo(timezone)
                 except (ZoneInfoNotFoundError, ValueError):
-                    findings.append(_finding("error", "companion_view_timezone_invalid", "local_clock.timezone must be a known IANA timezone.", "local_clock.timezone"))
+                    findings.append(_finding("error", "companion_view_timezone_invalid", "local_clock.timezone must be UTC or an IANA timezone available on this host.", "local_clock.timezone"))
 
     status = data.get("last_shared_status")
     if status is not None:

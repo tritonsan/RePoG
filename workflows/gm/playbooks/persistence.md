@@ -128,4 +128,3 @@ Player Mode beyond a brief natural wait.
 World Voices remains dormant on ordinary turns. When triggered, persist only
 active/pending communication references in hot context and load artifact bodies
 or old threads on demand. A hidden artifact never causes a Dashboard refresh.
-

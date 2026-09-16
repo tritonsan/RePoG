@@ -17,7 +17,8 @@ Use this matrix; an act closure alone never forces a reward.
 
 | Condition | State and review | Permitted continuation |
 | --- | --- | --- |
-| Cadence `none`, or closure does not match the named cadence | Create no new `due` status or automatic reward review. Preserve any already-earned pending award from an earlier matching boundary. | Continue the causal aftermath or prepared next act. |
+| Cadence `none` | Create no `due`/`offered` gate or automatic reward review. If the Designer disabled a previously active cadence, preserve any already-earned unspent award as `deferred`, with OOC `not_applicable` and no fiction lock; changing cadence never deletes earned content. | Continue the causal aftermath or prepared next act. |
+| Closure does not match an enabled cadence | Create no new `due` status or automatic reward review. Preserve any already-earned pending award and apply its existing choice/dependency rules below. | Continue independent aftermath; a dependent next act still waits for its existing choice. |
 | Matching cadence, no award pending | Capture closure evidence and set `due` in the same durable transaction. Run the Distill appraisal once. | Do not skip the last action or interrupt live danger to offer rewards. |
 | `due`, with no player choice necessary | Apply/present earned change through its accepted channel; record applied or the established realization condition. | No mandatory OOC pause. Narrate the resulting fiction after persistence. |
 | `automatic_fictional`, choice required | Offer the actual choice through fiction if possible; otherwise ask a concise OOC clarification. Keep OOC-interlude metadata `not_applicable`. | Only effects and next-act preparation dependent on that choice wait. Independent aftermath/breather continues. |

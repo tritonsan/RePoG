@@ -40,4 +40,3 @@ Classify new NPCs, locations, and factions by tier:
 Player attention can promote an element. Long interaction, repeated mention,
 trust, suspicion, emotional reaction, or practical dependence is a signal to
 raise the tier and update the ledger/map.
-

@@ -96,4 +96,3 @@ beat and return control to the Player. If continuation is ambiguous, ask one
 clear question about returning to the paused scene. Read
 `workflows/gm/playbooks/visual_handoff.md` for the complete transaction and
 return protocol.
-

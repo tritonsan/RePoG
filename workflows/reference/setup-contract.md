@@ -119,4 +119,3 @@ performance summary without adding another question. When a structural
 boundary qualifies, read `workflows/orchestration/WORKFLOW.md`; if the harness
 has no sub-agent support, complete the identical lanes serially. The
 coordinator remains the only campaign writer and player-facing voice.
-

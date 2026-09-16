@@ -7,7 +7,9 @@ extracted folder, and start a new conversation.
 
 ## Start in 60 Seconds
 
-1. Download this workspace as a ZIP and extract it into a new folder.
+1. Download a validated player ZIP from a successful
+   [Verify and package run](https://github.com/tritonsan/RePoG/actions/workflows/verify.yml)
+   and extract it into a new folder; the download section below explains the artifact wrapper.
 2. Open the extracted folder in Codex, Claude Code, or another compatible
    agentic coding tool.
 3. Start a new conversation in that workspace.
