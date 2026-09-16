@@ -30,9 +30,6 @@ temp/
 .site-artifacts/
 .tmp-assets/
 
-# Local design-review captures are not release source.
-apps/webmcp/design-qa-*.png
-
 # Unaccepted generated visual drafts
 campaign/visuals/_drafts/*
 !campaign/visuals/_drafts/README.md
@@ -44,4 +41,3 @@ campaign/dashboard/.cache/
 # Optional local secrets
 .env
 .env.*
-campaign/agent_bridge_state.json

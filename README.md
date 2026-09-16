@@ -330,10 +330,6 @@ API key, or generated background image. See
 
 ## RPG Agent Seat
 
-For the serverless jury runtime, joint human/agent turn contract, hard cost
-caps, security boundary, and AWS deployment gate, see
-[`docs/hosted-runtime.md`](docs/hosted-runtime.md).
-
 The Dashboard can also act as a shared Table surface for one active browser
 agent, with multiple T3 party-capable characters eligible in the roster.
 Session Zero explicitly chooses `off` or `on_demand`. Supported browsers can
@@ -346,10 +342,9 @@ the normal RPG flow.
 Agent Seat now uses versioned, game-independent Agent Pack, Turn Brief, Intent,
 and Resolution contracts. Capability, target, owned-resource, knowledge, stale
 revision, and outcome-authority checks are deterministic; no character name or
-genre-specific regex grants permission. A hosted relay can connect ChatGPT's
-in-app browser to a local RePoG campaign through the optional bridge while
-keeping campaign and GM-only files local. The included fantasy and
-science-fiction fixtures exercise the same contract.
+genre-specific regex grants permission. The local Dashboard exposes only the
+controlled character's bounded perspective and pending-turn interface while
+keeping campaign and GM-only files private.
 
 Agent Seat is progressive enhancement. Browsers without the current WebMCP
 draft still render the Dashboard and participant status strip normally. See
@@ -393,16 +388,3 @@ RePoG is licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE
 Bundled third-party components and their retained licenses are listed in
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Maintainer-facing canonical
 source and release rules are documented in [`DISTRIBUTION.md`](DISTRIBUTION.md).
-# RePoG distributions
-
-This repository contains two deliberately separate delivery surfaces:
-
-- **RePoG Workspace** is the standalone, local-first package opened by Codex
-  or another compatible agentic coding tool on the player's own computer.
-- **RePoG Living Table** is the optional WebMCP jury experience under
-  `apps/webmcp/`, backed by the serverless runtime under `runtime/hosted/` and
-  its AWS deployment definition under `infra/aws/`.
-
-The hosted surface does not replace the local product or require a developer
-computer to remain online. See `docs/hosted-runtime.md` for its bounded Agent
-Seat and golden-campaign deployment contract.

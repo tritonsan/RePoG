@@ -115,21 +115,4 @@ The local server exposes only:
 
 It binds to loopback, requires a local Host, rejects cross-origin writes,
 limits JSON body size, and serves neither the campaign directory nor GM-only
-state. Hosted relay authentication and multi-session isolation are separate
-adapters and must not weaken this local contract.
-
-## Hosted Relay And Bridge
-
-The hosted relay stores only compiled packs, safe turn briefs, structured
-intents, character-visible resolutions, and an event trace. It never receives
-campaign files or GM-only state. A separate `tools/agent_bridge.py` process
-uses a session-scoped bearer credential to exchange these envelopes. Browser
-participants redeem a separate, expiring invitation into an HttpOnly,
-SameSite session cookie.
-
-Relay creation additionally requires the server-side
-`REPOG_RELAY_BOOTSTRAP_KEY`. Session bridge and invitation tokens are stored as
-SHA-256 digests, expire after 24 hours, and are never included in public event
-records. Fixture sessions use the same Agent Pack and intent contracts but are
-marked `resolver_mode=fixture`; only bridge sessions wait for real RePoG
-resolution.
+state.

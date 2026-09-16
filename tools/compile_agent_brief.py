@@ -324,7 +324,7 @@ def compile_brief(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def compile_state_brief(pack: dict[str, Any], next_turn: dict[str, Any]) -> dict[str, Any]:
-    """Compile a hosted Turn Brief from the bounded Agent Seat read model."""
+    """Compile a portable Turn Brief from the bounded Agent Seat read model."""
     if next_turn.get("status") != "ready":
         raise BriefError("next_turn must be ready")
     session = next_turn.get("session")

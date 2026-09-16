@@ -30,18 +30,6 @@ session revision; `migrate` atomically upgrades legacy Agent Seat state.
 same-origin WebMCP tools. It never exposes the private campaign directory and
 does not expose configuration or resolution writes over HTTP.
 
-The optional hosted relay uses the same versioned envelopes under
-`contracts/agent-seat/v1/`. `tools/agent_bridge.py` is a transport adapter,
-not a second GM: it uploads only an explicitly compiled Agent Session Pack and
-Turn Brief, pulls pending intents, and returns RePoG-authored visible results.
-Its credential state is local-only and ignored by Git.
-
-```bash
-python tools/agent_bridge.py create --relay-url https://example.chatgpt.site --manifest agent-pack.json --turn turn-brief.json
-python tools/agent_bridge.py pull
-python tools/agent_bridge.py resolve --input-json '{...}' --next-turn next-turn.json
-```
-
 ## Campaign Checks
 
 ```bash

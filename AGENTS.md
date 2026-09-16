@@ -360,13 +360,6 @@ Mode rather than guessing.
   `knowledge_boundaries.md` remain authoritative for fictional and epistemic
   truth; the roster must never duplicate their fact text.
 
-- Hosted WebMCP is an optional transport adapter, never a second campaign
-  authority. Export only versioned Agent Session Packs and character-safe Turn
-  Briefs. The separate bridge may move pending intents and visible resolutions
-  but must not read or upload campaign owners, invent outcomes, or bypass the
-  ordinary RPG persistence transaction. Fixture resolution is restricted to
-  explicitly marked demonstration sessions.
-
 - `companion_state.json` is the bounded current-state and operation ledger when
   the Companion runtime is active. It owns state, continuity, and public-surface
   revisions; interaction and semantic-operation identity; the current
