@@ -12,6 +12,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from file_transaction import FileTransactionError, JOURNAL_DIR, LOCK_FILE, campaign_lock
+
 
 def _slug(value: str) -> str:
     value = value.strip().lower()
@@ -160,61 +162,35 @@ def create_snapshot(campaign_path: Path, label: str) -> dict:
         }
 
     transaction_dir = campaign_path / ".repog-transactions"
-    lock_path = transaction_dir / ".lock"
     try:
-        transaction_dir.mkdir(exist_ok=True)
-        descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError:
-        try:
-            entries = sorted(path.name for path in transaction_dir.iterdir())
-        except OSError:
-            entries = [".lock"]
+        with campaign_lock(campaign_path):
+            legacy_locks = [name for name in (".session-zero-state.lock", ".agent_seat_state.json.lock") if (campaign_path / name).exists()]
+            if legacy_locks:
+                return {"ok": False, "error": "recovery_required", "entries": legacy_locks}
+            pending_entries = []
+            for path in transaction_dir.iterdir():
+                if path.name == LOCK_FILE:
+                    continue
+                if path.name == JOURNAL_DIR and path.is_dir() and not any(path.iterdir()):
+                    continue
+                pending_entries.append(path.name)
+            if pending_entries:
+                return {
+                    "ok": False,
+                    "error": "rpg_transaction_pending",
+                    "transaction_path": str(transaction_dir),
+                    "entries": sorted(pending_entries),
+                }
+            return _create_snapshot_locked(campaign_path, label)
+    except FileTransactionError as exc:
         return {
             "ok": False,
-            "error": "rpg_transaction_pending",
-            "transaction_path": str(transaction_dir),
-            "entries": entries,
-        }
-    except OSError as exc:
-        return {
-            "ok": False,
-            "error": "rpg_transaction_unreadable",
+            "error": "rpg_transaction_pending" if exc.category == "transaction_busy" else exc.category,
             "transaction_path": str(transaction_dir),
             "reason": str(exc),
         }
-
-    try:
-        with os.fdopen(descriptor, "w", encoding="ascii", newline="\n") as stream:
-            stream.write(f"{os.getpid()}\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        try:
-            pending_entries = sorted(
-                path.name for path in transaction_dir.iterdir() if path != lock_path
-            )
-        except OSError as exc:
-            return {
-                "ok": False,
-                "error": "rpg_transaction_unreadable",
-                "transaction_path": str(transaction_dir),
-                "reason": str(exc),
-            }
-        if pending_entries:
-            return {
-                "ok": False,
-                "error": "rpg_transaction_pending",
-                "transaction_path": str(transaction_dir),
-                "entries": pending_entries,
-            }
-        return _create_snapshot_locked(campaign_path, label)
-    finally:
-        try:
-            lock_path.unlink(missing_ok=True)
-        finally:
-            try:
-                transaction_dir.rmdir()
-            except OSError:
-                pass
+    except OSError as exc:
+        return {"ok": False, "error": "rpg_transaction_unreadable", "reason": str(exc)}
 
 
 def main(argv: list[str] | None = None) -> int:

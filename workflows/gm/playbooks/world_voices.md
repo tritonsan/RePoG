@@ -1,5 +1,8 @@
 # World Voices Playbook
 
+Read only the relevant optional-surface contract in
+`workflows/reference/optional-surfaces.md` when this feature is active.
+
 Load this playbook only when a communication trigger occurs, a document reaches
 the character, the Player asks what people are saying, the Player intentionally
 sends or publishes something, or an existing artifact receives a plausible

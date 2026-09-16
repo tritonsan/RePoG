@@ -1,5 +1,8 @@
 # Visual Handoff Playbook
 
+Read only the relevant optional-surface contract in
+`workflows/reference/optional-surfaces.md` when this feature is active.
+
 Use this playbook whenever image generation interrupts Session 0 or play. A
 visible draft is not acceptance, persistence, dashboard placement, or the end
 of the surrounding task.

@@ -16,6 +16,10 @@ The schema-v7 causal order is:
 
 `campaign promise -> character seed -> character-aware world scaffold -> Deep expansion when selected -> two-way reciprocity pass -> design approval -> materialized preparation -> player-safe preparation review -> preparation approval -> readiness`
 
+Schema-v9+ Standard uses `rpg_standard_v9.md` and its single combined preparation
+acceptance. It may reuse only selected semantic modules below. Legacy accounting
+and split approvals remain applicable only to their recorded route.
+
 # Decision Accounting
 
 Each named module contains at least one content decision. The first accepted
@@ -162,9 +166,12 @@ question list.
 
      With `fictional`, establish the same competence in prose with no stat work.
 
-     A Player may deliberately choose a competence that runs against their
-     distribution; record the tension as accepted rather than correcting it.
-     Either way, the result feeds the clean-success space.
+     A Player may choose a self-image or ambition that runs against the
+     distribution; record it as aspiration, not guaranteed clean success.
+     If reliable competence exceeds the distribution, resolve the mismatch
+     explicitly: revise the distribution or accept a narrow ability/ruling
+     with its scope, cost, limit, and precedence recorded in `rules.md` and
+     the character sheet. Never silently override the accepted system.
 
      Whatever model is accepted becomes binding in play, not decoration. Write it
      in the compact form the GM keeps hot, and expect resolution to name the axis

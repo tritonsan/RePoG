@@ -16,6 +16,10 @@ at that point because preparation approval has not happened yet.
 Audit asks whether the campaign can support natural play, not whether every
 narrative fact is schema-normalized.
 
+For ownership questions, read only the relevant section of
+`workflows/reference/authority-map.md`; for advancement inspect the single
+`workflows/gm/playbooks/advancement.md` matrix.
+
 # Audit Checklist
 
 First route by `setup_profile.yaml.experience_mode`. Legacy missing values mean
@@ -333,8 +337,9 @@ Use Lite tools when available:
 
 - `tools/check_player_facing.py --campaign campaign` for protected-name
   leakage without broad generic-word false positives;
-- `tools/check_state.py campaign --scope hot` for per-durable-turn current
-  sanity and `--scope full` at the selected distill boundary;
+- `tools/check_state.py campaign --scope hot` for an explicit bounded diagnostic,
+  and `--scope full` at the selected distill/audit boundary; the writer already
+  validates ordinary durable commits, so add no per-turn hot-check call;
 - `tools/check_dashboard.py` for local dashboard state, asset, revision, tile,
   map, and player-facing safety;
 - `tools/check_world_voices.py campaign` for private lifecycle/reference and

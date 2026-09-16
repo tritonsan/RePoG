@@ -1,10 +1,11 @@
-schema_version: 8
+schema_version: 9
 workspace_mode: standalone
 status: pending
 setup_revision: 0
-# Legacy revision-bound RPG reciprocity approvals. Schema-v6+ Quick and
-# schema-v7 Standard/Deep use both fields; schema-v8 Deep records its gate
-# revisions in session_zero_state.json, and Companion leaves them null.
+# Revision-bound RPG reciprocity approvals. Schema-v9 Quick/Standard combine
+# actual preparation review and approval once. Older routes keep their existing
+# contract; Deep v8 records its gates in session_zero_state.json. Companion
+# leaves both fields null.
 design_direction_approved_revision: null
 preparation_approved_revision: null
 # First gate. Leave blank only before the user chooses an experience.
@@ -14,7 +15,7 @@ experience_mode: ""
 # routing and triggered Research Gate work do not increment questions_completed.
 session_zero_mode: ""
 # Deep v8 uses the stage ledger instead of a readiness question quota. Quick
-# and Standard still set their existing numeric target when depth is chosen.
+# and Standard select 9 and 20–29 decisions respectively for schema v9.
 question_target: ""
 # Deep v8 derives this mirror from session_zero_state.json. Quick, Standard,
 # Companion, and legacy routes retain their existing accounting behavior.

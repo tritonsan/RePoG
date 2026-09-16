@@ -62,8 +62,10 @@ readable, and usable as a downloaded folder:
    gradual disclosure, consent-aware user memory, qualitative relationship
    evidence, and a privacy-safe Companion View.
 7. **Reliability and privacy:** migrations, stale-write rejection, protected
-   projections, browser smoke coverage, dependency-free verification, and 317
-   passing development tests.
+   projections, local HTTP coverage, dependency-free verification, and a
+   reproducible development suite in this source repository. The
+   [verification workflow](https://github.com/tritonsan/RePoG/actions/workflows/verify.yml)
+   tests Windows, macOS, and Linux and builds validated player ZIPs.
 
 The public distribution does not embed or require a separate model API call.
 It uses the capabilities already available in the agentic tool where the
@@ -80,20 +82,30 @@ four steps are the same.
 
 ### 1. Download the workspace
 
-On GitHub, select **Code → Download ZIP**.
+For the filtered player package, open the latest successful
+[Verify and package run](https://github.com/tritonsan/RePoG/actions/workflows/verify.yml)
+and download a `RePoG-player-...` artifact. Extract the artifact to obtain
+`RePoG.zip`; the player contents are the same on all three operating systems.
+
+Alternatively, select **Code → Download ZIP** for the complete source
+workspace. It also supports play, but includes development tests, examples,
+and CI configuration.
 
 ![Select Code and Download ZIP on GitHub](assets/getting-started/01-download-zip.gif)
 
-The current repository file list may look simpler than the recording because
-the public download has since been reduced to the clean player workspace.
-GitHub's ZIP contains only the public repository's tracked files; it does not
-contain Git history, development tests, local caches, or private campaign
-folders.
+The recording shows the source-ZIP alternative. GitHub's source ZIP contains
+tracked files and excludes Git history and ignored local files. The validated
+player ZIP additionally excludes tests, examples, and maintainer configuration;
+it includes the versioned Agent Seat contracts and a SHA-256 file manifest.
 
 ### 2. Extract the ZIP
 
 Extract the archive into a new folder. You may rename that folder for your
 campaign.
+
+RePoG's local helpers require **Python 3.10 or later** available to the agentic
+tool as `python` (or `python3` on systems that use that command). The player
+workspace needs no third-party Python packages.
 
 ![Extract the downloaded RePoG ZIP](assets/getting-started/02-extract-workspace.gif)
 
@@ -144,8 +156,8 @@ facts.
 
 ## Session 0 Depth
 
-- **Quick:** current RPG setup uses 10 compact decisions; Companion uses 7.
-- **Standard:** current RPG setup uses 21–30 decisions; Companion uses 15.
+- **Quick:** new RPG setup uses 9 decision slots; Companion uses 7.
+- **Standard:** new RPG setup uses 20–29 decisions; Companion uses 15.
 - **Deep:** new RPG campaigns use nine dependency-gated stages and stage-local
   extensions; the decision count is a fatigue signal rather than a completion
   quota. Companion and legacy RPG Deep retain their 30–45 planning range.
@@ -154,6 +166,10 @@ All modes use the same continuity model. Quick records visible defaults;
 Standard gives a balanced setup; Deep opens only the stage extensions relevant
 to the chosen campaign. Existing completed RPG Deep campaigns remain on their
 compatible legacy contract unless explicitly migrated.
+
+These counts describe decisions, not a promise of one chat exchange per slot.
+New RPG Quick and Standard setups use one approval of the actual prepared
+campaign to lock and start; existing setups preserve their accepted version.
 
 ## AI Companion Continuity
 

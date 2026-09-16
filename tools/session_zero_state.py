@@ -26,6 +26,8 @@ from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterator
 
+from file_transaction import FileTransactionError, assert_readable, campaign_lock, commit_files, recover
+
 
 STATE_FILE = "session_zero_state.json"
 SETUP_FILE = "setup_profile.yaml"
@@ -1177,8 +1179,9 @@ def _replace_top_scalar(text: str, key: str, value: Any) -> str:
 
 
 def _validate_setup(text: str, state: dict[str, Any]) -> None:
+    if _top_scalar(text, "schema_version") not in {"8", "9"}:
+        raise StateError("setup_invalid", "setup_profile.yaml schema_version must be 8 or 9")
     required = {
-        "schema_version": "8",
         "experience_mode": "rpg",
         "session_zero_mode": "deep",
         "deep_flow_id": FLOW_ID,
@@ -1264,8 +1267,18 @@ def project_session_zero_text(existing_text: str, state: dict[str, Any]) -> str:
     return existing_text[: match.start()] + rendered + separator + suffix
 
 
+def _assert_readable_state(root: Path) -> None:
+    try:
+        # The readiness checker runs under its parent's held writer lock.
+        # Refuse persisted incomplete batches without rejecting that check.
+        assert_readable(root, check_lock=False)
+    except FileTransactionError as exc:
+        raise StateError(exc.category, str(exc)) from exc
+
+
 def _validated_campaign_state(campaign: Path, *, require_ready: bool = False) -> dict[str, Any]:
     root = _campaign_root(campaign)
+    _assert_readable_state(root)
     manifest = load_manifest(root, require_full=require_ready)
     state = _read_json(root / STATE_FILE, STATE_FILE)
     _validate_state(state, manifest, require_ready=require_ready)
@@ -1307,6 +1320,7 @@ def _validated_campaign_state(campaign: Path, *, require_ready: bool = False) ->
                 # Computing the digest still validates that every bounded
                 # campaign-relative reference exists and remains readable.
                 compute_output_digest(root, portion["output_refs"])
+    _assert_readable_state(root)
     return copy.deepcopy(state)
 
 
@@ -1358,47 +1372,31 @@ def _atomic_bundle(
     summary_path: Path,
     summary_text: str,
 ) -> None:
-    snapshots = {
-        state_path: state_path.read_bytes(),
-        setup_path: setup_path.read_bytes(),
-        summary_path: summary_path.read_bytes(),
-    }
-    written: list[Path] = []
     try:
-        _atomic_bytes(setup_path, setup_text.encode("utf-8"))
-        written.append(setup_path)
-        _atomic_bytes(summary_path, summary_text.encode("utf-8"))
-        written.append(summary_path)
-        _atomic_bytes(state_path, _json_bytes(state))
-        written.append(state_path)
-    except Exception as exc:
-        rollback_errors: list[str] = []
-        for path in reversed(written):
-            try:
-                _atomic_bytes(path, snapshots[path])
-            except Exception as rollback_exc:  # pragma: no cover - exceptional filesystem failure
-                rollback_errors.append(f"{path}: {rollback_exc}")
-        detail = f"; rollback errors: {'; '.join(rollback_errors)}" if rollback_errors else ""
-        raise StateError("commit_failed", f"state commit failed and was rolled back: {exc}{detail}") from exc
+        with campaign_lock(state_path.parent):
+            recover(state_path.parent)
+            commit_files(state_path.parent, {
+                setup_path: setup_text.encode("utf-8"),
+                summary_path: summary_text.encode("utf-8"),
+                state_path: _json_bytes(state),
+            }, apply_file=_atomic_bytes)
+    except FileTransactionError as exc:
+        category = "commit_failed" if exc.category == "commit_rolled_back" else exc.category
+        raise StateError(category, str(exc)) from exc
 
 
 @contextmanager
 def _mutation_lock(root: Path) -> Iterator[None]:
-    path = root / ".session-zero-state.lock"
     try:
-        descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError as exc:
-        raise StateError("state_busy", "another Deep Session 0 state mutation is in progress") from exc
-    try:
-        os.write(descriptor, str(os.getpid()).encode("ascii"))
-        os.close(descriptor)
-        yield
-    finally:
-        try:
-            os.close(descriptor)
-        except OSError:
-            pass
-        path.unlink(missing_ok=True)
+        with campaign_lock(root):
+            legacy = root / ".session-zero-state.lock"
+            if legacy.exists():
+                raise StateError("recovery_required", "legacy lock .session-zero-state.lock remains; confirm the old process stopped before removing it")
+            recover(root)
+            yield
+    except FileTransactionError as exc:
+        category = "state_busy" if exc.category == "transaction_busy" else exc.category
+        raise StateError(category, str(exc)) from exc
 
 
 def _load_for_mutation(root: Path) -> tuple[dict[str, Any], dict[str, Any], str, str]:

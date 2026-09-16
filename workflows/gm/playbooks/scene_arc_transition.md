@@ -34,9 +34,9 @@ reachable for a long stretch without moving, press toward the question using the
 pressures the Compass already lists, rather than closing arbitrarily or waiting
 indefinitely.
 
-When an act closes, set the advancement status in `arc_closure.md` to `due` in
-that same closing transaction. Nothing else sets it, so a status left unset means
-the progression the campaign accepted never arrives.
+When a closure occurs, apply `advancement.md` before changing any reward status.
+Only a matching accepted cadence creates a new due award. Preserve closure
+evidence even when no reward is due; never let an act closure override cadence.
 
 ## Scene Checkpoint
 
@@ -151,17 +151,9 @@ understanding why is a failure, not a style. When the upgrade needs training,
 downtime, travel, or a scene, record it as pending with its condition and let play
 deliver it. Record which direction the Player took as a motivation signal.
 
-Read both cadence and presentation:
-
-- `cadence: none`: no automatic review or gate.
-- `presentation: automatic_fictional`: review and apply/present the earned
-  change through consequences, access, capability, training, recognition, or
-  another established fictional channel. Do not force an OOC interruption.
-  Pause only when a required choice cannot be resolved fictionally.
-- `presentation: explicit_ooc`: when a choice is required, open a short
-  table-facing gate. If the Player defers, record it as deferred; do not choose
-  or apply an upgrade and do not open a next act that depends on it. A calm
-  aftermath/breather may continue while the choice waits.
+Apply the transition matrix in `advancement.md` for cadence, presentation,
+deferral, continuation locks, and next-act dependencies. Do not derive a second
+gate from the status word alone.
 
 Tie every reward to player action and an established fictional source. Do not
 interrupt the middle of live danger to distribute it.

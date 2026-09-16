@@ -23,8 +23,11 @@ import re
 import shutil
 import sys
 import tempfile
+from functools import lru_cache
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterator
+
+import file_transaction
 
 
 TRANSACTION_DIR = ".repog-transactions"
@@ -876,8 +879,26 @@ def _journal_root(root: Path) -> Path:
 
 
 def _pid_alive(pid: int) -> bool:
+    """Probe legacy lock ownership without sending a signal on Windows."""
     if pid <= 0:
         return False
+    if os.name == "nt":
+        import ctypes
+        from ctypes import wintypes
+
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel.OpenProcess.restype = wintypes.HANDLE
+        kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel.WaitForSingleObject.restype = wintypes.DWORD
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        handle = kernel.OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE
+        if not handle:
+            return ctypes.get_last_error() != 87  # Invalid PID is certainly gone.
+        try:
+            return kernel.WaitForSingleObject(handle, 0) != 0
+        finally:
+            kernel.CloseHandle(handle)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -891,41 +912,22 @@ def _pid_alive(pid: int) -> bool:
 
 @contextlib.contextmanager
 def _transaction_lock(root: Path) -> Iterator[None]:
-    journal_root = _journal_root(root)
-    journal_root.mkdir(exist_ok=True)
-    lock_path = journal_root / LOCK_FILE
-    descriptor: int | None = None
-    for _ in range(2):
-        try:
-            descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.write(descriptor, f"{os.getpid()}\n".encode("ascii"))
-            os.fsync(descriptor)
-            os.close(descriptor)
-            descriptor = None
-            break
-        except FileExistsError:
-            try:
-                raw = lock_path.read_text(encoding="ascii").strip()
-                owner_pid = int(raw)
-            except (OSError, ValueError):
-                owner_pid = -1
-            if _pid_alive(owner_pid):
-                raise RPGStateError("transaction_busy", f"another RPG transaction holds the campaign lock (pid {owner_pid})")
-            try:
-                lock_path.unlink()
-            except OSError as exc:
-                raise RPGStateError("transaction_busy", f"cannot clear stale RPG transaction lock: {exc}") from exc
-    else:
-        raise RPGStateError("transaction_busy", "cannot acquire the RPG transaction lock")
     try:
-        yield
-    finally:
-        if descriptor is not None:
-            os.close(descriptor)
-        try:
-            lock_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+        with file_transaction.campaign_lock(root):
+            legacy_lock = _journal_root(root) / LOCK_FILE
+            if legacy_lock.exists():
+                if legacy_lock.is_symlink():
+                    raise RPGStateError("recovery_required", "legacy transaction lock cannot be a link")
+                try:
+                    owner_pid = int(legacy_lock.read_text(encoding="ascii").strip())
+                except (OSError, ValueError):
+                    raise RPGStateError("recovery_required", "legacy lock owner is unreadable; inspect before recovery")
+                if _pid_alive(owner_pid):
+                    raise RPGStateError("transaction_busy", f"a legacy RPG writer may still be running (pid {owner_pid})")
+                legacy_lock.unlink()
+            yield
+    except file_transaction.FileTransactionError as exc:
+        raise RPGStateError(exc.category, str(exc)) from exc
 
 
 def _transaction_path(root: Path, operation_id: str) -> Path:
@@ -1053,6 +1055,14 @@ def _recover_transactions(root: Path) -> list[str]:
         return []
     recovered: list[str] = []
     for tx_path in sorted(path for path in journal_root.iterdir() if path.is_dir()):
+        if tx_path.name == file_transaction.JOURNAL_DIR:
+            continue
+        if (
+            tx_path.is_symlink()
+            or tx_path.resolve() != journal_root.resolve() / tx_path.name
+            or not re.fullmatch(r"[0-9a-f]{24}", tx_path.name)
+        ):
+            raise RPGStateError("recovery_required", "unexpected legacy transaction storage entry")
         manifest_path = tx_path / "manifest.json"
         if not manifest_path.is_file():
             # Staging cannot touch campaign targets before this manifest exists.
@@ -1069,6 +1079,7 @@ def _recover_transactions(root: Path) -> list[str]:
         except OSError as exc:
             raise RPGStateError("recovery_required", f"cannot clean recovered transaction {operation_id}: {exc}") from exc
         recovered.append(operation_id)
+    recovered.extend(file_transaction.recover(root))
     return recovered
 
 
@@ -1078,6 +1089,17 @@ def _apply_candidate_file(path: Path, payload: bytes) -> None:
     _atomic_bytes(path, payload)
 
 
+@lru_cache(maxsize=1)
+def _candidate_checker() -> Any:
+    module_path = Path(__file__).with_name("check_state.py")
+    spec = importlib.util.spec_from_file_location("_repog_candidate_checks", module_path)
+    if spec is None or spec.loader is None:
+        raise RPGStateError("campaign_invalid", "cannot load changed-owner structural validation")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _commit_candidates(
     root: Path,
     *,
@@ -1085,6 +1107,11 @@ def _commit_candidates(
     payload_hash: str,
     candidates: dict[str, bytes],
 ) -> None:
+    findings = _candidate_checker().check_changed_owners(root, candidates)
+    errors = [finding for finding in findings if finding["severity"] == "error"]
+    if errors:
+        detail = "; ".join(f"{item['rule']}: {item['message']}" for item in errors)
+        raise RPGStateError("candidate_invalid", detail)
     tx_path, manifest = _prepare_journal(root, operation_id, payload_hash, candidates)
     order = sorted(candidates, key=lambda item: (item == "current_state.yaml", item))
     try:

@@ -405,6 +405,8 @@ def _yaml_list(value: str) -> list[str]:
 
 
 STATUS_BLOCK_HEADINGS = (
+    "RPG Quick v9 Decision Slot Status",
+    "RPG Standard v9 Module Status",
     "RPG Quick Decision Slot Status",
     "RPG Standard / Deep Reciprocity Module Status",
     "RPG Deep v8 Stage Summary",
@@ -418,6 +420,10 @@ def _selected_status_heading(experience_mode: str, mode: str, schema_version: in
 
     if experience_mode == "companion":
         return "Companion Module Status"
+    if schema_version >= 9 and mode == "quick":
+        return "RPG Quick v9 Decision Slot Status"
+    if schema_version >= 9 and mode == "standard":
+        return "RPG Standard v9 Module Status"
     if schema_version >= 6 and mode == "quick":
         return "RPG Quick Decision Slot Status"
     if schema_version >= 8 and mode == "deep":
@@ -518,8 +524,8 @@ def _check_setup_profile(
 
     deep_v8 = schema_version >= 8 and experience_mode == "rpg" and mode == "deep"
 
-    if schema_version not in {1, 2, 3, 4, 5, 6, 7, 8}:
-        _add(findings, "error", "setup_schema_invalid", "setup_profile schema_version must be between 1 and 8.", path)
+    if schema_version not in {1, 2, 3, 4, 5, 6, 7, 8, 9}:
+        _add(findings, "error", "setup_schema_invalid", "setup_profile schema_version must be between 1 and 9.", path)
     if questions_completed < 0 or last_checkpoint < 0 or last_checkpoint > questions_completed:
         _add(findings, "error", "setup_progress_invalid", "Question and checkpoint progress is inconsistent.", path)
     if schema_version >= 3 and setup_revision < 0:
@@ -687,6 +693,8 @@ def _check_setup_profile(
             if mode == "quick":
                 if experience_mode == "companion":
                     valid_target = question_target == 7
+                elif schema_version >= 9:
+                    valid_target = question_target == 9
                 elif schema_version >= 6:
                     valid_target = question_target == 10
                 else:
@@ -694,6 +702,8 @@ def _check_setup_profile(
             elif mode == "standard":
                 if experience_mode == "companion":
                     valid_target = question_target == 15
+                elif schema_version >= 9:
+                    valid_target = 20 <= question_target <= 29
                 elif schema_version >= 7:
                     valid_target = 21 <= question_target <= 30
                 else:
@@ -763,8 +773,9 @@ def _check_setup_profile(
         )
 
     if schema_version >= 6 and experience_mode == "rpg" and mode == "quick":
+        preparation_slot = 9 if schema_version >= 9 else 10
         design_required = questions_completed >= 8 or content_ready
-        preparation_required = questions_completed >= 10 or content_ready
+        preparation_required = questions_completed >= preparation_slot or content_ready
         if design_direction_approved_revision is not None and questions_completed < 8:
             _add(
                 findings,
@@ -773,12 +784,12 @@ def _check_setup_profile(
                 "RPG Quick design direction approval belongs to decision slot 8.",
                 path,
             )
-        if preparation_approved_revision is not None and questions_completed < 10:
+        if preparation_approved_revision is not None and questions_completed < preparation_slot:
             _add(
                 findings,
                 "error",
                 "setup_preparation_approval_early",
-                "RPG Quick preparation approval belongs to decision slot 10.",
+                f"RPG Quick preparation approval belongs to decision slot {preparation_slot}.",
                 path,
             )
         if design_required and design_direction_approved_revision is None:
@@ -794,7 +805,7 @@ def _check_setup_profile(
                 findings,
                 "error",
                 "setup_preparation_approval_missing",
-                "RPG Quick requires revision-bound preparation approval at decision slot 10.",
+                f"RPG Quick requires revision-bound preparation approval at decision slot {preparation_slot}.",
                 path,
             )
         if (
@@ -914,14 +925,18 @@ def _check_setup_profile(
     if mode == "quick" and content_ready:
         if experience_mode == "companion" and questions_completed != 7:
             _add(findings, "error", "quick_question_target", "Completed Companion Quick setup must record exactly 7 content decisions; routing and triggered research gates do not count.", path)
-        elif experience_mode != "companion" and schema_version >= 6 and questions_completed != 10:
+        elif experience_mode != "companion" and schema_version >= 9 and questions_completed != 9:
+            _add(findings, "error", "quick_question_target", "Completed schema-v9 RPG Quick setup must record exactly 9 content decisions.", path)
+        elif experience_mode != "companion" and 6 <= schema_version < 9 and questions_completed != 10:
             _add(findings, "error", "quick_question_target", "Completed schema-v6 RPG Quick setup must record exactly 10 content decisions; routing and triggered research gates do not count.", path)
         elif experience_mode != "companion" and schema_version < 6 and not 6 <= questions_completed <= 8:
             _add(findings, "error", "quick_question_target", "Completed legacy RPG Quick setup must record 6–8 content decisions.", path)
     if mode == "standard" and content_ready:
         if schema_version >= 5 and experience_mode == "companion" and questions_completed != 15:
             _add(findings, "error", "setup_question_target", "Completed Companion Standard setup must record exactly 15 content decisions.", path)
-        elif schema_version >= 7 and experience_mode != "companion" and not 21 <= questions_completed <= 30:
+        elif schema_version >= 9 and experience_mode != "companion" and not 20 <= questions_completed <= 29:
+            _add(findings, "error", "setup_question_target", "Completed schema-v9 RPG Standard setup must record 20–29 content decisions.", path)
+        elif 7 <= schema_version < 9 and experience_mode != "companion" and not 21 <= questions_completed <= 30:
             _add(findings, "error", "setup_question_target", "Completed schema-v7 RPG Standard setup must record 21–30 content decisions.", path)
         elif 5 <= schema_version < 7 and experience_mode != "companion" and not 17 <= questions_completed <= 25:
             _add(findings, "error", "setup_question_target", "Completed legacy RPG Standard setup must record 17–25 content decisions.", path)
@@ -2582,34 +2597,28 @@ def _check_rpg_transaction_journal(
     journal = campaign_path / ".repog-transactions"
     if not journal.exists():
         return
-    if not journal.is_dir():
-        _add(
-            findings,
-            "error",
-            "rpg_transaction_recovery_required",
-            "The RPG transaction journal path is not a directory; recover it before continuing.",
-            journal,
-        )
-        return
     try:
-        has_entries = next(journal.iterdir(), None) is not None
-    except OSError as exc:
-        _add(
-            findings,
-            "error",
-            "rpg_transaction_recovery_required",
-            f"The RPG transaction journal cannot be inspected: {exc}",
-            journal,
-        )
+        if journal.is_symlink() or not journal.is_dir():
+            raise ValueError("transaction storage is not a regular directory")
+        pending = False
+        for entry in journal.iterdir():
+            if entry.is_symlink():
+                pending = True
+            elif entry.name == ".writer.lock" and entry.is_file():
+                # Persistent OS advisory lock; its existence does not mean a
+                # writer is active. A caller may validate while holding it.
+                continue
+            elif entry.name == "files" and entry.is_dir():
+                pending = pending or next(entry.iterdir(), None) is not None
+            else:
+                pending = True
+    except (OSError, ValueError) as exc:
+        _add(findings, "error", "rpg_transaction_recovery_required",
+             f"The transaction journal cannot be inspected: {exc}", journal)
         return
-    if has_entries:
-        _add(
-            findings,
-            "error",
-            "rpg_transaction_recovery_required",
-            "The RPG transaction journal contains unfinished work; recover it before validation or play.",
-            journal,
-        )
+    if pending:
+        _add(findings, "error", "rpg_transaction_recovery_required",
+             "The transaction journal contains unfinished work; recover it before validation or play.", journal)
 
 
 STYLE_ACTIVITY_REVISION_THRESHOLD = 6
@@ -4001,6 +4010,125 @@ def _check_optional_json_state(campaign_path: Path, findings: list[dict]) -> Non
             _check_style_state(state, path, findings)
         else:
             _check_mechanics_state(state, path, findings)
+
+
+def check_changed_owners(campaign_path: Path, candidates: dict[str, bytes]) -> list[dict]:
+    """Validate only staged RPG owner structures, without a campaign scan or write.
+
+    Markdown meaning remains the GM's responsibility. Current-state shape and
+    mechanics values reuse the same checks as the explicit aggregate audit.
+    Candidates are checked in memory before the transaction creates its journal.
+    """
+    findings: list[dict] = []
+    for relative, payload in candidates.items():
+        path = campaign_path / relative
+        try:
+            text = payload.decode("utf-8")
+        except UnicodeDecodeError:
+            _add(findings, "error", "owner_encoding_invalid", "Owner content must be UTF-8.", path)
+            continue
+        if not text.strip() or "\x00" in text:
+            _add(findings, "error", "owner_content_invalid", "Owner content must be non-empty text without NUL bytes.", path)
+            continue
+        if relative == "mechanics_state.json":
+            try:
+                data = json.loads(text)
+            except json.JSONDecodeError as exc:
+                _add(findings, "error", "mechanics_state_invalid", str(exc), path)
+                continue
+            if not isinstance(data, dict):
+                _add(findings, "error", "mechanics_state_invalid", "Mechanics state must be an object.", path)
+                continue
+            _check_mechanics_state(data, path, findings)
+        elif relative == "current_state.yaml":
+            _check_current_state_candidate(campaign_path, text, path, findings)
+    return findings
+
+
+def _check_current_state_candidate(campaign_path: Path, text: str, path: Path, findings: list[dict]) -> None:
+    # Check duplicate mapping keys before the lightweight readers could silently
+    # select one value. Block scalar prose is deliberately opaque.
+    levels: list[tuple[int, set[str]]] = []
+    scalar_indent: int | None = None
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if scalar_indent is not None and indent > scalar_indent:
+            continue
+        scalar_indent = None
+        if "\t" in line[:len(line) - len(line.lstrip())]:
+            _add(findings, "error", "state_indentation_invalid", "Use spaces for state indentation.", path)
+        if line.lstrip().startswith("- "):
+            # A new sequence item starts a separate mapping; its sibling may
+            # legitimately contain the same keys (e.g. two inventory objects).
+            while levels and levels[-1][0] > indent:
+                levels.pop()
+            line = " " * (indent + 2) + line.lstrip()[2:]
+            indent += 2
+        match = re.match(r"^( *)([A-Za-z_][A-Za-z0-9_-]*):(?:[ \t]*(.*))?$", line)
+        if not match:
+            continue
+        while levels and levels[-1][0] > indent:
+            levels.pop()
+        if not levels or levels[-1][0] < indent:
+            levels.append((indent, set()))
+        key, raw = match.group(2), match.group(3) or ""
+        if key in levels[-1][1]:
+            _add(findings, "error", "state_key_duplicate", f"Duplicate state mapping key: {key}", path)
+        levels[-1][1].add(key)
+        if re.fullmatch(r"[|>][+-]?[1-9]?(?:\s+#.*)?", raw.strip()):
+            scalar_indent = indent
+
+    values = _top_level_values(text)
+    for key in TOP_LEVEL_KEYS:
+        if key not in values:
+            _add(findings, "error", "state_key_missing", f"Missing current-state field: {key}", path)
+    try:
+        memory_version = int(_clean_scalar(values.get("memory_version", "1")))
+        revision = int(_clean_scalar(values.get("continuity_revision", "0")))
+        if memory_version < 1 or revision < 0:
+            raise ValueError
+    except ValueError:
+        _add(findings, "error", "state_version_invalid", "Memory version and continuity revision must be valid integers.", path)
+        return
+
+    for parent, required in (("player", PLAYER_KEYS), ("current_scene", SCENE_KEYS)):
+        nested = _nested_values(_block(text, parent))
+        for key in required:
+            if key not in nested:
+                _add(findings, "error", "state_key_missing", f"Missing current-state field: {parent}.{key}", path)
+
+    lists = [(None, key) for key in ("inventory", "conditions", "active_clocks", "active_threats")]
+    lists += [("player", "capabilities"), ("current_scene", "present_npcs"), ("current_scene", "open_choices")]
+    if memory_version >= 3:
+        lists.append(("scene_frame", "pending_consequences"))
+    for parent, key in lists:
+        block = _block(text, parent) if parent else text
+        indent = 2 if parent else 0
+        match = re.search(rf"(?m)^ {{{indent}}}{re.escape(key)}:[ \t]*(.*)$", block)
+        if match is None:
+            continue  # The owning structure reports missing keys separately.
+        raw = match.group(1).split(" #", 1)[0].strip()
+        if raw and not (raw.startswith("[") and raw.endswith("]")):
+            _add(findings, "error", "state_list_invalid", f"{parent + '.' if parent else ''}{key} must be a list.", path)
+        elif not raw:
+            items = []
+            for line in block[match.end():].splitlines():
+                if not line.strip() or line.lstrip().startswith("#"):
+                    continue
+                depth = len(line) - len(line.lstrip(" "))
+                if depth <= indent:
+                    break
+                if depth == indent + 2:
+                    items.append(line.strip())
+            if not items or any(not item.startswith("- ") for item in items):
+                _add(findings, "error", "state_list_invalid", f"{key} needs list items or an explicit [].", path)
+
+    setup_path = campaign_path / "setup_profile.yaml"
+    setup = _top_level_values(setup_path.read_text(encoding="utf-8")) if setup_path.is_file() else {}
+    ready = _boolean(setup.get("ready_for_play", "false")) is True
+    _check_scene_frame(text, path, memory_version=memory_version, ready=ready, findings=findings)
 
 
 def _meaningful_contract_value(value: str) -> bool:

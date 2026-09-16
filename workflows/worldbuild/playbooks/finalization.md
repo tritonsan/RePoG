@@ -2,8 +2,8 @@
 
 Load this playbook at the selected route's final readiness boundary.
 
-Current reciprocity RPG routes—schema-v6+ Quick, schema-v7 Standard/Deep, and
-schema-v8 Deep—
+Current reciprocity RPG routes—schema-v6–v8 Quick, schema-v7–v8 Standard,
+schema-v7 Deep, schema-v9+ Quick/Standard, and the Deep-v8 ledger route—
 reach this boundary only after actual materialized preparation was reviewed
 player-safe and approved at the current setup revision. Their substantive
 world/cast/opening synthesis is already complete.
@@ -14,6 +14,10 @@ required playable core inside this boundary before draft preflight.
 
 Supporting workers, when eligible, remain read-only proposal workers. The
 coordinator is the sole campaign writer and player-facing voice.
+
+Schema-v9+ Quick/Standard reach this boundary through their single combined
+actual-preparation acceptance. Do not request a second readiness approval or
+legacy slot 10/module 21. Deep continues its existing ledger gates.
 
 # Route Boundary
 

@@ -17,6 +17,7 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 sys.dont_write_bytecode = True
@@ -46,6 +47,16 @@ def _load_verifier(source: Path):
         raise DistributionError("Could not load the workspace verifier.")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module
+
+
+def _committed_policy(source: Path, commit: str) -> ModuleType:
+    """Read packaging rules from the same commit as the packaged bytes."""
+    filename = "tools/verify_workspace.py"
+    module = ModuleType("repog_committed_distribution_policy")
+    module.__file__ = str(source / filename)
+    code = _git(source, "show", f"{commit}:{filename}")
+    exec(compile(code, module.__file__, "exec"), module.__dict__)
     return module
 
 
@@ -98,12 +109,14 @@ def build(source: Path, target: Path, *, archive: Path | None = None, dry_run: b
         raise DistributionError(f"Target already exists: {target}")
     if archive and archive.exists():
         raise DistributionError(f"Archive already exists: {archive}")
-    if not (source / ".git").is_dir():
+    if not (source / ".git").exists():
         raise DistributionError(f"Canonical source is not a Git checkout: {source}")
+    if Path(_git(source, "rev-parse", "--show-toplevel")).resolve() != source:
+        raise DistributionError("Source must be the canonical Git repository root.")
 
     commit = _git(source, "rev-parse", "HEAD")
-    tracked = [line for line in _git(source, "ls-files").splitlines() if line]
-    policy = _load_verifier(source)
+    tracked = [path for path in _git(source, "ls-tree", "-rz", "--name-only", commit).split("\0") if path]
+    policy = _committed_policy(source, commit)
     selected = [
         path
         for path in tracked
@@ -142,7 +155,7 @@ def build(source: Path, target: Path, *, archive: Path | None = None, dry_run: b
                 "archive",
                 "--format=zip",
                 f"--output={git_archive}",
-                "HEAD",
+                commit,
                 "--",
                 *selected,
             ],

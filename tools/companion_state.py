@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import functools
 import hashlib
 import importlib.util
 import json
@@ -25,6 +26,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from file_transaction import FileTransactionError, assert_readable, campaign_lock, commit_files, recover, target_path
 
 
 STATE_FILE = "companion_state.json"
@@ -100,6 +103,18 @@ class CompanionStateError(ValueError):
     """Typed, user-readable state failure."""
 
 
+def _locked_mutation(function):
+    @functools.wraps(function)
+    def wrapped(campaign: Path, *args, **kwargs):
+        try:
+            with campaign_lock(campaign):
+                recover(campaign)
+                return function(campaign, *args, **kwargs)
+        except FileTransactionError as exc:
+            raise CompanionStateError(f"{exc.category}: {exc}") from exc
+    return wrapped
+
+
 def _strict_int(value: Any, *, minimum: int = 0) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value >= minimum
 
@@ -163,7 +178,11 @@ def _iso(value: datetime) -> str:
 def _load(campaign: Path) -> tuple[Path, dict[str, Any]]:
     path = campaign.resolve() / STATE_FILE
     try:
+        assert_readable(path.parent)
         data = json.loads(path.read_text(encoding="utf-8"))
+        assert_readable(path.parent)
+    except FileTransactionError as exc:
+        raise CompanionStateError(f"{exc.category}: {exc}") from exc
     except FileNotFoundError as exc:
         raise CompanionStateError(f"missing {STATE_FILE}") from exc
     except (OSError, json.JSONDecodeError) as exc:
@@ -222,48 +241,23 @@ def _atomic_commit_pair(
     view_path: Path,
     view_data: dict[str, Any],
 ) -> None:
-    """Commit state + public projection together, rolling both back on failure."""
+    """Commit the pair with a restart-recoverable journal."""
+    try:
+        with campaign_lock(state_path.parent):
+            recover(state_path.parent)
+            commit_files(state_path.parent, {
+                view_path: _serialized(view_data), state_path: _serialized(state_data),
+            }, apply_file=_apply_transaction_file)
+    except FileTransactionError as exc:
+        raise CompanionStateError(f"{exc.category}: {exc}") from exc
 
-    try:
-        old_state = state_path.read_bytes()
-        old_view = view_path.read_bytes()
-    except OSError as exc:
-        raise CompanionStateError(f"cannot stage Companion/View transaction: {exc}") from exc
-    state_temp = _write_temp(state_path, _serialized(state_data))
-    try:
-        view_temp = _write_temp(view_path, _serialized(view_data))
-    except Exception:
-        state_temp.unlink(missing_ok=True)
-        raise
-    state_replaced = False
-    view_replaced = False
-    try:
-        # Projection first prevents the canonical state from advertising a
-        # revision which was never materialized.  Any second-step failure is
-        # immediately restored from the byte-exact snapshots above.
-        os.replace(view_temp, view_path)
-        view_replaced = True
-        os.replace(state_temp, state_path)
-        state_replaced = True
-    except Exception as exc:
-        rollback_errors: list[str] = []
-        if state_replaced:
-            try:
-                _restore_bytes(state_path, old_state)
-            except Exception as rollback_exc:  # pragma: no cover - OS fault path
-                rollback_errors.append(f"state rollback failed: {rollback_exc}")
-        if view_replaced:
-            try:
-                _restore_bytes(view_path, old_view)
-            except Exception as rollback_exc:  # pragma: no cover - OS fault path
-                rollback_errors.append(f"view rollback failed: {rollback_exc}")
-        detail = f"Companion/View transaction failed: {exc}"
-        if rollback_errors:
-            detail += "; " + "; ".join(rollback_errors)
-        raise CompanionStateError(detail) from exc
-    finally:
-        state_temp.unlink(missing_ok=True)
-        view_temp.unlink(missing_ok=True)
+
+def _apply_transaction_file(path: Path, payload: bytes | None) -> None:
+    """Isolated write seam for process-exit and rollback regression tests."""
+    if payload is None:
+        path.unlink(missing_ok=True)
+    else:
+        _restore_bytes(path, payload)
 
 
 def _yaml_scalar(path: Path, key: str) -> str:
@@ -805,9 +799,17 @@ def _semantic_payload_hash(
     state_patch: dict[str, Any],
     public_patch: dict[str, Any] | None,
     gap_id: str | None,
+    owner_mutations: list[dict[str, Any]] | None = None,
+    log_marker: dict[str, Any] | None = None,
 ) -> str:
+    payload = {"state_patch": state_patch, "public_patch": public_patch, "gap_id": gap_id}
+    # Preserve hashes of existing operation receipts when the extension is unused.
+    if owner_mutations:
+        payload["owner_mutations"] = owner_mutations
+    if log_marker is not None:
+        payload["log_marker"] = log_marker
     canonical = json.dumps(
-        {"state_patch": state_patch, "public_patch": public_patch, "gap_id": gap_id},
+        payload,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
@@ -821,6 +823,7 @@ def inspect(campaign: Path, *, now_override: str | None = None) -> dict[str, Any
     return {"ok": True, "operation": "inspect", **_inspection(state, _now(state, now_override))}
 
 
+@_locked_mutation
 def begin_exchange(
     campaign: Path,
     *,
@@ -1076,6 +1079,69 @@ def _apply_state_patch(state: dict[str, Any], patch: dict[str, Any], now: dateti
     return candidate
 
 
+COMPANION_MARKDOWN_OWNERS = {
+    "knowledge_boundaries.md", "user_context.md", "threads.md",
+    "world_dynamics.md", "boundaries.md", "relationship_map.md",
+}
+
+
+def _owner_candidates(
+    campaign: Path,
+    mutations: list[dict[str, Any]] | None,
+    log_marker: dict[str, Any] | None,
+) -> dict[Path, bytes]:
+    """Check agent-authored authority replacements without interpreting prose."""
+    if mutations is None:
+        mutations = []
+    if not isinstance(mutations, list) or len(mutations) > 16:
+        raise CompanionStateError("owner_mutations must be an array of at most 16 entries")
+    candidates: dict[Path, bytes] = {}
+    total = 0
+    for mutation in mutations:
+        if not isinstance(mutation, dict) or set(mutation) != {"path", "expected_sha256", "text"}:
+            raise CompanionStateError("owner mutation requires exactly path, expected_sha256 and text")
+        relative, path = target_path(campaign, mutation["path"])
+        parts = relative.split("/")
+        entity_note = len(parts) >= 2 and parts[0] in {"characters", "places", "factions"} and path.suffix == ".md"
+        if relative not in COMPANION_MARKDOWN_OWNERS and not entity_note:
+            raise CompanionStateError(f"not a Companion Markdown authority: {relative}")
+        if path in candidates:
+            raise CompanionStateError("owner mutation paths must be unique")
+        text = mutation["text"]
+        if not isinstance(text, str) or not text.strip() or len(text) > 500_000 or "\x00" in text:
+            raise CompanionStateError("owner text must be nonempty Markdown under 500000 characters")
+        total += len(text)
+        if total > 2_000_000:
+            raise CompanionStateError("owner candidates exceed the combined text bound")
+        expected = mutation["expected_sha256"]
+        original = path.read_bytes() if path.is_file() else None
+        if original is None:
+            if expected is not None or not entity_note or not path.parent.is_dir():
+                raise CompanionStateError("only new typed entity notes may use expected_sha256: null")
+        elif not isinstance(expected, str) or re.fullmatch(r"[0-9a-f]{64}", expected) is None or hashlib.sha256(original).hexdigest() != expected:
+            raise CompanionStateError(f"stale owner content: {relative}")
+        payload = text.encode("utf-8")
+        if payload == original:
+            raise CompanionStateError(f"owner mutation does not change content: {relative}")
+        candidates[path] = payload
+    if log_marker is not None:
+        if not isinstance(log_marker, dict) or set(log_marker) != {"expected_sha256", "text"}:
+            raise CompanionStateError("log_marker requires exactly expected_sha256 and text")
+        text = log_marker["text"]
+        if not isinstance(text, str) or not text.strip() or len(text) > 8_000 or "\x00" in text:
+            raise CompanionStateError("log marker must be nonempty text under 8000 characters")
+        _, path = target_path(campaign, "session_log.md")
+        if not path.is_file():
+            raise CompanionStateError("session_log.md must exist before appending a marker")
+        original = path.read_bytes()
+        if log_marker["expected_sha256"] != hashlib.sha256(original).hexdigest():
+            raise CompanionStateError("stale session log content")
+        separator = b"\n" if original.endswith(b"\n") else b"\n\n"
+        candidates[path] = original + separator + text.rstrip().encode("utf-8") + b"\n"
+    return candidates
+
+
+@_locked_mutation
 def commit_semantic(
     campaign: Path,
     *,
@@ -1088,6 +1154,8 @@ def commit_semantic(
     expected_public_surface_revision: int | None = None,
     gap_id: str | None = None,
     now_override: str | None = None,
+    owner_mutations: list[dict[str, Any]] | None = None,
+    log_marker: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Commit one bounded semantic update and return a public-view candidate."""
 
@@ -1096,7 +1164,9 @@ def commit_semantic(
         raise CompanionStateError("state_patch must be a JSON object")
     if public_patch is not None and not isinstance(public_patch, dict):
         raise CompanionStateError("public_patch must be a JSON object")
-    payload_hash = _semantic_payload_hash(state_patch, public_patch, gap_id)
+    if owner_mutations is not None and not isinstance(owner_mutations, list):
+        raise CompanionStateError("owner_mutations must be an array")
+    payload_hash = _semantic_payload_hash(state_patch, public_patch, gap_id, owner_mutations, log_marker)
     campaign_root = campaign.resolve()
     path, state = _load(campaign_root)
     _require_clean_state(state)
@@ -1148,8 +1218,8 @@ def commit_semantic(
             f"semantic sequence must be exactly {expected_next}; received {semantic_sequence}"
         )
     public_change = bool(public_patch)
-    if not state_patch and not public_change:
-        raise CompanionStateError("commit-semantic requires a state patch or non-empty public patch")
+    if not state_patch and not public_change and not owner_mutations:
+        raise CompanionStateError("commit-semantic requires a state patch, public patch or owner mutation")
     if public_change and expected_public_surface_revision is None:
         raise CompanionStateError("a public patch requires expected_public_surface_revision")
     _check_revision(
@@ -1158,6 +1228,7 @@ def commit_semantic(
         expected_continuity_revision,
         expected_public_surface_revision if public_change else None,
     )
+    owner_candidates = _owner_candidates(campaign_root, owner_mutations, log_marker)
     view_path: Path | None = None
     view_candidate: dict[str, Any] | None = None
     if public_change:
@@ -1191,7 +1262,7 @@ def commit_semantic(
 
     candidate = _apply_state_patch(state, state_patch, now)
     candidate["state_revision"] += 1
-    if state_patch:
+    if state_patch or owner_mutations:
         candidate["continuity_revision"] += 1
         candidate["last_observation_at"] = _iso(now)
     if public_change:
@@ -1216,7 +1287,16 @@ def commit_semantic(
         assert view_path is not None and view_candidate is not None
         view_candidate["public_surface_revision"] = candidate["public_surface_revision"]
         _validate_public_candidate(campaign_root, view_path, view_candidate)
-        _atomic_commit_pair(path, candidate, view_path, view_candidate)
+        if not owner_candidates:
+            _atomic_commit_pair(path, candidate, view_path, view_candidate)
+        else:
+            commit_files(campaign_root, {
+                **owner_candidates, view_path: _serialized(view_candidate), path: _serialized(candidate),
+            }, apply_file=_apply_transaction_file)
+    elif owner_candidates:
+        commit_files(campaign_root, {
+            **owner_candidates, path: _serialized(candidate),
+        }, apply_file=_apply_transaction_file)
     else:
         _atomic_write(path, candidate)
 
@@ -1250,6 +1330,7 @@ def commit_semantic(
     }
 
 
+@_locked_mutation
 def commit_presence(
     campaign: Path,
     *,
@@ -1333,6 +1414,8 @@ def _parser() -> argparse.ArgumentParser:
     semantic.add_argument("--expected-continuity-revision", type=int, required=True)
     semantic.add_argument("--state-patch-json", required=True)
     semantic.add_argument("--public-patch-json")
+    semantic.add_argument("--owner-mutations-json", help="Bounded hash-guarded Markdown authority candidates.")
+    semantic.add_argument("--log-marker-json", help="Hash-guarded append-only session log marker.")
     semantic.add_argument("--expected-public-surface-revision", type=int)
     semantic.add_argument("--gap-id")
     semantic.add_argument("--now", help="Fixed timezone-aware ISO timestamp for replay/tests.")
@@ -1382,6 +1465,8 @@ def main(argv: list[str] | None = None) -> int:
                 expected_continuity_revision=args.expected_continuity_revision,
                 state_patch=_json_object(args.state_patch_json, label="--state-patch-json") or {},
                 public_patch=_json_object(args.public_patch_json, label="--public-patch-json"),
+                owner_mutations=json.loads(args.owner_mutations_json) if args.owner_mutations_json else None,
+                log_marker=_json_object(args.log_marker_json, label="--log-marker-json"),
                 expected_public_surface_revision=args.expected_public_surface_revision,
                 gap_id=args.gap_id,
                 now_override=args.now,
@@ -1401,7 +1486,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             result = validate(campaign)
-    except CompanionStateError as exc:
+    except (CompanionStateError, json.JSONDecodeError) as exc:
         result = {"ok": False, "operation": args.command, "error": str(exc)}
     print(json.dumps(result, indent=2, ensure_ascii=True))
     return 0 if result.get("ok") else 2

@@ -826,7 +826,7 @@ def migrate(campaign_path: Path, *, apply: bool = False) -> dict[str, Any]:
             "campaign_path": str(campaign),
         }
 
-    if schema == 8:
+    if schema in {8, 9}:
         if not state_path.is_file() and setup.get("session_zero_mode", "").casefold() == "deep":
             return {
                 "ok": False,

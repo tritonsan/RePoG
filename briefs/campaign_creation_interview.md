@@ -1,5 +1,12 @@
 # Campaign Creation Interview
 
+Version note: schema-v9+ Quick/Standard use the routed `rpg_quick_v9.md` and
+`rpg_standard_v9.md` playbooks: nine Quick slots, 20 Standard modules/20–29
+content decisions, and one combined actual-preparation review/approval. The
+legacy ten-slot/21-module sections below describe preserved older routes only.
+Deep keeps its `rpg_deep_v8` flow. This cold reference does not override the
+selected versioned playbook.
+
 ## Routing Gates
 
 When `setup_profile.yaml.status` is `pending` and `experience_mode` is blank,
@@ -9,7 +16,7 @@ that answer, then ask only for Quick, Standard, or Deep when
 
 Use these content-decision contracts:
 
-- schema-v6+ RPG Quick: exactly 10;
+- schema-v6–v8 RPG Quick: exactly 10;
 - schema-v7 RPG Standard: 21–30;
 - schema-v7 RPG Deep: 30–45 before any explicit extension;
 - schema-v8 RPG Deep: nine dependency-gated stages; decision count is fatigue
@@ -323,8 +330,9 @@ axes for this setting and this starting stage instead of importing a generic lis
 offer two to four candidate sets, derive the point total and bands from the
 accepted axis count, ask how many points the Player wants to spend, record the
 axes with the campaign rules so validation follows that set, and derive competence
-from the distribution. A competence that contradicts the distribution is a
-legitimate Player choice and is recorded as accepted.
+from the distribution. A conflicting self-image is an aspiration, not guaranteed
+competence. Reliable exceptions require an explicitly accepted scoped ruling or
+a revised distribution, recorded before use.
 
 Ask the Player about the character and derive how the world perceives them. Do
 not ask who warms to them, who distrusts them, what strangers assume, or how a
@@ -908,7 +916,7 @@ character and faction notes keep only stable behavior/posture and edge ids.
 Before `ready_for_play: true`, confirm the selected route's budget and status
 block, a locked active profile at the current setup revision, materialized
 first-session preparation, active opening brief, reviewed defaults/deferrals,
-and every required approval. Schema-v6+ Quick requires exactly 10 slots and
+and every required approval. Schema-v6–v8 Quick requires exactly 10 slots and
 slots 8/9/10 approval flow. Schema-v7 Standard/Deep requires the 21-module
 status block, an earlier design approval, actual player-safe preparation review,
 and `preparation_approved_revision` equal to current `setup_revision`; Deep

@@ -328,11 +328,9 @@ owner; keep private visual transaction state in its owning visual tool.
 
 # Closure And Advancement Review
 
-Run this review only when the closure matches
-`play_profile.yaml.advancement.cadence`. `none` creates no automatic reward
-gate; `session`, `scenario`, `arc`, and `campaign` trigger only at their named
-boundary. When a matching advancement moment occurs, review it before
-finalizing memory:
+Apply `workflows/gm/playbooks/advancement.md` first. Its transition matrix
+alone determines whether appraisal is due and what may continue. At a matching
+advancement moment, appraise the award before finalizing memory:
 
 1. Determine closure level: beat, session, scenario, arc, or campaign.
 2. Tag achievements: combat_success, social_success, discovery,
@@ -363,27 +361,14 @@ do not record the status, reward, or continuity revision piecemeal.
 Major arc closure should usually change both character capability and world
 state. Do not reduce every reward to a stat increase.
 
-Set `Advancement status` to `due` only at the selected cadence and follow the
-profile's presentation policy:
-
-- `none` opens no automatic gate;
-- `automatic_fictional` applies or presents earned change through an
-  established fictional channel without a mandatory OOC interruption; pause
-  only if an unresolved Player choice is necessary;
-- `explicit_ooc` opens a hard table-facing gate only when a choice is required.
-  If the Player defers, record it as deferred, apply nothing, and do not open a
-  next act that depends on the choice; a calm aftermath or breather may
-  continue.
-
-When a reward choice is required, do not begin `next_act_prep.md` or draft the
-post-arc opening while it waits. A calm aftermath/breather may continue, but
-next-act preparation starts only after the Player chooses or explicitly
-defers a choice confirmed not to affect that next act.
+Return the appraisal to the advancement matrix for presentation, required
+choice, deferral, and dependent next-act preparation. An independent breather
+remains playable while an award waits; no unchosen upgrade is applied.
 
 # Carry-Forward Review
 
-After a scenario, arc, or campaign closure, prepare the next act before play
-continues.
+After a scenario, arc, or campaign closure, prepare the next act before entering
+it. Independent aftermath/breather play may continue under the advancement matrix.
 
 Read `creation_ledger.md`, `threads.md`, `relationship_map.md`,
 `knowledge_boundaries.md`, `current_state.yaml`, relevant character/place/

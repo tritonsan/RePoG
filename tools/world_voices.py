@@ -20,6 +20,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from file_transaction import FileTransactionError, assert_readable, campaign_lock, commit_files, recover
+
 from check_world_voices import (
     ARTIFACT_FAMILIES,
     CLAIM_CLASSES,
@@ -91,25 +93,17 @@ def _atomic_bytes(path: Path, payload: bytes) -> None:
 
 
 def _commit(changes: dict[Path, bytes]) -> None:
-    snapshots: dict[Path, bytes | None] = {}
-    written: list[Path] = []
+    index = next((path for path in changes if path.name == "index.json" and path.parent.name == "world_voices"), None)
+    if index is None:
+        raise WorldVoicesError("input_invalid", "World Voices transaction requires its index")
+    root = index.parent.parent
     try:
-        for path, payload in changes.items():
-            snapshots[path] = path.read_bytes() if path.exists() else None
-            _atomic_bytes(path, payload)
-            written.append(path)
-    except Exception as exc:
-        errors: list[str] = []
-        for path in reversed(written):
-            try:
-                if snapshots[path] is None:
-                    path.unlink(missing_ok=True)
-                else:
-                    _atomic_bytes(path, snapshots[path] or b"")
-            except Exception as rollback_exc:  # pragma: no cover
-                errors.append(str(rollback_exc))
-        suffix = f" Rollback errors: {'; '.join(errors)}" if errors else ""
-        raise WorldVoicesError("write_failed_rolled_back", f"World Voices write failed and was rolled back: {exc}.{suffix}") from exc
+        with campaign_lock(root):
+            recover(root)
+            commit_files(root, changes, apply_file=_atomic_bytes)
+    except FileTransactionError as exc:
+        category = "write_failed_rolled_back" if exc.category == "commit_rolled_back" else exc.category
+        raise WorldVoicesError(category, str(exc)) from exc
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -572,32 +566,41 @@ def _project(root: Path, payload: dict[str, Any]) -> dict[str, Any]:
             raise WorldVoicesError("projection_too_large", "Player-safe World Voices projection exceeds 128 bounded pages.")
         catalog = {"projection_version": 1, "generated_revision": expected_source, "page_size": page_size, "visible_count": len(summaries), "pages": pages}
         _atomic_bytes(temporary / "catalog.json", _json_bytes(catalog))
-        backup = projection_root.with_name(f".{projection_root.name}.backup")
-        if backup.exists():
-            shutil.rmtree(backup)
-        if projection_root.exists():
-            os.replace(projection_root, backup)
-        try:
-            os.replace(temporary, projection_root)
+        changes = {
+            projection_root / path.relative_to(temporary): path.read_bytes()
+            for path in temporary.rglob("*") if path.is_file()
+        }
+        for path in projection_root.rglob("*") if projection_root.exists() else []:
+            if path.is_file() and path not in changes:
+                changes[path] = None
+
+        def validate_projection() -> None:
             result = check_world_voices(root, projection="full")
             if not result["ok"]:
                 raise WorldVoicesError("projection_invalid", "Generated projection did not pass World Voices validation.")
-        except Exception:
-            if projection_root.exists():
-                shutil.rmtree(projection_root, ignore_errors=True)
-            if backup.exists():
-                os.replace(backup, projection_root)
-            raise
-        if backup.exists():
-            shutil.rmtree(backup)
-    except Exception:
+
+        commit_files(root, changes, validate_applied=validate_projection)
+    finally:
         if temporary.exists():
             shutil.rmtree(temporary, ignore_errors=True)
-        raise
     return {"ok": True, "action": "project", "revision": expected, "source_revision": expected_source, "visible_count": len(summaries), "catalog_path": "assets/world_voices/catalog.json"}
 
 
 def apply(root: Path, action: str, payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        if action == "validate":
+            assert_readable(root)
+            result = _apply_locked(root, action, payload)
+            assert_readable(root)
+            return result
+        with campaign_lock(root):
+            recover(root)
+            return _apply_locked(root, action, payload)
+    except FileTransactionError as exc:
+        raise WorldVoicesError(exc.category, str(exc), exit_code=3) from exc
+
+
+def _apply_locked(root: Path, action: str, payload: dict[str, Any]) -> dict[str, Any]:
     root = root.resolve()
     if not (root / "world_voices" / "index.json").is_file():
         raise WorldVoicesError("world_voices_missing", "Campaign has no World Voices memory. Missing configuration remains off for compatibility.")

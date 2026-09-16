@@ -38,6 +38,30 @@ must exist in the current brief. An agent may request an effect but the
 `asserted_outcomes` list must remain empty because RePoG is the sole outcome
 authority.
 
+### Portable Envelopes And Local Records
+
+The four portable schemas ship in the player ZIP. Local seat state and HTTP
+requests retain their separate storage/transport format; do not validate a raw
+local record as a portable envelope.
+
+`tools/compile_agent_brief.py` provides read-only adapters:
+
+- `compile-pack` produces the versioned Session Pack. The Python
+  `compile_state_brief(pack, next_turn)` function produces a Turn Brief from
+  the ready, bounded `agent_seat.get_next_turn` response.
+- `import-intent --input-json ...` accepts an object with `intent` and `brief`
+  fields. It checks the portable intent's turn, source revision, actor, and
+  character authority, then returns a local `request`. Submit that request
+  through the ordinary `agent_seat.submit_turn` entry point; submission checks
+  the live beat again. Translation alone writes nothing.
+- `export-resolution --input-json ...` accepts the bounded resolved next-turn
+  response and returns a portable `resolution`. It exports only visible
+  consequences; internal timestamps and local operational fields stay out.
+
+The source test suite validates a real compile → submit → resolve lifecycle
+against all four schemas, including stale-turn and unauthorized-reference
+rejections. No third-party schema package is required during ordinary play.
+
 ## Local Table Flow
 
 1. Session Zero explicitly chooses Agent Seats `off` or `on_demand` inside the

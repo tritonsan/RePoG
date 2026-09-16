@@ -56,9 +56,10 @@ Apply this short sequence:
    already recorded by `begin-exchange`. When semantic truth changed, call
    `commit-semantic` once with the gap id, expected revisions, a fresh
    operation id, a new monotonic semantic sequence, concrete evidence, and
-   only the bounded patches that changed. The durable transaction owns
-   rollback; do not run a
-   separate hot checker or Companion View patch afterward.
+   only the bounded patches and exact owner candidates that changed, using the
+   atomic owner contract below. Never pre-write a disclosure, user memory,
+   thread, or character note. The transaction owns rollback; add no separate
+   hot checker, receipt append, or Companion View patch afterward.
 7. **Speak:** send one natural character message. Do not report persistence,
    checks, ids, time bands, or internal policy.
 
@@ -100,17 +101,44 @@ or address the user. The primary agent then performs one ordered commit path:
 
 1. Freeze the revisions, evidence set, allowed sources, and target authorities.
 2. Merge only compatible, non-stale proposals.
-3. Write affected cold Markdown authorities under the coordinator's sole
-   ownership.
-4. Invoke `commit-semantic` exactly once to advance continuity and atomically
-   update `companion_state.json` plus Companion View when visible truth changed.
-5. Append the session-log or full-review marker without creating another
-   fictional revision.
-6. Run the applicable validation once, then write the character reply.
+3. Assemble exact changed Markdown owner candidates with their loaded content
+   hashes; keep the original files untouched.
+4. Invoke `commit-semantic` exactly once with the state patches, owner candidates,
+   and any append-only log marker. The same transaction owns continuity, the
+   allowed Markdown authorities, and Companion View when shared truth changes.
+5. Wait for success before reporting the change. Run the applicable full-review
+   validation once; then write the character reply.
 
-Unsupported or failed delegation falls back to the identical serial review
-without exposing orchestration to the user. Never use a second semantic commit
-merely to persist a cold-note or review-marker write.
+Unsupported or failed delegation falls back to identical serial semantics.
+A review with no changed semantic owner/state creates no fictional revision or
+fictional log event. Do not manufacture a change merely to store a review marker.
+Never use a second semantic commit for an owner or marker belonging to this result.
+
+## Atomic Owner Candidates
+
+Use optional `--owner-mutations-json` on `commit-semantic` when a result changes
+Markdown authority. Each entry has:
+
+```json
+{"path":"knowledge_boundaries.md","expected_sha256":"<loaded SHA-256>","text":"<complete model-authored candidate>"}
+```
+
+Existing owners require their exact loaded hash; a newly created permitted typed
+character/place/faction note uses `expected_sha256: null`. Submit only changed
+candidates, at most 16 owners and within the tool's size limits. Paths are relative
+to `campaign/`; profiles, derived projections, private JSON, and outside paths are
+not permitted owner candidates. Use only the helper's Companion authority allowlist.
+
+An optional `--log-marker-json` contains the loaded session-log
+`expected_sha256` and append-only `text`. It is staged in the same transaction,
+never appended beforehand or used alone to pretend a semantic change occurred.
+The tool's ordinary receipt is still created once. An owner-only semantic change
+advances continuity exactly once; unchanged candidates are not a reason to commit.
+
+On stale hash/revision, stop and reconcile against current owners before proposing
+a new operation. For an uncertain retry of the identical request, reuse its stable
+operation id and unchanged payload. Follow recovery before another exchange when
+a transaction is incomplete. Do not narrate partial owner changes as established.
 
 # Time And Independent Life
 

@@ -1,6 +1,6 @@
 # RPG Quick Session 0
 
-Load this playbook only after the router has selected `rpg + quick`. Schema-v6+
+Load this playbook only after the router has selected `rpg + quick`. Schema-v6–v8
 RPG Quick uses exactly 10 unique content-decision slots. Set
 `question_target: 10`; keep `activated_packs`, `completed_packs`, and
 `defaulted_packs` empty. The experience/depth gates and triggered Research Gate
@@ -11,6 +11,9 @@ because character or preparation work is omitted. It must follow this causal
 order:
 
 `character seed -> world scaffold -> two-way reciprocity pass -> design approval -> materialized preparation -> player-safe preparation review -> preparation approval -> readiness`
+
+Schema-v9+ Quick uses `rpg_quick_v9.md`. Its selected semantic slot guidance
+may refer here, but this legacy accounting/approval contract does not apply.
 
 # Decision Accounting
 
@@ -79,9 +82,10 @@ separate slots into one answer:
    limitation/cost/counterplay from the distribution instead of asking the Player
    to restate it, and ask only for a limit the sheet cannot express—an obligation,
    a vow, a condition, a fear, or the cost of recognition—skipping it when there is
-   none. Under fictional grounding, ask the limitation contract directly. A
-   competence that contradicts the distribution is allowed and recorded as
-   accepted. If the Player volunteers which parts of the character should be tested
+   none. Under fictional grounding, ask the limitation contract directly. A self-image or ambition may conflict with the distribution, but is not a
+   guaranteed capability. If the Player requests reliable competence beyond
+   that distribution, agree a scoped ability/ruling with its cost and limit,
+   or revise the distribution before accepting it as reliable. If the Player volunteers which parts of the character should be tested
    or left alone, record it here; otherwise infer it from the promise and show the
    inference at review. Growth cadence and presentation stay in slot 5.
 4. **Agency, Authorship, And Boundaries** — ask the content boundary first and

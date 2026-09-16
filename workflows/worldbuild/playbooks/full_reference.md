@@ -1,5 +1,12 @@
 # Worldbuild Full Reference
 
+Version note: schema-v9+ Quick/Standard use the routed `rpg_quick_v9.md` and
+`rpg_standard_v9.md` playbooks: nine Quick slots, 20 Standard modules/20–29
+content decisions, and one combined actual-preparation review/approval. The
+legacy ten-slot/21-module sections below describe preserved older routes only.
+Deep keeps its `rpg_deep_v8` flow. This cold reference does not override the
+selected versioned playbook.
+
 > Cold design reference preserving the pre-router workflow in full. Do not
 > load this file for an ordinary Session 0 turn. The compact router and
 > focused playbooks govern routing, delegation, and final readiness order;
@@ -74,7 +81,7 @@ When experience is selected and `session_zero_mode` is blank, ask only:
 
 Use these content-decision contracts:
 
-- schema-v6+ RPG Quick: exactly 10;
+- schema-v6–v8 RPG Quick: exactly 10;
 - schema-v7 RPG Standard: 21–30;
 - schema-v7 RPG Deep: 30–45;
 - Companion Quick: exactly 7;
@@ -234,8 +241,8 @@ the Player explicitly approves migration.
   stage rather than importing a generic set, offer two to four candidates, derive
   the point total and bands from the accepted axis count, record the axes with the
   campaign rules so validation follows them, and derive competence from the
-  distribution. A competence that contradicts the distribution is a legitimate
-  Player choice.
+  distribution. Conflicting self-image is aspiration, not reliable competence;
+  an exception requires an accepted scoped ruling or revised distribution.
 - Build the character as a short ordered sequence sized by route: identity core,
   character surface, desire and why-now, competence, limit, position, and change
   appetite. The surface includes the concrete physical basics—gender or
@@ -510,7 +517,7 @@ and caveat in the final confirmation.
 
 # Quick Session 0
 
-Schema-v6+ RPG Quick uses exactly 10 unique decision slots. The routing gates and
+Schema-v6–v8 RPG Quick uses exactly 10 unique decision slots. The routing gates and
 triggered Research Gate work do not count; revising a completed slot increments
 `setup_revision` but never `questions_completed`:
 

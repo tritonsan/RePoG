@@ -14,13 +14,18 @@ build a world that retains independent causality, run a two-way pass,
 materialize actual preparation, show it player-safe, and obtain revision-bound
 approval before readiness.
 
+Read `workflows/reference/setup-contract.md` once when entering setup; consult
+only the needed ownership section in `workflows/reference/authority-map.md`.
+
 # Hot Loading Rule
 
 | Situation | Load |
 | --- | --- |
-| RPG Quick interview, reciprocity review, or preparation review | `playbooks/rpg_quick.md` |
-| RPG Standard or schema-v7-and-earlier Deep | `playbooks/rpg_standard_deep.md` |
-| Schema-v8 RPG Deep | `deep_v8/manifest.json`, then only `deep_v8/<active stage>.md` |
+| Schema-v9+ RPG Quick | `playbooks/rpg_quick_v9.md` |
+| Schema-v9+ RPG Standard | `playbooks/rpg_standard_v9.md` |
+| Schema-v6–v8 RPG Quick interview, reciprocity review, or preparation review | `playbooks/rpg_quick.md` |
+| Schema-v7–v8 RPG Standard or schema-v7-and-earlier Deep | `playbooks/rpg_standard_deep.md` |
+| Deep ledger flow (schema-v8+) | `deep_v8/manifest.json`, then only `deep_v8/<active stage>.md` |
 | Companion Quick, Standard, or Deep | `playbooks/companion_setup.md` |
 | Research Gate or source work | `playbooks/research_gate.md` |
 | Final readiness boundary | `playbooks/finalization.md` |
@@ -48,8 +53,10 @@ If experience is selected and `session_zero_mode` is blank, ask only:
 Persist `quick`, `standard`, or `deep`; set status `in_progress`. Quick,
 Standard, Companion, and legacy Deep set a numeric `question_target`:
 
-- schema-v6+ RPG Quick: exactly 10;
-- schema-v7 RPG Standard: 21–30;
+- schema-v9+ RPG Quick: exactly 9;
+- schema-v9+ RPG Standard: 20–29;
+- schema-v6–v8 RPG Quick: exactly 10;
+- schema-v7–v8 RPG Standard: 21–30;
 - Companion Quick: exactly 7;
 - Companion Standard: exactly 15;
 - schema-v7 RPG Deep and Companion Deep: initially 30–45;
@@ -396,10 +403,11 @@ Derive the point total and the low, middle, and defining bands from the accepted
 axis count and starting level instead of a fixed classic total, state them, and
 ask how many points the Player wants to spend. Record the accepted axes with the
 campaign's rules so validation follows that set instead of a default count. Then
-derive competence from the distribution and confirm it. A Player may deliberately
-take a competence that contradicts their distribution; record that tension as
-accepted rather than correcting it. With fictional grounding, do the same work in
-prose and skip stat construction entirely.
+derive competence from the distribution and confirm it. A conflicting self-image
+or ambition is recorded as aspiration, not reliable capability. If reliable
+competence exceeds the distribution, explicitly revise the distribution or accept
+a scoped ability/ruling with its cost, limit, and precedence; persist that contract
+before it governs play. With fictional grounding, use prose and skip stat construction.
 
 Ask the Player about the character; derive how the world perceives them. Never
 ask the Player to decide what strangers assume, who warms to them, who distrusts
@@ -515,36 +523,23 @@ and accepted defaults. Pack lifecycle lists remain empty outside Deep.
 
 # Current RPG Reciprocity Approvals
 
-Schema-v6+ Quick and every schema-v7 RPG depth use two approvals:
+Versioned routes own their exact acceptance contract:
 
-- design direction approval after the complete reciprocity design;
-- preparation approval after actual materialized preparation is shown
-  player-safe.
+| Route | Design approval | Actual-preparation acceptance |
+| --- | --- | --- |
+| Schema-v9+ Quick | Slot 8 | Slot 9 combines factual review and readiness approval |
+| Schema-v9+ Standard | Module 19 | Module 20 combines factual review and readiness approval |
+| Schema-v6–v8 Quick | Slot 8 | Legacy slot 9 review, slot 10 approval |
+| Schema-v7–v8 Standard / schema-v7 Deep | Module 19 | Legacy module 20 review, module 21 approval |
+| Deep `rpg_deep_v8` | Its design gate | Its single combined preparation acceptance |
 
-Quick uses slots 8, 9, and 10. Schema-v7 Standard/Deep uses modules 19, 20, and
-21. In both routes:
-
-- design approval sets `design_direction_approved_revision` to the resulting
-  current setup revision;
-- substantive preparation is materialized while `ready_for_play: false`;
-- the next review shows actual prepared truth, not another proposal;
-- final preparation approval sets `preparation_approved_revision` to the
-  resulting current revision;
-- design changes clear both approvals; preparation-only changes clear the
-  preparation approval;
-- stale preparation approval cannot pass preflight.
-
-The integrated preparation review asks whether the actual player-safe
-preparation is factually accurate, complete at the promised opening scale, and
-faithful to the approved direction. Its acceptance does not authorize
-readiness.
-
-Preparation approval then asks for a separate go/no-go on that unchanged
-reviewed preparation together with the complete locked/defaulted/deferred
-record and readiness implications. It introduces no new campaign truth.
-
-Legacy Standard/Deep and Companion retain their existing final-summary approval
-unless explicitly migrated.
+Materialize actual preparation while not ready. Design changes clear both
+approvals; preparation-only changes clear preparation approval. The current
+preparation approval must match the setup revision. New routes use
+`playbooks/preparation_review_v9.md`; never ask their player to approve unchanged
+preparation twice or write a phantom legacy completion row. Deep retains its
+manifest and ledger even in a schema-v9 workspace. Legacy and Companion routes
+retain their existing final-summary behavior unless explicitly migrated.
 
 # Starter Bundles
 
@@ -612,10 +607,10 @@ For current reciprocity RPG routes:
 2. obtain design approval;
 3. materialize actual opening-scale preparation while not ready, optionally
    using bounded read-only proposal lanes;
-4. show and accept the player-safe integrated preparation review as a factual
-   accuracy and completeness check;
-5. obtain current-revision preparation approval as a separate go/no-go on that
-   unchanged reviewed preparation;
+4. show the player-safe actual preparation with its complete consequential
+   defaults/deferrals;
+5. obtain current-revision acceptance using the selected route: v9 Quick/Standard
+   and Deep v8 combine review and approval once; older routes retain their split;
 6. load `finalization.md`.
 
 For legacy Standard/Deep and Companion, load finalization after their existing

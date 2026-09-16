@@ -56,7 +56,10 @@ increase the count. A value mechanically entailed by an accepted answer is not
 an inferred default either; only a coordinator choice among plausible ordinary
 alternatives receives a stable label here.
 
-Current RPG reciprocity routes use two revision-bound approvals. Schema-v6+
+Schema-v9 Quick and Standard use design approval followed by one actual
+preparation review/approval (Quick slots 8/9; Standard modules 19/20).
+
+Legacy RPG reciprocity routes use two revision-bound approvals. Schema-v6–v8
 Quick records design approval at slot 8, reviews actual materialized
 preparation at slot 9, and records preparation approval at slot 10. Schema-v7
 Standard/Deep uses modules 19, 20, and 21 for the same boundaries. Preparation
@@ -69,15 +72,73 @@ and both approvals in `session_zero_state.json`. Its decision count is a
 fatigue signal rather than a readiness quota, and this file only displays the
 managed summary below.
 
-Quick and schema-v7 Standard/Deep use a factual integrated review followed by a
+Legacy Quick and Standard/Deep use a factual integrated review followed by a
 separate readiness go/no-go. Schema-v8 Deep combines those functions in its
 second and final Player approval: show the audited preparation once and ask the
 Player to request a correction or `lock and start`. No route may introduce new
 campaign truth during readiness approval.
 
+## RPG Quick v9 Decision Slot Status
+
+Use only for schema-v9 RPG Quick. Design approval is slot 8; actual
+preparation review and approval share slot 9. All legacy status blocks stay open.
+
+- 1. Campaign Promise And Player Fantasy: open
+- 2. Character Identity, Current Desire, And Why Now: open
+- 3. Competence, Limitation, And Social Position: open
+- 4. Agency, Authorship, And Boundaries: open
+- 5. Play And System Contract: open
+- 6. Presentation Contract: open
+- 7. Character–World Relationship Pattern: open
+- 8. Reciprocity Design Review: open
+- 9. Preparation Review And Approval: open
+
+### Quick v9 Approval References
+
+- Design direction approved revision: null
+- Preparation materialized while ready_for_play false: no
+- Integrated preparation reviewed player-safe: no
+- Preparation approved revision: null
+- Approval invalidation notes:
+
+## RPG Standard v9 Module Status
+
+Use only for schema-v9 RPG Standard. Design approval is module 19; actual
+preparation review and approval share module 20. Additional meaningful
+decisions may bring the total to 29; revisions do not add decisions.
+
+- 1. Campaign Promise And Player Fantasy: open
+- 2. Research Need And Source Boundary: open
+- 3. Agency, Authorship, And Content Boundaries: open
+- 4. Character Identity, Current Desire, And Why Now: open
+- 5. Competence, Limitation, Social Position, And Change Appetite: open
+- 6. Play And System Contract: open
+- 7. Presentation And Visual Contract: open
+- 8. Canon Policy: open
+- 9. Palette: open
+- 10. World Truths And Operating Model: open
+- 11. Scale, Everyday Life, Access, And Routes: open
+- 12. Independent Issues And World Dynamics: open
+- 13. Factions And Institutions: open
+- 14. Faces, Places, And Independent Relationships: open
+- 15. Progression And Rewards: open
+- 16. Character–World Reciprocity Pass: open
+- 17. Starting Situation Design: open
+- 18. Continuity, Ownership, And Preparation Contract: open
+- 19. Reciprocity Design Review: open
+- 20. Preparation Review And Approval: open
+
+### Standard v9 Approval References
+
+- Design direction approved revision: null
+- Preparation materialized while ready_for_play false: no
+- Integrated preparation reviewed player-safe: no
+- Preparation approved revision: null
+- Approval invalidation notes:
+
 ## RPG Quick Decision Slot Status
 
-Use this block only for schema-v6+ `rpg + quick`. Standard/Deep use their
+Use this block only for schema-v6–v8 `rpg + quick`. Standard/Deep use their
 schema-appropriate status block; Companion uses its own block. A revised
 completed slot keeps its completed count and receives a newer setup revision.
 
@@ -102,7 +163,7 @@ completed slot keeps its completed count and receives a newer setup revision.
 
 ## RPG Standard / Deep Reciprocity Module Status
 
-Use this block only for schema-v7 `rpg + standard|deep`. Quick uses its 10-slot
+Use this block for schema-v7–v8 RPG Standard or schema-v7 RPG Deep. Quick uses its 10-slot
 block; schema-v1–v6 Standard/Deep and legacy Quick use the legacy Module Status
 block. A revised completed module keeps its completed count and receives a
 newer setup revision.

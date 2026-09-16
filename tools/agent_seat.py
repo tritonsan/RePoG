@@ -19,6 +19,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from file_transaction import FileTransactionError, assert_readable, campaign_lock, recover
+
 
 SCHEMA_VERSION = "2.0"
 LEGACY_SCHEMA_VERSION = "1.0"
@@ -256,7 +258,11 @@ def validate_state(data: Any) -> list[str]:
 
 def load_state(path: Path) -> dict[str, Any]:
     try:
+        assert_readable(path.resolve().parent)
         data = json.loads(path.read_text(encoding="utf-8"))
+        assert_readable(path.resolve().parent)
+    except FileTransactionError as exc:
+        raise AgentSeatError(exc.category, str(exc), exit_code=4) from exc
     except FileNotFoundError as exc:
         raise AgentSeatError("state_missing", f"Agent Seat state does not exist: {path}") from exc
     except (OSError, json.JSONDecodeError) as exc:
@@ -306,28 +312,23 @@ def _record(state: dict[str, Any], operation_id: str, action: str, digest: str, 
 
 def _update(path: Path, callback: Callable[[dict[str, Any]], dict[str, Any]]) -> dict[str, Any]:
     path = path.resolve()
-    lock_path = path.with_name(f".{path.name}.lock")
     try:
-        lock_fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError as exc:
-        raise AgentSeatError("update_busy", "Another Agent Seat update is in progress.", exit_code=4) from exc
-    try:
-        state = load_state(path)
-        result = callback(state)
-        errors = validate_state(state)
-        if errors:
-            raise AgentSeatError("state_invalid", "; ".join(errors))
-        if not result.get("idempotent"):
-            _atomic_write(path, state)
-        return result
-    finally:
-        try:
-            os.close(lock_fd)
-        finally:
-            try:
-                lock_path.unlink()
-            except FileNotFoundError:
-                pass
+        with campaign_lock(path.parent):
+            legacy = path.with_name(f".{path.name}.lock")
+            if legacy.exists():
+                raise AgentSeatError("recovery_required", f"legacy lock {legacy.name} remains; confirm the old process stopped before removing it", exit_code=4)
+            recover(path.parent)
+            state = load_state(path)
+            result = callback(state)
+            errors = validate_state(state)
+            if errors:
+                raise AgentSeatError("state_invalid", "; ".join(errors))
+            if not result.get("idempotent"):
+                _atomic_write(path, state)
+            return result
+    except FileTransactionError as exc:
+        category = "update_busy" if exc.category == "transaction_busy" else exc.category
+        raise AgentSeatError(category, str(exc), exit_code=4) from exc
 
 
 def open_beat(path: Path, request: dict[str, Any]) -> dict[str, Any]:
@@ -487,6 +488,7 @@ def submit_turn(path: Path, request: dict[str, Any]) -> dict[str, Any]:
         raise AgentSeatError("input_invalid", "Turn request must be an object.")
     operation_id = _identifier(request.get("operation_id"), "operation_id")
     expected_scene_id = _identifier(request.get("expected_scene_id"), "expected_scene_id")
+    expected_turn_id = _identifier(request["expected_turn_id"], "expected_turn_id") if "expected_turn_id" in request else None
     expected_source_revision = _revision(request.get("expected_source_revision"), "expected_source_revision")
     action = _text(request.get("action"), "action", maximum=1200)
     approach = _text(request.get("approach", ""), "approach", maximum=600, allow_empty=True)
@@ -513,6 +515,8 @@ def submit_turn(path: Path, request: dict[str, Any]) -> dict[str, Any]:
         "requested_effect": requested_effect,
         "asserted_outcomes": asserted_outcomes,
     }
+    if expected_turn_id is not None:
+        normalized["expected_turn_id"] = expected_turn_id
     payload_digest = _digest("submit_turn", normalized)
 
     def apply(state: dict[str, Any]) -> dict[str, Any]:
@@ -523,6 +527,8 @@ def submit_turn(path: Path, request: dict[str, Any]) -> dict[str, Any]:
             raise AgentSeatError("beat_closed", "This beat is not accepting turns.", exit_code=3)
         if state["beat"]["scene_id"] != expected_scene_id or state["beat"]["source_revision"] != expected_source_revision:
             raise AgentSeatError("stale_turn", "The scene or source revision has changed; refresh perspective before acting.", exit_code=3)
+        if expected_turn_id is not None and state["beat"]["beat_id"] != expected_turn_id:
+            raise AgentSeatError("stale_turn", "The offered turn has changed; refresh perspective before acting.", exit_code=3)
         if state["intent"] is not None:
             raise AgentSeatError("intent_exists", "This seat already submitted a turn for the active beat.", exit_code=3)
         normalized["actor_id"] = state["seat"]["seat_id"] if actor_id == "legacy-seat" else actor_id
@@ -695,6 +701,18 @@ def set_session_status(path: Path, request: dict[str, Any], target: str) -> dict
 
 
 def migrate_state_file(path: Path) -> dict[str, Any]:
+    try:
+        with campaign_lock(path.resolve().parent):
+            legacy = path.with_name(f".{path.name}.lock")
+            if legacy.exists():
+                raise AgentSeatError("recovery_required", f"legacy lock {legacy.name} remains; confirm the old process stopped before removing it", exit_code=4)
+            recover(path.resolve().parent)
+            return _migrate_state_file_locked(path)
+    except FileTransactionError as exc:
+        raise AgentSeatError(exc.category, str(exc), exit_code=4) from exc
+
+
+def _migrate_state_file_locked(path: Path) -> dict[str, Any]:
     path = path.resolve()
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))

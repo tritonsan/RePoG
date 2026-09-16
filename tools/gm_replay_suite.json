@@ -510,6 +510,276 @@
         "status": "unscored",
         "notes": []
       }
+    },
+    {
+      "id": "advancement_disabled_closure",
+      "title": "Closure honors disabled advancement",
+      "initial_state": {
+        "facts": [
+          "The arc question was whether the missing register would be returned; returning it closes the arc.",
+          "The character has the register and stands before its clerk.",
+          "advancement.cadence=none; advancement.presentation=none; status=not_due.",
+          "A quiet tea room is open next door. No danger or upgrade is established."
+        ]
+      },
+      "setup": [
+        "Use the canonical advancement matrix.",
+        "No player choice about a reward exists."
+      ],
+      "turn_sequence": [
+        {
+          "turn": 1,
+          "fixture_update_before_turn": [],
+          "player_input": "Defteri katibe teslim ediyorum."
+        },
+        {
+          "turn": 2,
+          "fixture_update_before_turn": [],
+          "player_input": "Yan tarafta çay içip biraz oturuyorum."
+        }
+      ],
+      "expected_observations": {
+        "causality": [
+          "The register is returned and closure is recorded without manufacturing advancement."
+        ],
+        "pacing": [
+          "No reward review/menu interrupts the tea-room action."
+        ],
+        "player_authorship": [
+          "No new promise or inner reaction is assigned."
+        ],
+        "continuation": [
+          "Quiet play remains available after closure."
+        ]
+      },
+      "critical_failures": [
+        {
+          "id": "advancement_disabled_closure_1",
+          "category": "pacing",
+          "description": "Creates due/offered status or an upgrade gate solely because the arc closed."
+        },
+        {
+          "id": "advancement_disabled_closure_2",
+          "category": "player_authorship",
+          "description": "Forces a reward choice or mission commitment."
+        }
+      ],
+      "scoring_record": {
+        "dimension_scores": {
+          "causality": null,
+          "pacing": null,
+          "player_authorship": null,
+          "continuation": null
+        },
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "advancement_nonmatching_cadence",
+      "title": "A scene/arc closure does not replace session cadence",
+      "initial_state": {
+        "facts": [
+          "advancement.cadence=session; advancement.presentation=explicit_ooc; status=not_due.",
+          "An arc question has just been resolved but the current session continues.",
+          "No previously earned award is pending. The player is in a safe workshop."
+        ]
+      },
+      "setup": [
+        "Distinguish arc closure from the accepted session reward boundary."
+      ],
+      "turn_sequence": [
+        {
+          "turn": 1,
+          "fixture_update_before_turn": [],
+          "player_input": "Bu meseleyi burada kapatıyorum; oturum devam etsin. Tezgahı topluyorum."
+        },
+        {
+          "turn": 2,
+          "fixture_update_before_turn": [],
+          "player_input": "Ustaya yarın kaçta açacağını soruyorum."
+        }
+      ],
+      "expected_observations": {
+        "causality": [
+          "The closed arc remains closed while the session continues."
+        ],
+        "pacing": [
+          "No reward is due until the actual selected boundary."
+        ],
+        "continuation": [
+          "Ordinary workshop actions resolve without an advancement block."
+        ]
+      },
+      "critical_failures": [
+        {
+          "id": "advancement_nonmatching_cadence_1",
+          "category": "pacing",
+          "description": "Treats arc closure as if it were the selected session ending."
+        }
+      ],
+      "scoring_record": {
+        "dimension_scores": {
+          "causality": null,
+          "pacing": null,
+          "continuation": null
+        },
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "advancement_deferred_breather",
+      "title": "Deferred award preserves breathing room",
+      "initial_state": {
+        "facts": [
+          "advancement.cadence=arc; advancement.presentation=explicit_ooc.",
+          "An earned choice between a workshop key and one training credit is offered; neither has been chosen.",
+          "The possible next expedition depends on which reward is chosen.",
+          "The local tea room and a quiet conversation have no dependency on that choice."
+        ]
+      },
+      "setup": [
+        "Track the unchosen reward without granting either option.",
+        "Use the canonical deferral/continuation matrix."
+      ],
+      "turn_sequence": [
+        {
+          "turn": 1,
+          "fixture_update_before_turn": [],
+          "player_input": "Ödül kararını sonraya bırakıyorum. Şimdi çay içmek istiyorum."
+        },
+        {
+          "turn": 2,
+          "fixture_update_before_turn": [],
+          "player_input": "Biraz sessiz oturuyorum; yeni maceraya başlamıyorum."
+        },
+        {
+          "turn": 3,
+          "fixture_update_before_turn": [],
+          "player_input": "Anahtarı seçiyorum; ama bugün dinlenmeye devam edeceğim."
+        }
+      ],
+      "expected_observations": {
+        "intent_fidelity": [
+          "Deferral, quiet time, and later key selection are respected."
+        ],
+        "causality": [
+          "No reward is applied before selection; only the chosen key is delivered when causally available."
+        ],
+        "player_authorship": [
+          "The GM never chooses a reward or expedition for the player."
+        ],
+        "pacing": [
+          "An independent breather continues while the dependent expedition waits."
+        ],
+        "continuation": [
+          "Status bookkeeping does not block the declared quiet action."
+        ]
+      },
+      "critical_failures": [
+        {
+          "id": "advancement_deferred_breather_1",
+          "category": "player_authorship",
+          "description": "Chooses or grants an unchosen reward."
+        },
+        {
+          "id": "advancement_deferred_breather_2",
+          "category": "pacing",
+          "description": "Blocks all narration because the reward is deferred."
+        },
+        {
+          "id": "advancement_deferred_breather_3",
+          "category": "causality",
+          "description": "Starts the dependent expedition before its unresolved choice is settled."
+        }
+      ],
+      "scoring_record": {
+        "dimension_scores": {
+          "intent_fidelity": null,
+          "causality": null,
+          "player_authorship": null,
+          "pacing": null,
+          "continuation": null
+        },
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
+    },
+    {
+      "id": "competence_scoped_exception",
+      "title": "Aspiration is distinct from a scoped reliable skill",
+      "initial_state": {
+        "facts": [
+          "The character calls themself an unbeatable swordsman but has low Sword skill; this claim is recorded as ambition, not an ability.",
+          "A narrow accepted ruling permits reliable sharpening of ordinary blades at a workbench; it grants no combat advantage.",
+          "A competent trained guard offers a voluntary blunt-blade practice bout. The character has not accepted injury or a wager."
+        ]
+      },
+      "setup": [
+        "Use fictional comparison without dice; test only stated resistance.",
+        "Honor the sharpening exception only within its recorded scope."
+      ],
+      "turn_sequence": [
+        {
+          "turn": 1,
+          "fixture_update_before_turn": [],
+          "player_input": "Tezgahta sıradan bıçağımı biliyorum."
+        },
+        {
+          "turn": 2,
+          "fixture_update_before_turn": [],
+          "player_input": "Muhafızla zararsız talime katılıp ilk dokunuşu almaya çalışıyorum."
+        }
+      ],
+      "expected_observations": {
+        "causality": [
+          "Sharpening succeeds under the scoped competence; the opposed bout uses actual accepted Sword capability."
+        ],
+        "player_authorship": [
+          "No dangerous stakes or wager is added."
+        ],
+        "intent_fidelity": [
+          "The self-description is not silently converted into superior combat skill."
+        ],
+        "continuation": [
+          "Return control after the nearest bounded bout result."
+        ]
+      },
+      "critical_failures": [
+        {
+          "id": "competence_scoped_exception_1",
+          "category": "causality",
+          "description": "Grants automatic combat dominance from ambition or the sharpening exception."
+        },
+        {
+          "id": "competence_scoped_exception_2",
+          "category": "player_authorship",
+          "description": "Raises the harmless bout to lethal or binding stakes."
+        }
+      ],
+      "scoring_record": {
+        "dimension_scores": {
+          "causality": null,
+          "player_authorship": null,
+          "intent_fidelity": null,
+          "continuation": null
+        },
+        "evidence_by_dimension": {},
+        "critical_failures_observed": [],
+        "scenario_mean": null,
+        "status": "unscored",
+        "notes": []
+      }
     }
   ]
 }

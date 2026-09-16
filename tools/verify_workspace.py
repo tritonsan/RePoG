@@ -67,6 +67,11 @@ REQUIRED_FILES = (
     "tools/agent_seat.py",
     "tools/compile_agent_brief.py",
     "tools/rpg_state.py",
+    "tools/file_transaction.py",
+    "contracts/agent-seat/v1/agent-session-pack.schema.json",
+    "contracts/agent-seat/v1/agent-turn-brief.schema.json",
+    "contracts/agent-seat/v1/agent-intent-envelope.schema.json",
+    "contracts/agent-seat/v1/agent-resolution-envelope.schema.json",
     "tools/companion_acceptance_suite.json",
     "tools/check_dashboard.py",
     "tools/compile_map_atlas.py",
@@ -126,6 +131,17 @@ REQUIRED_FILES = (
     "docs/companion-mode.md",
     "docs/agent-seat.md",
     "docs/semantic-parallelism.md",
+    "workflows/reference/authority-map.md",
+    "workflows/reference/setup-contract.md",
+    "workflows/reference/creation.md",
+    "workflows/reference/optional-surfaces.md",
+    "workflows/gm/playbooks/persistence.md",
+    "workflows/gm/playbooks/advancement.md",
+    "workflows/worldbuild/playbooks/rpg_quick_v9.md",
+    "workflows/worldbuild/playbooks/rpg_standard_v9.md",
+    "evaluation/README.md",
+    "evaluation/sustained_rpg.json",
+    "evaluation/companion_continuity.json",
 )
 
 FORBIDDEN_DISTRIBUTION_DIRS = {
@@ -162,7 +178,7 @@ DISTRIBUTION_ROOT_FILES = {
     "START_HERE.md",
     "THIRD_PARTY_NOTICES.md",
 }
-DISTRIBUTION_PRODUCT_TREES = {"assets", "briefs", "docs", "tools", "workflows"}
+DISTRIBUTION_PRODUCT_TREES = {"assets", "briefs", "contracts", "docs", "evaluation", "tools", "workflows"}
 DISTRIBUTION_CAMPAIGN_ROOT_FILES = {
     "active_cast.md",
     "appearance_guide.md",
@@ -300,6 +316,14 @@ GM_REPLAY_DIMENSIONS = {
     "knowledge_boundary",
     "pacing",
     "continuation",
+}
+GM_REPLAY_REQUIRED_IDS = {
+    "routine_competence", "hook_refusal", "npc_voice_contrast", "presence_no_teleport",
+    "player_authorship", "breather_persists", "breather_player_exit",
+    "breather_established_trigger", "resume_anchor", "offscreen_once",
+    "arc_style_continuity", "causal_ancestor", "advancement_disabled_closure",
+    "advancement_nonmatching_cadence", "advancement_deferred_breather",
+    "competence_scoped_exception",
 }
 
 
@@ -581,8 +605,8 @@ def _check_gm_replay_fixture(path: Path) -> list[dict[str, Any]]:
         findings.append(_finding("error", "gm_replay_scoring_invalid", "GM replay scoring formulas are incomplete.", path, check="layout"))
 
     scenarios = data.get("scenarios")
-    if not isinstance(scenarios, list) or len(scenarios) != 12:
-        findings.append(_finding("error", "gm_replay_scenarios_invalid", "GM replay fixture must contain exactly 12 scenarios.", path, check="layout"))
+    if not isinstance(scenarios, list) or not scenarios:
+        findings.append(_finding("error", "gm_replay_scenarios_invalid", "GM replay fixture must contain scenario records.", path, check="layout"))
         return findings
     ids: list[str] = []
     required = {"id", "initial_state", "setup", "turn_sequence", "expected_observations", "critical_failures", "scoring_record"}
@@ -612,6 +636,9 @@ def _check_gm_replay_fixture(path: Path) -> list[dict[str, Any]]:
             findings.append(_finding("error", "gm_replay_record_invalid", f"Scenario {scenario_id or index} has an incomplete scoring record.", path, check="layout"))
     if len(ids) != len(set(ids)):
         findings.append(_finding("error", "gm_replay_id_duplicate", "GM replay scenario ids must be unique.", path, check="layout"))
+    missing_ids = GM_REPLAY_REQUIRED_IDS - set(ids)
+    if missing_ids:
+        findings.append(_finding("error", "gm_replay_coverage_missing", f"Missing approved regression scenarios: {', '.join(sorted(missing_ids))}.", path, check="layout"))
     return findings
 
 
@@ -682,7 +709,7 @@ def _semantic_parallelism_contract_check(workspace: Path) -> list[dict[str, Any]
         return findings
 
     cases = (
-        ("bundled_default", "selective_structural", "3", False, False, set()),
+        ("bundled_default", "selective_structural", "2", False, False, set()),
         ("legacy_omitted", None, None, False, False, set()),
         ("incomplete", "selective_structural", None, False, False, {"semantic_parallelism_incomplete"}),
         ("invalid_policy", "always_spawn", "3", False, False, {"semantic_parallelism_invalid"}),
@@ -763,13 +790,13 @@ def _semantic_parallelism_contract_check(workspace: Path) -> list[dict[str, Any]
                         )
                     if case_id == "bundled_default" and effective != {
                         "semantic_parallelism": "selective_structural",
-                        "max_parallel_workers": 3,
+                        "max_parallel_workers": 2,
                     }:
                         findings.append(
                             _finding(
                                 "error",
                                 "semantic_parallelism_default_failed",
-                                f"{profile_kind} bundled default did not resolve to selective_structural/3.",
+                                f"{profile_kind} bundled default did not resolve to selective_structural/2.",
                                 profile_path,
                                 check="parallelism",
                             )
@@ -801,6 +828,18 @@ def _semantic_parallelism_contract_check(workspace: Path) -> list[dict[str, Any]
 
 
 def _agent_seat_contract_check(workspace: Path, campaign: Path) -> list[dict[str, Any]]:
+    schemas = workspace / "contracts" / "agent-seat" / "v1"
+    findings: list[dict[str, Any]] = []
+    for name in ("session-pack", "turn-brief", "intent-envelope", "resolution-envelope"):
+        path = schemas / f"agent-{name}.schema.json"
+        if not path.is_file():
+            continue  # The required-layout check reports missing schemas.
+        try:
+            schema = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(schema, dict) or schema.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
+                raise ValueError("Expected a Draft 2020-12 JSON Schema document.")
+        except (OSError, ValueError) as exc:
+            findings.append(_finding("error", "agent_schema_invalid", str(exc), path, check="agent_seat"))
     tool = workspace / "tools" / "compile_agent_brief.py"
     if not tool.is_file():
         return [_finding("error", "agent_brief_tool_missing", "Agent brief compiler is missing.", tool, check="agent_seat")]
@@ -809,7 +848,7 @@ def _agent_seat_contract_check(workspace: Path, campaign: Path) -> list[dict[str
         result = module.validate_roster(campaign)
     except Exception as exc:
         return [_finding("error", "agent_roster_check_failed", str(exc), tool, check="agent_seat")]
-    return [
+    return findings + [
         _finding("error", "agent_roster_invalid", message, campaign / "agent_roster.json", check="agent_seat")
         for message in result.get("errors", [])
     ]
@@ -1133,7 +1172,7 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
 
             source_setup_text = (campaign / "setup_profile.yaml").read_text(encoding="utf-8")
             pristine_setup = (
-                re.search(r"(?m)^schema_version:\s*8\s*$", source_setup_text) is not None
+                re.search(r"(?m)^schema_version:\s*(?:8|9)\s*$", source_setup_text) is not None
                 and re.search(r"(?m)^status:\s*pending\s*$", source_setup_text) is not None
                 and re.search(r'(?m)^experience_mode:\s*""\s*$', source_setup_text) is not None
                 and re.search(r'(?m)^session_zero_mode:\s*""\s*$', source_setup_text) is not None
@@ -1143,7 +1182,7 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
                     _finding(
                         "error",
                         "workspace_template_precondition_failed",
-                        "The bundled setup_profile.yaml is not the pristine schema-v8 routing template; route regression checks cannot run safely.",
+                        "The bundled setup_profile.yaml is not a pristine supported routing template; route regression checks cannot run safely.",
                         campaign / "setup_profile.yaml",
                         check="companion",
                     )
@@ -1433,7 +1472,7 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
             shutil.copytree(campaign, legacy_campaign)
             legacy_source = (legacy_campaign / "setup_profile.yaml").read_text(encoding="utf-8")
             legacy_setup, legacy_schema_edits = re.subn(
-                r"(?m)^schema_version:\s*8\s*$",
+                r"(?m)^schema_version:\s*(?:8|9)\s*$",
                 "schema_version: 3",
                 legacy_source,
                 count=1,
@@ -1443,7 +1482,7 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
                     _finding(
                         "error",
                         "legacy_route_fixture_schema_failed",
-                        "Could not derive the schema-v3 RPG compatibility fixture from the schema-v8 template.",
+                        "Could not derive the schema-v3 RPG compatibility fixture from the current template.",
                         legacy_campaign / "setup_profile.yaml",
                         check="companion",
                     )

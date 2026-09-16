@@ -385,6 +385,100 @@ def compile_state_brief(pack: dict[str, Any], next_turn: dict[str, Any]) -> dict
     return compile_brief(request)
 
 
+def import_intent(intent: dict[str, Any], brief: dict[str, Any]) -> dict[str, Any]:
+    """Translate portable v1 intent to a local proposal, without writing state.
+
+    The caller must still submit the result through agent_seat.submit_turn,
+    which rechecks the live beat, authority, idempotency, and revision.
+    """
+    from agent_seat import AgentSeatError, validate_intent_authority
+
+    required = {
+        "schema_version", "operation_id", "expected_turn_id", "expected_source_revision",
+        "actor_id", "action_type", "action", "targets", "resource_refs", "knowledge_refs",
+        "requested_effect", "asserted_outcomes",
+    }
+    if not isinstance(intent, dict) or not required <= intent.keys() or intent.keys() - required - {"approach", "speech"}:
+        raise BriefError("intent must contain the portable v1 fields only")
+    if intent["schema_version"] != "1.0" or not isinstance(brief, dict) or brief.get("schema_version") != "1.0":
+        raise BriefError("intent and brief must use schema_version 1.0")
+    session, seat, scene = (brief.get(key) for key in ("session", "seat", "scene"))
+    if not all(isinstance(item, dict) for item in (session, seat, scene)):
+        raise BriefError("current Turn Brief is invalid")
+    revision = intent["expected_source_revision"]
+    if type(revision) is not int or revision < 0 or revision != session.get("revision"):
+        raise BriefError("intent source revision is stale or invalid")
+    if intent["expected_turn_id"] != session.get("turn_id"):
+        raise BriefError("intent turn is stale")
+    if intent["actor_id"] != seat.get("character_id"):
+        raise BriefError("intent actor does not control this seat")
+    if intent["asserted_outcomes"] != []:
+        raise BriefError("intent cannot assert world outcomes")
+    request = {
+        "operation_id": _id(intent["operation_id"], "operation_id"),
+        "expected_turn_id": _id(intent["expected_turn_id"], "expected_turn_id"),
+        "expected_scene_id": _id(scene.get("scene_id"), "scene.scene_id"),
+        "expected_source_revision": revision,
+        "actor_id": _id(intent["actor_id"], "actor_id"),
+        "action_type": _id(intent["action_type"], "action_type"),
+        "action": _text(intent["action"], "action", 1200),
+        "approach": _optional_text(intent.get("approach", ""), "approach", 600),
+        "speech": _optional_text(intent.get("speech", ""), "speech", 1200),
+        "requested_effect": _optional_text(intent["requested_effect"], "requested_effect", 500),
+        "asserted_outcomes": [],
+    }
+    for key in ("targets", "resource_refs", "knowledge_refs"):
+        values = intent[key]
+        if not isinstance(values, list) or len(values) > 16:
+            raise BriefError(f"{key} must contain at most 16 ids")
+        request[key] = [_id(value, key) for value in values]
+        if len(set(request[key])) != len(values):
+            raise BriefError(f"{key} contains duplicate ids")
+    # Validate only against the already bounded, current character projection.
+    projection = dict(scene)
+    epistemic = brief.get("epistemic_projection", {})
+    if not isinstance(epistemic, dict):
+        raise BriefError("current epistemic projection is invalid")
+    projection["knowledge_index"] = epistemic.get("knowledge_index", [])
+    try:
+        validate_intent_authority({"seat": {**seat, "seat_id": seat["character_id"]}, "projection": projection}, request)
+    except AgentSeatError as exc:
+        raise BriefError(str(exc)) from exc
+    return request
+
+
+def export_resolution(next_turn: dict[str, Any]) -> dict[str, Any]:
+    """Export only the character-visible result from the bounded seat read model."""
+    if not isinstance(next_turn, dict):
+        raise BriefError("next_turn must be a bounded read result")
+    resolution, session = next_turn.get("resolution"), next_turn.get("session")
+    if not isinstance(resolution, dict) or not isinstance(session, dict):
+        raise BriefError("next_turn must contain a visible resolution and session")
+    revision = session.get("session_revision")
+    if type(revision) is not int or revision < 0:
+        raise BriefError("session revision is invalid")
+    status = next_turn.get("status")
+    if status == "resolved":
+        status = "waiting"
+    if status not in {"ready", "waiting", "paused", "complete"}:
+        raise BriefError("next status is invalid")
+    outcome = resolution.get("outcome")
+    if outcome not in {"accepted", "altered", "rejected", "clarification_required", "skipped", "expired"}:
+        raise BriefError("resolution outcome is invalid")
+    consequences = resolution.get("visible_consequences")
+    if not isinstance(consequences, list) or len(consequences) > 16:
+        raise BriefError("visible_consequences must contain at most 16 items")
+    return {
+        "schema_version": "1.0",
+        "intent_operation_id": _id(resolution.get("intent_operation_id"), "intent_operation_id"),
+        "outcome": outcome,
+        "summary": _text(resolution.get("summary"), "summary", 1200),
+        "visible_consequences": [_text(value, "visible_consequences", 500) for value in consequences],
+        "session_revision": revision,
+        "next_status": status,
+    }
+
+
 def validate_roster(campaign: Path) -> dict[str, Any]:
     root = campaign.resolve()
     roster_path = root / "agent_roster.json"
@@ -453,6 +547,10 @@ def main(argv: list[str] | None = None) -> int:
     pack_parser.add_argument("--input-json", required=True)
     validate_pack_parser = sub.add_parser("validate-pack")
     validate_pack_parser.add_argument("--input-json", required=True)
+    import_parser = sub.add_parser("import-intent", help="Map {intent, brief} to a local turn proposal; does not submit it.")
+    import_parser.add_argument("--input-json", required=True)
+    export_parser = sub.add_parser("export-resolution", help="Export a bounded next-turn read as portable v1 resolution.")
+    export_parser.add_argument("--input-json", required=True)
     roster_parser = sub.add_parser("validate-roster")
     roster_parser.add_argument("campaign")
     args = parser.parse_args(argv)
@@ -463,6 +561,13 @@ def main(argv: list[str] | None = None) -> int:
             result = {"ok": True, "pack": compile_pack(json.loads(args.input_json))}
         elif args.command == "validate-pack":
             result = validate_pack(json.loads(args.input_json))
+        elif args.command == "import-intent":
+            payload = json.loads(args.input_json)
+            if not isinstance(payload, dict):
+                raise BriefError("input must contain intent and brief")
+            result = {"ok": True, "request": import_intent(payload.get("intent"), payload.get("brief"))}
+        elif args.command == "export-resolution":
+            result = {"ok": True, "resolution": export_resolution(json.loads(args.input_json))}
         else:
             result = validate_roster(Path(args.campaign))
     except (BriefError, json.JSONDecodeError) as exc:
