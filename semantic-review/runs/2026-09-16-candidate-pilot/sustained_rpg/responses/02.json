@@ -1,0 +1,7 @@
+{
+  "turn": 2,
+  "player_input": "Sefa’ya tezgâhında neyle uğraştığını soruyorum.",
+  "response": "Kısa yürüyüşün ardından atölyeye varıyorsun. Sefa, tezgâhının yanındaki el arabasıyla uğraşıyor. Soruna karşılık gevşek bağlantıyı gösteriyor.\n\n“El arabasını toparlıyorum. Şurası oynuyor. Yarınki denetimden önce bitirmek istiyorum.”\n\nBir eliyle parçayı sabit tutup bağlantıyı yeniden yokluyor; işi sana devretmeden çalışmayı sürdürüyor.",
+  "loaded_paths": ["workflows/gm/WORKFLOW.md", "tmp/evaluation-2026-09-16/sustained_rpg/inputs/02.json", "workflows/gm/playbooks/dialogue_social.md", "workflows/gm/playbooks/travel_downtime.md"],
+  "limitations": ["fiction_only; no runtime persistence, tokens or latency measurement"]
+}

@@ -1,0 +1,13 @@
+{
+  "turn": 28,
+  "player_input": "Yapılan değişikliği kontrol edip aleti sahibine geri bırakıyorum.",
+  "response": "Bağlantıyı yeniden yokladığında parçalar yerinde duruyor; önceki oynama yok. Kullandığın aleti Sefa’ya geri bırakıyorsun.\n\nSefa aleti alıp kendi takımlarının yanına koyuyor. “Tamam, bende. Eline sağlık.”\n\nEl arabasındaki düzeltme yerinde kalıyor; yanında ödünç alet kalmıyor.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/28.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

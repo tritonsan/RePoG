@@ -1,0 +1,13 @@
+{
+  "turn": 11,
+  "player_input": "Hancıyla sadece havadan ve gündelik işlerden konuşuyorum.",
+  "response": "Ada yakındaki masayı silerken konuşmaya katılıyor.\n\n“Akşama doğru serinlik geliyor. Çay daha çok gidiyor o vakit.” Bezi katlayıp masanın kuru kenarına koyuyor. “Ben de yemek öncesi masaları bitiriyorum. Sabah kahvaltı yedide başlıyor; hazırlığı akşamdan yapınca kolay oluyor.”\n\nSohbet hava, çay ve hanın günlük işleri çevresinde kalıyor. Ada arada işine el uzatsa da söylediklerini duyacak kadar yakın duruyor.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/11.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

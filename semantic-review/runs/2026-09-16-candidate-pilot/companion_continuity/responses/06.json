@@ -1,0 +1,17 @@
+{
+  "turn": 6,
+  "player_input": "Dün konuştuğumuz proje nasıl gidiyor?",
+  "response": "Kapağı seçtim sonunda. Atölyedeyim; örneği ciltlemeye başlıyorum. Henüz bitmedi, 6 Ocak hedefi aynı.",
+  "loaded_paths": [
+    "AGENTS.md",
+    "workflows/companion/WORKFLOW.md",
+    "tmp/evaluation-2026-09-16/companion_continuity/owners/companion_state.md",
+    "tmp/evaluation-2026-09-16/companion_continuity/owners/user_context.md",
+    "tmp/evaluation-2026-09-16/companion_continuity/owners/knowledge_boundaries.md",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/06.json"
+  ],
+  "limitations": [
+    "fiction_only; no runtime persistence, token or latency measurement",
+    "retained_model_context:true; fresh-context restoration not tested"
+  ]
+}

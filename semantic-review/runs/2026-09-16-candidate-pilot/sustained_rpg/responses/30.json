@@ -1,0 +1,13 @@
+{
+  "turn": 30,
+  "player_input": "Bana ödül seçimi sunulursa sonraya bırakıyorum. Şimdi öğle yemeğine gitmek istiyorum.",
+  "response": "OOC: Seçimi erteliyoruz. Atölye kullanımı veya bir eğitim hakkı arasındaki kazanımın harcanmadan bekliyor; henüz hiçbirini seçmiş ya da kullanmış değilsin. Öğle yemeğine gitmen bunu kaybettirmez.\n\nRıhtımdan ayrılıp hana yürüyorsun. İçeride öğle yemeği hazırlığı var; yemek salonunda oturabileceğin bir masa açık. Denetimde tamamladığın iş geride kalıyor.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/30.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

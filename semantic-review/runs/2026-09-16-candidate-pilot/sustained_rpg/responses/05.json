@@ -1,0 +1,7 @@
+{
+  "turn": 5,
+  "player_input": "Örneği Sefa’ya geri veriyorum; ödünç almış olmayayım.",
+  "response": "Sefa düzelttiğin örneği alıp kendi tezgâhına koyuyor. “Tamam, bende.”\n\nÖrnek onda kalıyor. Kullandığın rende de atölyenin çalışma alanında; yanında götürülmek üzere ayrılmış bir eşya yok. Sefa yeniden el arabasına eğiliyor.",
+  "loaded_paths": ["workflows/gm/WORKFLOW.md", "tmp/evaluation-2026-09-16/sustained_rpg/inputs/05.json"],
+  "limitations": ["fiction_only; no runtime persistence, tokens or latency measurement"]
+}

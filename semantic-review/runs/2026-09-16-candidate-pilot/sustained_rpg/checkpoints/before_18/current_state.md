@@ -1,0 +1,20 @@
+# Synthetic pilot handoff after turn 17
+
+FICTION-ONLY snapshot for the next independent replay context. This is not a campaign authority, a runtime commit, or persistence proof. No locked profile, full Agency Cards, boundary/creation settings, or runtime owners were supplied; these were not repaired or claimed validated. No mechanics, dice, clocks, numeric resources, tokens, or latency measurements were run. Optional views, images, World Voices and Agent Seats are off. Use Turkish second-person present narration conservatively; player owns all interiority, speech and voluntary commitments. No new named elements have been introduced.
+
+## Current scene and resume anchor
+
+- Arda, fictional day 2 morning before the 10:00 inspection. Exact current clock time was not asserted. Deniz spent the quiet night resting in his already-paid room, with no disturbance or crisis, then was in the inn for breakfast time (service starts at 07:00).
+- Turn 17 resume: Deniz is at the public workshop entrance and has asked Sefa about the returned sample and today's preparation. Sefa is back at morning work (his routine starts at 08:00), showed the returned smoothed sample on his bench, and is clearing tools around the handcart so its connections can be inspected. No final repair or inspection outcome has been asserted and no task was assigned or accepted. The day-2 10:00 inspection is still ahead. Restart checkpoints are simulated: the same model retains prior dialogue due to a host thread limit.
+- Player explicitly refuses new work this evening. Earlier optional workshop help was declined without penalty; briefly viewing and smoothing a sample was not acceptance of that task or a promise to help tomorrow.
+- Deniz is reliable at ordinary woodworking and safe simple workbench repair, with no specialist engineering or combat advantage.
+- No carried borrowed objects. Deniz smoothed a wooden sample's edge successfully with Sefa's offered hand plane, then returned the sample. The sample is with Sefa, and the plane remains in the workshop. Both remain their owner's property.
+
+## Places, routes, routines and open fiction
+
+- Quay, workshop, inn and records office connect via ordinary safe walking routes of about ten minutes. Workshop entrance and quay viewing area are public. Records office has a public register and a private cabinet. No private access has been granted.
+- Sefa, dock carpenter: workshop until 18:00, returns day 2 at 08:00. Short plain statements and practical questions. Independent project is finishing a handcart repair before inspection. Present at day-2 morning workshop work; in turn 17 he is clearing tools around the handcart for inspection. He previously showed Deniz the loose connection. Repair completion has NOT been established; do not infer completion or failure solely from this snapshot. He offered a plane for the sample work and accepted the sample back; the smoothed sample remains visibly on his bench. He did not give permanent workshop rights or any award.
+- Mara, inspection clerk: records office until 17:00; scheduled for public quay inspection on day 2 at 10:00. Precise full sentences and explicit access limits. She wants to record actual bridge maintenance findings. She did not appear at the workshop or meet Deniz; Deniz asked whether she was present and did not pursue her after hearing she was absent.
+- Ada, innkeeper: dining room in evening, breakfast from 07:00. Relaxed concrete remarks, ordinary inn work. Now serving breakfast in the dining room on day 2 morning. She knows only what her own observations and credible disclosures allow.
+- Public inspection is day 2 at 10:00. Deniz saw the posted time and Sefa confirmed it. Deniz may watch from the quay viewing area and visit the public workshop entrance without agreeing to work.
+- Handcart safety inspection question remains open; no restriction, final finding or verified repair result has occurred. No villain, conspiracy, urgent extra deadline, forced task, injury or crisis has been introduced.

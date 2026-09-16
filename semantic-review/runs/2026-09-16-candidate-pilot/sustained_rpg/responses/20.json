@@ -1,0 +1,13 @@
+{
+  "turn": 20,
+  "player_input": "Mara konuşmaya müsaitse kendimi tanıtıp hangi kayıtların herkese açık olduğunu soruyorum.",
+  "response": "Mara elindeki notu tamamladıktan sonra sorunu dinlemek için dönüyor. Kendini tanıttığında sana adınla karşılık veriyor.\n\n“Deniz, kayıt bürosundaki halka açık sicili inceleyebilirsiniz. Duyurulan denetim saati de herkese açıktır. Özel dolaptaki evraklar ise serbest incelemeye açık değildir; sicile bakma izni o evrakları kapsamaz.”\n\nSonra kalemini elindeki kaydın üzerinde tutarak sorunun devamını bekliyor.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/20.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

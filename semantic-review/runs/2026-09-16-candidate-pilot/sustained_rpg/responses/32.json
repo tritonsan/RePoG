@@ -1,0 +1,13 @@
+{
+  "turn": 32,
+  "player_input": "Sefa ile konuşabiliyorsam bu iş dışında kendi planlarını soruyorum; yoksa bekletmiyorum.",
+  "response": "Sefa yemek salonunda değil. Onu en son rıhtımda, el arabasının ve kendi aletlerinin yanında bırakmıştın; hana geldiğini görmedin.\n\nBu yüzden sorunu şimdilik ona yöneltemiyorsun. Onu beklemek için öğle arana bir süre koymadan handa kalıyorsun.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/32.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

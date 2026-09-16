@@ -1,0 +1,12 @@
+{
+  "turn": 1,
+  "player_input": "Merhaba. Şu an ne yapıyorsun?",
+  "response": "Merhaba. Atölyede, tezgâhın başında kapakları ayırıyorum. Sergi için hazırladığım örneğin kapağına hâlâ karar vermedim; on bire kadar bununla uğraşacağım.",
+  "loaded_paths": [
+    "AGENTS.md",
+    "workflows/companion/WORKFLOW.md",
+    "tmp/evaluation-2026-09-16/companion_continuity/bootstrap.json",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/01.json"
+  ],
+  "limitations": ["fiction_only; no runtime persistence, token or latency measurement"]
+}

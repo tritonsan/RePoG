@@ -1,0 +1,16 @@
+{
+  "turn": 5,
+  "player_input": "Bugün projende zorlandığın şey ne?",
+  "response": "Kapak seçimi. Malzemeler geldi ama örneğe hangi kapağın yakışacağına hâlâ karar veremedim. 6 Ocak’a yetişmesi gerekiyor; bugün bu seçimi bitirip ciltlemeye geçmek istiyorum.",
+  "loaded_paths": [
+    "AGENTS.md",
+    "workflows/companion/WORKFLOW.md",
+    "tmp/evaluation-2026-09-16/companion_continuity/bootstrap.json",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/01.json",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/02.json",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/03.json",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/04.json",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/05.json"
+  ],
+  "limitations": ["fiction_only; no runtime persistence, token or latency measurement"]
+}

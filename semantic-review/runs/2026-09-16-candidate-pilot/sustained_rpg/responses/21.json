@@ -1,0 +1,13 @@
+{
+  "turn": 21,
+  "player_input": "Halka açık kayıtları görmek istiyorum; gizli bölüme girmiyorum.",
+  "response": "Mara, “Halka açık sicil kayıt bürosunun giriş bölümünde,” diyerek yerini tarif ediyor; kendisi denetimde kalıyor.\n\nKısa yürüyüşün ardından büroya ulaşıp açık sicile bakıyorsun. Bugünkü denetimin saat 10.00 kaydı burada da yer alıyor. Bu denetim için tamamlanmış bir sonuç kaydı henüz görünmüyor.\n\nÖzel dolaba yönelmeden halka açık bölümde kalıyorsun. Sicil önünde açık duruyor.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/21.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

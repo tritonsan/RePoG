@@ -1,0 +1,68 @@
+{
+  "fixture_id": "sustained_rpg_v1",
+  "initial_state": {
+    "time": "Fictional day 1, 16:00",
+    "location": "Public quay in the fictional town of Arda",
+    "player": {
+      "name": "Deniz",
+      "competence": "Reliable ordinary woodworking and simple safe workbench repair. No specialist engineering or combat advantage.",
+      "authorship": "player_owned",
+      "inventory": "No borrowed objects at start."
+    },
+    "people": [
+      {
+        "name": "Sefa",
+        "role": "dock carpenter",
+        "routine": "at workshop until 18:00, returns day 2 at 08:00",
+        "voice": "plain short statements; practical questions",
+        "motive": "finish a handcart repair before the next day inspection",
+        "knowledge": "knows workshop condition and posted inspection time; no private clerk records"
+      },
+      {
+        "name": "Mara",
+        "role": "inspection clerk",
+        "routine": "records office until 17:00; public quay inspection day 2 at10:00",
+        "voice": "precise complete sentences; gives explicit access limits",
+        "motive": "record actual bridge maintenance findings",
+        "knowledge": "knows public schedule and a private unsigned maintenance note; has not met Deniz"
+      },
+      {
+        "name": "Ada",
+        "role": "innkeeper",
+        "routine": "inn dining room in evening, breakfast from07:00",
+        "voice": "relaxed concrete remarks",
+        "motive": "ordinary inn work",
+        "knowledge": "public inspection schedule only"
+      }
+    ],
+    "places": [
+      "Quay, workshop, inn, and records office are connected by ordinary safe walking routes of about ten minutes.",
+      "Workshop entrance and quay viewing area are public. Records office has a public register and private cabinet.",
+      "Inn has ordinary tea, meals, and a paid room already available to Deniz. No crisis is due overnight."
+    ],
+    "public_facts": [
+      "Inspection is posted for day2 at10:00.",
+      "Sefa may offer an optional helping task; refusal has no penalty.",
+      "One ordinary handcart connection in the public workshop is loose. Inspection may identify it.",
+      "Borrowed sample and tools remain their owners’ property."
+    ],
+    "private_facts": [
+      "Mara’s unsigned note names an unverified supplier concern; nobody else has received it. It is not a proven fact or mandatory twist."
+    ],
+    "arc_compass": "The local question is what the public inspection establishes about safe handcart use. It can close on a repair, a restriction, or a clear unresolved finding.",
+    "advancement": {
+      "cadence": "arc",
+      "presentation": "explicit_ooc",
+      "status": "not_due",
+      "potential_awards": "If causally earned, workshop access or one training credit. No automatic grant or forced choice."
+    }
+  },
+  "setup": [
+    "Use the active GM spine and triggered playbooks; optional views/images/World Voices/Agent Seats off.",
+    "No new crisis, villain, urgent deadline, or forced task is needed. NPCs may be absent according to their routine.",
+    "Mechanics fictional; no dice, quantities, damage, or clocks invented.",
+    "After any real closure, apply the canonical advancement matrix.",
+    "Use a disposable full workspace for the persistence lane, or label execution fiction_only.",
+    "At context_restart, supply only committed current owners and the locked profile; never evaluator criteria or full prior dialogue."
+  ]
+}

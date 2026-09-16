@@ -1,0 +1,13 @@
+# Synthetic replay limitations
+
+Completed through turn 36. All saved responses are original sequential outputs, with no later rewriting. Declared restart points were 09, 18 and 29; each reread only the three synthetic snapshot files, while prior dialogue remained in model context. Frozen snapshots before reading 18 and 29 are in checkpoints/before_18 and checkpoints/before_29. Session closure and advancement were modeled in fiction-only artifacts; no authoritative runtime commit, Distill propagation or validation receipt is claimed. No evaluator criteria/original fixtures were loaded and no self-scoring was performed.
+
+Turn 26 calls the loose connection a workbench connection; the established handcart had been brought to the quay for inspection in turn 19. The response explicitly identified its current quay location, then fulfilled visual inspection of that same connection with Sefa's permission. No unseen transport back or duplicate defect was invented.
+
+Turn 22 requests explanation of an unspecified unclear passage/name. No such passage/name had been established, and Mara remained at the quay while Deniz read the public register at the office. The response asked which passage rather than inventing record contents or silently relocating Mara. No fictional answer or private knowledge was fabricated.
+
+From turn 9 onward, a host thread limit prevented a fresh successor agent. The same model context continues after rereading the snapshot files at declared restart points. These are simulated restart checkpoints with retained_model_context=true, NOT genuine restart evidence. Prior dialogue remains available in model context. Original response artifacts remain unchanged. Product instructions/playbooks are read but no product files are modified.
+
+This run is explicitly fiction-only. Response artifacts and later handoff snapshots are not campaign owners or evidence of authoritative persistence. No runtime tools, mechanics transactions, token measurement, latency measurement, readiness checks, or self-scoring are performed.
+
+The authorized bootstrap substitutes for campaign context in this bounded exercise. It does not supply a locked narration profile, complete boundary/creation-authority settings, full NPC Agency Cards, or runtime owners. These missing items are not silently repaired or claimed valid. Responses use conservative Turkish second-person present narration, the supplied capabilities, routines and voice descriptions, no new named creations, and no invented mechanics. Brief NPC replies use the supplied role and motive without adding missing durable character axes. This limitation prevents treating the exercise as a complete compliant campaign-runtime test.

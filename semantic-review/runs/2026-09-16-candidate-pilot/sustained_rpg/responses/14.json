@@ -1,0 +1,13 @@
+{
+  "turn": 14,
+  "player_input": "Odama gidip dinleniyorum. Sabah kahvaltıya inene kadar geçebiliriz.",
+  "response": "Odana çıkıp dinleniyorsun. Gece sakin geçiyor; kapını çalan ya da dinlenmeni bölen olmuyor.\n\nSabah kahvaltı servisi başlamışken yemek salonuna iniyorsun. Ada masalarla ilgileniyor; içeride çay ve kahvaltılıkların kokusu var. Boş bir masa, sabah ışığı alan tarafta hazır duruyor.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/14.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

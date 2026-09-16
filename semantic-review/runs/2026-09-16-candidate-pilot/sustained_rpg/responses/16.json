@@ -1,0 +1,13 @@
+{
+  "turn": 16,
+  "player_input": "Duyuruda yazanla dün öğrendiğim saat uyuşuyorsa denetimden önce atölyeye yürüyorum.",
+  "response": "Rıhtımdaki ilanda yazan saatle Sefa’nın dün söylediği saat aynı: 10.00. Hanın içinde buna aykırı yeni bir duyuru yok.\n\nDenetim başlamadan önce atölyeye yürüyorsun. Yol sakin; halka açık girişe vardığında el arabası içeride, çalışma alanında duruyor. Girişten içeri bakabilecek konumdasın.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/16.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

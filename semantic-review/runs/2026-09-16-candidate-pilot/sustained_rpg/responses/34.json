@@ -1,0 +1,13 @@
+{
+  "turn": 34,
+  "player_input": "Varsa ertelenmiş ödül seçeneklerini yeniden duymak istiyorum; yoksa ödül istemiyorum.",
+  "response": "OOC: Ertelediğin, henüz harcanmamış bir kazanım var. Sefa’nın gördüğü başarılı onarım karşılığında şu iki seçenekten birini seçebilirsin:\n\n- Atölye kullanımı: Çalışma saatlerinde, Sefa’nın işini aksatmadan kendi sıradan marangozluk işlerin için çalışma alanına erişim. Aletlerin sahipliği değişmez.\n- Bir eğitim hakkı: Sefa’yla birlikte kararlaştırılacak bir marangozluk çalışmasında kullanılır. Eğitim gerçekleşmeden yeni beceri kazanılmış sayılmaz.\n\nİkisi de sana yeni görev borcu yüklemiyor. Henüz seçim yapılmadı; istersen ertelenmiş olarak kalabilir.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/34.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

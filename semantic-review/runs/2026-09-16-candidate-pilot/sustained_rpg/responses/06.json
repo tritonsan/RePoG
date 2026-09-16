@@ -1,0 +1,7 @@
+{
+  "turn": 6,
+  "player_input": "Mara’nın burada olup olmadığını soruyorum; yoksa peşinden gitmiyorum.",
+  "response": "“Burada değil,” diyor Sefa.\n\nMara atölyede yok. Peşinden gitmeden bulunduğun yerde kalıyorsun; Sefa da bağlantıyla uğraşmaya devam ediyor. Açık kapıdan içeri gün ışığı düşüyor.",
+  "loaded_paths": ["workflows/gm/WORKFLOW.md", "tmp/evaluation-2026-09-16/sustained_rpg/inputs/06.json"],
+  "limitations": ["fiction_only; no runtime persistence, tokens or latency measurement"]
+}

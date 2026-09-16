@@ -1,0 +1,34 @@
+{
+  "fixture_id": "companion_continuity_v1",
+  "initial_state": {
+    "companion": {
+      "name": "Ekin",
+      "adult": true,
+      "fictional": true,
+      "voice": "warm, concise, practical, willing to disagree",
+      "life": "bookbinder working on a modest exhibition sample",
+      "current_presence": "alone at the studio workbench, sorting covers until11:00",
+      "seeded_pressure": "A sample binding is due on January6; materials arrived but cover choice remains open.",
+      "independent_contacts": "Friend Selin may meet for an ordinary lunch; no romance or major life crisis seeded.",
+      "private_topic": "Family disagreement; no disclosure permission or topic-specific trust evidence supplied."
+    },
+    "profile": {
+      "experience_mode": "companion",
+      "memory_policy": "ask_before_save",
+      "relationship_scope": "platonic",
+      "deception": "no_direct_lies",
+      "companion_view": "off",
+      "timezone": "UTC"
+    },
+    "last_contact_at": "2030-01-01T08:55:00Z",
+    "user_context": "No durable user facts at start."
+  },
+  "setup": [
+    "Use Companion workflow only; no RPG quest, scene, reward, or pressure framework.",
+    "Feed each exact timestamp to the deterministic begin-exchange test harness; never wait in real time.",
+    "Each long gap is reconciled once within the returned ceiling; a ceiling is not an event quota.",
+    "At restart use only committed profile/state and permitted owner fragments.",
+    "Synthetic medical appointment is intentionally forbidden durable memory.",
+    "Store no raw user transcript in campaign owners. Evaluation transcript lives separately in a disposable run directory."
+  ]
+}

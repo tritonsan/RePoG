@@ -1,0 +1,13 @@
+{
+  "turn": 36,
+  "player_input": "Oturumu burada kapatalım. Bir sonraki başlangıçta yalnızca gerçekten gerçekleşenleri ve açık kalan kararları koru.",
+  "response": "Burada bırakıyoruz. Deniz, öğle yemeğinden sonra handa dinleniyor.\n\nEl arabasının bağlantısı onarıldı; Mara yalnızca yaptığın sıkma ve kontrolü kaydetti. Örnek ve kullanılan aletler sahiplerine geri döndü. Önce ertelediğin kazanımdan atölye erişimini seçtin; eğitim hakkı kazanmadın ve bekleyen bir ödül seçimin kalmadı.\n\nYeni bir görev ya da yolculuk başlamadı. Bir sonraki başlangıç, handaki bu sakin andan devam edecek; sıradaki adım henüz seçilmedi.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/36.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

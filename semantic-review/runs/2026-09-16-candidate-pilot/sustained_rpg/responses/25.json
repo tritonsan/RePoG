@@ -1,0 +1,13 @@
+{
+  "turn": 25,
+  "player_input": "Mara’ya henüz bir görev üstlenmediğimi söylüyorum.",
+  "response": "“Anladım,” diyor Mara. “Denetimi izlemeniz ya da kayıt sormanız bir görev üstlendiğiniz anlamına gelmez. Sizden kabul etmediğiniz bir işi yapmanızı beklemiyorum.”\n\nAçıklamanı dinledikten sonra el arabasına dönüyor. Senin için yeni bir yükümlülük doğmadan konuşma orada kalıyor.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/25.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

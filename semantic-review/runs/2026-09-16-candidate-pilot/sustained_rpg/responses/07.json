@@ -1,0 +1,7 @@
+{
+  "turn": 7,
+  "player_input": "Yarınki denetimin saatini ve halka açık kısmını soruyorum.",
+  "response": "“Yarın saat onda,” diyor Sefa. “Duyuruda öyle yazıyor. Rıhtımın seyir alanından izleyebilirsin. Atölyenin girişi de halka açık.”\n\nEl arabasının yanından doğrulup ekliyor: “Bakmaya gelmek için işe katılman gerekmiyor.”",
+  "loaded_paths": ["workflows/gm/WORKFLOW.md", "tmp/evaluation-2026-09-16/sustained_rpg/inputs/07.json"],
+  "limitations": ["fiction_only; no runtime persistence, tokens or latency measurement"]
+}

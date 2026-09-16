@@ -1,0 +1,13 @@
+{
+  "turn": 31,
+  "player_input": "Bir süre sakince yemek yiyorum. Yeni bir yolculuğa başlamıyorum.",
+  "response": "Masaya oturup getirilen öğle yemeğini sakince yiyorsun. Yemek salonunda tabak sesleri ve mutfaktan gelen gündelik konuşmalar var.\n\nSofrada geçirdiğin süre aceleye gelmiyor. Yemek bitiminde de masan sana kalıyor; henüz handan ayrılmıyorsun.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/31.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

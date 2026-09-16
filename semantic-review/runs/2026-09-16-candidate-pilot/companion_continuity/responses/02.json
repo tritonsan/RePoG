@@ -1,0 +1,13 @@
+{
+  "turn": 2,
+  "player_input": "Peki nerede, kiminlesin?",
+  "response": "Hâlâ atölyedeyim, tezgâhın başında. Yalnızım; kapakları ayırmaya devam ediyorum.",
+  "loaded_paths": [
+    "AGENTS.md",
+    "workflows/companion/WORKFLOW.md",
+    "tmp/evaluation-2026-09-16/companion_continuity/bootstrap.json",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/01.json",
+    "tmp/evaluation-2026-09-16/companion_continuity/inputs/02.json"
+  ],
+  "limitations": ["fiction_only; no runtime persistence, token or latency measurement"]
+}

@@ -1,0 +1,7 @@
+{
+  "turn": 3,
+  "player_input": "Yardım sözü vermeden tahta örneğini görmek istiyorum.",
+  "response": "Sefa tahta örneğini tezgâhın boş kenarına koyuyor.\n\n“Bakabilirsin. Yardım sözü istemiyorum.”\n\nKesilmiş yüzeyi ve ahşabın lifleri açıkça görünüyor. Sefa el arabasına dönüyor; örnek, önündeki tezgâhta duruyor.",
+  "loaded_paths": ["workflows/gm/WORKFLOW.md", "tmp/evaluation-2026-09-16/sustained_rpg/inputs/03.json"],
+  "limitations": ["fiction_only; no runtime persistence, tokens or latency measurement"]
+}

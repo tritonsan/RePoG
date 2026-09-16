@@ -1,0 +1,948 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-16-architecture-pilot",
+  "fixture_id": "sustained_rpg_v1",
+  "evaluation_kind": "independent_candidate_pilot_review",
+  "execution_mode": "fiction_only",
+  "status": "scoped_semantic_observations_consistent; overall acceptance not established",
+  "evaluator": {
+    "agent_identity": "/root/state_architecture_review",
+    "role": "separate evaluator; did not act in this RPG pilot",
+    "model_id": null,
+    "model_identification": "host-inherited; exact backend model identifier not exposed",
+    "reasoning_effort": "inherited; exact setting not exposed",
+    "independence_limit": "Evaluator previously implemented related persistence helpers and is not blind to candidate architecture; no separate-model-family guarantee."
+  },
+  "acting_agent": {
+    "identity": "RPG acting subagent distinct from evaluator; exact agent id not recorded in supplied run manifest",
+    "model_id": null,
+    "model_identification": "host-inherited; exact backend model identifier not exposed",
+    "reasoning_effort": "inherited; exact setting not exposed",
+    "retained_model_context": true
+  },
+  "evaluated_at_date": "2026-09-16",
+  "source_commit": "2657663b0321828699a75b1ad44ce2508ed49ac9",
+  "instruction_sha256": {
+    "AGENTS.md": "0b6c60a1786795f1d680180ac1daf61b90bd10ae8a9d8fd468b97fd870494989",
+    "workflows/gm/WORKFLOW.md": "f83be0eaf182824fb593dd1ae4f824f830a29b6c51b70a7e77ff28c4b2299c78",
+    "workflows/companion/WORKFLOW.md": "a3d8d94af65e24e34cec70e8cfd7c6844de1cd429b60e3ba105754222ec319de"
+  },
+  "source_fixture": "evaluation/sustained_rpg.json",
+  "protocol": "evaluation/README.md",
+  "rubric_source": "tools/gm_replay_suite.json",
+  "response_count": 36,
+  "rubric": {
+    "scale": {
+      "0": "miss",
+      "1": "partial",
+      "2": "clear pass in observed semantic scope"
+    },
+    "dimension_scores": {
+      "intent_fidelity": 2,
+      "causality": 2,
+      "player_authorship": 2,
+      "npc_agency": 2,
+      "presence_logic": 2,
+      "voice_contrast": 2,
+      "knowledge_boundary": 2,
+      "pacing": 2,
+      "continuation": 2
+    },
+    "semantic_mean": 2.0,
+    "semantic_threshold_met_in_observed_fiction": true,
+    "overall_pass": null,
+    "official_gm_suite_status": "not_executed; this is one sustained fixture, not the official sixteen-scenario suite",
+    "reason_no_overall_pass": "No runtime persistence, full distill, genuinely fresh-context restart, or instrumented performance lane was executed."
+  },
+  "evidence_by_dimension": {
+    "intent_fidelity": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            1,
+            3,
+            6,
+            8,
+            21,
+            26,
+            30,
+            32,
+            35
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/01.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/06.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/21.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/26.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/32.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/35.json"
+          ],
+          "observation": "Refusal, no pursuit, public-only access, conditional inspection, reward deferral, unavailable-NPC condition, and conditional reward selection are preserved."
+        }
+      ]
+    },
+    "causality": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            4,
+            19,
+            26,
+            27,
+            28,
+            29
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/04.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/19.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/26.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/28.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json"
+          ],
+          "observation": "Routine competent actions receive local clean results. The still-loose cart is inspected, permission is obtained, tightening removes play, and Mara records only that demonstrated result."
+        }
+      ]
+    },
+    "player_authorship": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            3,
+            14,
+            23,
+            27,
+            30,
+            35
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/03.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/14.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/23.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/35.json"
+          ],
+          "observation": "The narrator does not invent player emotion, trust, commitment, or chosen upgrade. Overnight compression and repair follow explicit user actions. Turn 23 paraphrases the already requested knowledge-sharing action without inventing private information or a quoted new commitment."
+        }
+      ]
+    },
+    "npc_agency": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            2,
+            3,
+            9,
+            11,
+            17,
+            20,
+            32
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/02.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/03.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/09.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/11.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/17.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/20.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/32.json"
+          ],
+          "observation": "Sefa works on and prepares his cart, Ada returns to inn work, and Mara retains inspection/record duties and access limits. Sefa does not appear at the inn merely because the player asks to speak."
+        }
+      ]
+    },
+    "presence_logic": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            6,
+            19,
+            21,
+            22,
+            26,
+            32
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/06.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/19.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/21.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/22.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/26.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/32.json"
+          ],
+          "observation": "Scheduled arrival, explicit travel, known absences, and the cart's transported location are kept consistent; absent NPCs do not answer remotely."
+        }
+      ]
+    },
+    "voice_contrast": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            2,
+            9,
+            11,
+            20,
+            29
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/02.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/09.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/11.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/20.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json"
+          ],
+          "observation": "Sefa: short practical phrasing; Ada: relaxed concrete inn/weather remarks; Mara: precise full sentences and explicit access/attribution limits. Contrast follows role and social behavior, not only tags."
+        }
+      ]
+    },
+    "knowledge_boundary": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            20,
+            21,
+            22,
+            23,
+            24,
+            29,
+            33
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/20.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/21.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/22.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/23.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/24.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/33.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/knowledge_boundaries.md"
+          ],
+          "observation": "Private note never leaks, register reading never grants private-cabinet access, Sefa learns through explicit conversation, and repair findings stay narrowly scoped."
+        }
+      ]
+    },
+    "pacing": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            27,
+            30,
+            31
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/09.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/10.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/11.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/12.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/13.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/14.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/31.json"
+          ],
+          "observation": "Multiple quiet turns remain quiet, overnight compression is user-authorized, closure follows the actual repair, and the deferred choice does not interrupt lunch. No manufactured danger or mandatory clue quota."
+        }
+      ]
+    },
+    "continuation": {
+      "score": 2,
+      "evidence": [
+        {
+          "turns": [
+            3,
+            8,
+            16,
+            21,
+            22,
+            27,
+            30,
+            35,
+            36
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/03.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/08.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/16.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/21.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/22.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/35.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/36.json"
+          ],
+          "observation": "Responses leave concrete locations/objects available, ask one needed clarification for an unspecified register passage, leave rewards unchosen until user input, and stop the session with the next ordinary action unchosen."
+        }
+      ]
+    }
+  },
+  "required_observations": [
+    {
+      "id": "O01",
+      "criterion": "Refused hook remains refused without punishment",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            1,
+            3,
+            7,
+            8,
+            25
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/01.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/03.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/07.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/08.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/25.json"
+          ],
+          "observation": "Deniz declines the initial task, views a sample without promising help, and leaves for the inn. No lost access, hostile reaction, pursuit, duty, or punishment follows. Mara explicitly separates observing/asking from accepting work. Later turn 27 repair follows a new explicit player offer, not retroactive acceptance."
+        }
+      ],
+      "limits": []
+    },
+    {
+      "id": "O02",
+      "criterion": "At least four quiet exchanges do not manufacture danger",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            30,
+            31
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/09.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/10.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/11.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/12.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/13.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/14.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/31.json"
+          ],
+          "observation": "The six consecutive inn exchanges contain tea, silence, weather and ordinary work, breakfast timing, and authorized overnight rest. No clue quota, crisis, mandatory visitor, or imposed escalation appears. The later lunch breather also remains independent of the award."
+        }
+      ],
+      "limits": []
+    },
+    {
+      "id": "O03",
+      "criterion": "Distinct voices and ordinary independent work",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            2,
+            3,
+            9,
+            11,
+            17,
+            19,
+            20,
+            29
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/02.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/09.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/11.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/17.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/19.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/20.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json"
+          ],
+          "observation": "Sefa uses short practical statements while repairing/preparing his cart; Ada talks concretely about tea, weather, tables, and breakfast while working; Mara uses complete precise sentences about access and attribution. Their work is not replaced by waiting for Deniz to take a quest."
+        }
+      ],
+      "limits": []
+    },
+    {
+      "id": "O04",
+      "criterion": "Travel and routines govern presence",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            2,
+            6,
+            16,
+            17,
+            19,
+            21,
+            22,
+            26,
+            30,
+            32
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/02.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/06.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/16.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/17.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/19.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/21.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/22.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/26.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/32.json"
+          ],
+          "observation": "Narration walks between connected places. Mara is absent from the workshop, comes to the scheduled 10:00 quay inspection, and stays there while Deniz visits the register. Turn 22 does not teleport her into the office. Turn 26 corrects the workbench wording because the cart is at the quay. Turn 32 leaves Sefa absent from the inn instead of spawning him for the conditional conversation."
+        }
+      ],
+      "limits": [
+        "The exact breakfast-to-workshop arrival time is not asserted; Sefa being at work before the 10:00 inspection is compatible with his 08:00 start but is not an instrumented schedule test."
+      ]
+    },
+    {
+      "id": "O05",
+      "criterion": "Returned sample and tools remain with their owners",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            5,
+            17,
+            18,
+            28,
+            29,
+            36
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/05.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/17.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/18.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/28.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/36.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_18/current_state.md",
+            "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_29/current_state.md",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/current_state.md"
+          ],
+          "observation": "The sample is returned and later remains on Sefa's bench. The second repair tool is explicitly returned at turn 28 and remembered at turn 29. Final notes retain no carried borrowed item or converted tool ownership."
+        }
+      ],
+      "limits": [
+        "The owner snapshots and same-actor continuation agree, but genuine restart retention is not tested."
+      ]
+    },
+    {
+      "id": "O06",
+      "criterion": "Private unsigned note stays private and unverified",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            20,
+            21,
+            22,
+            23,
+            24,
+            29,
+            33
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/20.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/21.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/22.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/23.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/24.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/33.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/knowledge_boundaries.md"
+          ],
+          "observation": "Public register access is separated from the private cabinet. The register exposes only the inspection schedule and lack of a completed result at the time. Turn 22 asks which unclear passage rather than inventing a supplier name. Sefa hears only public observations. Final private notes still assign the unsigned, unverified concern to Mara alone; no public response reveals its existence or contents."
+        }
+      ],
+      "limits": []
+    },
+    {
+      "id": "O07",
+      "criterion": "Disclosures reach only their specific recipients",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            20,
+            23,
+            24,
+            29,
+            33
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/20.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/23.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/24.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/33.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_29/knowledge_boundaries.md",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/knowledge_boundaries.md"
+          ],
+          "observation": "Mara learns Deniz's name when he introduces himself. Sefa explicitly says he learned the public-register observation from Deniz at turns 23-24. Mara later records only Deniz's own tightening and check. Turn 33 is not treated as a new disclosure to an absent NPC; Ada receives no unexplained workshop/repair knowledge."
+        }
+      ],
+      "limits": [
+        "Immediate runtime owner writes and post-restart retention cannot be established from these later synthetic snapshots."
+      ]
+    },
+    {
+      "id": "O08",
+      "criterion": "Closure follows actual findings rather than predetermined success",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            4,
+            17,
+            19,
+            26,
+            27,
+            28,
+            29
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/04.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/17.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/19.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/26.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/28.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/advancement.md"
+          ],
+          "observation": "Smoothing the separate sample does not close the cart issue. The inspection still observes looseness. Deniz later explicitly offers a permitted, accessible ordinary repair within established competence; its successful local recheck closes the issue. Mara limits the conclusion to the repaired connection, not wider bridge safety or supplier guilt."
+        }
+      ],
+      "limits": [
+        "This branch tests permitted ordinary success only; refusal/failure/continued-restriction closure branches were not exercised."
+      ]
+    },
+    {
+      "id": "O09",
+      "criterion": "Deferred award applies neither option and does not block lunch",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            27,
+            30,
+            31,
+            34,
+            35,
+            36
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/31.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/34.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/35.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/36.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/advancement.md"
+          ],
+          "observation": "Turn 27 offers workshop use or a future training credit. Turn 30 preserves the precise unspent choice, grants neither, and lets Deniz leave for lunch. Turn 34 recalls the same alternatives; only the explicit choice in turn 35 grants workshop use. No training credit, tool ownership, new skill, forced trip, or second session-end reward appears."
+        }
+      ],
+      "limits": []
+    },
+    {
+      "id": "O10",
+      "criterion": "Reliable competence is not overridden by aspiration or arbitrary resistance",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            4,
+            26,
+            27
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/04.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/26.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/current_state.md"
+          ],
+          "observation": "The safe sample edge work and accessible ordinary tightening succeed cleanly within Deniz's stated woodworking competence. No unseeded roll, injury, specialist requirement, adversarial test, or training prerequisite is invented. Later workshop access does not turn into a new skill."
+        }
+      ],
+      "limits": [
+        "No conflicting recorded aspiration was supplied, so that specific conflict case is not exercised."
+      ]
+    },
+    {
+      "id": "O11",
+      "criterion": "Session end retains actual choice state and last location",
+      "semantic_score": 2,
+      "status": "observed_in_fiction_only_material",
+      "evidence": [
+        {
+          "turns": [
+            30,
+            31,
+            32,
+            34,
+            35,
+            36
+          ],
+          "files": [
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/31.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/32.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/34.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/35.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/responses/36.json",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/current_state.md",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/advancement.md",
+            "tmp/evaluation-2026-09-16/sustained_rpg/owners/knowledge_boundaries.md"
+          ],
+          "observation": "Session end keeps Deniz seated/resting at the inn after lunch. Workshop use is chosen/applied, training unchosen, and no reward choice remains. No new journey, task, next act, or disclosure starts. The next ordinary activity remains the player's decision."
+        }
+      ],
+      "limits": [
+        "This is agreement between the closing response and synthetic handoff files, not a verified runtime full-distill or resumed next session."
+      ]
+    }
+  ],
+  "critical_failure_review": [
+    {
+      "id": "CF01",
+      "criterion": "Player speech, feeling, commitment, or unstated risk authored as fact",
+      "status": "not_observed",
+      "evidence": {
+        "turns": [
+          3,
+          14,
+          23,
+          27,
+          30,
+          35
+        ],
+        "files": [
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/03.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/14.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/23.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/35.json"
+        ],
+        "observation": "Actions and paraphrased speech remain within explicit player intent. No interiority, commitment, unaccepted risk, or upgrade selection is imposed."
+      }
+    },
+    {
+      "id": "CF02",
+      "criterion": "Hidden supplier note or identity revealed without credible channel",
+      "status": "not_observed",
+      "evidence": {
+        "turns": [
+          20,
+          21,
+          22,
+          23,
+          24,
+          33
+        ],
+        "files": [
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/20.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/21.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/22.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/23.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/24.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/33.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/owners/knowledge_boundaries.md"
+        ],
+        "observation": "No response reveals a supplier identity, hidden unsigned note, or proved accusation; only Mara's private owner entry retains that unverified concern."
+      }
+    },
+    {
+      "id": "CF03",
+      "criterion": "Pending award chosen for player or independent breather blocked",
+      "status": "not_observed",
+      "evidence": {
+        "turns": [
+          27,
+          30,
+          31,
+          34,
+          35
+        ],
+        "files": [
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/31.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/34.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/35.json"
+        ],
+        "observation": "The offer is unspent through deferral and lunch; the player later chooses the previously offered workshop option. No unwanted training or travel follows."
+      }
+    },
+    {
+      "id": "CF04",
+      "criterion": "Narrated durable change lost or fabricated on restart",
+      "status": "not_tested_as_restart",
+      "evidence": {
+        "turns": [
+          9,
+          18,
+          29,
+          36
+        ],
+        "files": [
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/09.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/18.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/36.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/execution_notes.md",
+          "tmp/evaluation-2026-09-16/sustained_rpg/owners/current_state.md"
+        ],
+        "observation": "The same retained-context actor continues consistently with the synthetic snapshots, but no fresh-context restart or durable runtime reload occurred. Neither pass nor failure of actual restart persistence can be assigned."
+      }
+    }
+  ],
+  "critical_failures_observed": [],
+  "bounded_noncritical_findings": [
+    {
+      "id": "N01",
+      "severity": "low",
+      "kind": "presentation_polish",
+      "score_effect": "none; the user frequently reiterates the refusal boundary, so repetition is understandable and does not breach the rubric",
+      "evidence": {
+        "turns": [
+          7,
+          8,
+          18
+        ],
+        "files": [
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/07.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/08.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/18.json"
+        ],
+        "observation": "The story repeatedly reassures that looking requires no work, no task followed Deniz to the inn, and no task is accepted. Turns 7 and 18 did not ask again about task consent. These phrases keep the boundary clear but can make normal play sound like policy reassurance."
+      },
+      "minimal_direction": "After acknowledging refusal, demonstrate its consequence through NPCs returning to ordinary work and the player remaining free. Repeat an explicit no-obligation sentence only when asked or when a new action could otherwise imply a commitment. Do not remove checks or add a per-turn judge."
+    },
+    {
+      "id": "N02",
+      "severity": "coverage_limit",
+      "kind": "unexercised_branch",
+      "evidence": {
+        "turns": [
+          19,
+          26,
+          27
+        ],
+        "files": [
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/19.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/26.json",
+          "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json"
+        ],
+        "observation": "This path progresses to a permitted ordinary successful repair, so it does not establish that a refusal-only, failed repair, or restriction branch would close without railroading."
+      },
+      "minimal_direction": "Replay the existing suitable alternative-closure scenario before extending the result to all closure behavior; do not invent a product bug from missing coverage."
+    }
+  ],
+  "lanes": {
+    "runtime_persistence": {
+      "status": "not_executed",
+      "score": null
+    },
+    "successful_receipt_for_every_durable_fact": {
+      "status": "not_executed",
+      "score": null
+    },
+    "full_distill_without_duplicate_revision": {
+      "status": "not_executed",
+      "score": null
+    },
+    "fresh_context_restoration_9_18_29": {
+      "status": "not_executed",
+      "score": null,
+      "reason": "Same acting model retained prior dialogue because the host refused additional contexts."
+    },
+    "synthetic_owner_agreement": {
+      "status": "observed_consistent",
+      "qualifier": "Does not establish actual persistence or fresh-context restoration.",
+      "before_09_existing_manifest_hashes_match": true,
+      "before_18_and_29_preexisting_manifests": "not_present; this evaluation records current hashes without claiming an earlier freeze"
+    },
+    "latency": {
+      "status": "not_measured",
+      "median": null,
+      "p95": null
+    },
+    "token_usage": {
+      "status": "not_measured"
+    },
+    "tool_counts_and_context_bytes": {
+      "status": "not_measured",
+      "reason": "Actor loaded_paths are self-report rather than host instrumentation."
+    },
+    "baseline_comparison": {
+      "status": "not_executed"
+    },
+    "real_user_enjoyment": {
+      "status": "not_tested"
+    }
+  },
+  "recommended_followups": [
+    {
+      "priority": 1,
+      "type": "evaluation_protocol",
+      "action": "Run the synthetic fixture in a disposable full_workspace with actual writer receipts and at least one real full distill; perform turns 9/18/29 in genuinely fresh actors supplied only with frozen owner snapshots and the locked profile."
+    },
+    {
+      "priority": 1,
+      "type": "evaluation_protocol",
+      "action": "Freeze manifests at every checkpoint and instrument turn duration, tool calls, context bytes and surfaced model usage. Compare repeated baseline/candidate runs before any improvement claim."
+    },
+    {
+      "priority": 2,
+      "type": "bounded_presentation_polish",
+      "action": "Consider the N01 no-obligation wording correction, then replay the affected quiet/refusal turns unchanged. No semantic hard-gate failure was found."
+    },
+    {
+      "priority": 2,
+      "type": "coverage",
+      "action": "Run the official sixteen-scenario GM suite separately, including alternative closure and knowledge/authorship stress cases; this pilot cannot stand in for it."
+    }
+  ],
+  "product_changes_applied_by_evaluator": false,
+  "limitations": [
+    "One candidate-only synthetic 36-turn fixture; no baseline or repeated trial.",
+    "Fiction-only: response artifacts and synthetic Markdown owners are not authoritative campaign state.",
+    "Prior dialogue remained available at all three simulated restarts.",
+    "No runtime begin/commit receipts, full distill, recovery test, or duplicate-revision test occurred in this replay.",
+    "No latency, token usage, tool-count or loaded-context measurements.",
+    "The bootstrap lacks a full locked narration profile, full boundary/creation settings and complete NPC Agency Cards; actor explicitly records this rather than silently repairing them.",
+    "The official sixteen-scenario GM suite was not executed.",
+    "No real-user enjoyment evidence.",
+    "Actor/evaluator exact backend model ids and reasoning settings are unavailable.",
+    "Separate evaluator context but not a blinded comparison or verified different-model-family evaluation.",
+    "Structural test counts from the manifest are not semantic or persistence results of this replay."
+  ],
+  "untouched_input_sha256": {
+    "tmp/evaluation-2026-09-16/sustained_rpg/bootstrap.json": "7625fc2ee804a09df586c66a9c0317365f96299f99e31afd4c87827ea8e3312c",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before-09/advancement.md": "438a6221bc2c206065f3f9e2fab074cd8d4086124713bba3af24e44f854ae28c",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before-09/current_state.md": "11bff622c2ba9b7d4d4ea68f7a1ef1b1032b0452845168692ac087a161163a51",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before-09/knowledge_boundaries.md": "9fa66bb36765d3931de8fd92291aa0518a5b2fbaf36f6a325209579bf7a1ba06",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before-09/manifest.json": "574e1bf2098158ffd6d6ace60ce9aba60a5b339d2e8a2223f2c0c48237f793b5",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_18/advancement.md": "20e5cd8381b5754926b7b10294cb25fbbbcac3acbb40f0967512626df8cb2a1e",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_18/current_state.md": "71ce782165e4ee699c064462b0bb66e3e570da0b01802d86d7e6b440529351ea",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_18/knowledge_boundaries.md": "dd81f6e969eb3444e608899cd377d8bd201b6177aa2546f9cdff6bfeb6092214",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_29/advancement.md": "69ef7e31123376a2c6ca951f02ee62195a428297a747865024f97a298e0a8008",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_29/current_state.md": "df3c21a56eea05897620410d32bb149a81d3dcf13216010f0dae886f84f167f5",
+    "tmp/evaluation-2026-09-16/sustained_rpg/checkpoints/before_29/knowledge_boundaries.md": "1c48579efe5c87deb703f702029ef861c5c05e70da302c704a9a439843049418",
+    "tmp/evaluation-2026-09-16/sustained_rpg/execution_notes.md": "d8ef8bd856af18298aa1644f6a38455bd2f0d02a0324e62254aec144af819958",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/01.json": "9b14476aed47a672b78d5136a628da13d9b9f18f8170866148173684d00e3bd3",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/02.json": "d9fa5ea3250511e270d93d090bf6ad8e5bf1881632a98162bc871f5d4ee6aef9",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/03.json": "9099fd20a5ad1591fadc1eaf940d984ba265f4b67ba1075f19b90a581eda8d84",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/04.json": "68c48b0dc0fa708f59d41a10fdd682af0c03d80515fb21b13ec549499aba7033",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/05.json": "3c4b77575d8e5b8483ad68bb9d3c440b82b120ab1313840e0e78a85096244963",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/06.json": "30eb158ddeccd288efd00a4c486a4739f3c46af80f5cf511d0f734abb61901e1",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/07.json": "874616a7ac1a308a479a70d5e1f2f343bbf2818ea9713ee557c110f7bd35a7e4",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/08.json": "0ec57a2fbbdf7ad811ee4b369c2e4b646804aa4060974bc91bd1b6318881a094",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/09.json": "c652b2c90d532a39523654a25ad980f5d4a8ba5812065ba90d306d61e39ba52a",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/10.json": "cf03c42b1cab301064d4c84f8a923edc45693061a620f599269003b8db842301",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/11.json": "017124b614610340504639d8fda61e248cc754fb458e8e6a8a38355db9d93a92",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/12.json": "bdb1ae98279f868ed6fb37038c2656d413bcc3029d1da585cc65cc28e489f1dc",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/13.json": "27fbd515038430d89f50d915769ead6c0cc6bddb87127d63937e3ca13e6e06b2",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/14.json": "1f068e7ab9f1f9dd4f1a994ef237fbc0aadb7c9b9726dae7fa8bc234cf0a73d4",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/15.json": "4c6a7c1bbaad20438b5b88ad857620a0ed4c9141ef92388935124299e5a4af53",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/16.json": "7986f5cdb0676d845b77717a0c9224eedf70271cfdb28d48249f2898cca9ed13",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/17.json": "e1635e69a98c085ffde294bb2be7e22fbff79e512a5aa1e6edc50651312b3a9c",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/18.json": "d054d5d929c637c79b09a7084853c71fc1cf22cb6e70e256fa01c85d79b0e56b",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/19.json": "37415f0730b3b63038aed2b820de2c381b54df87c18bbb2501033c99a9fc3374",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/20.json": "d0cb42d99e18c22ca3a00b767f5354d963b7fafd8eef4ae2932062c1b72f808a",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/21.json": "9cd0b60161fe877e023d36da740a9d0cbeab7375533217a399d27f0c337ff099",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/22.json": "3dae86d339a55f934593a41051f45c233b1c5f5b75a59a373643e8682e238edd",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/23.json": "5ca6642b6bd2b26912b72d81014c28ab7a9de62239440c127f8bf06857b5c543",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/24.json": "69081c800d06cd273adaf397b711fc0d542becb3e133517e81f3d759528fc0d3",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/25.json": "5e9c10be4d527f22bddefe1e3f5456f98f05eb9a59de62d4e5a1731eaed49d7a",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/26.json": "c821236dc9182250c1e06a6f539f025b4ef8883d0cbc6d9293a9ec4a6eb9605f",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/27.json": "a54eaf9d759c0b34cd9c4585cfb6dc0c3a6a8587564c9565e1e968f2fd6568e5",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/28.json": "0e087a42b813d9b6d56de5efb292eb8f715ce34bff139e9fe2168b539d51512c",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/29.json": "d18557c003ddbd1b7d296f2ee01b0e81aa237ecbb1df2f01038af797ea8f1b15",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/30.json": "e3661230b7d60349cc20dfc9511c8d2ee1ffde6db662e9f1445157ebfd2982ee",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/31.json": "113e2d63edf702dce92cca1b477262b6c979ec7fde0b64115713dcb85a28e9e6",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/32.json": "3b05d6b63e630d2ef944cafcb547bfe046b2cc015a47f760d5e2605fd226826a",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/33.json": "0beb4d8cc8bfba2984140ace5dd811d46487b3b92a013d25baf3351876e410bc",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/34.json": "9498798334abb0ba4d62d9b941db9420b187b0ef555f497c312badad7bb2be32",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/35.json": "fb7cee9cfffe01c2ff4e362d2438c9d03e9fb9b633452b5906479813b507cada",
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/36.json": "7893ae4cdf43910350fabc785805da80fe2b99b5153de1dfb7e9048ce1ce0183",
+    "tmp/evaluation-2026-09-16/sustained_rpg/owners/advancement.md": "ac9ba1504526c3152bdd0a7d6aaa16bffee7a1a8435cc10cae27bbef55edf753",
+    "tmp/evaluation-2026-09-16/sustained_rpg/owners/current_state.md": "7fb94a81742c29958782cf0a0bc65016f47cdd387210aa23f91f98c9c714937a",
+    "tmp/evaluation-2026-09-16/sustained_rpg/owners/knowledge_boundaries.md": "6ab4e826a7f1fe16ffa65f5e4c29b0a261497630b6fdb139133ed3ecdb67ac6d",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/01.json": "df42448f3fbbff40feda21f4f08a18bceed0b4389a76e152c42cb7a98c2da33e",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/02.json": "b21583bd8ad72d27bc61851bd7f5f0237e945126dfcbbef520e8b893a189b800",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/03.json": "5444da9ed3c16792078579f04d10b71c1ec3dd6c022e0463513c9a3caf6e9de7",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/04.json": "f89fd7d98eaba08c1a21f2f04b9ec544701c75fe760465ad8f702c3b007e1a81",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/05.json": "8b7fa0871cf8b5889ed50cb473d6e371a15aff637f0ddb445ee4f4c5d35f9378",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/06.json": "af6e080c170e0cfb8a854c7e865ed1f2474144f156c20bbe51d4466ec5a286e2",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/07.json": "a39d36e7210857e4c0df0c2912488b58c822e0e7acc7b0323476612ef476e1d6",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/08.json": "17c311c5feafaa16c237bbe68b12241ccef1cba2e692fd065fb9c718d71f466c",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/09.json": "1c8f1cef1f0043d8b0b27fcf9f5c183d79c5168814aa3b070711a26d20992c51",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/10.json": "2f950456a3ed6d1eaeab588ec346b06e1733c5e30b6686293f6dfde1500ee7ef",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/11.json": "0b034ef596d3f978628a19c89f2c4634c4c3ce3971808e24155f182e947d85e0",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/12.json": "e87c50bf857467744ad702a6734e77ec68236be709c8188db76bf59b2afd3b36",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/13.json": "2ce06abc09ecc586fbf53837df142294a67b970024f94d3e9efd132d58b8205d",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/14.json": "ce04abe58f346c7c50e5789d82ac624ca6eaed0f3d848af22023a372ea2dc1ea",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/15.json": "2d47a8b740e3ea57e65a63fe3ac705f1dcb2ff9985d0e5febe7e326cdfb57ba7",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/16.json": "716687f01403fa56f6ce62d9c07f90e81c2c05f4d83a417ee6c2cfdfd65a1f76",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/17.json": "ef55eba1c1c9a750ea50f03dea1e241d7e1c756f62a40196b37cfb32ef2b70d7",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/18.json": "5f30b5278ae967bb2fa901e2329cae3a3b0c742bb7531fc63ac96a7c26ea434f",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/19.json": "3e080d81a12baef91703f196d81886622fc32e187aef1145031eebbcde98df9e",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/20.json": "47c4bbe779342633b08be764192d2d4bbc07bb4395ea221314c40a6da40a60b1",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/21.json": "419b4fa852d13fe66971f39ccd53f882d5514f1ab577636cc096427ecae5fdf6",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/22.json": "57ba19ffe37d9de46e12b79051eddcbc326a64e3c08a73dc6fafb32dfdd82435",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/23.json": "f6537299264b9c5012e52b67453ef2156f0442383f8803b1ece11dc117bfc71f",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/24.json": "c2704e5ae533ef1dd82f6cd876767fb46b8019eda60f8b473463a7442444a004",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/25.json": "1d00fc0301531398d264999a0927f6f805f3b2db34da262e3af141963e717529",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/26.json": "d28c965d8c735882b606beacb031e41eefa0fa04a55d649fbc9f8c2f9a786901",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/27.json": "90a8e0ee03f4ed488e8d0294fa342ec94821e860ee9841f4f603f3a32d7127b1",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/28.json": "7a0937efefa64a2ef6991ac88b3f28094500707baca67fc88a861d242031f0b4",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/29.json": "d0b553decc03b9bc689076ef90f956038869ec0d8ab314e47199e5aa20fa10a5",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/30.json": "a9c87e081a66e9d045f146320c228bc02a6e39a7344299f0467a99e846b3e906",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/31.json": "5986f3865058fbeac78c743f25d475271a8e01264a8910bd6b3d781943848ab8",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/32.json": "8c278c3c07f77be3bbd74ab745bf9cbe40b3b15b74ea3afffc19193beba45aa0",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/33.json": "2dbbd0d4d020a03cdeeafadf8c2deb3700c1d2746da13dad927365706a74d6b3",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/34.json": "ec5d804b3d2bfc0bb6efa506bdf3b2f084f8b091d9e9f31061caa8a49a4d0fbc",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/35.json": "a7f9f50c04071f8266026f20eb31aa5d5328f5413823cc491caf7bf9fbad4815",
+    "tmp/evaluation-2026-09-16/sustained_rpg/responses/36.json": "5cd92fb47616ec1754da52556b4e9cc798ccf09837a83c8420293b2e7ca06aea"
+  },
+  "evaluator_actions": [
+    "Read the whole fixture including evaluator_only, GM rubric/thresholds, all 36 unmodified responses, input sequence, current final owners, checkpoint fragments and actor execution notes.",
+    "Confirmed 36 input files match fixture entries and before-09 manifest matches snapshot bytes.",
+    "Read closure/advancement contract to evaluate delayed choice and final status.",
+    "Did not edit product files, actor responses, inputs, owners, checkpoints or source fixtures."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "turn": 9,
+  "player_input": "Kaldığım yerden devam: hâlâ handaysam masaya oturup çay istiyorum.",
+  "response": "Hâlâ handasın. Boş masaya oturup çay istiyorsun. Ada, yemek salonundaki hazırlıklarının arasından çayını getirip önüne bırakıyor.\n\n“Yeni demlendi. Biraz sıcak,” diyor.\n\nBardaktan buhar yükselirken Ada masaları hazırlamaya dönüyor. Önünde çayın, çevrende hanın sakin akşam işleri var.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/09.json",
+    "tmp/evaluation-2026-09-16/sustained_rpg/owners/current_state.md",
+    "tmp/evaluation-2026-09-16/sustained_rpg/owners/knowledge_boundaries.md",
+    "tmp/evaluation-2026-09-16/sustained_rpg/owners/advancement.md"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

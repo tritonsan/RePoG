@@ -1,0 +1,14 @@
+{
+  "turn": 19,
+  "player_input": "Denetim başladığında güvenli halka açık alandan gözlemliyorum.",
+  "response": "Denetim vakti yaklaşınca rıhtımın halka açık seyir alanına geçiyorsun. Sefa el arabasını atölyeden getiriyor; Mara da saat 10.00’daki denetim için rıhtıma geliyor.\n\nMara arabayı gözden geçirirken Sefa, dün gördüğün bağlantıyı gösteriyor. Parça yoklandığında hâlâ hafifçe oynuyor.\n\n“Bu bağlantıyı ayrıca kontrol edeceğim,” diyor Mara ve bulguyu not ediyor. Senin bulunduğun yer çalışma alanının dışında; yapılanları oradan rahatça izleyebiliyorsun.",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/19.json",
+    "workflows/gm/playbooks/advancement.md"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

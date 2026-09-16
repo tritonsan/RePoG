@@ -1,0 +1,7 @@
+{
+  "turn": 1,
+  "player_input": "Rıhtımdaki görev teklifini bugün kabul etmiyorum; sadece çevreye bakıyorum.",
+  "response": "Teklifi kabul etmeden rıhtımın halka açık seyir alanında kalıyorsun. Su, kıyı taşlarına hafifçe vuruyor; burada durup çevreyi seyretmene engel yok.\n\nAsılı duyuruda denetimin yarın saat 10.00’da yapılacağı yazıyor. Şimdilik rıhtımda senden beklenen bir iş yok; önünde suyun açık yüzü ve kıyı boyunca yürünebilecek yol uzanıyor.",
+  "loaded_paths": ["AGENTS.md", "workflows/gm/WORKFLOW.md", "tmp/evaluation-2026-09-16/sustained_rpg/bootstrap.json", "tmp/evaluation-2026-09-16/sustained_rpg/inputs/01.json", "workflows/gm/playbooks/scene_entry_opening.md", "workflows/gm/playbooks/exploration_investigation.md"],
+  "limitations": ["fiction_only; no runtime persistence, tokens or latency measurement"]
+}

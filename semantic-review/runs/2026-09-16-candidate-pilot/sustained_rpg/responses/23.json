@@ -1,0 +1,13 @@
+{
+  "turn": 23,
+  "player_input": "Sefa’nın bildiğiyle benim yeni öğrendiğimi ayırarak onunla konuşuyorum.",
+  "response": "Rıhtıma dönüp Sefa’yla konuşuyorsun. Denetimin saatini zaten bildiğini ayırarak, sicilde henüz tamamlanmış bir sonuç kaydı görmediğini aktarıyorsun.\n\n“Saati biliyordum,” diyor Sefa. “Sicilde ne yazdığını senden duyuyorum. Ben arabayla buradayım.”\n\nYanındaki el arabasını gösteriyor. “Bağlantının oynadığını birlikte gördük. Hakkında söyleyebileceğim somut şey bu.”",
+  "loaded_paths": [
+    "tmp/evaluation-2026-09-16/sustained_rpg/inputs/23.json"
+  ],
+  "retained_model_context": true,
+  "limitations": [
+    "fiction_only; no runtime persistence, tokens or latency measurement",
+    "restart checkpoints simulated; prior dialogue remains in model context due host thread limit"
+  ]
+}

@@ -56,7 +56,9 @@ Python kitaplığıyla çalışır.
 
 Yerel ortam Windows/Python 3.10. Normal sembolik bağlantı oluşturma izni yok;
 ilgili test bu nedenle atlanır. Windows junction testi gerçekten çalıştırılır.
-macOS/Linux sonuçları ancak uzak CI tamamlandığında doğrulanmış sayılır.
+Son ürün commit’i `5bd1b3c` için Windows, macOS, Linux/Python 3.10 ve Linux/Python
+3.13 CI işleri başarılı. Her iş testleri, iki paket üretiminin hash eşitliğini ve
+açılan ZIP kontrolünü tamamladı: [CI kaydı](https://github.com/tritonsan/RePoG/actions/runs/35096380794).
 
 Uzun anlatı denemeleri sentetik `fiction_only` pilotlardır. Gerçek runtime
 persistence, model token kullanımı, medyan/p95 yanıt gecikmesi veya gerçek oyuncu
@@ -64,3 +66,20 @@ memnuniyeti kanıtı değildir. Host'un ajan sayısı sınırı yüzünden devam
 model bağlamı korunur; snapshot yeniden okumaları gerçek yeni-bağlam testinin
 yerini tutmaz. Seri/paralel hız karşılaştırması yapılmadığı için performans artışı
 iddiası yoktur. Bu sınırlar kayıtların içinde de korunmalıdır.
+
+Yerel son koşu: **307 geçti, 1 ortam kaynaklı atlama**, 64,97 saniye. Workspace ve
+açılan oyuncu ZIP’i: **0 hata, 0 uyarı**. Temiz Windows CI’da bulunan UTC/tzdata
+sorunu ayrıca düzeltildi ve veritabanı yokluğunu taklit eden altı test eklendi.
+UTC View kontrolü harici saat dilimi paketi gerektirmiyor; diğer IANA adları host
+veritabanında bulunmalı.
+
+36 turluk RPG ve 12 konuşmalık Companion sentetik pilotunun cevapları, ara/final
+kayıtları ve bağımsız incelemesi [çalıştırma arşivinde](runs/2026-09-16-candidate-pilot/README.md)
+tutuluyor. Bunlar yukarıda belirtilen sınırlı anlatı kanıtıdır; tam runtime veya
+gerçek oyuncu kabul testi sonucu değildir.
+
+Her iki pilotun ayrı aktörden gelen değerlendirmesinde kritik semantik ihlal
+gözlenmedi. RPG incelemesinin küçük kalite notu: ret kabul edildikten sonra
+“sana yeni görev yüklenmiyor” güvencesini tekrar etmek yerine karakterlerin olağan
+davranışıyla özgürlüğü göstermek. Bu not takip için saklandı; küçük sentetik örnek
+üzerinden genel oyun kalitesi veya hız sonucu çıkarılmadı.

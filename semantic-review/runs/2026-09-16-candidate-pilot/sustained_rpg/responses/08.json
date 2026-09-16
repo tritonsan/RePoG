@@ -1,0 +1,7 @@
+{
+  "turn": 8,
+  "player_input": "Hana yürüyorum. Bu akşam yeni iş üstlenmiyorum.",
+  "response": "Atölyeden ayrılıp sakin bir yürüyüşle hana varıyorsun. Yemek salonunda akşam için hazırlanmış masalar var; içeriden çay kokusu geliyor.\n\nÜcreti ödenmiş odan hazır. Salonda da boş bir masa duruyor; sandalyesi rahatça çekilebilecek kadar açıkta. Kapıya kadar seni izleyen bir iş talebi ya da bekleyen bir görev yok.",
+  "loaded_paths": ["workflows/gm/WORKFLOW.md", "tmp/evaluation-2026-09-16/sustained_rpg/inputs/08.json", "workflows/gm/playbooks/breather_aftermath.md", "workflows/gm/playbooks/scene_arc_transition.md"],
+  "limitations": ["fiction_only; no runtime persistence, tokens or latency measurement"]
+}

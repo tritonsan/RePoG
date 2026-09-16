@@ -1,0 +1,7 @@
+{
+  "turn": 4,
+  "player_input": "Bildiğim marangozlukla örneğin kenarını güvenli tezgâhta düzeltiyorum.",
+  "response": "Sefa rendeyi uzatıyor. “Bununla çalışabilirsin.”\n\nÖrneği tezgâhta sabitleyip kenarını düzeltiyorsun. Bildiğin, elinin alışık olduğu bir iş; ince talaşlar ayrıldıkça pürüzlü kenar düzgünleşiyor. İş bittiğinde tahta örneği düz bir kenarla önünde duruyor. Rende hâlâ Sefa’nın ödünç verdiği alet.",
+  "loaded_paths": ["workflows/gm/WORKFLOW.md", "tmp/evaluation-2026-09-16/sustained_rpg/inputs/04.json"],
+  "limitations": ["fiction_only; no runtime persistence, tokens or latency measurement"]
+}

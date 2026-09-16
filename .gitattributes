@@ -1,0 +1,2 @@
+# Preserve exact synthetic evaluation bytes for cross-platform hash verification.
+semantic-review/runs/** -text whitespace=cr-at-eol,-blank-at-eof
