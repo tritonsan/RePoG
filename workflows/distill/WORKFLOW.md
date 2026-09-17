@@ -381,7 +381,8 @@ Classify each important element:
 - `dormant`: not pressing now, but can return later;
 - `transformed`: changed role, allegiance, state, location, or meaning;
 - `unknown`: outcome is uncertain and should not be assumed;
-- `must_return`: should appear or visibly pressure the next act;
+- `must_return`: has an established consequence to honor when its return trigger
+  and visibility channel are present;
 - `hold_for_later`: important but should not enter the next act yet.
 
 Write the result to `next_act_prep.md`. Include NPCs, companions, factions,
@@ -398,6 +399,23 @@ questions are answered/defaulted and any advancement choice on which the next
 act depends is cleared. Automatic fictional advancement does not require a
 separate OOC clearance. After narration uses the opening, mark it `consumed`;
 do not change the already historical `first_session.md` lifecycle.
+
+Before activating that opening, follow the act-identity handoff in
+`workflows/gm/playbooks/scene_arc_transition.md`. In an adopted identity contract,
+the outgoing Compass is already closed by its decisive event. Archive its id,
+question, scope, and closure evidence and activate a fresh Compass in one
+`threads.md` owner transaction. A new question must not inherit the old closure
+record. Give prep/opening the matching predecessor/successor references only
+after the owner commit; keep them pending until the full boundary check passes.
+An independent aftermath may remain under the closed Compass. Legacy campaigns
+adopt identity only at an accepted safe transition, never by invented history.
+
+Revisit only the Campaign Horizon and Planted Expectations affected by actual
+play: what remains open, became available, paid off, changed meaning, or was
+retired? A shown detail needs evidence; an unshown plan is not a remembered
+promise. Keep future answers open. Respect refusal, a new goal, and a breather;
+do not reconnect everything to a main plot or make every carried element appear.
+For `must_return`, preserve its causal trigger and visibility channel first.
 
 For a scenario, arc, or campaign closure eligible for structural delegation,
 use the dependency order from the GM scene/arc playbook: closure/reward
@@ -430,6 +448,14 @@ When a note becomes too long, compress it into:
 - active pressure;
 - next likely move.
 
+Load `workflows/reference/continuity-memory.md` for this compression. Preserve
+conditions, exceptions, source/evidence, holder uncertainty, topic, outstanding
+obligations, and what did not change. Compare the decisions the shorter text
+would allow with the original; restore any lost qualifier. Compression must
+never turn conditional permission into a blanket right or reconciliation into
+repaired trust on every topic. History links supplement current limits rather
+than replacing them. A semantic change needs its own evidence and transaction.
+
 # Knowledge Boundary Distill
 
 At the end of a session or arc, review every important discovery:
@@ -440,6 +466,12 @@ At the end of a session or arc, review every important discovery:
 - Which GM-only facts became foreshadowable, PC-known, companion-known,
   NPC-known, or revealed?
 - Which protected proper nouns must still stay out of Player Mode?
+
+When an important holder's source, mistaken version, or learning time matters,
+use the optional Holder Accounts in the same knowledge owner. A correction
+reaches only its actual recipients; keep an uninformed actor's earlier account.
+Preserve replaced accounts and their evidence in append-only history, subject
+to the active retention/forget policy. Never infer an institution-wide audience.
 
 `knowledge_boundaries.md` should already contain every discovery established
 during play. Use this review to verify holder and reveal status against the
@@ -495,8 +527,10 @@ At the end of a session or arc, review recurring NPCs:
   NPC back when useful.
 - If an NPC sounded generic, add a plain speech sample, stronger posture, or
   clearer mundane agenda.
-- If too many NPCs acted suspicious, retune at least one active NPC toward
-  busy, warm, indifferent, practical, afraid, greedy, official, or helpful.
+- If too many NPCs sounded suspicious, check whether their recorded agenda and
+  posture were actually portrayed. Restore the supported busy, warm, indifferent,
+  practical, afraid, greedy, official, or helpful behavior; do not invent a new
+  personality or motive merely to balance the cast.
 - If a key clue was buried inside personality prose, move it into
   `secrets_and_clues.md` or the NPC's `Key Info, If Any`.
 - Fill missing Agency Card decisions for promoted T2/T3 NPCs and run the
@@ -504,6 +538,14 @@ At the end of a session or arc, review recurring NPCs:
 - When a T3 or player-important T2 leaves active cast, preserve its goal,
   method, next decision, evaluation trigger/time horizon, and visible result
   channel without evaluating it until a relevant trigger occurs.
+
+For an important T2/T3, keep two or three contextual voice examples only when
+they clarify a useful contrast: ordinary task, pressure, or intimacy/refusal.
+Separate a passing mood from an earned lasting change, cite the cause and scope,
+and preserve what remains stable. Read topic-specific relationship consequences
+from `relationship_map.md`; an apology may repair one issue while another limit
+remains. Do not flatten this to a global trust upgrade. A trajectory transferred
+to a shared world domain leaves a reference, not a second live process.
 
 A wording sample or condensation may remain secondary when it only expresses
 committed identity. A newly chosen agenda, capability, knowledge limit,
@@ -551,6 +593,12 @@ Also rebuild the selective context fields:
 - add triggered lookups instead of loading broad campaign history;
 - list due world checks only when their fictional trigger may occur.
 
+Point to the current Compass rather than copying its question/closure text.
+Index important return signals with established aliases and a precise owner
+heading/id. Record the source revision checked; recheck affected dependencies
+when they change, not every brief entry on every turn. No lookup index becomes
+truth or grants a character access to hidden information.
+
 # World Dynamics Review
 
 Review only domains whose recorded elapsed-time, return, news, relationship, or
@@ -588,6 +636,13 @@ Player authorship, NPC agency/presence, knowledge limits, voice contrast,
 pacing, and continuation are model-reviewed with the GM Spine rubric only when
 sampled or explicitly audited; do not add a semantic Python checker or run one
 per turn.
+
+When sampled, retain bounded per-speaker fingerprints so an absent character's
+voice is not immediately displaced by narrator entries. Cross-NPC phrase
+warnings are surface evidence: a shared profession or deliberate motif may
+explain them. Use the separate literary dimensions and fresh-context protocol
+in `evaluation/README.md` at an explicit quality review. Structural validation
+and repetition counts alone do not establish story quality.
 
 # World Voices Distill
 

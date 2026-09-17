@@ -71,6 +71,15 @@ Choose independently:
 - `full_distill` at the configured durable threshold or another documented
   structural trigger. A durable result alone does not force this boundary.
 
+An unresolved reply can need a checkpoint before five soft turns: if the next
+answer would lose its question/choice referent after restart, preserve the last
+speaker, referent, and control point in `scene_frame.resume_anchor`. Reference
+the existing owner for an offer; never decide it for the Player. A completed
+greeting or joke with no reply dependency still writes nothing. When the exchange
+also establishes a promise, permission, disclosure, or relationship consequence,
+it is durable and carries the anchor in that same commit. See
+`workflows/reference/continuity-memory.md` for the bounded handoff contract.
+
 ### 3C. Commit Once
 
 - `soft + ordinary`: no write, counter, dashboard refresh, or check.

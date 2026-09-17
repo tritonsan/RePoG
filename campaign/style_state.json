@@ -2,10 +2,13 @@
   "schema_version": 3,
   "max_history": 8,
   "max_categorical_history": 8,
+  "max_speakers": 8,
+  "max_speaker_history": 4,
   "avoid_phrases": [],
   "last_beat_id": null,
   "last_scene_id": null,
   "last_speaker": null,
   "history": [],
+  "speaker_history": [],
   "categorical_history": []
 }

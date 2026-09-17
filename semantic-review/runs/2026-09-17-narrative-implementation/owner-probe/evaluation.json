@@ -1,0 +1,18 @@
+{
+  "evaluator": "root implementer, separate from the fresh reading actor",
+  "execution_mode": "focused_owner_probe",
+  "source": "reader_answers.json and the committed synthetic owners",
+  "fresh_context": "A new collaboration agent was created with fork_turns=none; its packet excluded prior transcript, generator, manifest, and evaluator expectations.",
+  "checks": [
+    {"question": 1, "result": "supported", "evidence": "Answer preserves tonight-only room permission, disputed old account, no tool gift/permanent key, and unaccepted conditional rental discussion; it follows the established Demir Usta alias."},
+    {"question": 2, "result": "supported", "evidence": "Answer keeps Baran's direct-observation correction separate from Ada, who has not heard the rumor or return outcome; it identifies the replaced report."},
+    {"question": 3, "result": "supported", "evidence": "Answer separates closed act_return at revision 1 from active act_work at revision 2 and cites the new commission/abandonment closure condition."},
+    {"question": 4, "result": "supported", "evidence": "Answer identifies the unresolved now-or-after-work tea question and does not choose for Mira."}
+  ],
+  "limitations": [
+    "One synthetic case and four Designer retrieval questions; not a full narrative replay or a statistical quality result.",
+    "The reader received six named owner files; this does not measure autonomous discovery in a large campaign.",
+    "The preparation script exercised real transaction primitives in separate processes, but skipped full setup and Distill and authored the semantic mutations in advance.",
+    "No blind baseline comparison, literary score, long-session resilience, or latency improvement claim."
+  ]
+}

@@ -3,6 +3,11 @@
 Read only the section needed to identify a changed fact's owner. This is a cold
 reference, never a per-turn load list. AGENTS.md owns cross-mode invariants.
 
+For a difficult lookup, holder-specific account, memory compression, or
+resumability question, load the relevant section of
+`workflows/reference/continuity-memory.md`. Its optional fields extend existing
+owners; they do not activate another memory store or require a legacy migration.
+
 ## Campaign Memory
 
 This distribution is a single-campaign, standalone workspace. Its active
@@ -228,7 +233,11 @@ Mode rather than guessing.
 - `knowledge_boundaries.md` is the sole current authority for tracked fact
   identities, truth and reveal status, current holders, suspicions and explicit
   unknowns, protected names, safe wording, reveal conditions, and Companion
-  disclosure state. Character and faction notes may own stable epistemic or
+  disclosure state. Optional Holder Accounts preserve one current received
+  account per actor–fact pair, including evidence source, fictional learning
+  time, and correction reference. They describe a holder's belief, not another
+  world truth; correcting one holder does not update uninformed actors.
+  Character and faction notes may own stable epistemic or
   disclosure habits but must not maintain a second copy of current knowledge.
 - `storytelling.md` elaborates the locked RPG narration selectors with
   campaign-specific examples and guidance for option prompting, pacing,
@@ -271,15 +280,19 @@ Mode rather than guessing.
   the current scene, immediate inventory, conditions, clocks, and threats.
   Its scene frame owns the resumable scene id and mode, ongoing process,
   disruption, last causal beat, bounded pending consequences, and resume
-  anchor. Its `persistence` block owns distill progress, durable-turn count,
-  and pending cold targets. It does not replace stable character or world
-  notes, or durable history.
+  anchor. A material unresolved reply or turn handoff may be retained in that
+  existing anchor through a pure checkpoint; it is not a transcript or a new
+  fictional revision. Its `persistence` block owns distill progress,
+  durable-turn count, and pending cold targets. It does not replace stable
+  character or world notes, or durable history.
 - `active_cast.md` is the RPG scene-chain hot tracker. It owns temporary
   location, activity, immediate objective, availability, presence reason,
   next move, and last-seen revision only for NPCs who are present, nearby,
   travelling with the player character, or likely to act in the current chain.
-  Character notes own stable identity, baseline routine, and offscreen
-  trajectory. Do not use this file as a whole-world roster or a duplicate
+  Character notes own stable identity, baseline routine, and their own personal
+  offscreen trajectory. A shared domain process belongs in `world_dynamics.md`;
+  the character note references it instead of running a second trajectory for
+  the same process. Do not use this file as a whole-world roster or a duplicate
   faction or domain clock.
 - `location_graph.md` owns current gameable route edges, direction, travel,
   access, visibility, ordinary traffic, conditions, and revision. Place notes
@@ -295,7 +308,11 @@ Mode rather than guessing.
 - `world_dynamics.md` owns the current trajectory, trigger and evaluation
   state, and notable evaluated events only for explicitly tracked,
   campaign-relevant offscreen domains. Character and faction notes own stable
-  motive, method, and capability; `current_state.yaml` and
+  motive, method, and capability. A character's separate personal trajectory
+  may stay in its character note; the same movement must not be evaluated in
+  both places. On transfer to a shared domain, retain only a `Domain trajectory
+  ref` for that process in the character note and archive the former personal
+  evaluation. `current_state.yaml` and
   `companion_state.json` own immediate state. Evaluate domains only on a due
   causal trigger. This file is not a continuous simulation, and elapsed time
   alone does not force a result.
@@ -322,8 +339,10 @@ Mode rather than guessing.
 - `creation_ledger.md` is the compact production index for every T1+ named NPC,
   location, or faction introduced during setup or play. It owns existence,
   type, tier, first appearance, note path, status, and promotion tracking.
-  Entity notes own stable detail, and any player-known or knowledge summary in
-  the ledger must agree with `knowledge_boundaries.md`.
+  Entity notes own stable detail and established aliases; a T1 stub without a
+  note keeps its established alias with its identity. Derived lookup signals
+  reference these owners rather than introducing aliases. Any player-known or
+  knowledge summary in the ledger must agree with `knowledge_boundaries.md`.
 - `relationship_map.md` owns one current qualitative edge per directed
   relationship, including status, trust, debt or tension, knowledge asymmetry,
   and revision. Entity notes own stable relationship behavior and
@@ -339,8 +358,13 @@ Mode rather than guessing.
 - `session_brief.md` is an optional, revision-bound GM prep and triggered-lookup
   index for observable player focus, possible scenes, useful entities, and
   likely references. It is neither a plot script nor a current-state authority;
-  reference owning files instead of copying their live facts, and refresh or
-  discard the brief when its source revision is stale.
+  reference owning files instead of copying their live facts. Optional lookup
+  entries bind established names/aliases or causal signals to an owner path and
+  heading/id, an applicability condition, and a verified revision. An older
+  revision makes applicability unverified; it need not erase useful pointers.
+  Load the owner, then refresh or discard only affected entries when their
+  dependencies change. The active Act id/Compass and closure references point
+  to `threads.md`; they never become a second live Compass.
 - `threads.md` owns the status of player-relevant dramatic questions, open
   consequences, promises, debts, mysteries, threats, and opportunities. In
   Companion mode it holds only established shared callbacks, plans, and open
@@ -360,11 +384,13 @@ Mode rather than guessing.
   activate or silently replace either contract.
 - `characters/`, `places/`, and `factions/` own readable per-entity stable
   identity, baseline agency and routine, capabilities and limits, appearance,
-  behavior, and reference links. They may reference current authorities but
-  must not duplicate current location, knowledge, relationship, offscreen
-  trajectory, or event history. The primary Companion note additionally owns
-  the stable fictional character and bounded Hot Character Kernel, not current
-  condition, user memory, or relationship context.
+  behavior, and reference links. A character note may own that NPC's personal
+  offscreen trajectory; a trajectory already owned by a shared world domain
+  stays a reference here. Do not duplicate another owner's current location,
+  knowledge, relationship, domain trajectory, or event history. The primary
+  Companion note additionally owns the stable fictional character and bounded
+  Hot Character Kernel, not current condition, user memory, or relationship
+  context.
 
 ### Assets, Derived Views, and Recovery
 

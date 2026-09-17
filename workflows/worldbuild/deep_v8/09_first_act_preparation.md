@@ -17,7 +17,10 @@ Ask one decision per message:
    routine/arrival, visible situation, scene mode, pressure or calm affordance,
    competence/counterplay opportunity, and neutral actions.
 
-Write the accepted frame immediately to its design owners. No event chain,
+Write the accepted frame immediately to its design owners. For a new campaign,
+assign its stable `Act id` and `Act status: planned` in `threads.md`, with
+`Previous act id: none`. Keep any horizon link conditional and its Closure Record
+empty; these are coordinator details, not another Player decision. No event chain,
 required route, scheduled climax, predetermined outcome, or mandatory quest is
 permitted. Draft a short, explicitly non-play narrative proof from this accepted
 opening material. It must demonstrate the Stage 7 POV, tense, prose density,
@@ -47,6 +50,10 @@ extension change invalidates this and every downstream gate.
 While not ready, materialize the approved opening scale: player/current state,
 world truth, independent issues, cast and place cards, relationships, knowledge,
 routes/presence, first-session prep, active opening, and approved runtime state.
+Set the first Compass `active` at its initial continuity revision (normally 0),
+and set `opening_brief.md` / `Opening act id` to that same id. A preparation proof
+is not an in-play discovery: mark an expectation planted only if it was genuinely
+shown to the Player, with its actual review/turn evidence and knowledge boundary.
 Keep the accepted narrative proof as presentation evidence; the actual opening
 must follow it but is not narrated yet.
 Read-only proposal lanes are optional; the coordinator owns all writes, ids,

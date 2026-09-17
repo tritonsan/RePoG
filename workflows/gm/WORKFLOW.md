@@ -34,6 +34,20 @@ brief, and relevant knowledge entries. The scene frame/resume anchor owns
 continuation; cold notes trigger by entity, place, domain, mechanic, source,
 advancement, visual, or continuity signals.
 
+Keep the current `threads.md` Arc Compass id, status, dramatic question, closure
+conditions, and reachable scope in this small context. Read its owner when it
+changes; a brief may point to it but never supplies a second current Compass.
+Load horizon/expectation detail only when a choice or act boundary touches it.
+Sandbox play does not need a main plot. Never apply an archived act's closure
+conditions to its successor.
+
+On a return, alias, promise, limit, or unfinished topic, follow the brief's
+Triggered Lookups to the owner before asserting what happened. If the pointer
+is missing, search the relevant owner by established name/alias/topic; absence
+from the brief is not absence from history. Recheck affected sources instead of
+discarding every pointer when the global revision advances. Load
+`../reference/continuity-memory.md` for a difficult lookup or holder account.
+
 Keep two short blocks of `boundaries.md` hot as well: the content limits and the
 creation-authority threshold. Limits that are never read cannot protect anyone, and
 an authority threshold nobody consults changes nothing. Both are compact, and a
@@ -131,8 +145,10 @@ Apply these six steps in order:
 3. Resolve the nearest logical response of the world, within what the capability
    model supports.
 4. Let only actors who could perceive or learn of the event react.
-5. Identify the fact, position, relationship, pressure, or affordance changed.
-6. Return control at a concrete moment created by that changed situation.
+5. Identify any fact, position, relationship, pressure, or affordance changed;
+   unchanged truth is valid for a completed reply, pause, or ordinary exchange.
+6. Return control at the concrete moment the response leaves, without forcing
+   escalation or a new social fact to justify a turn.
 
 Routine competence without meaningful resistance succeeds cleanly. Use only
 approved mechanics and `play_profile.yaml.mechanics.resolution_grounding`;
@@ -178,6 +194,10 @@ Apply the restart-loss test: a changed fact needed after restart is durable;
 otherwise it is soft. Select the structural boundary independently. A soft
 ordinary turn performs no write or check. If roughly five soft turns have left
 the resume anchor stale, prepare a pure checkpoint without fictional revision.
+Checkpoint earlier when the next reply depends on an unresolved question or
+choice referent the existing anchor cannot preserve. Record the last speaker,
+that referent, and where control rests; do not store a transcript or accept the
+choice. New promises, permissions, or relationship changes remain durable.
 
 For any durable result, checkpoint, or full-distill trigger, load
 `playbooks/persistence.md` and commit exactly once through the owning helper.
@@ -196,6 +216,13 @@ When the fiction wants an outcome the sheet does not support, reach it through a
 different route or let the sheet stand. Show the direct
 result before new atmosphere or pressure, then end where the Player can react;
 avoid a menu unless requested or selected by profile.
+
+Choose details that make action and interpretation possible: the tool's relevant
+shape, the distance that matters, a character's particular choice of words.
+Let subtext and behavior carry tone when explanation would flatten it. Vary
+length with the moment, not a paragraph quota; a complete quiet reply can end.
+Keep policy assurances out of character speech unless the fiction itself calls
+for them. Sampled literary review lives in `evaluation/README.md`, not this turn.
 
 # Scene Logic
 
@@ -242,6 +269,12 @@ boundary, and routine/availability. A note that is only a descriptive paragraph
 is not enough. When they are missing, fill them in the same turn as part of that
 turn's write, then speak. This is one small write per NPC, not per turn, and it
 is what later turns read instead of reconstructing a voice from memory.
+
+For a significant returning character, also read the current relationship topic
+and any earned disposition change. A temporary mood does not rewrite baseline
+identity. Use contextual speech examples as references, never repeated lines.
+Personal and shared-domain trajectories have one owner per process; load the
+continuity reference when handing a process between them.
 
 `style_state.json` is the only repetition and last-speaker memory in the system.
 When the selected style policy samples a turn, update its fingerprints; an

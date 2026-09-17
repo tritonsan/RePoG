@@ -296,6 +296,15 @@ Run the semantic cases as sampled conversation replays under
 
 ## Player-Facing And Style Checks
 
+At a full RPG boundary, `check_state.py` also checks adopted act identities,
+archive/opening/prep references, optional holder-account shapes, and explicit
+Triggered Lookup references. `narrative_memory.py` supplies those bounded
+structural checks; it does not infer facts, judge prose, or compare meanings.
+The durable writer checks changed thread/account structure before committing,
+without a campaign scan. Legacy campaigns without meaningful act ids remain
+valid and receive an adoption warning only at a ready full review. No automatic
+campaign migration or schema-version change is required.
+
 ```bash
 python tools/check_player_facing.py --campaign campaign --text "You step into the rain."
 python tools/check_style.py campaign/style_state.json --text "Rain ticks against the glass." --scene-id dock --beat-id turn-12
@@ -309,6 +318,12 @@ Style schema v3 also retains at most eight optional categorical fingerprints
 (`dramatic_beat`, `gm_move`, `ending_form`, `sensory_channel`,
 `complication_type`, `npc_social_tactic`, and `metaphor_family`). Repetition is
 warning-only; the helper does not judge meaning or rewrite narration.
+Optional v3 `speaker_history` retains at most eight NPC/Companion buckets and
+four sampled fingerprints per speaker, so intervening narrator samples do not
+erase a returning voice. Recording initializes old states lazily; raw dialogue
+is not stored. Cross-NPC overlap produces an advisory surface-pattern warning
+only after matching multiple other NPCs. Shared factions or deliberate motifs
+may explain it; the result is not a verdict on personality or literary quality.
 The player-facing check reads exact unrevealed names from
 `knowledge_boundaries.md`; ordinary words such as "tool" are not banned.
 

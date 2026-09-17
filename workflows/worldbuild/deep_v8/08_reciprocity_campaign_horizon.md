@@ -31,7 +31,10 @@ campaign horizon without designing the first act or fixing a plot.
 - `campaign_architecture` begins here for long-journey, episodic, setup/payoff,
   or ending-horizon triggers. Its Stage 8 portion records multi-arc questions,
   available setups, reach conditions, and possible endings without scheduling
-  outcomes. Its separate first-act-dependent portion belongs to Stage 9.
+  outcomes. Keep those questions in `threads.md` / Campaign Horizon and important
+  unshown possibilities as `prepared` Planted Expectations, with source references.
+  Its separate first-act-dependent portion belongs to Stage 9. No question or
+  expected payoff is required when the accepted sandbox has none.
 
 Stage 6 `character_embedding` output is an input here, not a second extension
 activation or permission to invent personal truth.

@@ -141,6 +141,52 @@ why this character would disclose it in this context.
 - Verification method:
 - Must-not-imply fact ids:
 
+## Holder Accounts
+
+Optional detail for an important actor–fact relationship whose source, timing,
+or mistaken account matters later. Existing confirmed/suspicion/unknown lists
+remain valid. Add detail when play needs it; do not invent missing provenance
+or migrate every fact. Use a named subsection with these bullet fields per
+current account:
+
+| Field | Record |
+| --- | --- |
+| Account id | A stable identifier for this received account or belief. |
+| Holder ref | The specific actor's existing note/id; never an unearned whole-faction audience. |
+| Fact id | The existing fact this account concerns. |
+| Account | The concise proposition the holder received or believes, preserving scope and uncertainty; a stable source account reference may replace repeated text. |
+| Stance | `confirmed`, `suspected`, `refuted`, or `unknown`, from this holder's evidence. |
+| Source ref | The observation, report, inference basis, or receipt entry that supports this holder's account; use an owner/history reference. |
+| Learned at | Established fictional time or `unknown`; do not substitute wall-clock time. |
+| Recorded revision | The continuity revision at which this account was persisted. |
+| Supersedes | Previous account id if replaced, otherwise `none`. |
+| Correction ref | Evidence that changed this holder's account, otherwise `none`. |
+
+Keep at most one current account for each holder–fact pair. `confirmed` records
+the holder's conviction from their evidence; it does not certify objective
+world truth. Keep holder lists consistent with the account. A corrected world
+fact does not correct every holder: each needs a believable channel. An account
+reference must preserve the version actually received, not silently follow a
+mutable source to information the holder never learned.
+
+When new evidence changes an account, preserve the old account with its source
+in the same transaction's append-only history and replace only the affected
+current account. In RPG mode, put that before/after evidence in the semantic
+capture for the writer's receipt; never hand-append the receipt. Record the
+causal correction reference. Do not infer
+other actors' knowledge, remove their still-held mistakes, or promote a
+suspicion because another actor learned the truth.
+
+This section owns epistemic accounts, not a second copy of playable world
+truth. The existing Companion Disclosure Ledger still owns the primary
+companion's private truth and exact user-facing account; refer to that entry
+instead of creating a parallel disclosure record here. User retention consent
+and forgetting still follow `user_context.md` and the locked memory policy;
+do not use history or holder accounts to retain a forbidden user memory.
+
+See `workflows/reference/continuity-memory.md` for conservative discovery and
+the preservation check used when compressing these records.
+
 ## Reveal Ledger
 
 Use compact entries.

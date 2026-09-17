@@ -1,0 +1,38 @@
+{
+  "task": "Read-only restored-owner retrieval",
+  "fork_turns": "none",
+  "prior_transcript_received": false,
+  "transcript_note": "fork_turns none supplied no parent conversation or prior transcript; only the bounded task and environment instructions were received.",
+  "sources_read": [
+    {
+      "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-narrative-implementation\\owner-probe\\actor_packet.json",
+      "sha256": "45bcb5332c363ecf690bbebd02d4c23b0677cdaed39c0cea4d2ecf1e9e4406ff"
+    },
+    {
+      "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-narrative-implementation\\owner-probe\\campaign\\current_state.yaml",
+      "sha256": "3cd1dcb1d4babd8f4b77ceee3a0ee56cd07fa50687b010f35974552a7b0f5b9a"
+    },
+    {
+      "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-narrative-implementation\\owner-probe\\campaign\\session_brief.md",
+      "sha256": "7cc91babad788939d30a73961ab95e8372125c5e3d00e9a79e8f2eaa5820b0fc"
+    },
+    {
+      "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-narrative-implementation\\owner-probe\\campaign\\threads.md",
+      "sha256": "6de65af9f4c6cdba9e828295f9b5a68cf5a4075af8cd0ca784115337705df2ce"
+    },
+    {
+      "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-narrative-implementation\\owner-probe\\campaign\\knowledge_boundaries.md",
+      "sha256": "3061a858c5bf2c58b9096afcd2375a1a82135be4f1122deaef5eb103a04d177a"
+    },
+    {
+      "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-narrative-implementation\\owner-probe\\campaign\\relationship_map.md",
+      "sha256": "1bcc8999d03c8218c8339d86276488e663708d635efcae596d64aabb85e87be0"
+    },
+    {
+      "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-narrative-implementation\\owner-probe\\campaign\\characters\\ece.md",
+      "sha256": "0ad41062bf5e8600b037f78cf49783ba3703f49d42f6075d3fd618ad2f7b9c13"
+    }
+  ],
+  "campaign_mutated": false,
+  "self_scored": false
+}

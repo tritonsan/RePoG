@@ -38,6 +38,13 @@ If four or more axes substantially match, redesign at least two axes before
 using the NPC. This is semantic GM judgment. Do not call or create a checker,
 score file, or per-turn report for it.
 
+For important recurring voices, also compare how they answer the same ordinary
+question. Different jobs or goals do not by themselves make dialogue distinct.
+Use the character note's optional contextual examples where calibration is
+needed: ordinary speech, refusal under pressure, or speech to someone trusted.
+These illustrate choices and rhythm; do not recite them as catchphrases. Shared
+faction language can remain shared without giving everyone the same tactic.
+
 ## Presence Gate
 
 Before a recurring NPC appears, establish their last location, elapsed time,
@@ -45,6 +52,17 @@ plausible route, routine/availability, current task, reason here, and how recent
 history shapes their posture. A useful NPC is not automatically nearby. With a
 weak route or reason, use absence, delay, a believable message, another local
 person, or let the Player seek them.
+
+For an important reunion or a returning disputed subject, load the relevant
+`relationship_map.md` edge and, if needed, its decisive event reference. Carry
+forward the current topic, scope, and exceptions: trust in someone's skill can
+coexist with a dispute about money. A limited apology repairs only what the
+fiction establishes. Do not reset the relationship or narrate its whole history.
+
+Separate a temporary mood, a changed attitude toward one person, and an earned
+change to a stable principle. Only the last revises the character note's baseline,
+with an event reference and an explicit scope. Keep unchanged traits recognizable;
+do not invent growth or force a return to an old personality after real change.
 
 ## Knowledge Protocol
 
@@ -78,6 +96,19 @@ Preserve distinct word choice, rhythm, directness, status behavior, social
 tactic, and metaphor family. Do not give every clever NPC the narrator's
 favorite gestures, pauses, or metaphors.
 
+Keep boundary and knowledge checks private. Answer an explicit request for
+reassurance clearly, then normally show the respected limit through behavior:
+the NPC accepts a refusal, returns to work, or leaves a question unanswered.
+Do not append repeated assurances about absent obligations, unspoken claims, or
+what the GM has not done. An official clarifying terms may naturally be precise;
+every NPC should not acquire that same administrative voice.
+
+Let subtext follow the NPC's real aim and relationship, without making every
+ordinary line a riddle. Where a physical action matters, a grounded detail of
+movement, material, or position can make its result legible. Use only details
+supported by the fiction or permitted incidental color; no gesture or sensory
+quota, and no invented technical fact merely to sound specific.
+
 ## Resolve Social Action
 
 Honor the Player's actual approach and leverage. Decide what the NPC wants,
@@ -91,7 +122,10 @@ character convinced, trusting, ashamed, frightened, or morally persuaded.
 
 ## Conversation Beat
 
-Resolve the Player's last line or action first. Let the NPC answer while
-pursuing their own immediate objective, then change one concrete social fact or
-affordance. End before the Player character's reply. Do not append an unrelated
-threat or mystery merely to keep the conversation moving.
+Resolve the Player's last line or action first. Let the NPC answer while pursuing
+their own immediate objective. Show a changed social fact or affordance when it
+follows causally; an unchanged stance, a completed short exchange, or shared
+silence is also a valid result. Greetings and repeated requests do not require
+new trust, debt, or disclosure. This does not prevent an NPC from taking a
+motivated initiative. End before the Player character's reply. Do not append an
+unrelated threat or mystery merely to keep the conversation moving.

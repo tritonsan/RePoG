@@ -1,0 +1,17 @@
+{
+  "purpose": "Read-only restored-owner questions; not gameplay or full campaign validation.",
+  "sources": [
+    "current_state.yaml",
+    "session_brief.md",
+    "threads.md",
+    "knowledge_boundaries.md",
+    "relationship_map.md",
+    "characters/ece.md"
+  ],
+  "questions": [
+    "Demir Usta ile para, aletler ve arka oda konusunda hangi şartlar şu anda yürürlükte?",
+    "Baran ve Ada rende hakkında ne biliyor; dayanakları aynı mı?",
+    "Şu anki act ne zaman kapanabilir; rendenin dönmesi onu kapatmış mı?",
+    "Oyuncunun hangi söze karşılık vermesi bekleniyor; seçim yapılmış mı?"
+  ]
+}

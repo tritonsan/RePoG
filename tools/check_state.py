@@ -7,6 +7,7 @@ import importlib.util
 import json
 import re
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 
@@ -3777,32 +3778,85 @@ def _check_style_state(state: dict, path: Path, findings: list[dict]) -> None:
         else:
             speaker_type = last_speaker.get("type")
             speaker_id = last_speaker.get("id")
-            if speaker_type not in {"narrator", "npc", "companion", "mixed", "other"}:
+            if not isinstance(speaker_type, str) or speaker_type not in {"narrator", "npc", "companion", "mixed", "other"}:
                 _add(findings, "error", "style_speaker_invalid", "last_speaker.type is invalid.", path)
-            if speaker_type in {"npc", "companion"} and (not isinstance(speaker_id, str) or not speaker_id.strip()):
+            elif speaker_type in {"npc", "companion"} and (not isinstance(speaker_id, str) or not speaker_id.strip()):
                 _add(findings, "error", "style_speaker_id_missing", "NPC/companion style state needs a speaker id.", path)
             elif speaker_id is not None and not isinstance(speaker_id, str):
                 _add(findings, "error", "style_speaker_id_invalid", "last_speaker.id must be a string or null.", path)
-    for index, entry in enumerate(history):
+
+    def check_fingerprint(entry: object, label: str) -> None:
         if not isinstance(entry, dict):
-            _add(findings, "error", "style_fingerprint_invalid", f"history[{index}] must be an object.", path)
-            continue
+            _add(findings, "error", "style_fingerprint_invalid", f"{label} must be an object.", path)
+            return
         speaker_type = entry.get("speaker_type", "narrator")
-        if speaker_type not in {"narrator", "npc", "companion", "mixed", "other"}:
-            _add(findings, "error", "style_fingerprint_invalid", f"history[{index}].speaker_type is invalid.", path)
-        if speaker_type in {"npc", "companion"} and not str(entry.get("speaker_id") or "").strip():
-            _add(findings, "error", "style_speaker_id_missing", f"history[{index}] needs a speaker_id.", path)
+        if not isinstance(speaker_type, str) or speaker_type not in {"narrator", "npc", "companion", "mixed", "other"}:
+            _add(findings, "error", "style_fingerprint_invalid", f"{label}.speaker_type is invalid.", path)
+        elif speaker_type in {"npc", "companion"} and (
+            not isinstance(entry.get("speaker_id"), str) or not entry["speaker_id"].strip()
+        ):
+            _add(findings, "error", "style_speaker_id_missing", f"{label} needs a speaker_id.", path)
         for field in ("word_count", "paragraph_count", "sentence_count"):
             if field in entry and not _strict_int(entry[field], minimum=0):
-                _add(findings, "error", "style_fingerprint_invalid", f"history[{index}].{field} must be a non-negative integer.", path)
+                _add(findings, "error", "style_fingerprint_invalid", f"{label}.{field} must be a non-negative integer.", path)
         for field in ("sentence_starters", "four_grams"):
             if field in entry and (
                 not isinstance(entry[field], list) or any(not isinstance(value, str) for value in entry[field])
             ):
-                _add(findings, "error", "style_fingerprint_invalid", f"history[{index}].{field} must be a string list.", path)
+                _add(findings, "error", "style_fingerprint_invalid", f"{label}.{field} must be a string list.", path)
+        for field in STYLE_CATEGORICAL_FIELDS:
+            if entry.get(field) is not None and (not isinstance(entry[field], str) or not entry[field].strip()):
+                _add(findings, "error", "style_fingerprint_invalid", f"{label}.{field} must be a non-empty string.", path)
+
+    for index, entry in enumerate(history):
+        check_fingerprint(entry, f"history[{index}]")
 
     if schema != 3:
         return
+    speaker_maximum = state.get("max_speakers", 8)
+    sample_maximum = state.get("max_speaker_history", 4)
+    for field, value, ceiling in (("max_speakers", speaker_maximum, 8), ("max_speaker_history", sample_maximum, 4)):
+        if not _strict_int(value, minimum=1) or value > ceiling:
+            _add(findings, "error", "style_speaker_limit_invalid", f"{field} must be an integer from 1 through {ceiling}.", path)
+    buckets = state.get("speaker_history", [])
+    if not isinstance(buckets, list):
+        _add(findings, "error", "style_speaker_history_invalid", "speaker_history must be a list.", path)
+        buckets = []
+    if len(buckets) > 8 or (_strict_int(speaker_maximum, minimum=1) and len(buckets) > speaker_maximum):
+        _add(findings, "error", "style_speaker_history_too_long", "speaker_history exceeds its bounded speaker limit.", path)
+    seen_voices = set()
+    for index, bucket in enumerate(buckets):
+        label = f"speaker_history[{index}]"
+        if not isinstance(bucket, dict):
+            _add(findings, "error", "style_speaker_history_invalid", f"{label} must be an object.", path)
+            continue
+        kind, identity = bucket.get("speaker_type"), bucket.get("speaker_id")
+        valid_voice = (
+            isinstance(kind, str) and kind in {"npc", "companion"}
+            and isinstance(identity, str) and bool(identity.strip())
+        )
+        if not valid_voice:
+            _add(findings, "error", "style_speaker_history_invalid", f"{label} needs npc/companion type and a non-empty speaker_id.", path)
+        else:
+            voice_key = (kind, identity)
+            if voice_key in seen_voices:
+                _add(findings, "error", "style_speaker_duplicate", f"{label} repeats a character voice.", path)
+            seen_voices.add(voice_key)
+        samples = bucket.get("history")
+        if not isinstance(samples, list):
+            _add(findings, "error", "style_speaker_history_invalid", f"{label}.history must be a list.", path)
+            continue
+        if len(samples) > 4 or (_strict_int(sample_maximum, minimum=1) and len(samples) > sample_maximum):
+            _add(findings, "error", "style_speaker_samples_too_long", f"{label}.history exceeds its bounded sample limit.", path)
+        for sample_index, sample in enumerate(samples):
+            sample_label = f"{label}.history[{sample_index}]"
+            check_fingerprint(sample, sample_label)
+            if not isinstance(sample, dict):
+                continue
+            if valid_voice and (sample.get("speaker_type") != kind or sample.get("speaker_id") != identity):
+                _add(findings, "error", "style_speaker_context_mismatch", f"{sample_label} does not match its character voice.", path)
+            if any(field in sample for field in ("text", "narration", "full_text")):
+                _add(findings, "error", "style_speaker_full_prose", f"{sample_label} must store fingerprints, not full prose.", path)
     categorical_maximum = state.get("max_categorical_history", 8)
     categorical_history = state.get("categorical_history", [])
     if not _strict_int(categorical_maximum, minimum=1) or categorical_maximum > 8:
@@ -3829,7 +3883,7 @@ def _check_style_state(state: dict, path: Path, findings: list[dict]) -> None:
         if present == 0:
             _add(findings, "error", "style_categorical_entry_invalid", f"categorical_history[{index}] has no categorical fingerprint.", path)
         speaker_type = entry.get("speaker_type", "narrator")
-        if speaker_type not in {"narrator", "npc", "companion", "mixed", "other"}:
+        if not isinstance(speaker_type, str) or speaker_type not in {"narrator", "npc", "companion", "mixed", "other"}:
             _add(findings, "error", "style_categorical_entry_invalid", f"categorical_history[{index}].speaker_type is invalid.", path)
 
 
@@ -4012,6 +4066,18 @@ def _check_optional_json_state(campaign_path: Path, findings: list[dict]) -> Non
             _check_mechanics_state(state, path, findings)
 
 
+@lru_cache(maxsize=1)
+def _narrative_checks():
+    # Anchor to this workspace even when a distribution verifier loads us by path.
+    path = Path(__file__).with_name("narrative_memory.py")
+    spec = importlib.util.spec_from_file_location("_repog_narrative_memory", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load narrative-memory structural checks")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def check_changed_owners(campaign_path: Path, candidates: dict[str, bytes]) -> list[dict]:
     """Validate only staged RPG owner structures, without a campaign scan or write.
 
@@ -4042,6 +4108,17 @@ def check_changed_owners(campaign_path: Path, candidates: dict[str, bytes]) -> l
             _check_mechanics_state(data, path, findings)
         elif relative == "current_state.yaml":
             _check_current_state_candidate(campaign_path, text, path, findings)
+        elif relative == "threads.md":
+            checks = _narrative_checks()
+            findings.extend(checks.check_threads(text, path))
+            if path.is_file():
+                before = _read(path, findings)
+                state_candidate = candidates.get("current_state.yaml", b"").decode("utf-8", errors="replace")
+                revision_match = re.search(r"(?m)^continuity_revision:[ \t]*(\d+)[ \t]*$", state_candidate)
+                revision = int(revision_match.group(1)) if revision_match else None
+                findings.extend(checks.check_thread_transition(before, text, path, revision=revision))
+        elif relative == "knowledge_boundaries.md":
+            findings.extend(_narrative_checks().check_accounts(text, path))
     return findings
 
 
@@ -4591,6 +4668,15 @@ def check_campaign(
         )
         _check_knowledge_authority(campaign_path, findings)
         _check_world_evaluation_identity(campaign_path, findings)
+        checks = _narrative_checks()
+        for relative, check in (
+            ("threads.md", lambda text, path: checks.check_threads(text, path, ready=content_ready)),
+            ("knowledge_boundaries.md", checks.check_accounts),
+        ):
+            path = campaign_path / relative
+            if path.is_file():
+                findings.extend(check(_read(path, findings), path))
+        findings.extend(checks.check_references(campaign_path, ready=content_ready))
 
     if memory_version >= 2 and all((campaign_path / relative).is_file() for relative in V2_FILES):
         _check_v2_memory(

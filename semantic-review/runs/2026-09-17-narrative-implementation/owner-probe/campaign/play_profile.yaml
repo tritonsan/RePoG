@@ -1,0 +1,12 @@
+schema_version: 2
+profile_status: locked
+source_setup_revision: 3
+performance:
+  semantic_parallelism: off
+  max_parallel_workers: 1
+  turn_protocol: fast
+  cold_distill_policy: scene_checkpoint_or_5_durable
+  validation_policy: hot_each_durable_full_on_distill
+  style_review_policy: sampled_and_distill
+  latency_notice_policy: exceptional_only
+  estimate_acknowledged: true

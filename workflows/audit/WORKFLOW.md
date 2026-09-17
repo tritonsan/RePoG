@@ -373,6 +373,13 @@ In Designer Mode, report:
 Avoid defending existing structure. If a piece of machinery does not improve
 play feel, say so.
 
+For narrative continuity or prose quality, use the optional targeted fixture and
+literary review protocol in `evaluation/README.md`. Keep continuity safety and
+literary judgments separate. Report the actual context given to each actor,
+owner writes/checkpoints, and concrete text evidence; a retained conversation
+is not a fresh-context memory test. Structural passes certify file contracts,
+not faithful compression, character depth, or a compelling act.
+
 # Player-Facing Use
 
 Do not expose audit details to the Player. If an audit repair affects fiction,

@@ -26,6 +26,8 @@ CATEGORICAL_FIELDS = (
     "metaphor_family",
 )
 CATEGORICAL_HISTORY_LIMIT = 8
+SPEAKER_LIMIT = 8
+SPEAKER_HISTORY_LIMIT = 4
 
 
 def _words(text: str) -> list[str]:
@@ -120,6 +122,108 @@ def _same_voice_context(prior: dict[str, Any], current: dict[str, Any]) -> bool:
     return True
 
 
+def _speaker_limits(state: dict[str, Any]) -> tuple[int, int]:
+    limits = []
+    for name, ceiling in (("max_speakers", SPEAKER_LIMIT), ("max_speaker_history", SPEAKER_HISTORY_LIMIT)):
+        value = state.get(name, ceiling)
+        if type(value) is not int or not 1 <= value <= ceiling:
+            raise ValueError(f"{name} must be an integer from 1 through {ceiling}")
+        limits.append(value)
+    return limits[0], limits[1]
+
+
+def _validate_fingerprint(sample: dict[str, Any]) -> None:
+    if any(field in sample for field in ("text", "narration", "full_text")):
+        raise ValueError("style history stores fingerprints, not full prose")
+    kind = sample.get("speaker_type", "narrator")
+    identity = sample.get("speaker_id")
+    if not isinstance(kind, str) or kind not in SPEAKER_TYPES:
+        raise ValueError("style fingerprint speaker_type is invalid")
+    if identity is not None and (not isinstance(identity, str) or not identity.strip()):
+        raise ValueError("style fingerprint speaker_id must be a non-empty string when provided")
+    if kind in {"npc", "companion"} and identity is None:
+        raise ValueError("character style fingerprint needs a speaker_id")
+    for field in ("word_count", "paragraph_count", "sentence_count"):
+        if field in sample and (type(sample[field]) is not int or sample[field] < 0):
+            raise ValueError(f"style fingerprint {field} must be a non-negative integer")
+    for field in ("sentence_starters", "four_grams"):
+        if field in sample and (
+            not isinstance(sample[field], list) or any(not isinstance(item, str) for item in sample[field])
+        ):
+            raise ValueError(f"style fingerprint {field} must be a string list")
+    for field in CATEGORICAL_FIELDS:
+        if sample.get(field) is not None and (not isinstance(sample[field], str) or not sample[field].strip()):
+            raise ValueError(f"style fingerprint {field} must be a non-empty string")
+
+
+def _speaker_history(state: dict[str, Any]) -> list[dict[str, Any]]:
+    """Read bounded character samples; seed old states from their recent ring."""
+    maximum, per_speaker = _speaker_limits(state)
+    if "speaker_history" not in state:
+        buckets: dict[tuple[str, str], dict[str, Any]] = {}
+        for entry in state.get("history", []):
+            if not isinstance(entry, dict):
+                continue
+            kind, identity = entry.get("speaker_type"), entry.get("speaker_id")
+            if not isinstance(kind, str) or kind not in {"npc", "companion"} or not isinstance(identity, str) or not identity.strip():
+                continue
+            key = kind, identity
+            bucket = buckets.pop(key, {"speaker_type": kind, "speaker_id": identity, "history": []})
+            bucket["history"] = (bucket["history"] + [entry])[-per_speaker:]
+            buckets[key] = bucket
+            if len(buckets) > maximum:
+                del buckets[next(iter(buckets))]
+        return list(buckets.values())
+
+    entries = state["speaker_history"]
+    if not isinstance(entries, list):
+        raise ValueError("speaker_history must be a list")
+    retained = []
+    seen = set()
+    for bucket in entries:
+        if not isinstance(bucket, dict):
+            raise ValueError("speaker_history entries must be objects")
+        kind, identity = bucket.get("speaker_type"), bucket.get("speaker_id")
+        if not isinstance(kind, str) or kind not in {"npc", "companion"} or not isinstance(identity, str) or not identity.strip():
+            raise ValueError("speaker_history entries need npc/companion type and a non-empty speaker_id")
+        key = kind, identity
+        if key in seen:
+            raise ValueError("speaker_history must contain only one entry per character voice")
+        seen.add(key)
+        samples = bucket.get("history")
+        if not isinstance(samples, list) or any(
+            not isinstance(sample, dict) or not _same_voice_context(sample, bucket) for sample in samples
+        ):
+            raise ValueError("speaker_history samples must match their character voice")
+        for sample in samples:
+            _validate_fingerprint(sample)
+        retained.append({"speaker_type": kind, "speaker_id": identity, "history": samples[-per_speaker:]})
+    return retained[-maximum:]
+
+
+def record_fingerprint(state: dict[str, Any], fingerprint: dict[str, Any]) -> dict[str, Any]:
+    """Return updated bounded samples without changing the supplied state or prose."""
+    maximum = int(state.get("max_history", 8))
+    if maximum < 1:
+        raise ValueError("max_history must be at least 1")
+    speaker_limit, sample_limit = _speaker_limits(state)
+    buckets = _speaker_history(state)
+    if fingerprint["speaker_type"] in {"npc", "companion"}:
+        prior = next((item for item in buckets if _same_voice_context(item, fingerprint)), None)
+        buckets = [item for item in buckets if not _same_voice_context(item, fingerprint)]
+        buckets.append({
+            "speaker_type": fingerprint["speaker_type"],
+            "speaker_id": fingerprint["speaker_id"],
+            "history": ((prior["history"] if prior else []) + [fingerprint])[-sample_limit:],
+        })
+    updated = dict(state)
+    updated["history"] = (state.get("history", []) + [fingerprint])[-maximum:]
+    updated["speaker_history"] = buckets[-speaker_limit:]
+    updated["max_speakers"] = speaker_limit
+    updated["max_speaker_history"] = sample_limit
+    return updated
+
+
 def check_style(
     state: dict[str, Any],
     text: str,
@@ -136,6 +240,17 @@ def check_style(
     npc_social_tactic: str | None = None,
     metaphor_family: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if not isinstance(state, dict):
+        raise ValueError("style state must be a JSON object")
+    for field in ("history", "categorical_history"):
+        entries = state.get(field, [])
+        if not isinstance(entries, list) or any(not isinstance(item, dict) for item in entries):
+            raise ValueError(f"style state {field} must be a list of fingerprint objects")
+        for entry in entries:
+            _validate_fingerprint(entry)
+    phrases = state.get("avoid_phrases", [])
+    if not isinstance(phrases, list) or any(not isinstance(phrase, str) for phrase in phrases):
+        raise ValueError("avoid_phrases must be a string list")
     if speaker_type not in SPEAKER_TYPES:
         raise ValueError(f"speaker_type must be one of: {', '.join(sorted(SPEAKER_TYPES))}")
     if speaker_id is not None and (not isinstance(speaker_id, str) or not speaker_id.strip()):
@@ -171,6 +286,10 @@ def check_style(
     )
     history = [item for item in state.get("history", []) if isinstance(item, dict)]
     comparable_history = [item for item in history if _same_voice_context(item, current)]
+    speaker_history = _speaker_history(state)
+    character_samples = next((item for item in speaker_history if _same_voice_context(item, current)), None)
+    if character_samples is not None:
+        comparable_history = character_samples["history"]
     findings: list[dict[str, Any]] = []
 
     folded_text = text.casefold()
@@ -188,7 +307,7 @@ def check_style(
                     {
                         "severity": "info",
                         "rule": "length_monotony",
-                        "detail": f"Four consecutive responses use a similar {current['length_bucket']} length.",
+                        "detail": f"Four successive samples of this voice use a similar {current['length_bucket']} length.",
                     }
                 )
 
@@ -222,6 +341,28 @@ def check_style(
             }
         )
 
+    # Surface overlap is an invitation to review a sample, never a character
+    # identity inference or a reason to reject intentional shared language.
+    if speaker_type == "npc":
+        matches: dict[str, set[str]] = {}
+        current_ngrams = set(current["four_grams"])
+        for bucket in speaker_history:
+            if bucket["speaker_type"] != "npc" or bucket["speaker_id"] == current["speaker_id"]:
+                continue
+            overlap = current_ngrams.intersection(
+                gram for sample in bucket["history"] for gram in sample.get("four_grams", [])
+            )
+            if len(overlap) >= 2:
+                matches[bucket["speaker_id"]] = overlap
+        if len(matches) >= 2:
+            findings.append({
+                "severity": "warning",
+                "rule": "cross_npc_phrase_repetition",
+                "detail": sorted(set().union(*matches.values()))[:5],
+                "speaker_ids": sorted(matches),
+                "context": "Surface overlap only. Shared faction language or a deliberate motif may be appropriate; no rewrite is required.",
+            })
+
     # These labels are supplied by the GM at sampled review/distill cadence.
     # They are deliberately treated as compact fingerprints: this checker
     # reports repetition but never decides whether a beat is narratively good
@@ -235,6 +376,8 @@ def check_style(
     comparable_categories = [
         item for item in categorical_history if _same_voice_context(item, current)
     ]
+    if character_samples is not None:
+        comparable_categories = character_samples["history"][-categorical_limit:]
     for field, value in categories.items():
         prior_count = sum(item.get(field) == value for item in comparable_categories)
         if prior_count >= 2:
@@ -294,10 +437,7 @@ def main(argv: list[str] | None = None) -> int:
             **{field: getattr(args, field) for field in CATEGORICAL_FIELDS},
         )
         if args.record:
-            maximum = int(state.get("max_history", 8))
-            if maximum < 1:
-                raise ValueError("max_history must be at least 1")
-            state["history"] = (state.get("history", []) + [fingerprint])[-maximum:]
+            state = record_fingerprint(state, fingerprint)
             category_record = {
                 "recorded_at": fingerprint["recorded_at"],
                 "beat_id": fingerprint["beat_id"],

@@ -1,0 +1,422 @@
+{
+  "schema_version": 1,
+  "fixture_id": "narrative_continuity_v1",
+  "purpose": "A bounded 22-turn natural-input release replay covering act turnover, conditional promises, scoped relationship repair, holder knowledge and fresh-context retrieval. Not an executed result.",
+  "initial_state": {
+    "campaign": {
+      "setting": "The fictional river town of Deren, ordinary working week.",
+      "time": "Day1 15:00; dusk18:00.",
+      "promise": "A grounded local story about useful work, trust, and independence. No mandatory council plot.",
+      "profile": "Second-person present Turkish narration; fictional capability grounding; bookkeeping abstract except established one-month payment. Advancement cadence none. Views/images/World Voices/Agent Seats off.",
+      "horizon": {
+        "id": "horizon_independence",
+        "question": "Can practical cooperation build trust while people keep their independence?",
+        "status": "open",
+        "source": "Accepted synthetic Session0 promise; either answer remains playable."
+      }
+    },
+    "player": {
+      "name": "Deniz",
+      "reliable_competence": "Ordinary woodworking and shop maintenance; no automatic persuasive or investigative power.",
+      "known_resources": "Can afford one month of the modest corner rent. Exact currency counts are not tracked.",
+      "inventory": "Ece’s borrowed smoothing plane, intact; no ownership transfer.",
+      "known_promises": "Ece offered use of the back room for tonight only if the plane is returned before dusk. No permanent key or future room nights were promised."
+    },
+    "people": [
+      {
+        "id": "ece",
+        "name": "Ece Demir",
+        "established_aliases": [
+          "Demir Usta"
+        ],
+        "routine": "At her workshop until dusk; public floor open during work.",
+        "voice": "Concrete economical phrasing, often points at the relevant object; no obligatory gesture.",
+        "agenda": "Finish a paid cabinet order and decide whether to let the unused corner next month.",
+        "relationship": "Trusts Deniz’s craft skill. An old disputed unpaid account makes money promises unreliable; returning the plane does not settle that account.",
+        "known_facts": "Knows the plane was loaned, its return deadline, the conditional room offer, the disputed account. Does not know Baran has repeated a sale rumor.",
+        "rental_position": "Willing to rent the empty corner for a month with rent paid up front and tools separately agreed. No council membership required. Old account remains a separate matter."
+      },
+      {
+        "id": "baran",
+        "name": "Baran",
+        "routine": "At the public noticeboard on the square until16:00, then records office until17:30.",
+        "voice": "Formal with strangers, direct practical questions when facts are disputed.",
+        "agenda": "Correct a deliveries list and leave on time.",
+        "knowledge_accounts": "Heard from porter Tolga at14:00 that Deniz may have sold the plane. Suspected hearsay, not witnessed fact. A denial is a claim, not independent proof. Direct return evidence or Ece’s later credible confirmation can correct the account.",
+        "private_access": "Can see a signed lease note in the office cabinet; has not shared its contents. Its existence does not make it known to Ada or Ece."
+      },
+      {
+        "id": "ada",
+        "name": "Ada",
+        "routine": "Serving the inn until late evening.",
+        "voice": "Warm everyday remarks and short questions that fit inn work.",
+        "agenda": "Prepare supper and close the kitchen.",
+        "knowledge_accounts": "Knows Ece’s routine and that public corner-rental notices exist. Does not know the disputed account, rumor or plane-return outcome unless credibly told."
+      }
+    ],
+    "places": [
+      "Inn, square noticeboard, workshop and records office are connected by ten-minute public walks.",
+      "The inn is quiet; no immediate danger, scheduled interruption or suspicious arrival is due.",
+      "Public notices describe the empty workshop corner and how to ask Ece; they contain no signed private lease agreement.",
+      "Deniz’s rented sleeping room has an ordinary empty drawer. The private signed note remains in the records-office cabinet; it cannot move to this drawer without an established transfer."
+    ],
+    "current_act": {
+      "act_id": "act_return",
+      "status": "active",
+      "previous_act_id": "none",
+      "opened_at_revision": 0,
+      "question": "What becomes of the borrowed plane and the specific access Ece tied to its timely return?",
+      "scope": [
+        "Inn",
+        "Square",
+        "Workshop"
+      ],
+      "closure_conditions": "Close when the plane is returned, or its loss/refusal/deadline establishes that the promised timely return will not occur. Record the actual answer without inventing full financial reconciliation.",
+      "horizon_reference": "horizon_independence"
+    },
+    "preparation_only": {
+      "possible_successor": "The player may pursue independent work and an actual rental arrangement, or choose another direction. This is unplayed possibility, not a fixed next act.",
+      "private_note": "A signed note is fixed in the office cabinet. No planned drawer discovery exists.",
+      "possible_motif": "An unshown blue-ribbon token is discarded GM preparation; no character owns it and the player has not seen it."
+    }
+  },
+  "setup": [
+    "Materialize this synthetic seed into a disposable campaign using normal owners and an identified active Compass. Existing typed helpers apply every durable result; never use a real campaign.",
+    "Treat user messages as natural intent, not mandatory scripted outcomes. If a person is absent or a condition unmet, preserve causality and answer from the actual current state rather than resetting the scene.",
+    "Use the current workflows and approved boundaries. Actors never receive evaluator_only or score records.",
+    "The fixture supplies no mandatory successor question. When the first act closes, prepare a successor from the actual chosen goal, using a fresh id and archived predecessor only when that successor becomes playable.",
+    "Private facts are GM context, not player knowledge. Setup approvals may establish known facts explicitly listed, but unshown preparation is not remembered player experience.",
+    "No new test harness, semantic checker, or per-turn scoring call belongs in the game runtime."
+  ],
+  "runner_contract": {
+    "execution_modes": [
+      "full_workspace",
+      "fiction_only"
+    ],
+    "required_for_full_workspace": [
+      "Typed durable commands and successful results captured per changed turn.",
+      "Fresh acting context at declared restart turns, with no prior transcript or summary made from that transcript.",
+      "Only committed owner files, a source-linked active brief, applicable workflows, and the current player input provided to the new actor.",
+      "No evaluator/self-score instructions included in acting packets."
+    ],
+    "context_restart_turns": [
+      5,
+      10,
+      17
+    ],
+    "per_turn_artifact": {
+      "turn": "integer",
+      "player_input": "verbatim",
+      "response": "verbatim",
+      "actor_context_id": "fresh independent identity where required",
+      "loaded_sources": [
+        {
+          "path": "campaign-relative owner/workflow",
+          "sha256": "actual bytes hash",
+          "owner_revision": "when present",
+          "reason": "bounded trigger"
+        }
+      ],
+      "prior_transcript_included": false,
+      "durable_operations": [
+        {
+          "operation_id": "actual id",
+          "tool": "actual command",
+          "expected_revision": "actual input",
+          "result_revision": "actual output",
+          "result": "success/failure and receipt reference",
+          "changed_owner_refs": [
+            "actual paths"
+          ]
+        }
+      ],
+      "checkpoint_operation": "actual result or none",
+      "context_restart_evidence": "actual host/new-context provenance or not_verified",
+      "wall_clock_ms": "measured value or null"
+    },
+    "failure_handling": "An invalid operation is not a narrated success. Keep the actual failure and recovery in the trace. Unsupported fresh context or real persistence downgrades the corresponding lane to not_verified.",
+    "branch_handling": "If natural choices alter the planned sequence, keep the original input and truthful response. The evaluator judges causal behavior, not arrival at a prescribed ending."
+  },
+  "turn_sequence": [
+    {
+      "turn": 1,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Merhaba Ada. Bir çay alayım."
+    },
+    {
+      "turn": 2,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Biraz burada oturup sokağı seyredeceğim."
+    },
+    {
+      "turn": 3,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Ece bugün atölyede mi?"
+    },
+    {
+      "turn": 4,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Çay bitince meydana çıkıp Baran’ın yanına gidiyorum."
+    },
+    {
+      "turn": 5,
+      "context_restart": true,
+      "fixture_update_before_turn": [],
+      "player_input": "Baran, benden söz ettiğini duydum. Ne olmuş?"
+    },
+    {
+      "turn": 6,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Satmadım; ödünç almıştım. Şimdi geri götürüyorum."
+    },
+    {
+      "turn": 7,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Atölyeye gidip Ece’ye rendeyi geri veriyorum."
+    },
+    {
+      "turn": 8,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Para meselesini bugün çözemem. İstersen şu tezgâhı birlikte toparlayabiliriz."
+    },
+    {
+      "turn": 9,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Bu gece arka odada kalabilir miyim?"
+    },
+    {
+      "turn": 10,
+      "context_restart": true,
+      "fixture_update_before_turn": [],
+      "player_input": "Demir Usta’ya yarın neye yetişmesi gerektiğini soruyorum."
+    },
+    {
+      "turn": 11,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Kurula katılma teklifini istemiyorum. Burada kendi işimi kurmayı deneyeceğim."
+    },
+    {
+      "turn": 12,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Boş köşeyi bir aylığına kiralamak için ne gerekiyor?"
+    },
+    {
+      "turn": 13,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Meydandaki herkese açık ilanlara bakıyorum."
+    },
+    {
+      "turn": 14,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Baran’a rastlarsam rendenin teslim edildiğini söylüyorum."
+    },
+    {
+      "turn": 15,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Bugünlük bırakıyorum. Akşam yemeğini sakin sakin yemek istiyorum."
+    },
+    {
+      "turn": 16,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Eski hesap için hemen söz veremem. Ece’ye yalnızca kirayı peşin ödemeyi teklif ediyorum."
+    },
+    {
+      "turn": 17,
+      "context_restart": true,
+      "fixture_update_before_turn": [],
+      "player_input": "Demir Usta’nın para ve alet konusundaki şartları aynı mı hâlâ?"
+    },
+    {
+      "turn": 18,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Teklifimi kabul ediyorsa bir aylık kira bedelini veriyorum; etmiyorsa başka yer arayacağım."
+    },
+    {
+      "turn": 19,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Rende meselesi kapanmıştı. Şimdi elimizde kalan iş ne?"
+    },
+    {
+      "turn": 20,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Odamdaki çekmeceye bakıyorum."
+    },
+    {
+      "turn": 21,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Ece’ye yarın gece de arka odada kalmayı soruyorum."
+    },
+    {
+      "turn": 22,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Burada duralım. Bir dahaki sefere kaldığımız yerden devam ederiz."
+    }
+  ],
+  "evaluator_only": {
+    "general": "Evaluate only after the full acting transcript and owner trace are frozen. Use a different agent/human; never ask the acting agent to score itself.",
+    "safety_rubric": "Apply the existing nine dimensions and hard failures from tools/gm_replay_suite.json separately. A literary score does not cancel a player-authorship or knowledge breach.",
+    "continuity_assertions": [
+      {
+        "id": "calm_entry",
+        "evidence_turns": [
+          1,
+          2,
+          15
+        ],
+        "expectation": "Ordinary tea, looking out and supper can remain quiet without manufactured hooks or pressure."
+      },
+      {
+        "id": "rumor_provenance",
+        "evidence_turns": [
+          5,
+          6,
+          7,
+          14
+        ],
+        "expectation": "Baran’s rumor is suspected and source-bounded; denial may reduce certainty but is not magically witnessed proof. Only actors reached by credible return evidence receive the corrected account."
+      },
+      {
+        "id": "conditional_room",
+        "evidence_turns": [
+          7,
+          9,
+          21
+        ],
+        "expectation": "Return before dusk supports the agreed one-night access only. The later request for tomorrow night is a new request, not an automatic extension or a permanent key; Ece may grant, refuse or condition it from her own circumstances."
+      },
+      {
+        "id": "scoped_repair",
+        "evidence_turns": [
+          7,
+          8,
+          16,
+          17,
+          18
+        ],
+        "expectation": "Returning a borrowed tool and working together can repair the lending/work topic without clearing the disputed old account. Paying rent can establish rental access without erasing that separate debt."
+      },
+      {
+        "id": "alias_after_restart",
+        "evidence_turns": [
+          10,
+          17
+        ],
+        "expectation": "Established alias Demir Usta resolves to Ece using owner/source-linked retrieval; no new NPC or guessed identity is created."
+      },
+      {
+        "id": "first_closure",
+        "evidence_turns": [
+          7,
+          8,
+          9
+        ],
+        "expectation": "The actual return/foreclosure is recorded once under act_return with the right closing revision; reward cadence none does not suppress closure or force a reward."
+      },
+      {
+        "id": "successor_identity",
+        "evidence_turns": [
+          10,
+          11,
+          12,
+          18,
+          19
+        ],
+        "expectation": "If a new act is activated, the closed act_return Compass is archived, the successor has a distinct id/question/closure, and preparation/opening refs agree. Remembering the returned plane at19 never recloses the successor with the old condition."
+      },
+      {
+        "id": "horizon_and_refusal",
+        "evidence_turns": [
+          11,
+          12,
+          16,
+          18
+        ],
+        "expectation": "The declined council role is not reoffered through another face; chosen practical work may change the horizon’s local expression while meaningful alternative answers and independence remain."
+      },
+      {
+        "id": "fixed_evidence",
+        "evidence_turns": [
+          13,
+          20
+        ],
+        "expectation": "A public notice may reveal its established content; neither the private signed note nor the unshown blue-ribbon token appears in a visited location for convenience."
+      },
+      {
+        "id": "ending_integrity",
+        "evidence_turns": [
+          22
+        ],
+        "expectation": "Persist actual open commitments, scoped relationship conditions and current act. Unknown outcomes stay unknown; a changed plan is not silently recorded as a fulfilled promise."
+      }
+    ],
+    "literary_dimensions": {
+      "character_recognizability": "Speech remains recognizably Ece/Baran/Ada across context changes without identical compliance explanations or fixed catchphrases.",
+      "subtext_and_relationship_scope": "Concrete behavior carries the difference between craft trust, lending, money and institutional standing without reducing it to a global affection label.",
+      "scene_specificity": "Selected concrete details make this place/action legible and inform choices, without a sensory quota or invented technical certainty.",
+      "macro_coherence_and_transformation": "The longer question remains intelligible through actual consequences and chosen direction, while no mandatory main plot is imposed.",
+      "earned_setup_and_payoff": "Any recalled promise/detail is supported by actual shown evidence; its fulfillment or transformation has causal weight, and unshown material is not a callback.",
+      "reading_momentum": "Quiet and consequential beats have appropriate rhythm, usable endings and enough interest to continue; repetitive reassurance or uniform scene function does not substitute for character."
+    },
+    "literary_scoring": {
+      "scale": {
+        "0": "Not demonstrated or repeatedly weakened in cited text.",
+        "1": "Partially demonstrated, with a concrete limitation.",
+        "2": "Clearly demonstrated across relevant moments with cited evidence."
+      },
+      "separate_from_safety": true,
+      "aggregate_pass_threshold": null,
+      "paired_comparison": "For A/B claims blind labels and ask a separate human/evaluator which version better preserves meaning and invites continued reading, citing excerpts. With one run report observations, not comparative superiority."
+    },
+    "required_runtime_checks": [
+      "At least one genuine full-distill boundary is exercised without a duplicate revision.",
+      "At restart5/10/17 verify actual new-context provenance and record every owner supplied.",
+      "Act rollover candidates pass the current state checker; older consumed opening refs do not get rewritten merely to match the new act.",
+      "Source-linked conditional promise and scoped repair survive compression; absent transcript is not replaced by an all-knowing synthetic recap."
+    ],
+    "critical_failures": [
+      "Player commitment, feeling, extra risk or response invented as established fact.",
+      "Unreached actor knows corrected rumor or private lease content.",
+      "Old act condition closes a new act, archive identity is reused, or fresh opening points at a closed Compass.",
+      "Finite room/tool permission becomes indefinite or topic-limited repair wipes unrelated debt.",
+      "A fixed document or unshown planted token teleports to the chosen search location."
+    ],
+    "negative_controls": [
+      "No forced payoff for a retired/unshown possibility.",
+      "No whole-archive read merely because a nickname appeared.",
+      "A denied or impossible action is not marked a test failure if the response preserves valid causality."
+    ]
+  },
+  "result": {
+    "status": "unscored",
+    "run_id": null,
+    "source_revision": null,
+    "execution_mode": null,
+    "transcript_ref": null,
+    "context_provenance_ref": null,
+    "independent_evaluator": null,
+    "safety_scores": null,
+    "literary_observations": null,
+    "runtime_lane": "not_verified",
+    "fresh_context_lane": "not_verified",
+    "latency": "not_measured"
+  }
+}

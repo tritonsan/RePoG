@@ -33,9 +33,23 @@ Use the profile's clue density as a maximum, never a quota:
 - `balanced`: usually at most one hard and one soft clue in a scene;
 - `high`: more connected evidence is available, but only where causes support it.
 
-A clue may move to another credible carrier if the original carrier becomes
-unavailable. Never lock required progress to one NPC, prop, roll, or prescribed
-action. Do not turn every incidental detail into evidence for the same mystery.
+Keep access flexible, not established evidence. If a prepared but unused route
+becomes unavailable, another causally credible route may expose the same fact.
+Do not change an already-established document's location, history, owner, contents,
+or witness knowledge merely because the Player chose somewhere else to search.
+
+Before using a different carrier, read the relevant source/knowledge entry:
+what is fixed, who actually knows it, and what transfer or observation could make
+this access possible? A copy, witness, consequence, or transmission needs a real
+source and timing; commit any newly established transfer/holder change normally.
+An unsupported alternate location stays unrelated, even if that means this search
+finds no clue. Do not retroactively validate a disproven hypothesis.
+
+Avoid locking progress to one prescribed action by preparing multiple plausible
+access opportunities, not by making the same evidence appear wherever the Player
+goes. If no alternative is possible, honor the lost opportunity and its consequences;
+let the situation transform rather than guarantee the intended solution. Do not
+turn every incidental detail into evidence for the same mystery.
 
 ## Evidence And Knowledge
 

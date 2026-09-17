@@ -754,7 +754,10 @@ carefully the rest was chosen.
 This pack deepens an Arc Compass that module 17 already filled for the first act;
 it is not what creates one. Its own work is the multi-arc layer—promises that
 outlive this act, setups whose payoff belongs to a later one, and how the campaign
-could end.
+could end. Keep that optional campaign layer in `threads.md` / Campaign Horizon,
+separate from the identified current Arc Compass. The current act may cite it or
+remain independent; the link follows actual Player interests rather than requiring
+every scene to serve one main plot.
 
 Do not interview the Player through Arc Compass field names, for the same reason
 module 14 forbids interviewing through entity schema fields: asked directly, setups
@@ -770,13 +773,16 @@ compass from what they say.
 - Active pressures: reference `issues.md` and `world_dynamics.md` rather than
   restating them, since those own systemic problems and offscreen movement.
 - Setups awaiting payoff: record what is already planted and available—an unresolved
-  capability, a debt, a piece of knowledge someone holds—not what will happen. Leave
-  the payoff unscheduled.
+  capability, a debt, a piece of knowledge someone holds—not what will happen. Use
+  the selective Planted Expectations lifecycle in `threads.md`: unshown possibilities
+  remain `prepared`, and a planted entry cites actual shown evidence and audience.
+  Leave the payoff unscheduled; transformation or retirement are valid.
 - Climax availability conditions: state what must be true for a climax to become
   reachable, never when it occurs, and keep every condition something the Player can
   move toward or away from.
-- Closure conditions: align them with the actual arc-close trigger and the accepted
-  cadence instead of inventing a parallel rule; consult `arc_closure.md`.
+- Closure conditions: tie them to the current Act id's open dramatic question.
+  Reward cadence is a separate decision under `advancement.md`, never a reason
+  to keep a resolved act open or close an unanswered one.
 - Player interest signals: record only what the Player has actually expressed, never a
   prediction of what they will enjoy, and update the field from play.
 

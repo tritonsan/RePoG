@@ -71,7 +71,7 @@ End ordinary turns with one of these:
 - a consequence arriving in the fiction;
 - an NPC move, offer, threat, silence, or visible hesitation;
 - a sensory change that creates a clear opening;
-- quiet completion that shows the action worked and the situation changed;
+- quiet completion, including a simple answer or unchanged situation;
 - a concrete affordance the character can naturally respond to.
 
 ## Lore And Exposition Policy
@@ -155,6 +155,12 @@ NPCs may be vivid without speaking in riddles. Let ordinary people say ordinary
 things. Keep polished, aphoristic, or highly stylized lines rare unless the
 campaign explicitly wants heightened dialogue.
 
+An explicit request about a boundary deserves a clear answer. After that, show
+the respected boundary through what the NPC does, without repeatedly announcing
+that no task, obligation, secret, or player decision was added. Let each line
+serve the speaker's immediate purpose; careful terms fit some characters and
+situations but should not become everyone's voice.
+
 - Stylization level:
 - Plain speech examples to favor:
 - Cryptic or over-polished speech to avoid:
@@ -176,7 +182,8 @@ character knows changed. Then move back into close scene narration.
 The opening scene should reveal:
 
 - the immediate situation;
-- one active pressure;
+- an active pressure only when the established scene has one; quiet openings
+  can lead with routine, companionship, or an ordinary goal;
 - one clear action space;
 - at most one small hook, clue, or strange detail.
 
@@ -235,6 +242,16 @@ answer.
 Do not let the first few responses lock the campaign into one permanent
 message length, paragraph count, or sentence rhythm.
 
+Sample narrator prose and character-only dialogue separately when reviewing
+style. `style_state.json` retains the recent global ring plus up to eight named
+character voices with up to four fingerprints each; it stores no full dialogue.
+Named-voice samples survive intervening narrator turns, while least recently
+recorded voices eventually expire. Reload the character note after a long absence.
+Use this at the selected sampled/distill cadence, never as a gate on every turn.
+Surface repetition warnings are prompts for judgment, not measures of literary
+quality. Deliberate motifs and shared faction phrases may be worth retaining.
+Do not add length, metaphors, threats, or gestures just to remove a warning.
+
 ## Narrator Variety
 
 - Prose density: lean | balanced | lush
@@ -249,6 +266,14 @@ message length, paragraph count, or sentence rhythm.
 Use humor, reflection, tension, or heightened prose only when the world,
 character perspective, and current beat support them. Variety must not become
 random tonal drift.
+
+When the player specifically looks, handles, or repairs something, a grounded
+material, motion, sound, or spatial relation can show what is distinctive and
+what changed. Prefer a detail that supports the next action over a generic
+"suitable tool" or "something shifts" when the fiction establishes more.
+Do not invent an unknown technical mechanism or add sensory detail to every
+turn. Compression is still appropriate for routine passage; detail should earn
+its space through clarity, character, or a usable consequence.
 
 ## Beat Rotation
 
@@ -307,6 +332,12 @@ Important NPCs should not all sound like the same cryptic narrator. Vary word
 choice, rhythm, pressure tactic, directness, humor, class markers, and metaphor
 family. Avoid repeating the same social vocabulary across multiple NPCs unless
 it is a deliberate faction trait.
+
+An important character's register can change with audience or pressure while
+their priorities remain recognizable. Keep a few contextual examples in that
+character's existing note only when useful, and treat them as calibration rather
+than reusable lines. Distinguish temporary mood, topic-specific relationship
+change, and lasting disposition change; only earned changes revise stable traits.
 
 ## Voice And Metaphor Rotation
 

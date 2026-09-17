@@ -1,0 +1,190 @@
+{
+  "mode": "focused_owner_probe",
+  "full_workspace": false,
+  "initialization": "Synthetic fixture owner materialization before the first operation.",
+  "limitations": "No full setup/Distill or natural-turn capture; transaction primitive and stored-owner reading only.",
+  "requests": [
+    {
+      "command": "commit-durable",
+      "payload": {
+        "operation_id": "close-return",
+        "expected_continuity_revision": 0,
+        "boundary": "ordinary",
+        "cause": "The player returned the borrowed tool; the scoped consequence is recorded.",
+        "resume_impact": "The next exchange uses the committed question and limits.",
+        "changes": [
+          {
+            "id": "continuity",
+            "kind": "act",
+            "established_delta": "The established continuity is recorded.",
+            "owners": [
+              "threads.md"
+            ],
+            "cold_targets": []
+          },
+          {
+            "id": "witnessed-return",
+            "kind": "knowledge",
+            "established_delta": "The established continuity is recorded.",
+            "owners": [
+              "knowledge_boundaries.md"
+            ],
+            "cold_targets": []
+          }
+        ],
+        "mutations": [
+          {
+            "path": "threads.md",
+            "exact_replacements": [
+              {
+                "old": "# Threads\n\n## Arc Compass\n- Act id: act_return\n- Act status: active\n- Previous act id: none\n- Opened at revision: 0\n- Dramatic question: What becomes of the borrowed tool?\n- Closure conditions: The tool is returned or its loss is established.\n### Act Scope\n- Places this act can reach: Workshop and inn\n- People who belong to it: Ece and Mira\n- What is already in motion as it opens: The borrowed tool is due back.\n- What stays true if the character does nothing: Ece closes the workshop at dusk.\n### Closure Record\n- Closing action: \n- Condition met or foreclosed: \n- Recorded at revision: \n\n## Act Archive\n",
+                "new": "# Threads\n\n## Arc Compass\n- Act id: act_return\n- Act status: closed\n- Previous act id: none\n- Opened at revision: 0\n- Dramatic question: What becomes of the borrowed tool?\n- Closure conditions: The tool is returned or its loss is established.\n### Act Scope\n- Places this act can reach: Workshop and inn\n- People who belong to it: Ece and Mira\n- What is already in motion as it opens: The borrowed tool is due back.\n- What stays true if the character does nothing: Ece closes the workshop at dusk.\n### Closure Record\n- Closing action: Returned the plane before dusk.\n- Condition met or foreclosed: Timely return fulfilled.\n- Recorded at revision: 1\n\n## Act Archive\n"
+              }
+            ]
+          },
+          {
+            "path": "knowledge_boundaries.md",
+            "exact_replacements": [
+              {
+                "old": "# Knowledge Boundaries\n## Facts\n### Plane return\n- Fact id: plane_return\nMira still holds Ece's borrowed plane. Return has not happened.\n## Holder Accounts\n### Baran\n- Account id: baran_report\n- Holder ref: baran\n- Fact id: plane_return\n- Account: Tolga said Mira may have sold the plane; Baran has no direct evidence.\n- Stance: suspected\n- Source ref: Tolga's report at 14:00\n- Learned at: day 1 14:00\n- Recorded revision: 0\n- Supersedes: none\n- Correction ref: none\n### Ada\n- Account id: ada_uninformed\n- Holder ref: ada\n- Fact id: plane_return\n- Account: Ada has heard neither the sale rumor nor any return outcome.\n- Stance: unknown\n- Source ref: synthetic setup\n- Learned at: unknown\n- Recorded revision: 0\n- Supersedes: none\n- Correction ref: none\n",
+                "new": "# Knowledge Boundaries\n## Facts\n### Plane return\n- Fact id: plane_return\nMira returned the plane intact before dusk. Ece accepted it; the old unpaid account is unchanged.\n## Holder Accounts\n### Baran\n- Account id: baran_observed\n- Holder ref: baran\n- Fact id: plane_return\n- Account: Baran saw Mira return the plane intact to Ece before dusk.\n- Stance: confirmed\n- Source ref: direct observation at the workshop\n- Learned at: day 1 17:00\n- Recorded revision: 1\n- Supersedes: baran_report\n- Correction ref: direct witnessed return\n### Ada\n- Account id: ada_uninformed\n- Holder ref: ada\n- Fact id: plane_return\n- Account: Ada has heard neither the sale rumor nor any return outcome.\n- Stance: unknown\n- Source ref: synthetic setup\n- Learned at: unknown\n- Recorded revision: 0\n- Supersedes: none\n- Correction ref: none\n\n## Historical Accounts\nBaran's superseded baran_report: suspected sale from Tolga's 14:00 report; replaced only after direct observation.\n"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "command": "commit-durable",
+      "payload": {
+        "operation_id": "activate-work",
+        "expected_continuity_revision": 1,
+        "boundary": "ordinary",
+        "cause": "The player returned the borrowed tool; the scoped consequence is recorded.",
+        "resume_impact": "The next exchange uses the committed question and limits.",
+        "changes": [
+          {
+            "id": "continuity",
+            "kind": "act",
+            "established_delta": "The established continuity is recorded.",
+            "owners": [
+              "threads.md"
+            ],
+            "cold_targets": []
+          }
+        ],
+        "mutations": [
+          {
+            "path": "threads.md",
+            "exact_replacements": [
+              {
+                "old": "# Threads\n\n## Arc Compass\n- Act id: act_return\n- Act status: closed\n- Previous act id: none\n- Opened at revision: 0\n- Dramatic question: What becomes of the borrowed tool?\n- Closure conditions: The tool is returned or its loss is established.\n### Act Scope\n- Places this act can reach: Workshop and inn\n- People who belong to it: Ece and Mira\n- What is already in motion as it opens: The borrowed tool is due back.\n- What stays true if the character does nothing: Ece closes the workshop at dusk.\n### Closure Record\n- Closing action: Returned the plane before dusk.\n- Condition met or foreclosed: Timely return fulfilled.\n- Recorded at revision: 1\n\n## Act Archive\n",
+                "new": "# Threads\n\n## Arc Compass\n- Act id: act_work\n- Act status: active\n- Previous act id: act_return\n- Opened at revision: 2\n- Dramatic question: Can Mira establish independent work in the workshop corner?\n- Closure conditions: Close when the first paid commission is completed, or Mira abandons this work attempt.\n### Act Scope\n- Places this act can reach: Workshop and inn\n- People who belong to it: Ece and Mira\n- What is already in motion as it opens: The borrowed tool is due back.\n- What stays true if the character does nothing: Ece closes the workshop at dusk.\n### Closure Record\n- Closing action: \n- Condition met or foreclosed: \n- Recorded at revision: \n\n## Act Archive\n### act_return\n- Act id: act_return\n- Act status: closed\n- Previous act id: none\n- Opened at revision: 0\n- Dramatic question: What becomes of the borrowed tool?\n- Closure conditions: The tool is returned or its loss is established.\n#### Act Scope\n- Places this act can reach: Workshop and inn\n- People who belong to it: Ece and Mira\n- What is already in motion as it opens: The borrowed tool is due back.\n- What stays true if the character does nothing: Ece closes the workshop at dusk.\n#### Closure Record\n- Closing action: Returned the plane before dusk.\n- Condition met or foreclosed: Timely return fulfilled.\n- Recorded at revision: 1\n"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "command": "commit-checkpoint",
+      "payload": {
+        "operation_id": "reply-handoff",
+        "expected_continuity_revision": 2,
+        "checkpoint": {
+          "scene_id": "dock-interview",
+          "scene_mode": "focused",
+          "resume_anchor": "Ece asks Mira whether she wants tea now or after the cabinet work; Mira has not answered.",
+          "active_cast_handoff": "none"
+        },
+        "mutations": [
+          {
+            "path": "current_state.yaml",
+            "exact_replacements": [
+              {
+                "old": "resume_anchor: The witness waits for the next question.",
+                "new": "resume_anchor: Ece asks Mira whether she wants tea now or after the cabinet work; Mira has not answered."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "results": [
+    {
+      "ok": true,
+      "operation": "commit-durable",
+      "idempotent": false,
+      "operation_id": "close-return",
+      "continuity_revision": 1,
+      "durable_turns_since_distill": 1,
+      "pending_cold_targets": [],
+      "checkpoint_committed": false,
+      "full_distill_required": false,
+      "narration_allowed": true,
+      "distill_reason": null,
+      "changed_files": [
+        "current_state.yaml",
+        "knowledge_boundaries.md",
+        "session_log.md",
+        "threads.md"
+      ],
+      "mechanic_results": [],
+      "recovered_transactions": []
+    },
+    {
+      "ok": true,
+      "operation": "commit-durable",
+      "idempotent": false,
+      "operation_id": "activate-work",
+      "continuity_revision": 2,
+      "durable_turns_since_distill": 2,
+      "pending_cold_targets": [],
+      "checkpoint_committed": false,
+      "full_distill_required": false,
+      "narration_allowed": true,
+      "distill_reason": null,
+      "changed_files": [
+        "current_state.yaml",
+        "session_log.md",
+        "threads.md"
+      ],
+      "mechanic_results": [],
+      "recovered_transactions": []
+    },
+    {
+      "ok": true,
+      "operation": "commit-checkpoint",
+      "idempotent": false,
+      "operation_id": "reply-handoff",
+      "continuity_revision": 2,
+      "durable_turns_since_distill": 2,
+      "pending_cold_targets": [],
+      "checkpoint_committed": true,
+      "full_distill_required": false,
+      "narration_allowed": true,
+      "distill_reason": null,
+      "changed_files": [
+        "current_state.yaml",
+        "session_log.md"
+      ],
+      "mechanic_results": [],
+      "recovered_transactions": []
+    }
+  ],
+  "owner_sha256": {
+    "active_cast.md": "6444672ca339bb48d1522f14342a1226c2d9a5949e52a8f99037e02a97dff136",
+    "current_state.yaml": "3cd1dcb1d4babd8f4b77ceee3a0ee56cd07fa50687b010f35974552a7b0f5b9a",
+    "knowledge_boundaries.md": "3061a858c5bf2c58b9096afcd2375a1a82135be4f1122deaef5eb103a04d177a",
+    "mechanics_state.json": "52d530bfd4cc07403a76dd3f9fb58281267e67a08d7a623b46ed6bf02baafdc1",
+    "play_profile.yaml": "1a9576fb2809e6afeba004c3caab48fa5c1005eb5a40511a7fd4f4ee3068f390",
+    "relationship_map.md": "1bcc8999d03c8218c8339d86276488e663708d635efcae596d64aabb85e87be0",
+    "secrets_and_clues.md": "30b02d503da99629764ec8ab439dde8f7404194211c23c0c05c27623ff7ae0a2",
+    "session_brief.md": "7cc91babad788939d30a73961ab95e8372125c5e3d00e9a79e8f2eaa5820b0fc",
+    "session_log.md": "86f20ca66b5a5cd559537b6cd8f2ea4f080e53629aef982724b3c2cd362fe2ae",
+    "setup_profile.yaml": "69f2ab55906a5068d0307575e54078a625cdd349a5c30b4d1ee5c5031b1acc76",
+    "threads.md": "6de65af9f4c6cdba9e828295f9b5a68cf5a4075af8cd0ca784115337705df2ce",
+    "characters/ece.md": "0ad41062bf5e8600b037f78cf49783ba3703f49d42f6075d3fd618ad2f7b9c13"
+  }
+}

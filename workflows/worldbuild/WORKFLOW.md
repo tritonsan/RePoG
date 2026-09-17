@@ -230,9 +230,18 @@ first act as the only one nothing prepares. Fill the Arc Compass for it during
 setup—its question, pressures, planted setups, what makes a climax reachable, what
 would close it—and give it a scope in names: the places it can reach, the people
 who belong to it, what is already in motion, and what stays true if the character
-does nothing. One place and one person is an opening, not an act. Leave the
-closure record empty until the act actually closes; the condition being satisfied
-or made unreachable is what closes it, and the action that did so is recorded then.
+does nothing. Match scope to the actual question rather than adding places or
+people to meet a quota. Leave the closure record empty until the act actually closes;
+the condition being satisfied or made unreachable closes it, and the action that did
+so is recorded then.
+
+For a new campaign, assign a stable first `Act id` in `threads.md` during design
+with `Act status: planned` and `Previous act id: none`. At actual opening-scale
+materialization set it `active`, record `Opened at revision` (initial continuity
+revision 0 when no fictional turn occurred), and set the same `Opening act id` in
+`opening_brief.md`. These are coordinator fields, not extra interview decisions.
+Existing campaigns without ids keep their contract until deliberate adoption; do
+not backfill a historical act sequence silently.
 
 Shape multi-arc architecture without fixing a plot, and never interview the Player
 through arc-compass field names any more than through entity schema fields. Ask what
@@ -241,9 +250,16 @@ question drawn from the character premise whose opposite answer would still leav
 campaign worth playing, pressures referenced from the issue and dynamics authorities
 rather than restated, setups recorded as what is already planted and available with
 the payoff left unscheduled, climax conditions stating what makes a climax reachable
-rather than when it lands, closure conditions aligned with the real arc-close trigger
-and accepted cadence, and interest signals limited to what the Player actually
-expressed and updated from play.
+rather than when it lands, closure conditions tied to the actual dramatic question
+independently of reward cadence, and interest signals limited to what the Player
+actually expressed and updated from play.
+
+Keep campaign-scale questions/promises in the optional Campaign Horizon section of
+`threads.md`, distinct from the current Arc Compass. Its horizon reference and brief
+link to actual choices explain possible continuity without forcing a main plot.
+Important setups use selective Planted Expectations there: mark unshown preparation
+as `prepared`, and require real first-shown evidence before claiming something was
+planted for the Player. Neither future outcomes nor payoff dates are promised.
 
 Translate accepted mechanical answers into approved modules and their required
 tracking fields before design approval, rather than leaving the coupling to surface as

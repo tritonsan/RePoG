@@ -1,0 +1,39 @@
+[
+  {
+    "question": "Demir Usta ile para, aletler ve arka oda konusunda hangi şartlar şu anda yürürlükte?",
+    "answer": "Demir Usta, Ece Demir'in yerleşik adıdır. Ece Mira'nın zanaatına güveniyor, fakat eski ödenmemiş hesap hâlâ ihtilaflı ve Ece borç para vermiyor. Mira rendeyi sağlam olarak gün batımından önce teslim etmiş, Ece de kabul etmiştir; bu, yalnızca bu gece arka odayı kullanma iznini sağlar. Kalıcı anahtar, sonraki geceler, aletlerin hediye edilmesi veya eski hesabın kapanması vaat edilmemiştir. Ece, bedeli peşin ödenecek bir aylık çalışma köşesi kiralamasını görüşmeye açıktır; bu henüz yapılmış bir kira anlaşması değildir ve aletler ayrıca kararlaştırılacaktır. Kira tutarı ve ayrı alet anlaşmasının ayrıntıları bu kaynaklarda belirtilmemiştir.",
+    "source_refs": [
+      "campaign/characters/ece.md#Ece Demir — Established alias; Relationship authority",
+      "campaign/session_brief.md#Triggered Lookups > Demir Usta — Owner ref",
+      "campaign/relationship_map.md#Ece and Mira",
+      "campaign/knowledge_boundaries.md#Facts > Plane return"
+    ]
+  },
+  {
+    "question": "Baran ve Ada rende hakkında ne biliyor; dayanakları aynı mı?",
+    "answer": "Baran, Mira'nın rendeyi sağlam olarak gün batımından önce Ece'ye teslim ettiğini atölyede doğrudan gördü; güncel bilgisi doğrulanmış ve öğrenme zamanı 1. gün 17.00 olarak kaydedilmiş. Tolga'nın 14.00 raporundan kaynaklanan eski satış şüphesi, bu doğrudan gözlemden sonra geçersiz kalmış. Ada ise ne satış söylentisini ne de iadenin sonucunu duymuş; onun iade hakkındaki bilgi durumu bilinmiyor. Dayanakları aynı değildir: Baran'ınki doğrudan gözlem, Ada içinse olay hakkında edinilmiş bilgi yoktur; 'synthetic setup' yalnızca bu bilgisizlik kaydının kaynak alanıdır.",
+    "source_refs": [
+      "campaign/knowledge_boundaries.md#Holder Accounts > Baran — Account; Stance; Source ref; Learned at; Supersedes",
+      "campaign/knowledge_boundaries.md#Holder Accounts > Ada — Account; Stance; Source ref",
+      "campaign/knowledge_boundaries.md#Historical Accounts"
+    ]
+  },
+  {
+    "question": "Şu anki act ne zaman kapanabilir; rendenin dönmesi onu kapatmış mı?",
+    "answer": "Şimdiki act, act_work, etkin durumdadır ve 2. revizyonda açılmıştır. Mira'nın ilk ücretli siparişi tamamlanınca veya bu çalışma girişiminden vazgeçince kapanabilir. Rendenin dönmesi bunu kapatmamıştır: gün batımından önceki iade, önceki act_return act'inin kapanış koşulunu yerine getirmiş ve onun kapanışı 1. revizyonda kaydedilmiştir. Şimdiki act'in kapanış kaydı boştur.",
+    "source_refs": [
+      "campaign/threads.md#Arc Compass — Act id; Act status; Opened at revision; Closure conditions",
+      "campaign/threads.md#Arc Compass > Closure Record",
+      "campaign/threads.md#Act Archive > act_return — Act status; Closure conditions",
+      "campaign/threads.md#Act Archive > act_return > Closure Record"
+    ]
+  },
+  {
+    "question": "Oyuncunun hangi söze karşılık vermesi bekleniyor; seçim yapılmış mı?",
+    "answer": "Ece, Mira'ya çayı şimdi mi yoksa dolap işi bittikten sonra mı istediğini soruyor. Oyuncunun bu soruya karşılık vermesi bekleniyor; Mira henüz cevap vermemiş, dolayısıyla seçim yapılmamış. Ece'nin dolabı bitirmekte olduğu da devam eden süreç olarak kayıtlıdır.",
+    "source_refs": [
+      "campaign/current_state.yaml — scene_frame.resume_anchor",
+      "campaign/current_state.yaml — scene_frame.ongoing_process"
+    ]
+  }
+]

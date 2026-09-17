@@ -1,0 +1,53 @@
+campaign_id: test_campaign
+mode: lite
+memory_version: 3
+continuity_revision: 2
+status: active
+last_updated: ""
+
+persistence:
+  last_distilled_revision: 0
+  durable_turns_since_distill: 2
+  pending_cold_targets: []
+
+fictional_time:
+  day: 1
+  phase: evening
+  elapsed_index: 0
+
+player:
+  name: Mira
+  concept: investigator
+  level_band: beginner
+  stat_budget_policy: standard
+  stat_budget_note: ""
+  condition: ready
+  current_goal: Find the courier
+  stats: {}
+  capabilities: []
+
+current_scene:
+  title: Ece's Workshop
+  location: workshop
+  summary: The borrowed tool is being returned.
+  present_npcs: []
+  immediate_pressure: ""
+  open_choices: []
+
+scene_frame:
+  scene_id: dock-interview
+  mode: focused
+  ongoing_process: Ece is finishing a cabinet.
+  disruption: ""
+  last_causal_beat:
+    player_intent: Ask about the courier.
+    world_response: The witness hesitates.
+    changed_fact: ""
+    returned_control_at: The witness waits.
+  pending_consequences: []
+  resume_anchor: Ece asks Mira whether she wants tea now or after the cabinet work; Mira has not answered.
+
+inventory: []
+conditions: []
+active_clocks: []
+active_threats: []

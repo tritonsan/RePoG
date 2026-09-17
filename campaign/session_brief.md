@@ -18,9 +18,34 @@ Use references below rather than parallel summaries of those facts.
 
 ## Triggered Lookups
 
-Open these only if the listed fictional signal occurs:
+Open these only if the listed fictional signal occurs. Keep the set small and
+use references to owners, not copies of their current facts. A name, an
+established alias, a topic, a return to a place, or a due event can be a signal.
 
 - Signal -> file or element:
+
+For a consequential old promise, debt, knowledge limit, or dormant element
+that would otherwise be hard to rediscover, use an optional named subsection
+with these bullet fields:
+
+| Field | Record |
+| --- | --- |
+| Lookup id | A stable local identifier for this pointer. |
+| Signals | The established names, aliases, topics, or causal triggers that should cause a lookup. |
+| Owner ref | One campaign-relative path with a heading or explicit id, such as `threads.md#arc-compass`. |
+| Why now | A short applicability condition, not the answer or a planned outcome. |
+| Verified at revision | The continuity revision when this pointer and condition were checked against the owner. |
+
+An older brief can still lead to the correct owner. Treat its applicability as
+unverified until the linked source is read; a changed source invalidates the
+old condition, not the owner's truth. Recheck affected pointers on a relevant
+return, scene handoff, or act preparation. Refresh or remove only those that no
+longer apply. Do not refresh every pointer for an unrelated revision.
+
+Legacy `Signal -> file or element` entries remain usable; add detail only when
+needed. `workflows/reference/continuity-memory.md` owns discovery, ambiguous
+matches, and missing-reference handling. A lookup miss is not proof that a
+remembered event never happened.
 
 ## Due World Checks
 
@@ -40,6 +65,14 @@ The smallest triggered set likely to matter next:
 - Relationship rows:
 - Knowledge boundaries:
 - Rules or resources:
+- Active Act id and Compass owner ref:
+- Relevant closure-condition owner refs:
+
+The live Compass remains in `threads.md#arc-compass`. Keep its current id and
+references here when the campaign has adopted act ids; do not copy the dramatic
+question or closure conditions into a competing authority. An id mismatch means
+reload the live Compass and repair the pointer before using it. Older campaigns
+without act ids keep their existing Compass until an explicit adoption boundary.
 
 ## Opening Or Scene-Entry Reference
 

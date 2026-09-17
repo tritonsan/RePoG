@@ -12,7 +12,10 @@ new location, or a deliberate scene reframe. Do not load it for every turn.
   `consumed` after that opening is used in play.
 - Resume: use `current_state.yaml.scene_frame.resume_anchor`; do not reconstruct
   the last beat from broad history.
-- Post-arc: also require the carried-forward truth in `next_act_prep.md`.
+- Post-arc: also require the carried-forward truth in `next_act_prep.md`. In an
+  identified campaign, `Opening act id` must match the current active Compass
+  before an opening is activated/narrated. Consumed older openings are history,
+  not a reason to reuse an old Compass or rewrite its archived outcome.
 
 ## Frame The Scene
 
@@ -35,13 +38,17 @@ when its condition has a cause and practical consequences.
 ## First Campaign Opening
 
 Give arrival context so the character does not appear from nowhere. Reveal the
-immediate situation and one active pressure without explaining its hidden
-cause. Let useful lore surface later through action, behavior, consequences,
-rumor, or focused questions.
+immediate situation and any already-present visible pressure without explaining
+its hidden cause. If no pressure is present, show an ordinary playable affordance
+from the place and its routine. An accepted calm/breather opening needs no threat,
+quest, suspicious stranger, or disturbance. Let useful lore surface later through
+action, behavior, consequences, rumor, or focused questions.
 
 The opening should make at least one natural action legible without implying
 that it is mandatory. If the Player refuses the apparent hook, continue from
-the place's routine, relationships, pressures, and neutral affordances.
+the place's routine, relationships, pressures, and neutral affordances. Do not
+reskin that refused request for a different NPC. If direction later seems unclear,
+use the transition playbook's stuck/refusal distinction before offering a nudge.
 
 ## Resume
 

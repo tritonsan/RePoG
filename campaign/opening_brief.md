@@ -3,6 +3,7 @@
 Campaign id: `new_campaign`
 
 Opening status: `pending`
+Opening act id:
 
 Allowed values are `pending`, `active`, and `consumed`:
 
@@ -12,6 +13,13 @@ Allowed values are `pending`, `active`, and `consumed`:
 - `consumed`: the opening has already been narrated and this file is historical
   evidence, not live scene truth.
 
+`Opening act id` references the Compass in `threads.md`; it never defines a
+second act. In the modern identity contract an `active` opening must name the
+current `active` Compass. A `pending` opening may name a proposed successor while
+its preparation is incomplete. A `consumed` opening may retain an archived act id
+and must not be rewritten merely because a later act became active. Campaigns
+without meaningful act ids retain the legacy contract until deliberate adoption.
+
 This file is the GM's working source for the next player-facing opening. It
 defines what the Player must know before acting, what should remain hidden, and
 whether the opening is the first campaign scene or a post-arc bridge.
@@ -19,8 +27,11 @@ whether the opening is the first campaign scene or a post-arc bridge.
 While status is `active`, this file is the sole owner of the next finalized
 opening. `first_session.md` may supply drafting inputs until its prep status
 becomes `materialized`; `session_brief.md` may reference this file but must not
-copy its opening text. After the opening is used, mark both this file and
-`first_session.md` consumed in the same durable checkpoint. A consumed opening
+copy its opening text. After the first opening is used, mark this file and
+`first_session.md` consumed at that handoff. For later openings, only this opening
+is newly consumed; `first_session.md` remains historical. Commit any changed
+current-state/Compass truth through the RPG owner transaction before completing
+these secondary lifecycle markers. A consumed opening
 must not be compared to `current_state.yaml` for current location, present
 NPCs, pressure, scene mode, or resume state.
 
@@ -32,8 +43,9 @@ reviewed before the selected route's current-revision preparation approval.
 
 ## Approval References
 
-- Route boundary: Quick slots 8–10 | schema-v7 Standard/Deep modules 19–21 |
-  schema-v8 Deep Stage 9 gates | legacy final confirmation
+- Route boundary: schema-v9 Quick slots 8–9 | schema-v9 Standard modules 19–20 |
+  legacy Quick slots 8–10 | schema-v7 Standard/Deep modules 19–21 |
+  Deep-v8 Stage 9 gates | legacy final confirmation
 - Setup revision:
 - Design direction approved revision:
 - Integrated materialized preparation accepted revision:

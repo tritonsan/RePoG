@@ -28,7 +28,17 @@ Use one line per element:
 
 `Name | Type | Tier | First Seen | Player-Known Summary | Knows/Suspects | Linked To | File | Status`
 
-- `Example Name | npc | T1 | opening scene | One-sentence visible summary. | Knows only visible facts; suspects a hidden motive. | Linked Element | none yet | active`
+- `Example Name | npc | T1 | opening scene | One-sentence visible identity. | Knowledge-ledger refs only. | Linked Element | none yet | active`
+
+Use the canonical name and note path to rediscover an existing element before
+creating another one. An established alias belongs with stable identity in the
+entity note, or in the same T1 ledger stub while no note exists. Persist a newly
+established lasting alias through the normal durable owner transaction before
+using it as truth. A lookup signal may reference that alias; it may not invent
+one or reveal a protected name. Keep `Knows/Suspects` as knowledge-ledger
+references rather than another current account. For an important dormant
+element, retain its identity/note path and add a selective pointer in
+`session_brief.md` when a known return trigger makes it relevant.
 
 ## Promoted Elements
 

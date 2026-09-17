@@ -8,6 +8,8 @@ next major act. It is GM-facing prep, not player-facing narration.
 ## Prep Status
 
 - Closure source:
+- Previous act id:
+- Next act id:
 - Prep status: needed
 - Advancement gate cleared: no
 - Ready for opening brief: no
@@ -20,6 +22,13 @@ Allowed prep statuses:
 - `drafting`
 - `ready`
 - `used`
+
+The ids refer to `threads.md`, which alone owns Compass state and history. Keep
+this prep `drafting` while the successor is only a proposal. `ready`/`used` must
+identify the committed successor and its archived predecessor; never copy the old
+question/closure condition into a new act merely because the fields are nonblank.
+No meaningful Act id means the legacy contract still applies; do not silently
+migrate a live campaign.
 
 ## Carry-Forward Elements
 
@@ -41,8 +50,10 @@ Useful statuses:
 
 ## Must Affect Next Act
 
-Elements that must visibly affect the next act's opening, pressure, resources,
-opposition, reputation, or available choices.
+Elements whose already-established consequences constrain the next act. Record
+the causal trigger and visibility channel before surfacing them. `must_return`
+is a continuity obligation, not permission to teleport an NPC, force a hook,
+reveal a hidden fact, or make every carry-forward item appear in the opening.
 
 - 
 
@@ -95,6 +106,18 @@ already clear.
 
 ## Next Act Frame
 
+- Compass reference: `threads.md` / Act id
+- Horizon reference, or none:
+- What actual player choices changed in that connection:
+- What this act leaves independent of the campaign-scale question:
+- Relevant planted-expectation ids and due reasons, if any:
+
+These are references and short preparation rationale, not second owners of the
+question, closing conditions, or expectation statuses. Near possibilities may be
+concrete; distant outcomes stay open. Carrying the campaign promise forward can
+mean preserving, transforming, or explicitly retiring a question rather than
+repeating the same hook. Do not infer a new preference from one quiet or failed turn.
+
 - Scale:
 - Starting place:
 - Time jump:
@@ -108,8 +131,9 @@ already clear.
 ## Opening Brief Inputs
 
 Use these to draft `opening_brief.md` as `post_arc_opening` with Opening status
-`pending`. Set it to `active` only after this frame is playable and any
-dependent advancement choice is cleared; set it to `consumed` after the
+`pending`. Its `Opening act id` names the proposed successor. Set it to `active`
+only after that id matches the committed `active` Compass, this frame is playable,
+and any dependent advancement choice is cleared; set it to `consumed` after the
 opening is narrated. `first_session.md` remains historical and consumed.
 
 - Previous consequence:

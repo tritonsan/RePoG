@@ -61,3 +61,35 @@ do not regress; a faster but less faithful run is not an improvement.
 
 Use findings for a small rule/owner correction, then replay the affected case.
 Do not add transcript scoring or a second semantic judge to the runtime.
+
+## Targeted Narrative Continuity Run
+
+`narrative_continuity.json` is a bounded 22-turn alternative when testing act
+identity, conditional promises, holder knowledge, topic-specific repair, macro
+continuity, fixed evidence and calm play. Its player inputs deliberately avoid
+reciting the rules under test. It adds no new runtime engine or per-turn judge.
+
+Use the fixture's `runner_contract` in a disposable workspace. Restarts at turns
+5, 10 and 17 must be actual new acting contexts. A continued conversation, context
+compaction, or agent that already read the transcript does not qualify. Give the
+new actor only committed owner files, a source-linked active brief, applicable
+workflows and the current user message. Do not provide the preceding transcript,
+evaluator expectations, scores, or a newly invented omniscient recap. Previously
+spoken facts survive only through their ordinary committed owners.
+
+Keep a per-turn trace of the precise loaded file hashes, source revisions,
+context identity/provenance, exact tool request/result, changed owners and durable
+receipt, response, and measured time where available. Keep the same operation id
+for an identical uncertain retry and retain actual failures. If real persistence
+or a new context cannot be demonstrated, mark that lane `not_verified`; a plausible
+fiction-only transcript cannot substitute for it. Partial focused probes may report
+only the turns/lanes actually run and must not claim the complete fixture passed.
+
+Evaluate after freezing the run with a different reader/agent. The original nine
+safety/continuity dimensions and critical breaches remain separate from the added
+literary observations: recognizability, subtext and relationship scope, specificity,
+macro coherence/transformation, earned payoff and reading momentum. These extra
+0–2 evidence-backed dimensions have no automatic overall pass threshold. Do not
+average away a critical authorship, knowledge, act-identity or promise-scope failure.
+For claims of improvement, use blind paired comparison from the same seed/settings;
+a single run provides observations only. No fresh run is bundled by this fixture.

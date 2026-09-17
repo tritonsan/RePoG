@@ -52,17 +52,29 @@ fields safely, use `needs_review` rather than inventing them during migration.
 - Result shape:
 - Visible channel:
 - Last evaluation id:
+- Domain trajectory ref, if the shared process is owned in `world_dynamics.md`:
 
 `Result shape` describes the bounded kind of change that could follow from the
 recorded cause; it is not a predetermined outcome. Reevaluate only when the
 Agency Card's Evaluation trigger occurs, and preserve the last evaluation id
 for idempotent continuation.
 
+This note owns the character's personal trajectory. A shared process involving
+several actors belongs in `world_dynamics.md`. When that same process moves to a
+domain, set the personal trajectory to `inactive`, archive its former evaluation,
+and keep only the domain reference here; do not advance two current copies.
+A separate, unrelated personal trajectory may remain active.
+
 Before finalizing a new T2/T3, perform a model-only Contrast Pass against the
 two most similar active NPCs. Compare local role, desire, risk response, social
 tactic, voice rhythm, and hard boundary. If four or more axes substantially
 match, redesign at least two axes. Persist the differentiated character, not a
 scorecard, and do not add a semantic checker for this pass.
+
+Also check whether the important voices would remain distinguishable without
+their names: different occupations or goals alone do not establish different
+speech. Shared faction language may be intentional; preserve individual choices
+and social tactics around it.
 
 ## Agent Playability Card
 
@@ -187,6 +199,36 @@ character.
 A simple, ordinary line this character might say without sounding cryptic or
 polished.
 
+## Contextual Voice Examples
+
+Use selectively for a T3 or player-important T2 whose voice needs calibration.
+Two or three short examples are enough; leave this section empty for characters
+who do not need it. These are examples of phrasing, not lines or gestures to
+repeat, and do not establish new events, relationships, or known facts.
+
+- Ordinary request or practical answer:
+- Refusal under pressure, with the boundary intact:
+- With someone trusted, if that relationship is established:
+
+Vary warmth, formality, openness, or sentence rhythm with the audience and
+situation while retaining recognizable priorities. A warmer delivery does not
+automatically change the character's decision principle or grant information.
+
+## Earned Disposition Changes
+
+Use only when events support a lasting change to a value, habit, or decision
+principle. Temporary mood belongs with the current scene; attitude to a particular
+person belongs in `relationship_map.md`. Neither alone rewrites the Agency Card.
+
+- Changed disposition and scope:
+- Supporting event references in `session_log.md`:
+- What remains stable:
+
+Update the affected stable field here, retaining the evidence reference. Keep the
+event history in the log, not a second narrative here. A single betrayal need not
+make the character distrust everyone; a justified change may remain specific to
+one situation. Do not fill this section just to manufacture character growth.
+
 ## Public Face
 
 What the player can perceive or learn easily.
@@ -268,6 +310,11 @@ truth and `session_log.md` owns historical changes.
 - Baseline relationship behavior:
 - Relationship-map edge ids:
 
+Load the relevant current edge before an important recurring encounter. Respect
+its topic, exceptions, and remaining repair conditions instead of treating one
+global trust label as the whole relationship. This note references that truth;
+it does not carry a second current relationship summary.
+
 ## Secret-Keeping Behavior And References
 
 This note owns stable concealment, disclosure, and reaction habits. Current
@@ -280,7 +327,12 @@ relationship consequences belong in `relationship_map.md`.
 
 ## Last Meaningful Interaction
 
-What happened most recently that should affect future scenes.
+Reference the most recent interaction that should affect future scenes, rather
+than copying its history or current relationship consequences here.
+
+- Event reference in `session_log.md`:
+- Current relationship edge reference, when affected:
+- When to recall it (person, subject, place, or unresolved condition):
 
 ## GM Use
 

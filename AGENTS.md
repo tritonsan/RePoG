@@ -47,6 +47,8 @@ Cold references are loaded only when needed:
   a mutation or ownership question requires it, never the entire catalog per turn.
 - `workflows/reference/setup-contract.md`: shared Session 0 invariants.
 - `workflows/reference/creation.md`: named creation or tier promotion.
+- `workflows/reference/continuity-memory.md`: a cold lookup, important holder
+  account, unresolved conversational handoff, or memory compression.
 - `workflows/reference/optional-surfaces.md`: a triggered enabled projection or
   visual transaction.
 

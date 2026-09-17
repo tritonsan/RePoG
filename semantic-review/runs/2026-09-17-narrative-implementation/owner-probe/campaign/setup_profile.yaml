@@ -1,0 +1,9 @@
+schema_version: 4
+workspace_mode: standalone
+status: complete
+setup_revision: 3
+experience_mode: rpg
+session_zero_mode: standard
+question_target: 10
+questions_completed: 10
+ready_for_play: true
