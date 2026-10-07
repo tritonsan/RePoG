@@ -349,7 +349,7 @@ Status terms:
 
 - `locked`: decided and safe to use.
 - `open`: still needs a Designer answer.
-- `defaulted`: Codex chose a coherent default because the Designer allowed it.
+- `defaulted`: the agent chose a coherent default because the Designer allowed it.
 - `defer`: intentionally left for play to discover.
 - `inactive`: belongs to the unselected RPG/Companion experience.
 - `locked_with_open_questions`: safe at the current scale, with named limits

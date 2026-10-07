@@ -3,7 +3,7 @@
 Campaign id: `new_campaign`
 
 Use this file only if the campaign wants optional generated visuals. Visual
-generation can consume Codex usage limits, so it is off by default and should
+generation can consume model usage limits, so it is off by default and should
 be enabled only by an explicit Session 0 choice.
 
 ## Expected Time Cost
@@ -41,7 +41,7 @@ Allowed modes:
 
 Quota stance:
 
-- `conservative`: rare images; protect Codex usage.
+- `conservative`: rare images; protect model usage.
 - `normal`: occasional images for major moments.
 - `generous`: frequent images are welcome, but still ask before batches.
 
@@ -74,7 +74,7 @@ Mark what this campaign wants visuals for.
 - Era or genre references:
 - Things to avoid:
 
-Codex should suggest an art direction that fits the campaign's universe, tone,
+The agent should suggest an art direction that fits the campaign's universe, tone,
 palette, and source/canon policy, then let the Player accept or revise it.
 
 ## Prompting Policy

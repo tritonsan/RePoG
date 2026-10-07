@@ -647,7 +647,7 @@ survival, original fantasy with historical analogues, or private homebrew notes.
 ### 3. Group Contract
 
 Ask about boundaries, content limits, seriousness, humor, violence, moral
-pressure, agency, failure, loss, and how often Codex should clarify before
+pressure, agency, failure, loss, and how often the agent should clarify before
 acting.
 
 Also choose runtime narration as one coherent style card: point of view, tense,
@@ -871,7 +871,7 @@ The model should derive capability options from the chosen setting.
 
 Ask how the player character revises the world: linked issues, linked factions,
 faces, places, personal pressure, companion, mentor, rival, enemy, family,
-debt, secret, patron, or backstory limits Codex must not invent.
+debt, secret, patron, or backstory limits the agent must not invent.
 
 ### 16. Starting Situation / Session 0.5
 

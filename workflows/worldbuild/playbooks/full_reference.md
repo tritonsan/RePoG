@@ -1118,7 +1118,7 @@ Ask how the character connects to:
 - one or more faces or places;
 - a personal pressure, debt, secret, rival, patron, mentor, family tie, or
   companion;
-- things Codex must not invent from the character's past.
+- things the agent must not invent from the character's past.
 
 If the Designer wants a companion or close relation in depth, create that NPC
 with the same seriousness as the player character: appearance card,

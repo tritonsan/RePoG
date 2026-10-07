@@ -2,7 +2,7 @@
 
 Use this file before building durable world facts. It records whether the
 campaign needs outside research, what was learned, what remains uncertain, and
-which rules Codex must respect during worldbuilding and play.
+which rules the agent must respect during worldbuilding and play.
 
 ## Research Status
 
@@ -189,11 +189,11 @@ playable situations.
 ## Common Mistakes To Avoid
 
 Source-breaking assumptions, genre cliches, tonal mistakes, or realism errors
-Codex should avoid.
+the agent should avoid.
 
 ## Open Questions For Session 0
 
-Questions Codex must ask the Designer instead of silently inventing an answer.
+Questions the agent must ask the Designer instead of silently inventing an answer.
 
 ## Use In Play
 

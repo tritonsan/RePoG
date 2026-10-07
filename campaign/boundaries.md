@@ -2,7 +2,7 @@
 
 ## Canon Limits
 
-Facts or rules Codex must not contradict.
+Facts or rules the agent must not contradict.
 
 ## Tone Limits
 
@@ -143,7 +143,7 @@ Pre-authorization never widens a content boundary. Putting permanent loss in pla
 does not enable a category the Player set to avoid, and no accepted stance
 overrides the hard limits.
 
-Codex may freely add:
+The agent may freely add:
 
 - sensory details;
 - minor bystanders;
@@ -151,7 +151,7 @@ Codex may freely add:
 - plausible complications;
 - NPC delivery and body language.
 
-Codex should ask before adding:
+The agent should ask before adding:
 
 - major canon reveals;
 - permanent character death;

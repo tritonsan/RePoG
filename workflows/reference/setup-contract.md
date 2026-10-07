@@ -101,8 +101,8 @@ For RPG, offer:
   durable revision evidence, atomic candidate validation, and full validation
   at the selected boundary cannot be disabled.
 
-Before the choice, explain typical planning ranges based on ordinary Codex
-workspace use: Fast routine turns about 30–90 seconds, Fast ordinary durable
+Before the choice, explain provisional workspace planning ranges:
+Fast routine turns about 30–90 seconds, Fast ordinary durable
 turns about 45–120 seconds, and structural/boundary turns about 2–4 minutes;
 Balanced light turns about 1–2 minutes and durable turns about 1.5–3 minutes;
 Maximum Continuity durable turns about 2–4 minutes and structural turns about

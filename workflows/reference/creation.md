@@ -4,11 +4,11 @@ Load when creating or promoting a named or recurring entity.
 
 # Bounded Improvisation
 
-Codex may freely add color, sensory texture, NPC phrasing, body language, minor
+The agent may freely add color, sensory texture, NPC phrasing, body language, minor
 environmental details, and moment-to-moment scene rhythm when they do not
 contradict campaign memory or boundaries.
 
-Codex must update durable memory when it introduces or changes facts that
+The agent must update durable memory when it introduces or changes facts that
 should matter later, including:
 
 - named NPCs;

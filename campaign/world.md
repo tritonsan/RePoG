@@ -174,7 +174,7 @@ Summarize the main issues. Detailed current and impending issues live in
 
 ## Known Truths
 
-Facts Codex should treat as durable canon. Detailed playable truths live in
+Facts the agent should treat as durable canon. Detailed playable truths live in
 `world_truths.md`.
 
 These are GM-facing canon facts, not automatically player-known facts. Use

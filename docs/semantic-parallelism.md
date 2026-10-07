@@ -67,10 +67,9 @@ These are hypotheses for planning and must not be presented as guarantees:
 | Three-document World Voices batch | 15–35% | 40–100% |
 
 Sub-agents generally consume more tokens than a comparable single-agent run;
-their benefit is parallel wall-clock progress on independent work. OpenAI's
-current Codex guidance likewise recommends parallel agents for read-heavy
-tasks and warns against overlapping write-heavy work:
-[Codex sub-agents](https://learn.chatgpt.com/docs/agent-configuration/subagents.md).
+their benefit is parallel wall-clock progress on independent work. RePoG limits
+them to read-only proposals and keeps authoritative writes with the
+coordinating agent, as described in the eligible boundaries above.
 
 ## Benchmark Protocol
 

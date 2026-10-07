@@ -153,7 +153,7 @@ an explicit approval decision.
 
 ## GM Judgment Zones
 
-Things Codex should decide from fiction, campaign memory, and table feel.
+Things the agent should decide from fiction, campaign memory, and table feel.
 
 - 
 

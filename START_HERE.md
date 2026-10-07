@@ -11,7 +11,7 @@ maintainer files.
 
 1. If the workspace is still inside a ZIP archive, extract it into a new
    folder first.
-2. Open the extracted folder in Codex, Claude Code, or another compatible
+2. Open the extracted folder in Claude Code or another compatible
    agentic coding tool.
 3. Start a new conversation in that workspace.
 4. Send exactly:

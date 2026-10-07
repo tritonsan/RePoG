@@ -5,7 +5,7 @@ campaign-specific mechanics.
 
 ## Core Approach
 
-Codex handles ordinary fictional positioning directly. Use deterministic rules
+The agent handles ordinary fictional positioning directly. Use deterministic rules
 only when they improve fairness, tension, or continuity.
 
 `play_profile.yaml.mechanics.resolution_grounding` selects the campaign's

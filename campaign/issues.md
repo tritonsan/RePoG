@@ -2,7 +2,7 @@
 
 Campaign id: `new_campaign`
 
-Issues are active pressures, not plot scripts. They tell Codex what is moving
+Issues are active pressures, not plot scripts. They tell the agent what is moving
 in the world if the player does nothing.
 
 A Player choosing which issues matter sets salience, not exclusivity. Candidates
