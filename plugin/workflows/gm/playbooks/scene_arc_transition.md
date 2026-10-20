@@ -34,6 +34,11 @@ feels long. Conversely, a refusal, failed plan, or new solution can answer or
 foreclose the real question without delivering a prepared ending. A closed
 Compass remains current during its aftermath and cannot close a second time.
 
+A thread or threat closes the same way: the commit that closes it gives its
+owner a `Resolution:` line naming what resolved it, which is a roll id, a
+Player decision, or a played scene. Nothing closes silently or off-screen, a
+time skip included.
+
 ## When Direction Seems Stalled
 
 Use the Player's actual words/actions before treating a quiet stretch as drift.
@@ -97,7 +102,9 @@ Run the Distill workflow when:
 - the Designer explicitly requests it.
 
 A scene end alone is not on this list. Before changing away from a batching
-profile, reconcile all pending cold targets.
+profile, reconcile all pending cold targets. At an act closure, the distill may
+also launch the boundary curator (Distill workflow) to fold flagged notes; it
+creates no truth and closes nothing.
 
 ## Structural Parallelism
 

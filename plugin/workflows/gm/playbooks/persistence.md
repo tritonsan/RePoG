@@ -26,12 +26,26 @@ For `durable`, author one capture with:
   secondary `cold_targets` with reasons;
 - model-authored `mutations` for every owner, written as typed `ops` (3D),
   and any approved `mechanic_operations`;
+- for a change a roll decided, `roll_reference` (the receipt's `roll_id`) and
+  `outcome` (its band, exactly as rolled);
 - `checkpoint` data when the same turn also needs a scene handoff.
 
 Every owner must be mutated immediately. Never defer a changed fact's only
 owner; cold targets are duplicate summaries, projections, preparation,
 archives, or enrichment. Do not include helper-managed continuity fields or
 the matching `session_log.md` receipt as model-authored mutations.
+
+Every roll made since the last durable commit (a receipt at the expected
+revision) must be cited by one change or listed in the payload's `void_rolls`
+as `{"roll_id": "...", "reason": "..."}`, such as an attempt the Player
+withdrew or a soft result that changed nothing durable; otherwise the writer
+refuses the commit with `rolls_unaccounted`. A cited roll must be unused and
+from this revision, and an `outcome` that differs from its band is refused.
+Under `player_rolls` or `hybrid`, a roll the Player made with their own dice
+has no receipt: cite it as `"player: <what was rolled>"` with the band the
+reported result reached as `outcome`.
+While `dice_mode` is not `judgment_only`, a kind with a `contest`, `contested`,
+`conflict`, `clash`, `duel`, or `roll` token needs `roll_reference`.
 
 ### Authority Map For Declared Kinds
 
@@ -47,6 +61,7 @@ owner, and the durable writer rejects the commit when one is missing:
 | `relationship`, `bond` | `relationship_map.md` |
 | `presence`, `whereabouts` | `active_cast.md` |
 | `route`, `adjacency` | `location_graph.md` |
+| `directive` | `directives.md` |
 
 Other kinds stay free-form. Compose kinds when a turn changes more than one
 authority, such as `knowledge_relationship` for a confession that also changes
@@ -108,11 +123,22 @@ frozen the committed revision and pending cold-target set. Workers cannot
 increment revision, append the event, clear pending targets, patch a
 projection, or narrate the outcome.
 
-Wait for the command result. On failure, do not narrate the fact as established
-or complete a partial write manually. Keep the same operation id for a valid
-retry after the typed failure is addressed. On success, if
-`full_distill_required` is true or `narration_allowed` is false, current truth
-is safe but Distill must finish before narration.
+`play_profile.yaml.runtime.persistence_order` orders the reply and the commit:
+
+- `narrate_then_commit` (default when unset): resolve, decide the semantic
+  capture, and write the reply; then make the one commit call and write no text
+  after it. Never narrate a result this commit will not persist. If the call
+  fails, fix the typed failure and retry in the same turn; only if a narrated
+  fact still cannot be persisted, add one OOC line that corrects it. A full
+  distill that is due, or that the result reports as `full_distill_required`,
+  runs after the reply in the same turn.
+- `commit_then_narrate`: wait for the command result and narrate only after
+  success; on failure, do not narrate the fact as established. On success, if
+  `full_distill_required` is true or `narration_allowed` is false, current
+  truth is safe but Distill must finish before narration.
+
+Under either order, never complete a partial write manually, and keep the same
+operation id for a valid retry after the typed failure is addressed.
 
 ### 3D. Mutation Forms
 

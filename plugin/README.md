@@ -31,8 +31,8 @@ To try a local build for one session, start Claude Code with
 3. Choose an RPG Campaign or an AI Companion and follow Session 0.
 
 Keep one campaign per folder and one session per campaign at a time. Keep the
-transcript view on Normal during play: expanded tool output can reveal
-material the Game Master keeps hidden.
+transcript view on Normal during play: expanded tool output and hook context
+can reveal material the Game Master keeps hidden.
 
 ## What The Plugin Runs And Writes
 
@@ -40,17 +40,39 @@ material the Game Master keeps hidden.
   creates a campaign.
 - **Local helpers:** Python scripts in `tools/`, run through
   `scripts/repog.sh`, validate and save state inside the project folder's
-  `campaign/`. Claude Code asks before running them unless you allow them.
+  `campaign/`, including working files such as dice-roll receipts in
+  `campaign/.repog-runtime/`. Claude Code asks before running them unless you
+  allow them.
 - **New campaign files:** `repog:new` copies the blank template to
   `campaign/` and, only when they are missing, writes `.claude/settings.json`
   (turns Claude Code auto memory off and selects the RePoG output style for
   that folder) and a short `CLAUDE.md`. Existing files are never overwritten.
-- **SessionStart hook:** `scripts/session-start.sh` checks whether the folder
-  holds a plugin campaign and, only then, adds a one-line reminder to load
-  `repog:play`. It prints nothing in other folders.
+- **Hooks:** four, each a shell script in `scripts/` whose Python step runs
+  `tools/hook_entry.py` and is skipped without Python 3.10 or later. They
+  never stop your prompt or Claude's reply, the curation, capsule, and lint
+  steps follow their runtime switches below, and nothing they read or write
+  leaves your computer. The first three do nothing outside a folder that holds
+  a plugin campaign.
+  - `SessionStart`: adds a one-line reminder to load `repog:play` and marks
+    the scene capsule for a full refresh in `campaign/.repog-runtime/`.
+  - `UserPromptSubmit`: in a ready RPG campaign, first applies waiting curator
+    edits whose target notes are unchanged (editing those notes and adding an
+    entry to `campaign/session_log.md`), then adds a hidden scene capsule to
+    Claude's context, matching names in your prompt against campaign notes:
+    the scene, the cast in it, secret holders by id, your standing directives,
+    open dice rolls, and the last reply's presentation findings. It keeps its
+    capsule state in `campaign/.repog-runtime/`.
+  - `Stop` (runs in the background): reads the last reply from Claude Code's
+    local transcript, runs the presentation lint over it, and writes the
+    findings to `campaign/.repog-runtime/`.
+  - `PreToolUse`: runs on file-writing and Bash tool calls in any folder, but
+    only reads the call and lets it through unless it comes from the curator
+    agent, which may write nothing except its one staging file.
 - **Supporting agents:** two read-only proposal lanes for large structural
-  steps. Only the research lane can search the web, and only for a research
-  task you approved.
+  steps, and the boundary curator, which reads campaign notes after a full
+  distill and writes one proposal file under `campaign/.repog-runtime/curation/`
+  that the helpers apply only while those notes are unchanged. Only the
+  research lane can search the web, and only for a research task you approved.
 - **Optional local view:** the Dashboard server binds to `127.0.0.1` and starts
   only when you ask for it.
 - **Left out:** Claude cannot generate images, so image generation is not part
@@ -76,6 +98,26 @@ record grows too large or a character note stacks dated sections. For
 measuring, `tools/session_report.py <transcript.jsonl>` prints turn times and
 bookkeeping counts from a local Claude Code transcript, numbers only.
 
+Since 0.3.0 the reply comes first by default and its save follows in the same
+turn. A save that fails is fixed and retried in that turn; a narrated fact that
+still cannot be saved is corrected in one out-of-character line.
+
+## Runtime Switches
+
+`campaign/play_profile.yaml` has a `runtime:` block with four switches; a
+missing switch takes its default. Ask the Game Master out of character to
+change one.
+
+- `persistence_order`: `narrate_then_commit` (default) replies, then saves in
+  the same turn; `commit_then_narrate` saves before replying.
+- `presentation_lint`: `on` (default) or `off`, the Stop hook's check of each
+  reply.
+- `scene_capsule`: `on` (default) or `off`, the hidden capsule added to each
+  prompt.
+- `boundary_curator`: `background` (default), `inline`, or `off`: a background
+  agent, the Game Master itself, or no one tidies the notes a full distill
+  flags.
+
 ## Adults Only, Content, And Safety
 
 RePoG is for adults aged 18 or older. Session 0 asks which content boundaries
@@ -88,12 +130,13 @@ policies, and you can tighten a boundary at any time.
 ## Privacy
 
 The plugin collects nothing and sends nothing to any service of its own. Its
-helpers make no network calls and it has no telemetry or accounts. Web
-research happens only when you ask for it, through Claude's own web tools.
+helpers and hooks make no network calls and it has no telemetry or accounts.
+Web research happens only when you ask for it, through Claude's own web tools.
 Campaign files stay in your project folder, and your conversation is processed
-by Claude under your Anthropic account's terms. RePoG's forget operation
-removes campaign content; it does not erase Claude Code's own session
-transcripts on your computer.
+by Claude under your Anthropic account's terms. The hooks read campaign files
+and Claude Code's local transcript and write only inside `campaign/`. RePoG's
+forget operation removes campaign content; it does not erase Claude Code's own
+session transcripts on your computer.
 
 ## License
 

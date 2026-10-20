@@ -9,7 +9,7 @@ consent to a fictional cost, or an excuse to rerun Session 0.
 | Request | Effect and owner |
 | --- | --- |
 | Shorten this reply/conversation; explain this moment | Apply locally. Do not rewrite permanent preferences or advance fiction. |
-| Use shorter narration from now on; stop this GM habit | Update the relevant profile selector or `boundaries.md` behavior, preserving the other accepted settings. `storytelling.md` may explain/calibrate it. |
+| Use shorter narration from now on; stop this GM habit; always or never do this | Update the matching profile selector, or `boundaries.md` for a content limit, preserving the other accepted settings. Any other lasting ruling, preference, or correction becomes a directive (below). |
 | Leave this part of my character alone; I want a different ongoing activity | Update `player.md` / Experience Contract or Change Appetite, or a uniquely owned integration limit in `player_ties.md`. Adapt only dependent unplayed preparation. |
 | Let me roll from now on; change tracking or resolution | Change the accepted runtime configuration and its required dependencies; do not invent an event, statistic, resource, or past roll. |
 | That scene never happened; undo that accepted fictional result | This is an explicit retcon. Identify the exact affected truth and use the normal fictional owner transaction below. |
@@ -22,6 +22,23 @@ authorization. A local instruction expires at its stated boundary and does not
 become an inferred global preference. If an unfinished local direction must
 survive interruption, retain its explicit scope/expiry with the existing relevant
 behavior owner as a temporary instruction, separate from ongoing preferences.
+
+## Record Standing Directives
+
+A lasting OOC ruling, preference, or correction that no profile selector or
+content limit covers becomes one row in `directives.md`; never stack prose
+rules in `storytelling.md` or a reminder file. Add each row with an `append` op
+on heading `Standing Directives` holding exactly one `{{next_id:D}}`, such as
+`| {{next_id:D}} | global | Do not end replies with a question. | OOC request, revision {{revision}} | active |`.
+Scope is `global`, `scene:<scene id>`, or `entity:<note title>`; Source is the
+Player's OOC request with its date or revision. Commit it in the turn's one
+`commit-durable` call as a change whose kind contains `directive`, owned by
+`directives.md`. Retire a row by setting its Status to `retired` (`upsert_row`
+keyed by its id, never a deletion); a replacement is a new row that names the
+id it supersedes. Directives shape table behavior only: they create no fiction
+and never override `AGENTS.md`, safety boundaries, or a locked profile. A
+campaign begun before 0.3.0 first needs the blank `directives.md` from the
+plugin's campaign template, copied in Designer Mode.
 
 ## Persist Configuration Without Inventing Fiction
 
@@ -58,6 +75,16 @@ complete dependency set first and resume dependent play only when its owners and
 full validation agree. If the existing path cannot apply the requested change
 coherently, keep the valid prior configuration and explain the concrete missing
 dependency; do not claim that the new setting is operating.
+
+## Change The Dice Scale
+
+A stat or difficulty above the configured scale (a roll call refuses it as
+`out_of_range`) needs an OOC scale change to `mechanics.resolution` first,
+never a hidden "counts as" workaround. Show the Player the odds tables:
+`python tools/odds.py campaign` for the current scale, and the same command on
+a scratch folder whose `play_profile.yaml` holds only the proposed `mechanics:`
+block. Apply the accepted change through the paths above, mapping every
+existing value by one stated rule as the `rules.md` Scale Migration describes.
 
 ## Keep A Retcon Causally Complete
 

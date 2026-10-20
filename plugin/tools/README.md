@@ -77,6 +77,7 @@ JSON
 python tools/rpg_state.py campaign commit-distill --input-file - <<'JSON'
 {...}
 JSON
+python tools/rpg_state.py campaign commit-curation --apply-staged
 ```
 
 `--input-json "{...}"` still works; `--input-file` reads a UTF-8 file, or
@@ -113,6 +114,27 @@ continuity revision. A successful durable response with
 `narration_allowed: false` until the routed full distill completes. Neither
 command decides whether a turn was soft, what happened in the fiction, which
 facts matter, or what the Player should be told.
+
+A change decided by a roll call carries `roll_reference` (the receipt's
+`roll_id`) and `outcome` (its band). The writer refuses a cited roll that has no
+receipt, was rolled at another revision, was already used, or names a different
+band, and refuses the whole commit with `rolls_unaccounted` while a receipt at
+the expected revision is neither cited nor listed in the payload's `void_rolls`
+(`[{"roll_id": ..., "reason": ...}]`, at most 16). Cited and voided receipts
+are marked consumed after the commit. Until a campaign has a receipt store, a
+free-text `roll_reference` without `outcome` passes with a `roll_unrecorded`
+warning. A checkpoint may use scene mode `downtime`; a kind containing
+`directive` requires `directives.md`, and `glossary.md` is an owner as well.
+`create_text` for a new entity note adds advisory `name_common_word` and
+`name_near_duplicate` warnings from `name_check.py`.
+
+`commit-curation` applies staged curator proposals (see Boundary Curation).
+Each staged file is one transaction, applied whole only while every target
+still has the hash the curator read; otherwise it moves to `rejected/` with its
+reasons. An applied file moves to `applied/` and appends `### Curation Applied
+At Revision N` to `session_log.md`. Curation creates no revision and leaves the
+persistence counters alone. `--apply-staged` processes every waiting file older
+than a few seconds; `--staged PATH` (repeatable) names files instead.
 
 For AI Companion workspaces, the shared state checker routes automatically and
 does not apply RPG player/opening/arc readiness rules. The focused commands
@@ -294,11 +316,16 @@ The player-facing check reads exact unrevealed names from
 python tools/world_pulse.py --input-json "{\"evaluation_id\":\"harbor-trade-rev-12\",\"domain\":\"harbor_trade\",\"elapsed_steps\":3,\"volatility\":2,\"pressure\":1}"
 python tools/roll_dice.py --input-json "{\"expression\":\"2d6+1\",\"seed\":\"turn-12-lock\",\"roll_id\":\"turn-12-lock\"}"
 python tools/resolve_mechanic.py campaign/mechanics_state.json --input-json "{\"operation_id\":\"turn-12-fire\",\"operation_sequence\":1,\"expected_revision\":0,\"expected_continuity_revision\":0,\"resulting_continuity_revision\":1,\"operation\":\"use_ability\",\"actor_id\":\"player\",\"action_id\":\"fire_spell\"}"
+python tools/world_pulse.py --input-json "{\"domains\":[{\"evaluation_id\":\"skip-r41-harbor\",\"domain\":\"harbor_trade\",\"elapsed_steps\":3,\"volatility\":2,\"pressure\":1},{\"evaluation_id\":\"skip-r41-guild\",\"domain\":\"guild_feud\",\"elapsed_steps\":3,\"volatility\":1,\"pressure\":3}]}"
+python tools/resolve_mechanic.py campaign/mechanics_state.json --input-json "{\"operation_id\":\"skip-r41-wages-14\",\"operation_sequence\":8,\"expected_revision\":7,\"expected_continuity_revision\":41,\"resulting_continuity_revision\":42,\"operation\":\"settle_obligation\",\"obligation_id\":\"crew_wages\",\"period\":\"week:14\"}"
 ```
 
 An `evaluation_id` gives the same world-pulse envelope on every retry. A
-legacy explicit integer `seed` remains accepted. `roll_dice.py` accepts only
-bounded `NdM+/-K` expressions and returns its seed for reproduction.
+legacy explicit integer `seed` remains accepted. A `domains` batch (at most 12)
+returns `{"ok": true, "results": [...]}` in request order, each result identical
+to its single-domain call; one invalid entry fails the batch. Without
+`--campaign`, `roll_dice.py` rolls one bounded `NdM+/-K` expression and returns
+its seed for reproduction; call mode is described under Roll Calls And Odds.
 
 `resolve_mechanic.py` handles only mechanics explicitly configured by the
 campaign. Schema v2 rejects numeric strings and floats, requires a monotonic
@@ -309,3 +336,103 @@ become valid again after an arbitrary history limit. It never interprets what
 those changes mean in the fiction. A schema-v1
 ledger is migrated on its next successful operation; after migration, callers
 must supply the sequence and expected revisions shown above.
+
+For downtime, a clock may also carry `owner`, `tick: {unit, amount}`, and
+`on_fill`. `advance_time` ticks every clock whose tick unit matches (amount
+times steps, capped at the maximum) and marks the change `filled`, with its
+`on_fill` line, when the clock reaches its maximum. `add_obligation`
+(`obligation_id`, `actor_id`, `resource_id`, `amount`, `period_label`) records a
+recurring cost such as wages or rent; `settle_obligation` (`obligation_id`,
+`period`, optional `amount`) spends it from the actor's resource once per
+period key, so settling a period again is refused by name. During play these
+run as `mechanic_operations` inside `commit-durable`, which fills in the
+sequence and revisions.
+
+## Roll Calls And Odds
+
+```bash
+python tools/roll_dice.py --campaign campaign --input-json "{\"roll_id\":\"gate-shove\",\"call\":{\"actor\":\"Mira\",\"axis\":\"might\",\"value\":3,\"difficulty\":6,\"factors\":[{\"label\":\"crowbar\",\"modifier\":1}],\"stakes\":\"the guards hear the gate give\"}}"
+python tools/odds.py campaign
+```
+
+Call mode rolls a check declared before the die is seen. The call needs
+`actor`, `axis`, integer `value` and `difficulty`, and `stakes`; `factors` are
+optional labelled integer modifiers. The die comes from `play_profile.yaml`
+`mechanics.resolution`, or from a `die` key in `NdM` form when the campaign
+declares no scale, and a value or difficulty outside the declared ranges is
+refused as `out_of_range`. No seed is accepted: it derives from the campaign
+id, the continuity revision, the roll id, and the call, so the same roll id and
+call at the same revision return the stored receipt (`repeat: true`), and a
+used roll id with a different call is refused. The total is value plus
+modifiers plus die, the margin is total minus difficulty, and the first band
+whose `at_least` the margin reaches is the outcome (`success` at margin 0 or
+more, else `failure`, without a configured scale). When value plus modifiers
+beats the difficulty by `auto_success_margin` or more, the call takes the first
+band without dice (`auto: true`). Receipts append to
+`campaign/.repog-runtime/rolls.jsonl`, newest 2,000 kept.
+
+`odds.py` prints the exact chance of each band for every stat and difficulty
+on the declared scale as Markdown, then its findings: `scale_exhausted` when
+the top stat reaches the first band against every difficulty, and
+`first_band_unreachable` as information. The full check reports the same
+findings.
+
+## Boundary Curation
+
+```bash
+python tools/curation.py packet campaign --target characters/edric.md=stacked_sections --target active_cast.md=active_cast_stale
+python tools/curation.py validate campaign
+```
+
+`packet` builds the frozen packet for the `repog-curator` agent: curation id,
+staging path, base revision, play language, targets with reasons, the sha256
+of each target, and every active directive. It refuses `session_log.md`,
+`archive/`, `snapshots/`, hidden folders, and non-Markdown targets, and refuses
+a packet whose staged file is still waiting. The agent writes exactly one file,
+`campaign/.repog-runtime/curation/<curation_id>.json`, holding `curation_id`,
+`base_revision`, `reason`, `base_hashes`, and `mutations` of typed Markdown ops
+without placeholders or `create_text`. `validate` reports each staged file's
+shape, freshness, and a dry run. `rpg_state.py commit-curation` applies it.
+
+## Runtime Layer And Hooks
+
+```bash
+python tools/presentation_lint.py report campaign --last 20
+python tools/scene_capsule.py show campaign --full
+python tools/lang_pack.py codes
+python tools/lang_pack.py detect --candidates tr en < reply.txt
+python tools/name_check.py Corlan --existing Corran Mira --language en
+```
+
+`campaign/.repog-runtime/` holds working files that are never campaign truth;
+deleting it loses none. `repog_runtime.py` reads four `play_profile.yaml`
+`runtime:` switches, each defaulting when absent: `persistence_order`
+(`narrate_then_commit`), `presentation_lint` (`on`), `scene_capsule` (`on`), and
+`boundary_curator` (`background`).
+
+- `hook_entry.py prompt|stop|session-start|pretool` is the single entry the
+  hook scripts call. It reads the hook event on standard input, prints only
+  the JSON Claude Code expects, and never raises.
+- `scene_capsule.py` builds the hidden capsule the prompt hook injects: a
+  header with revision, day, location, scene, and persistence order; the cast
+  in scope with Core lines, current state, relationship rows, and knowledge;
+  which protected facts each does not hold, by fact id; directives in scope;
+  the language card; the last lint summary; open roll receipts; and staged
+  curation. A new or reset session, a changed scene, and every 12th prompt get
+  the full capsule, otherwise only changed sections. `show` prints the next
+  capsule without recording it.
+- `presentation_lint.py` checks the reply that just ended, after it is sent:
+  out-of-language lines, backend words, tracker numbers in prose, avoid
+  phrases, repeated n-grams, a restated prompt, PC-authoring patterns,
+  protected names, negated descriptions, glossary variants, and calques. It is
+  warning-only and rewrites nothing; `report` sums its history for a distill
+  review.
+- `lang_pack.py` loads `packs/languages/<code>.json` (stopwords, avoid phrases,
+  patterns, common words, a guidance card), folds case per language, and
+  detects a text's language from its function words.
+- `name_check.py` warns when a name is a common word of the play language or
+  one or two letters from an existing name.
+- `check_runtime.py` adds full-check rules: runtime switch values,
+  `narration.language`, the dice scale's odds, T2/T3 character notes without
+  `## Core` (`note_core_missing`), and a character whose Core status is `dead`
+  but who is listed as present (`dead_present`).

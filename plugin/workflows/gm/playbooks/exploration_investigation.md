@@ -20,6 +20,16 @@ room search or a careful inspection into touching a hazard. Routine perception
 of an obvious feature succeeds. Add uncertainty only when evidence is hidden,
 ambiguous, contested, time-sensitive, or risky to reach.
 
+That uncertainty is a contested check. When `dice_mode` is not
+`judgment_only`, declare it before any die is read: `actor`, `axis` and its
+`value`, `difficulty` with a one-line reason from how well the evidence is
+hidden or guarded, `factors`, and `stakes`. Roll it once through
+`python tools/roll_dice.py --campaign campaign --input-json` with a new
+`roll_id` and that `call`. A success finds what the method sought with no added
+setback; a cost comes only from a lower band or a real actor with a cause. No
+witness volunteers the decisive fact without a cause in their own motives, and
+no convenient find supplies it unless established evidence put it there.
+
 On any result, reveal the nearest consequence of the method first. Failure
 does not erase obvious facts. Partial results should change position, time,
 exposure, certainty, or available follow-up rather than merely repeat “not

@@ -13,6 +13,15 @@ performance:
   latency_notice_policy: exceptional_only
   estimate_acknowledged: false
 
+# Runtime layer around each turn. A missing key uses the default shown here,
+# so an older campaign needs no migration. Each switch is a locked preference
+# the Player changes through an OOC request.
+runtime:
+  persistence_order: narrate_then_commit
+  presentation_lint: on
+  scene_capsule: on
+  boundary_curator: background
+
 # Optional RPG browser-agent seats. Session Zero must choose mode explicitly
 # inside the existing Play/System decision. Companion experience mode keeps
 # this inactive. A ready character is never bound without an explicit seat
@@ -39,8 +48,25 @@ mechanics:
   travel_tracking: abstract
   wound_tracking: narrative
   dice_mode: judgment_only
+  # Optional numeric resolution scale for roll calls. Uncomment and adapt it
+  # only with numeric grounding and a dice mode, and read the odds table
+  # before locking it. These values illustrate the shape; they are not a
+  # default.
+  # resolution:
+  #   die: 2d6
+  #   stat_min: 1
+  #   stat_max: 5
+  #   difficulty_min: 4
+  #   difficulty_max: 13
+  #   auto_success_margin: 2
+  #   bands:
+  #     - {at_least: 0, band: success}
+  #     - {at_least: -2, band: partial_small_cost}
+  #     - {at_least: -4, band: partial_heavy_cost}
+  #     - {at_least: -99, band: failure}
 
 narration:
+  language: auto
   point_of_view: second
   tense: present
   camera: close
@@ -99,6 +125,11 @@ visuals:
 # wound_tracking: narrative | conditions
 # dice_mode: judgment_only | player_rolls | open_gm_rolls |
 #   hidden_gm_rolls | hybrid
+# mechanics.resolution: optional; die as NdM, stat and difficulty ranges,
+#   optional auto_success_margin, and bands ordered by at_least (first
+#   match wins); see rules.md Dice
+# narration.language: auto | a BCP-47 primary language subtag such as
+#   en, tr, de, es, or fr
 # point_of_view: first | second | third
 # tense: past | present
 # camera: close | medium | wide
@@ -144,6 +175,10 @@ visuals:
 # performance.semantic_parallelism: off | selective_structural |
 #   aggressive_structural
 # performance.max_parallel_workers: 1 | 2 | 3
+# runtime.persistence_order: narrate_then_commit | commit_then_narrate
+# runtime.presentation_lint: on | off
+# runtime.scene_capsule: on | off
+# runtime.boundary_curator: background | inline | off
 # agent_seats.mode: off | on_demand
 # agent_seats.transport: webmcp
 # agent_seats.autonomy: bounded_full

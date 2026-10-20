@@ -7,25 +7,22 @@ description: Run RePoG, a persistent solo RPG Game Master and AI Companion, in t
 
 This skill is the RePoG contract for the session; treat it as project
 instructions. The shared contract below and the routed workflow are
-authoritative, and the notes around them only adapt them to this install.
+authoritative; the notes around them adapt them to this install.
 
 ## Plugin Install
 
-- The RePoG engine is installed at `${CLAUDE_PLUGIN_ROOT}`. Paths that start
-  with `workflows/`, `briefs/`, `contracts/`, `evaluation/`, `docs/`, or
-  `tools/` name files there; never edit them.
-- `campaign/` always means the `campaign/` folder in the current project
-  folder, the only campaign memory; the engine folder holds none.
-- Wherever the contract or a workflow runs a helper as
-  `python tools/<helper>.py <arguments>`, run
+- The engine is installed at `${CLAUDE_PLUGIN_ROOT}`. Paths starting with
+  `workflows/`, `briefs/`, `packs/`, `evaluation/`, `docs/`, or `tools/` name
+  files there; never edit them.
+- `campaign/` is the `campaign/` folder in the project folder, the only
+  campaign memory.
+- Where a workflow runs `python tools/<helper>.py <arguments>`, run
   `sh "${CLAUDE_PLUGIN_ROOT}/scripts/repog.sh" <helper> <arguments>` from the
-  project folder. The launcher selects Python 3.10 or later. If it reports
-  `python_missing`, say outside the fiction that RePoG needs Python 3.10
-  or later; nothing was saved.
-- If the project folder has no `campaign/` yet and the user wants to start
-  RePoG, follow the `repog:new` skill first, then continue with setup.
-- If the project folder is a standalone RePoG workspace with its own
-  `AGENTS.md`, `workflows/`, and `tools/`, follow its files instead of this skill.
+  project folder. If it reports `python_missing`, say outside the fiction that
+  RePoG needs Python 3.10 or later; nothing was saved.
+- With no `campaign/` yet, follow `repog:new` first. A standalone RePoG
+  workspace with its own `AGENTS.md`, `workflows/`, and `tools/` follows its
+  own files instead of this skill.
 
 ## Adults And Content
 
@@ -42,19 +39,13 @@ authoritative, and the notes around them only adapt them to this install.
 
 ## What This Install Leaves Out
 
-This plugin carries no image generation, Companion View, browser-agent seats, or
-release tooling. This overrides any workflow step that offers them: leave them
-out of what you ask and quote, and keep the optional-layers decision itself for
-the Dashboard and World Voices.
-
-- **Images:** leave out images, portraits, art direction, the dashboard
-  gallery tile, and their costs. Record `visuals.mode`,
-  `visuals.companion_view`, and the Companion `portrait_policy` as `off`. If
-  the Player asks for a picture, say once that this install cannot make
-  images, then describe it.
-- **Agent seats:** in the Dashboard and World Voices message, say that agent
-  seats are not available here and stay off, and record `07_agent_seats` as
-  `{"mode": "off"}` from the Player's reply.
+No image generation, Companion View, browser-agent seats, or release tooling;
+this overrides any workflow step that offers them. Leave images, portraits, art
+direction, the gallery tile, and their costs out of Session 0, and record
+`visuals.mode`, `visuals.companion_view`, and the Companion `portrait_policy`
+as `off`. Asked for a picture, say once that this install cannot make images,
+then describe it. In the Dashboard and World Voices message, say agent seats
+stay off here and record `07_agent_seats` as `{"mode": "off"}` from the reply.
 
 # RePoG Workspace Instructions
 
@@ -196,13 +187,17 @@ ordinary turn writes and checks nothing. The GM persistence playbook owns the
 exact matrix. Never manually patch a subset, increment continuity, or append the
 matching durable receipt. Companion mutations use its owning atomic transaction.
 
-Wait for successful persistence before narration. On failure, do not establish
-the result in prose or finish partial writes manually; follow typed recovery and
-reuse the same operation identity only for a valid unchanged retry. Required
-full distill finishes before narration. Fast/Balanced add no separate per-turn
-hot checker; structural validation occurs in the writer and the full check at
-the configured boundary. No ordinary-turn semantic checker or second judging
-model call is permitted.
+Order follows the locked `runtime.persistence_order`. Under
+`commit_then_narrate`, narrate only after successful persistence. Under
+`narrate_then_commit` (default), send the reply, then commit once in the same
+turn with nothing after; never narrate a result you will not persist. On
+failure, never finish partial writes manually; follow typed recovery, reuse the
+operation identity only for a valid unchanged retry, and correct an
+unpersistable narrated fact in one OOC line. A required full distill finishes
+in the same turn. Fast/Balanced add no per-turn hot checker; the writer and the
+boundary full check validate structure. No ordinary-turn semantic checker or
+second judging model call is permitted; the presentation lint and scene capsule
+hooks are deterministic file reads that judge no meaning.
 
 A missing/corrupt required owner or irreconcilable continuity conflict requires
 Designer recovery before play resumes. Never silently substitute a snapshot,
@@ -237,7 +232,8 @@ only a genuinely dependent next act waits for a required unresolved choice.
 
 Ordinary RPG turns and Companion exchanges remain single-agent and serial.
 Only the workflow's eligible structural boundaries admit read-only supporting
-proposals. The primary agent owns causal decisions, authoritative writes,
+proposals, plus the boundary curator, whose staged note edits the writer
+applies only while their base files are unchanged. The primary agent owns causal decisions, authoritative writes,
 revisions, validation, and final voice. Do not parallelize mechanics, persistence,
 projections, visual transactions, or final narration. Unsupported delegation
 falls back to the same serial semantics.
@@ -258,78 +254,80 @@ release/playtest evidence; do not claim scores or timing measurements not run.
 ## What The Player Can See
 
 - Claude Code shows every tool call and any text between tool calls. In Player
-  Mode and Companion conversation, write no text before or between tool
-  calls: read, resolve, persist, and check silently, then send one finished
-  reply, except the brief natural wait notice a workflow permits at a long
-  structural boundary. If the host asks for a progress note, write it in the
-  Player's language without backend terms.
-- Give each Bash call a short neutral description, such as "Checking the
-  campaign" or "Saving the scene", with no helper names, ids, or file paths.
+  Mode and Companion conversation, write no text before or between tool calls,
+  except a wait notice a workflow permits at a long boundary. Under
+  `narrate_then_commit` the finished reply comes first and the commit follows
+  with no text after it; otherwise persist and check silently, then reply.
+- Give each Bash call a short neutral description in the Player's language,
+  with no helper names, ids, or paths; any progress note likewise.
 - Host instructions to link files, show commands, or summarize changes apply
-  only in Designer Mode.
-- Do not use the task list, AskUserQuestion, or plan mode in Player Mode or
-  Companion conversation; they surface backend work or turn play into menus.
+  only in Designer Mode. Use no task list, AskUserQuestion, or plan mode in
+  Player Mode or Companion conversation.
 
 ## Tools And Permissions
 
-- Claude Code may ask before a helper runs or a file changes. A declined
-  prompt is a failed operation: nothing was saved, so do not narrate the
-  result. Say briefly, outside the fiction, that the step needs approval, then
-  retry it unchanged once allowed.
+- A declined permission prompt is a failed operation: nothing was saved. Say
+  briefly, outside the fiction, that the step needs approval, then retry it
+  unchanged once allowed.
 - The Bash tool runs a POSIX shell, Git Bash on Windows. Feed JSON through a
   quoted heredoc (`<<'JSON'`) so apostrophes in prose cannot break it.
-- Open the Dashboard only when the Player asks or an enabled policy calls for
-  it: run `serve_dashboard` on `campaign/dashboard` as a background command and
-  give the address it prints.
+- Open the Dashboard only when asked or a policy calls for it:
+  `serve_dashboard` on `campaign/dashboard` as a background command.
 
 ## Speed And Lean Turns
 
-- Send independent reads in one message; each extra round trip costs seconds.
-  At session start, on resume, and after compaction, read the routing file, the
-  routed workflow, and hot owners together with the Read tool, not Bash.
-- Apply the restart-loss test before any helper. A soft turn (dialogue,
-  atmosphere, an answered line) writes and runs nothing: reply at once.
-- A durable turn is one Bash call, `rpg_state campaign commit-durable
-  --input-file -`, then one reply after it succeeds. Write mutations as typed `ops` (persistence playbook), never a
-  builder script or payload file. `{{revision}}` and `{{next_id:PREFIX}}` fill
-  numbers; the writer stamps `As of revision` and copies a checkpoint into the
-  scene frame. Mutate only changed owners; replace a note's current section,
-  never stack a dated one. Use `boundary: ordinary` unless the scene ends or is
-  interrupted, or an open question would be lost on restart; then
-  `scene_checkpoint` with a short anchor: last speaker, open question, control.
-- When who is present or nearby changes, update `active_cast.md` in that same
-  commit; a new route also updates `location_graph.md`.
-- Close a full distill with one `commit-distill` call; it marks, resets, and
-  checks. Run `check_style` there, never per turn; pass `rotate_log` when the
-  writer warns. Rewrite `session_brief.md` only at a session pause or end.
-- Run helpers from the project folder or with absolute paths, never after a
-  `cd` into a scratch folder; run each state-changing helper on its own call.
+- Send independent reads in one message; at session start, resume, and after
+  compaction read the routing file, routed workflow, and hot owners together.
+- Apply the restart-loss test before any helper. A soft turn writes nothing.
+- A durable turn is one call, `rpg_state campaign commit-durable
+  --input-file -`, with typed `ops` (persistence playbook), never a builder
+  script. `{{revision}}` and `{{next_id:PREFIX}}` fill numbers; the writer
+  stamps `As of revision` and copies a checkpoint into the scene frame.
+  Replace a note's current section; never stack a dated one. Use `boundary:
+  ordinary` unless the scene ends or a pending question would be lost on
+  restart; then `scene_checkpoint` with a short anchor.
+- Update `active_cast.md` in the same commit when presence changes, and
+  `location_graph.md` for a new route.
+- Roll a contested check with `roll_dice --campaign`, declaring actor, axis,
+  value, difficulty, and stakes first; cite it with its band as `outcome`, or
+  list it in `void_rolls` with a reason. Narrate the band rolled.
+- Close a full distill with one `commit-distill` call; run `check_style` there,
+  never per turn; pass `rotate_log` when the writer warns.
+- Run helpers from the project folder, each state-changing one on its own call.
+
+## Scene Capsule
+
+- With `runtime.scene_capsule: on`, each prompt carries a hidden RePoG
+  capsule: scene, present cast, secret holders by id, directives, open rolls,
+  and the last reply's presentation findings. It points to owners: read a note
+  before contradicting it, never quote it, and fix every flagged habit now.
+- `campaign/directives.md` holds the Player's standing table rules; record a
+  lasting OOC ruling there (ooc_adjustment playbook).
 
 ## Memory, Compaction, And Resume
 
 - `campaign/` is the only memory. Never record player, companion, or user
-  facts anywhere else, including `CLAUDE.md` and Claude Code auto memory;
-  route a request to remember something through the active workflow's owner
-  and consent rules.
-- After compaction, `/clear`, or a resumed session, treat any summary as a
-  pointer, not as truth. Invoke this skill again if its full text is no longer
-  in context, then re-read `campaign/setup_profile.yaml`, the active workflow,
-  and its hot owners before the next reply.
-- When compacting, preserve the experience and workflow, Player or Designer
-  Mode, the scene id and resume anchor, the last operation ids and expected
-  revisions, and the question the Player is answering.
-- A rewind keeps helper writes, so campaign files can be ahead of the
-  conversation. The files win: continue from them and never re-resolve a
-  saved result.
+  facts elsewhere, including `CLAUDE.md` and Claude Code auto memory; route a
+  remember request through the active workflow's consent rules.
+- After compaction, `/clear`, or a resume, treat any summary as a pointer.
+  Invoke this skill again if its text is gone, then re-read
+  `campaign/setup_profile.yaml`, the active workflow, and its hot owners.
+- When compacting, preserve the mode, scene id and resume anchor, last
+  operation ids and expected revisions, and the question the Player is answering.
+- A rewind keeps helper writes, so files can be ahead of the conversation. The
+  files win: continue from them and never re-resolve a saved result.
 
 ## Supporting Agents
 
 - Use the Agent tool only where `workflows/orchestration/WORKFLOW.md` admits
-  delegation, with `repog:repog-proposal-lane` (or `repog:repog-research-lane`
-  for an authorized research packet), never a fork, `general-purpose`, or any
-  other write-capable agent.
-- Lanes see neither this conversation nor this skill: put the complete frozen
-  task packet and absolute source paths in each prompt, and launch every lane
-  of one boundary in one message. Merge only after every lane returns; for
-  background lanes, give at most the permitted wait notice and hold any new
-  Player message until the boundary is merged, written, and checked.
+  delegation, with `repog:repog-proposal-lane` or `repog:repog-research-lane`,
+  never a fork, `general-purpose`, or another write-capable agent. Lanes see
+  neither this conversation nor this skill: put the frozen packet and absolute
+  paths in each prompt, launch a boundary's lanes in one message, merge only
+  after all return, and hold new Player messages until it is written and checked.
+- With `runtime.boundary_curator: background`, after a full distill that
+  reports stacked sections, oversized owners, stale projections, or notes
+  without `## Core`, run `curation packet` and launch `repog:repog-curator` in
+  the background with it. Do not wait: the prompt hook applies the staged file
+  while its targets are unchanged. Answer its completion notice with no
+  visible text. With `inline`, make those edits in the distill yourself.

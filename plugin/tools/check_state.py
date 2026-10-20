@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import importlib.util
 import json
 import re
@@ -257,7 +258,7 @@ BREATHER_EXIT_POLICIES = {
     "player_led_with_established_triggers",
     "world_led",
 }
-SCENE_MODES = {"ambient", "focused", "crisis", "aftermath", "transition", "breather"}
+SCENE_MODES = {"ambient", "focused", "crisis", "aftermath", "transition", "breather", "downtime"}
 ADVANCEMENT_CADENCES = {"none", "session", "scenario", "arc", "campaign"}
 ADVANCEMENT_PRESENTATIONS = {"none", "explicit_ooc", "automatic_fictional"}
 DASHBOARD_MODES = {"off", "on"}
@@ -4205,6 +4206,38 @@ def _narrative_checks():
 
 
 @lru_cache(maxsize=1)
+def _runtime_checks():
+    path = Path(__file__).with_name("check_runtime.py")
+    spec = importlib.util.spec_from_file_location("_repog_check_runtime", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load runtime checks")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@contextlib.contextmanager
+def _configured_stat_scale(campaign_path: Path):
+    """Use the campaign's declared stat range (mechanics.resolution) while checking.
+
+    Campaigns without a resolution block keep the 1-5 scale.
+    """
+
+    global STAT_MIN, STAT_MAX
+    saved = (STAT_MIN, STAT_MAX)
+    try:
+        profile = campaign_path / "play_profile.yaml"
+        text = profile.read_text(encoding="utf-8") if profile.is_file() else ""
+        STAT_MIN, STAT_MAX = _runtime_checks().stat_range(text)
+    except Exception:
+        STAT_MIN, STAT_MAX = saved
+    try:
+        yield
+    finally:
+        STAT_MIN, STAT_MAX = saved
+
+
+@lru_cache(maxsize=1)
 def _owner_ops():
     path = Path(__file__).with_name("owner_ops.py")
     spec = importlib.util.spec_from_file_location("_repog_owner_ops", path)
@@ -4611,6 +4644,16 @@ def check_campaign(
     scope: str = "full",
     preflight_ready: bool = False,
 ) -> dict:
+    with _configured_stat_scale(Path(campaign_path).resolve()):
+        return _check_campaign(Path(campaign_path), scope=scope, preflight_ready=preflight_ready)
+
+
+def _check_campaign(
+    campaign_path: Path,
+    *,
+    scope: str,
+    preflight_ready: bool,
+) -> dict:
     campaign_path = campaign_path.resolve()
     findings: list[dict] = []
 
@@ -4868,6 +4911,15 @@ def check_campaign(
                 findings.extend(check(_read(path, findings), path))
         findings.extend(checks.check_references(campaign_path, ready=content_ready))
         _check_curation(campaign_path, findings)
+
+        def add(severity: str, rule: str, message: str, path: Path) -> None:
+            _add(findings, severity, rule, message, path)
+
+        runtime_checks = _runtime_checks()
+        profile_path = campaign_path / "play_profile.yaml"
+        if profile_path.is_file():
+            runtime_checks.check_profile(_read(profile_path, findings), profile_path, add)
+        runtime_checks.check_notes(campaign_path, present_npcs, add)
 
     if memory_version >= 2 and all((campaign_path / relative).is_file() for relative in V2_FILES):
         _check_v2_memory(

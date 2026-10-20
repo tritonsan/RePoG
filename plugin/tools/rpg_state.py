@@ -23,12 +23,18 @@ import re
 import shutil
 import sys
 import tempfile
+import time
 from functools import lru_cache
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterator
 
+import curation
 import file_transaction
+import lang_pack
+import name_check
 import owner_ops
+import repog_runtime
+import roll_dice
 
 
 TRANSACTION_DIR = ".repog-transactions"
@@ -45,11 +51,22 @@ MAX_FILE_TEXT = 500_000
 SIZE_WARNING_TEXT = 300_000
 LOG_ROTATION_HINT_TEXT = 400_000
 ARCHIVE_DIR = "archive"
+MAX_VOID_ROLLS = 16
+# A roll the Player made with physical dice has no receipt; it is cited as
+# "player:<what was rolled>" and is accepted only where the Player rolls.
+PLAYER_ROLL_PREFIX = "player:"
+PLAYER_ROLL_MODES = {"player_rolls", "hybrid"}
+# Optional owners that older campaigns may lack: a typed edit starts from the
+# shipped template instead of failing on the missing file.
+TEMPLATE_OWNERS = {"directives.md", "glossary.md"}
+TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates" / "campaign"
+# A staged curation file younger than this may still be being written.
+CURATION_SETTLE_SECONDS = 3.0
 
 OPERATION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 CHANGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 KIND_RE = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
-SCENE_MODES = {"ambient", "focused", "crisis", "aftermath", "transition", "breather"}
+SCENE_MODES = {"ambient", "focused", "crisis", "aftermath", "transition", "breather", "downtime"}
 BOUNDARIES = {"ordinary", "scene_checkpoint", "full_distill"}
 
 # A declared semantic kind implies its authority owner. Only unambiguous tokens
@@ -62,6 +79,7 @@ KIND_AUTHORITY_TOKENS: tuple[tuple[frozenset[str], str], ...] = (
     (frozenset({"relationship", "bond"}), "relationship_map.md"),
     (frozenset({"presence", "whereabouts"}), "active_cast.md"),
     (frozenset({"route", "adjacency"}), "location_graph.md"),
+    (frozenset({"directive"}), "directives.md"),
 )
 
 ROOT_OWNER_FILES = {
@@ -80,6 +98,8 @@ ROOT_OWNER_FILES = {
     "world_truths.md",
     "rules.md",
     "mechanics_state.json",
+    "directives.md",
+    "glossary.md",
 }
 ENTITY_OWNER_DIRS = {"characters", "places", "factions"}
 SYSTEM_MANAGED_FILES = {"session_log.md"}
@@ -614,7 +634,7 @@ def _parse_changes(root: Path, value: Any) -> tuple[list[dict[str, Any]], set[st
         label = f"changes[{index}]"
         if not isinstance(raw, dict):
             raise RPGStateError("input_invalid", f"{label} must be an object")
-        _require_keys(raw, {"id", "kind", "established_delta", "owners", "cold_targets", "roll_reference"}, label)
+        _require_keys(raw, {"id", "kind", "established_delta", "owners", "cold_targets", "roll_reference", "outcome"}, label)
         change_id = _one_line(raw.get("id"), f"{label}.id", maximum=80)
         if CHANGE_ID_RE.fullmatch(change_id) is None or change_id in ids:
             raise RPGStateError("input_invalid", f"{label}.id must be a unique safe identifier")
@@ -636,6 +656,11 @@ def _parse_changes(root: Path, value: Any) -> tuple[list[dict[str, Any]], set[st
         roll_reference = ""
         if raw.get("roll_reference") is not None:
             roll_reference = _one_line(raw.get("roll_reference"), f"{label}.roll_reference", maximum=200)
+        outcome = ""
+        if raw.get("outcome") is not None:
+            outcome = _one_line(raw.get("outcome"), f"{label}.outcome", maximum=80)
+            if not roll_reference:
+                raise RPGStateError("input_invalid", f"{label}.outcome names a roll band, so it needs roll_reference")
         if rolls_expected and {token for token in re.split(r"[_-]+", kind) if token} & CONTEST_TOKENS and not roll_reference:
             raise RPGStateError(
                 "input_invalid",
@@ -675,9 +700,186 @@ def _parse_changes(root: Path, value: Any) -> tuple[list[dict[str, Any]], set[st
                 "owners": parsed_owners,
                 "cold_targets": parsed_cold,
                 "roll_reference": roll_reference,
+                "outcome": outcome,
             }
         )
     return parsed, owners, all_cold
+
+
+def _note_title(text: str) -> str:
+    match = re.search(r"(?m)^#[ \t]+(.+?)[ \t]*$", text)
+    return match.group(1).strip() if match else ""
+
+
+def _entity_titles(root: Path, *, exclude: str) -> list[str]:
+    titles: list[str] = []
+    for directory in sorted(ENTITY_OWNER_DIRS):
+        folder = root / directory
+        if not folder.is_dir():
+            continue
+        for note in sorted(folder.glob("*.md")):
+            relative = note.relative_to(root).as_posix()
+            if note.name.startswith("_") or relative == exclude:
+                continue
+            title = _note_title(repog_runtime.read_text(note)) or note.stem.replace("_", " ")
+            titles.append(title)
+    return titles
+
+
+def _name_warnings(root: Path, relative: str, text: str) -> list[dict[str, str]]:
+    """Advisory checks for a new entity's name; never blocks a commit.
+
+    Flags a name that equals a common word of the play language (a character
+    called "Tam" in Turkish reads as "exactly") and a name one or two letters
+    away from an existing one (Corran / Corlan).
+    """
+
+    try:
+        title = _note_title(text) or PurePosixPath(relative).stem.replace("_", " ")
+        code = repog_runtime.runtime_settings(root).get("language", "auto")
+        if code in {"", "auto"}:
+            code = lang_pack.detect_language(text)[0] or "en"
+        findings = name_check.check_name(title, _entity_titles(root, exclude=relative), lang_pack.load_pack(code))
+    except Exception:  # an advisory check must never break a commit
+        return []
+    return [
+        {"rule": str(item.get("rule", "name_check")), "path": relative, "message": str(item.get("message", ""))}
+        for item in findings
+        if item.get("level", "warning") == "warning"
+    ]
+
+
+def _parse_void_rolls(value: Any) -> list[dict[str, str]]:
+    if value is None:
+        return []
+    if not isinstance(value, list) or len(value) > MAX_VOID_ROLLS:
+        raise RPGStateError("input_invalid", f"void_rolls must be an array of at most {MAX_VOID_ROLLS} objects")
+    parsed: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for index, raw in enumerate(value):
+        label = f"void_rolls[{index}]"
+        if not isinstance(raw, dict):
+            raise RPGStateError("input_invalid", f"{label} must be an object with roll_id and reason")
+        _require_keys(raw, {"roll_id", "reason"}, label)
+        roll_id = _one_line(raw.get("roll_id"), f"{label}.roll_id", maximum=80)
+        if roll_id in seen:
+            raise RPGStateError("input_invalid", f"{label}.roll_id repeats {roll_id}")
+        seen.add(roll_id)
+        parsed.append({"roll_id": roll_id, "reason": _one_line(raw.get("reason"), f"{label}.reason", maximum=300)})
+    return parsed
+
+
+def _receipt(root: Path, roll_id: str) -> dict[str, Any] | None:
+    try:
+        return roll_dice.find_receipt(root, roll_id)
+    except roll_dice.RollCallError as exc:
+        raise RPGStateError("campaign_invalid", f"roll receipts cannot be read: {exc}") from exc
+
+
+def _usable_receipt(root: Path, roll_id: str, label: str, *, base_revision: int) -> dict[str, Any]:
+    receipt = _receipt(root, roll_id)
+    if receipt is None:
+        raise RPGStateError(
+            "input_invalid",
+            f"{label} '{roll_id}' names no recorded roll; make the roll with roll_dice --campaign first",
+        )
+    if receipt.get("revision") != base_revision:
+        raise RPGStateError(
+            "input_invalid",
+            f"{label} '{roll_id}' was rolled at revision {receipt.get('revision')}, but this turn starts at "
+            f"revision {base_revision}; roll again under a new roll id",
+        )
+    if receipt.get("consumed_revision") is not None:
+        raise RPGStateError(
+            "input_invalid",
+            f"{label} '{roll_id}' was already used by revision {receipt.get('consumed_revision')}",
+        )
+    return receipt
+
+
+def _verify_rolls(
+    root: Path,
+    changes: list[dict[str, Any]],
+    voided: list[dict[str, str]],
+    *,
+    base_revision: int,
+) -> tuple[list[str], list[dict[str, str]]]:
+    """Tie every roll made this turn to the commit that uses or voids it.
+
+    A cited roll must be a recorded receipt from this turn, unused, and the
+    change must name the band the roll produced; that is what stops a success
+    from being narrated as a setback. A roll made this turn and neither cited
+    nor voided with a reason is refused, so a result cannot be quietly
+    re-rolled. Campaigns that never recorded a receipt keep the older
+    free-text references, with a warning.
+    """
+
+    warnings: list[dict[str, str]] = []
+    store_exists = roll_dice.receipts_path(root).is_file()
+    player_rolls = _dice_mode(root) in PLAYER_ROLL_MODES
+    cited: list[str] = []
+    for change in changes:
+        reference = change.get("roll_reference")
+        if not reference:
+            continue
+        label = f"change {change['id']} roll_reference"
+        if reference.casefold().startswith(PLAYER_ROLL_PREFIX):
+            if not player_rolls:
+                raise RPGStateError(
+                    "input_invalid",
+                    f"{label} '{reference}' names a Player's own roll, but dice_mode does not let the Player roll; "
+                    "make the roll with roll_dice --campaign",
+                )
+            if not change.get("outcome"):
+                raise RPGStateError(
+                    "input_invalid",
+                    f"change {change['id']} cites the Player's roll; set outcome to the band that result reached",
+                )
+            continue
+        if not store_exists and not change.get("outcome"):
+            warnings.append(
+                {
+                    "rule": "roll_unrecorded",
+                    "path": "",
+                    "message": f"change {change['id']} cites '{reference}', which is not a recorded roll receipt",
+                }
+            )
+            continue
+        receipt = _usable_receipt(root, reference, label, base_revision=base_revision)
+        band = str(receipt.get("band", ""))
+        if not change.get("outcome"):
+            raise RPGStateError(
+                "input_invalid",
+                f"change {change['id']} cites roll '{reference}' (band '{band}'); set outcome to '{band}'",
+            )
+        if change["outcome"] != band:
+            raise RPGStateError(
+                "input_invalid",
+                f"change {change['id']}: outcome '{change['outcome']}' does not match roll '{reference}' band "
+                f"'{band}'; narrate and record the band the roll produced",
+            )
+        if receipt["roll_id"] in cited:
+            raise RPGStateError("input_invalid", f"roll '{reference}' is cited by more than one change")
+        cited.append(receipt["roll_id"])
+    voided_ids: list[str] = []
+    for item in voided:
+        receipt = _usable_receipt(root, item["roll_id"], "void_rolls entry", base_revision=base_revision)
+        if receipt["roll_id"] in cited:
+            raise RPGStateError("input_invalid", f"roll '{item['roll_id']}' is both cited and voided")
+        voided_ids.append(receipt["roll_id"])
+    if store_exists:
+        try:
+            pending = roll_dice.open_receipts(root, base_revision)
+        except roll_dice.RollCallError as exc:
+            raise RPGStateError("campaign_invalid", f"roll receipts cannot be read: {exc}") from exc
+        unaccounted = sorted({str(receipt.get("roll_id")) for receipt in pending} - set(cited) - set(voided_ids))
+        if unaccounted:
+            raise RPGStateError(
+                "rolls_unaccounted",
+                f"roll(s) made this turn are not accounted for: {', '.join(unaccounted)}; cite each in a change's "
+                "roll_reference with its outcome, or list it in void_rolls with a reason",
+            )
+    return cited + voided_ids, warnings
 
 
 def _distill_path(root: Path, value: Any, label: str) -> tuple[str, Path]:
@@ -698,6 +900,7 @@ def _parse_mutations(
     *,
     placeholders: owner_ops.PlaceholderContext,
     distill: bool = False,
+    notes: list[dict[str, str]] | None = None,
 ) -> tuple[dict[str, bytes], set[str]]:
     """Materialize every mutation in memory; nothing is written here.
 
@@ -749,9 +952,16 @@ def _parse_mutations(
             if not text.endswith("\n"):
                 text += "\n"
             candidates[relative] = text.encode("utf-8")
+            if notes is not None:
+                notes.extend(_name_warnings(root, relative, text))
             continue
 
-        text = _read_text(path, relative)
+        if relative in TEMPLATE_OWNERS and not path.exists():
+            # Campaigns created before these owners existed start from the
+            # blank template the first time the GM records one.
+            text = _read_text(TEMPLATE_DIR / relative, f"{relative} template")
+        else:
+            text = _read_text(path, relative)
         original_meta = _state_meta(text) if relative == "current_state.yaml" else None
         if modes[0] == "ops":
             try:
@@ -919,6 +1129,7 @@ def _durable_event(
     changes: list[dict[str, Any]],
     boundary: str,
     resume_impact: str,
+    voided: list[dict[str, str]] | None = None,
 ) -> str:
     lines = [
         f"### Durable Revision {revision}",
@@ -928,7 +1139,10 @@ def _durable_event(
         "- Established changes:",
     ]
     for change in changes:
-        suffix = f" (roll: {change['roll_reference']})" if change.get("roll_reference") else ""
+        suffix = ""
+        if change.get("roll_reference"):
+            band = f" -> {change['outcome']}" if change.get("outcome") else ""
+            suffix = f" (roll: {change['roll_reference']}{band})"
         lines.append(f"  - {change['id']} [{change['kind']}]: {change['established_delta']}{suffix}")
     lines.append("- Immediate authorities:")
     for change in changes:
@@ -945,6 +1159,10 @@ def _durable_event(
             lines.append(f"  - {change_id} -> `{path}` — {reason}")
     else:
         lines.append("- Deferred propagation: none — no secondary surface affected")
+    if voided:
+        lines.append("- Voided rolls:")
+        for item in voided:
+            lines.append(f"  - {item['roll_id']} — {item['reason']}")
     lines.extend(
         [
             f"- Boundary: {boundary}",
@@ -1262,6 +1480,7 @@ DURABLE_PAYLOAD_FIELDS = {
     "mutations",
     "checkpoint",
     "mechanic_operations",
+    "void_rolls",
 }
 CHECKPOINT_PAYLOAD_FIELDS = {"operation_id", "expected_continuity_revision", "mutations", "checkpoint"}
 
@@ -1309,11 +1528,14 @@ def _validate_durable_payload(root: Path, payload: dict[str, Any], *, revision: 
     cause = _one_line(payload.get("cause"), "cause")
     resume_impact = _one_line(payload.get("resume_impact"), "resume_impact")
     changes, owners, cold_targets = _parse_changes(root, payload.get("changes"))
+    notes: list[dict[str, str]] = []
     mutations, mutation_paths = _parse_mutations(
         root,
         payload.get("mutations", []),
         placeholders=owner_ops.PlaceholderContext(revision),
+        notes=notes,
     )
+    void_rolls = _parse_void_rolls(payload.get("void_rolls"))
     checkpoint_raw = payload.get("checkpoint")
     checkpoint = _parse_checkpoint(checkpoint_raw) if checkpoint_raw is not None else None
     if boundary == "scene_checkpoint" and checkpoint is None:
@@ -1354,6 +1576,8 @@ def _validate_durable_payload(root: Path, payload: dict[str, Any], *, revision: 
         "mutation_paths": mutation_paths,
         "checkpoint": checkpoint,
         "mechanic_operations": mechanic_operations,
+        "void_rolls": void_rolls,
+        "notes": notes,
     }
 
 
@@ -1473,6 +1697,12 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
         )
         if already_due:
             raise RPGStateError("distill_required", f"full distill is already required: {due_reason}")
+        consumed_rolls, roll_warnings = _verify_rolls(
+            root,
+            parsed["changes"],
+            parsed["void_rolls"],
+            base_revision=meta["revision"],
+        )
 
         mechanics_candidate, mechanic_results = _mechanic_candidate(
             root,
@@ -1481,6 +1711,8 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
         )
         candidates = dict(parsed["mutations"])
         warnings = _finish_candidates(candidates, parsed["mutation_paths"], stamp_revision=new_revision)
+        warnings.extend(roll_warnings)
+        warnings.extend(parsed["notes"])
         if parsed["checkpoint"] is not None:
             _sync_scene_frame(candidates, state_text, parsed["checkpoint"])
         if mechanics_candidate is not None:
@@ -1511,6 +1743,7 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
             changes=parsed["changes"],
             boundary=parsed["boundary"],
             resume_impact=parsed["resume_impact"],
+            voided=parsed["void_rolls"],
         )
         updated_log = _append_block(log_text, event)
         if parsed["checkpoint"] is not None:
@@ -1531,6 +1764,14 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
             payload_hash=payload_hash,
             candidates=candidates,
         )
+
+        if consumed_rolls:
+            try:
+                roll_dice.mark_consumed(root, consumed_rolls, new_revision)
+            except roll_dice.RollCallError as exc:
+                # The commit stands; an unmarked receipt is refused later because
+                # its revision no longer matches the turn that would cite it.
+                warnings.append({"rule": "roll_receipt_unmarked", "path": "", "message": str(exc)})
 
         new_meta = _state_meta(updated_state)
         required, reason = _distill_requirement(
@@ -1840,6 +2081,125 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _curation_event(*, revision: int, curation_id: str, reason: str, files: list[str]) -> str:
+    return "\n".join(
+        [
+            f"### Curation Applied At Revision {revision}",
+            "",
+            f"- Curation: {curation_id}",
+            f"- Reason: {reason}",
+            f"- Files curated: {', '.join(files) if files else 'none (nothing safe to change)'}",
+        ]
+    )
+
+
+def _stage_errors(root: Path, path: Path, revision: int) -> tuple[dict[str, Any] | None, list[str]]:
+    """Validate one staged file under the lock; return its payload or the reasons to reject it."""
+
+    errors = curation.validate_file(root, path)
+    if errors:
+        return None, errors
+    try:
+        payload = curation.read_staged(path)
+    except curation.CurationError as exc:
+        return None, [str(exc)]
+    fresh, stale = curation.split_by_freshness(root, payload)
+    if stale:
+        # All or nothing: a proposal written against text that changed since is
+        # never applied in part, because its edits may depend on each other.
+        return None, [f"target changed since the proposal was written: {', '.join(stale)}"]
+    errors = curation.dry_run(root, fresh, revision=revision)
+    return (None, errors) if errors else (payload, [])
+
+
+def commit_curation(
+    campaign: Path,
+    *,
+    staged: list[Path] | None = None,
+    settle_seconds: float = CURATION_SETTLE_SECONDS,
+) -> dict[str, Any]:
+    """Apply staged curator proposals whose target files are unchanged.
+
+    Each staged file is one transaction: its typed edits to secondary records
+    and notes are applied only when every target still has the hash the
+    curator read, then the file moves to `applied/`. Anything stale or invalid
+    moves to `rejected/` with its reasons. Curation creates no revision, no
+    distill marker, and no new truth; it only records what it tidied.
+    """
+
+    root = _campaign_root(campaign)
+    applied: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    waiting: list[str] = []
+    warnings: list[dict[str, str]] = []
+    with _transaction_lock(root):
+        recovered = _recover_transactions(root)
+        _, log_text, meta = _runtime(root)
+        files = [Path(item) for item in staged] if staged is not None else curation.list_staged(root)
+        now = time.time()
+        for path in files:
+            if staged is None:
+                try:
+                    if now - path.stat().st_mtime < settle_seconds:
+                        waiting.append(path.name)
+                        continue
+                except OSError:
+                    continue
+            payload, errors = _stage_errors(root, path, meta["revision"])
+            curation_id = str((payload or {}).get("curation_id") or path.stem)
+            if payload is not None:
+                try:
+                    candidates, paths = _parse_mutations(
+                        root,
+                        payload["mutations"],
+                        placeholders=owner_ops.PlaceholderContext(meta["revision"]),
+                        distill=True,
+                    )
+                    file_warnings = _finish_candidates(candidates, paths, stamp_revision=meta["revision"])
+                    files_curated = sorted(paths)
+                    log_text = _append_block(
+                        log_text,
+                        _curation_event(
+                            revision=meta["revision"],
+                            curation_id=curation_id,
+                            reason=str(payload.get("reason", "")).strip(),
+                            files=files_curated,
+                        ),
+                    )
+                    candidates["session_log.md"] = log_text.encode("utf-8")
+                    _commit_candidates(
+                        root,
+                        operation_id=f"curation-{curation_id}"[:MAX_OPERATION_ID],
+                        payload_hash=_canonical_hash(payload),
+                        candidates=candidates,
+                    )
+                except RPGStateError as exc:
+                    if exc.category == "recovery_required":
+                        raise
+                    log_text = _read_text(root / "session_log.md", "session log")
+                    errors = [f"{exc.category}: {exc}"]
+                else:
+                    curation.move_processed(path, "applied")
+                    applied.append({"curation_id": curation_id, "files": files_curated})
+                    warnings.extend(file_warnings)
+                    continue
+            try:
+                curation.move_processed(path, "rejected")
+            except curation.CurationError:
+                pass
+            rejected.append({"curation_id": curation_id, "reasons": errors[:6]})
+    return {
+        "ok": True,
+        "operation": "commit-curation",
+        "continuity_revision": meta["revision"],
+        "applied": applied,
+        "rejected": rejected,
+        "waiting": waiting,
+        "recovered_transactions": recovered,
+        "warnings": warnings,
+    }
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("campaign", help="Path to the active campaign folder")
@@ -1852,6 +2212,10 @@ def _parser() -> argparse.ArgumentParser:
             "--input-file",
             help="Read the JSON envelope from a UTF-8 file, or from standard input when the value is -",
         )
+    curation_parser = subparsers.add_parser("commit-curation")
+    target = curation_parser.add_mutually_exclusive_group(required=True)
+    target.add_argument("--apply-staged", action="store_true", help="Apply every settled staged curation file")
+    target.add_argument("--staged", action="append", help="Apply this staged file (repeatable)")
     return parser
 
 
@@ -1863,8 +2227,32 @@ def _read_input(args: argparse.Namespace) -> str:
     return Path(args.input_file).read_text(encoding="utf-8-sig")
 
 
+def _emit(result: dict[str, Any]) -> None:
+    # UTF-8 bytes, not the console code page: Windows pipes default to cp1252,
+    # which cannot encode most non-English names and would crash after a commit.
+    sys.stdout.buffer.write((json.dumps(result, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
+    sys.stdout.flush()
+
+
+def _curation_main(args: argparse.Namespace) -> int:
+    try:
+        staged = None if args.apply_staged else [Path(item) for item in args.staged]
+        result = commit_curation(Path(args.campaign), staged=staged)
+        exit_code = 0
+    except RPGStateError as exc:
+        result = {"ok": False, "failure_category": exc.category, "failure_reason": str(exc)}
+        exit_code = exc.exit_code
+    except (OSError, UnicodeError) as exc:
+        result = {"ok": False, "failure_category": "io_error", "failure_reason": str(exc)}
+        exit_code = 2
+    _emit(result)
+    return exit_code
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command == "commit-curation":
+        return _curation_main(args)
     try:
         payload = json.loads(_read_input(args))
         if not isinstance(payload, dict):
@@ -1886,7 +2274,7 @@ def main(argv: list[str] | None = None) -> int:
         exit_code = 2
     else:
         exit_code = 0
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    _emit(result)
     return exit_code
 
 

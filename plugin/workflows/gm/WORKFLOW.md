@@ -34,6 +34,13 @@ brief, and relevant knowledge entries. The scene frame/resume anchor owns
 continuation; cold notes trigger by entity, place, domain, mechanic, source,
 advancement, visual, or continuity signals.
 
+With `runtime.scene_capsule: on`, each prompt carries a hidden scene capsule:
+the first pointer to the present cast's Core lines, secret holders by fact id,
+directives in scope, open rolls, and the last reply's lint findings. It is a
+deterministic read of owners, and the owners stay authoritative: read the owner
+before asserting or changing a fact the capsule points to. `directives.md`
+holds the Player's standing table rules; follow every active row in scope.
+
 Keep the current `threads.md` Arc Compass id, status, dramatic question, closure
 conditions, and reachable scope in this small context. Read its owner when it
 changes; a brief may point to it but never supplies a second current Compass.
@@ -144,7 +151,7 @@ latency policy calls for one, but technical orchestration remains invisible.
    `ordinary`, `scene_checkpoint`, or `full_distill`; do not infer the semantic
    result before resolving the world response.
 3. Choose one scene mode: `ambient`, `focused`, `crisis`, `aftermath`,
-   `transition`, or `breather`.
+   `transition`, `breather`, or `downtime`.
 4. Load only the triggered playbook, authority note, knowledge row, and
    approved mechanic needed to decide this turn.
 
@@ -176,7 +183,7 @@ the accepted capability distribution stands.
 
 Honor the campaign's tracking settings as obligations, not preferences. When
 `dice_mode` is anything but `judgment_only`, a contested outcome comes from a
-recorded roll and the durable change carries its roll reference; never rename a
+recorded roll and the durable change cites its roll id and band; never rename a
 result as uncontested to avoid rolling. Quantified inventory, strict consumables,
 wounds as conditions, clocks, stepped time, and route travel each change state
 through a mechanic operation in the same durable commit rather than through
@@ -218,10 +225,10 @@ choice. New promises, permissions, or relationship changes remain durable.
 
 For any durable result, checkpoint, or full-distill trigger, load
 `playbooks/persistence.md` and commit exactly once through the owning helper.
-No changed fact's sole owner may be deferred. Narrate only after success and
-any required full distill. Optional surfaces use their triggered playbooks;
-load only the relevant entry of `../reference/authority-map.md` when ownership
-is unclear.
+No changed fact's sole owner may be deferred. `runtime.persistence_order` orders
+the reply and the commit; a required full distill finishes in the same turn.
+Optional surfaces use their triggered playbooks; load only the relevant entry
+of `../reference/authority-map.md` when ownership is unclear.
 
 ## 4. Narrate
 
@@ -232,7 +239,9 @@ a strong one for effect, and a strong axis is not ignored to keep a scene tense.
 When the fiction wants an outcome the sheet does not support, reach it through a
 different route or let the sheet stand. Show the direct
 result before new atmosphere or pressure, then end where the Player can react;
-avoid a menu unless requested or selected by profile.
+avoid a menu unless requested or selected by profile. Do not open by restating
+the Player's words; begin with the world's response. Correct every habit the
+capsule's lint findings name for the last reply.
 
 Choose details that make action and interpretation possible: the tool's relevant
 shape, the distance that matters, a character's particular choice of words.
@@ -253,6 +262,7 @@ Build a scene from:
 - `aftermath`: foreground cost, changed routine, relationships, and meaning.
 - `transition`: compress low-risk movement and establish the next reaction point.
 - `breather`: foreground safety, recovery, companionship, curiosity, and small projects.
+- `downtime`: an approved time skip, committed once (`playbooks/travel_downtime.md`).
 
 A living scene may be quiet, empty, closed, damaged, or routine; local noise, clues, complications, and NPC arrivals are ceilings, never quotas.
 

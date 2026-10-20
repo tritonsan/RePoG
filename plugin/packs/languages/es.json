@@ -1,0 +1,43 @@
+{
+  "code": "es",
+  "name": "Español",
+  "casefold": "default",
+  "stopwords": [
+    "de", "la", "que", "el", "en", "y", "a", "los", "se", "del",
+    "las", "un", "por", "con", "no", "una", "su", "para", "es", "al",
+    "lo", "como", "más", "pero", "sus", "le", "ya", "o", "fue", "este",
+    "ha", "sí", "si", "porque", "esta", "entre", "cuando", "muy", "sin", "sobre",
+    "también", "me", "hasta", "hay", "donde", "quien", "desde", "todo", "nos", "durante",
+    "todos", "uno", "les", "ni", "contra", "otros", "ese", "eso", "ante", "ellos",
+    "esto", "mí", "antes", "algunos", "qué", "unos", "yo", "otro", "otras", "otra",
+    "él", "tanto", "esa", "estos", "mucho", "nada", "muchos", "cual", "poco", "ella",
+    "estar", "estas", "algunas", "algo", "nosotros", "mi", "mis", "tú", "te", "ti",
+    "tu", "tus", "ellas", "vosotros", "usted", "ustedes", "os", "nuestro", "nuestra", "esos",
+    "esas", "estoy", "estás", "está", "estamos", "están", "estaba", "estaban", "era", "eran",
+    "soy", "eres", "somos", "fui", "fueron", "había", "habían", "he", "has", "han",
+    "tiene", "tienen", "tenía", "ser", "hacia", "aunque", "entonces", "luego", "después", "siempre",
+    "nunca", "aquí", "allí", "así", "bien", "cada", "cómo", "dónde", "cuándo", "quién",
+    "aún", "todavía", "solo", "apenas", "mientras", "pues", "tan", "mismo", "misma", "dijo"
+  ],
+  "avoid_phrases": [
+    {"phrase": "por un momento", "max_per_reply": 1, "note": "overused pause beat"},
+    {"phrase": "un largo momento", "max_per_reply": 0, "note": "stock beat"}
+  ],
+  "negated_description": [
+    "\\bno\\s+(?:era|fue|es)\\s+\\w+(?:\\s+\\w+)?\\s*[,;]\\s*(?:sino|era|fue|es)\\b",
+    "\\bni\\s+\\w+(?:\\s*,)?\\s+ni\\b",
+    "\\bno\\s+(?:tembló|temblaba|vaciló|vacilaba|titubeó|se\\s+inmutó)\\b"
+  ],
+  "day_patterns": [
+    "\\bd[ií]a\\s*(?:[:#]\\s*)?\\d+\\b",
+    "\\b\\d+\\s*(?:\\.\\s*)?[ºª°o]\\s+d[ií]a\\b",
+    "\\b(?:d[ée]cimo|und[ée]cimo|duod[ée]cimo|vig[ée]simo|trig[ée]simo|cuadrag[ée]simo|quincuag[ée]simo|sexag[ée]simo|septuag[ée]simo|octog[ée]simo|nonag[ée]simo|cent[ée]simo)(?:\\s+\\w+)?\\s+d[ií]a\\b"
+  ],
+  "pc_speech_patterns": [
+    "(?m)(?:^|(?<=[^\\w\\s])|(?<=[^\\w\\s]\\s))preguntas\\b",
+    "\\b(?:le|les|me|nos|te)\\s+preguntas\\b",
+    "\\b(?:dices|dijiste|preguntaste|respondes|respondiste|contestas|contestaste|susurras|susurraste|gritas|gritaste|murmuras|murmuraste|añades|añadiste)\\b",
+    "\\b(?:asientes|asentiste|sonríes|sonreíste|suspiras|suspiraste|decides|decidiste|prometes|prometiste|aceptas|aceptaste)\\b"
+  ],
+  "card": "Write natural Spanish, not translated English. Use the raya for dialogue, with lowercase tags after it (—Vamos —dijo). Address the player character with 'tú' unless the profile sets 'usted'; NPCs choose tú or usted by rank, age and closeness and keep that choice. Drop subject pronouns where the verb already marks the person. Use the preterite for events and the imperfect for background. Avoid stock beats (por un momento) and 'no era X, sino Y' descriptions. Write days and small numbers in words and never show tracker values."
+}

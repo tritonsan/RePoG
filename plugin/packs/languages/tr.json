@@ -1,0 +1,98 @@
+{
+  "code": "tr",
+  "name": "Türkçe",
+  "casefold": "turkish",
+  "stopwords": [
+    "ve", "ile", "ya", "veya", "ama", "fakat", "ancak", "oysa", "çünkü", "eğer",
+    "ki", "de", "da", "dahi", "bile", "mi", "mı", "mu", "mü", "ise",
+    "iken", "diye", "yani", "hem", "sanki", "işte", "hani", "acaba", "belki", "galiba",
+    "yine", "yoksa", "olduğu", "olduğunu",
+    "ben", "sen", "o", "biz", "siz", "onlar", "beni", "seni", "onu", "bizi",
+    "sizi", "onları", "bana", "sana", "ona", "bize", "size", "onlara", "benden", "senden",
+    "ondan", "benim", "senin", "onun", "bizim", "sizin", "onların", "bu", "şu", "bunu",
+    "şunu", "buna", "şuna", "bunun", "bundan", "bunlar", "bunları", "kendi", "kendisi", "kendine",
+    "kendini",
+    "bir", "biri", "birkaç", "biraz", "birçok", "bazı", "bazen", "her", "herkes", "hep",
+    "hepsi", "hiç", "hiçbir", "kimse", "bütün", "tüm", "öteki", "diğer", "başka", "aynı",
+    "şey", "şeyi", "çok", "az", "daha", "en", "pek", "fazla",
+    "kim", "kimin", "kime", "ne", "neden", "niye", "niçin", "nasıl", "nerede", "nereye",
+    "hangi", "kaç",
+    "için", "gibi", "kadar", "göre", "karşı", "doğru", "rağmen", "dolayı", "beri", "sonra",
+    "önce", "yerine", "boyunca", "olarak",
+    "içinde", "içine", "içeri", "içeride", "dışarı", "dışında", "üstünde", "üstüne", "üzerinde", "üzerine",
+    "altında", "yanında", "önünde", "arkasında", "arasında", "burada", "orada", "buraya", "oraya",
+    "şimdi", "hemen", "artık", "hâlâ", "henüz", "yalnız", "yalnızca", "sadece", "yeniden", "tekrar",
+    "zaten", "böyle", "şöyle", "öyle", "tam",
+    "var", "yok", "vardı", "yoktu", "değil", "değildi", "oldu", "olur", "olan", "idi",
+    "dedi", "etti", "et",
+    "evet", "hayır", "peki", "hadi", "tamam", "on", "iki",
+    "icin", "cok", "degil", "degildi", "simdi", "sey", "hic", "hicbir", "cunku", "boyle",
+    "oyle", "gore", "su", "icinde"
+  ],
+  "avoid_phrases": [
+    {"phrase": "bir an", "max_per_reply": 1, "note": "overused pause beat; show the pause through an action"},
+    {"phrase": "başka bir şey demedi", "max_per_reply": 0, "note": "stock closing beat; let what the character does carry the silence"},
+    {"phrase": "başka bir şey söylemedi", "max_per_reply": 0, "note": "stock closing beat; let what the character does carry the silence"},
+    {"phrase": "başka bir şey eklemedi", "max_per_reply": 0, "note": "stock closing beat; let what the character does carry the silence"},
+    {"phrase": "cevabını bekliyor", "max_per_reply": 0, "note": "turn-ending tic; end on a concrete moment instead"},
+    {"phrase": "cevabını bekledi", "max_per_reply": 0, "note": "turn-ending tic; end on a concrete moment instead"},
+    {"phrase": "yanıtını bekliyor", "max_per_reply": 0, "note": "turn-ending tic; end on a concrete moment instead"},
+    {"phrase": "sesi titremiyordu", "max_per_reply": 0, "note": "negated description; say how the voice sounded"},
+    {"phrase": "sessizlik uzadı", "max_per_reply": 1, "note": "stock beat"}
+  ],
+  "negated_description": [
+    "\\b\\w+m[ıiuü]yor(?:du|lardı|lar)?(?:\\s*[,;])?\\s+(?:ama|fakat|yalnızca|sadece)\\b",
+    "\\b\\w+(?:madı|medi)(?:lar)?(?:\\s*[,;])?\\s+(?:ama|fakat|yalnızca|sadece)\\b",
+    "\\b(?:sesi|eli|elleri|yüzü|bakışları|gözleri)\\s+(?:titremiyordu|titremedi|kıpırdamıyordu|kıpırdamadı|değişmiyordu|değişmedi)\\b",
+    "\\bhiç\\s*bir\\s+\\w+\\s+yoktu\\b",
+    "\\bdeğil(?:di)?\\s*[,;:—–-]\\s*\\w+[dt][ıiuü]\\b",
+    "\\bne\\s+\\w+\\s+ne\\s+de\\s+\\w+"
+  ],
+  "day_patterns": [
+    "\\b\\d+\\s*\\.\\s*gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*",
+    "\\b\\d+\\s*(?:['’]\\s*)?[ıiuü]?nc[ıiuü]\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*",
+    "(?<!\\bher\\s)(?<!\\bbir\\s)(?<!\\bo\\s)(?<!\\baynı\\s)\\bgün\\s*(?:[:#]\\s*)?\\d+\\b",
+    "\\b(?:(?:iki|üç|dört|beş|altı|yedi|sekiz|dokuz)\\s+)?(?:yüz\\s+)?(?:on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan)\\s+(?:birinci|ikinci|üçüncü|dördüncü|beşinci|altıncı|yedinci|sekizinci|dokuzuncu)\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*",
+    "\\b(?:(?:iki|üç|dört|beş|altı|yedi|sekiz|dokuz)\\s+)?(?:yüz\\s+)?(?:onuncu|yirminci|otuzuncu|kırkıncı|ellinci|altmışıncı|yetmişinci|sekseninci|doksanıncı|yüzüncü)\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*",
+    "\\byüz\\s+(?:birinci|ikinci|üçüncü|dördüncü|beşinci|altıncı|yedinci|sekizinci|dokuzuncu)\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*"
+  ],
+  "pc_speech_patterns": [
+    "\\b(?:dedin|sordun|söyledin|fısıldadın|bağırdın|mırıldandın|seslendin|haykırdın|yanıtladın|cevapladın|ekledin)(?:[ıiuü]z)?\\b",
+    "\\b(?:diyor|soruyor|söylüyor|fısıldıyor|bağırıyor|mırıldanıyor|sesleniyor|haykırıyor|yanıtlıyor|cevaplıyor|ekliyor)sun(?:uz)?\\b",
+    "\\b(?:cevap|yanıt|karar|söz)\\s+(?:verdin(?:iz)?|veriyorsun(?:uz)?)\\b",
+    "\\b(?:başını\\s+(?:salladın|sallıyorsun)|gülümsedin|gülümsüyorsun|iç\\s+(?:çektin|çekiyorsun)|omuz\\s+(?:silktin|silkiyorsun)|kabul\\s+(?:ettin|ediyorsun)|onayladın|onaylıyorsun)\\b"
+  ],
+  "meta_words": [
+    "revizyon", "kayıt dosyası", "kampanya dosyası", "durum dosyası", "oturum günlüğü",
+    "karakter notu", "sahne kimliği", "işlem kimliği", "şema", "betik", "araç çağrısı",
+    "yardımcı araç", "kalıcılık", "commit", "payload", "kaydediyorum", "kayda geçiriyorum",
+    "dosyayı güncelliyorum"
+  ],
+  "calques": [
+    {"bad": "yüzünde hiçbir şey yoktu", "better": "yüzünden ne düşündüğü okunmuyordu"},
+    {"bad": "sesi düzdü", "better": "sakin, tekdüze bir sesle konuştu"},
+    {"bad": "gözleri üstünde kaldı", "better": "gözlerini ayırmadı"},
+    {"bad": "gözleri senin üstünde kaldı", "better": "gözlerini senden ayırmadı"},
+    {"bad": "gözleri üzerinde kaldı", "better": "gözlerini ayırmadı"},
+    {"bad": "gözleri senin üzerinde kaldı", "better": "gözlerini senden ayırmadı"},
+    {"bad": "bir şeyi tartıyordu", "better": "aklından bir hesap geçirdiği belliydi"},
+    {"bad": "ne eksik ne fazla", "better": "tam kararında (or drop it)"},
+    {"bad": "surlarda çok yakışıyorsun", "better": "surlarda durmak sana yakışıyor"},
+    {"bad": "boğazını temizledi", "better": "hafifçe öksürdü"},
+    {"bad": "gözleri yumuşadı", "better": "bakışları yumuşadı"},
+    {"bad": "çenesi gerildi", "better": "dişlerini sıktı"},
+    {"bad": "çenesi kasıldı", "better": "dişlerini sıktı"},
+    {"bad": "tuttuğunu bilmediği nefesi", "better": "rahatlayıp nefesini bıraktı"},
+    {"bad": "havada asılı kaldı", "better": "sözlerinin ardından oda sessizleşti"},
+    {"bad": "dudaklarının köşesi kıvrıldı", "better": "dudağının kenarında belli belirsiz bir gülümseme belirdi"},
+    {"bad": "bu mantıklı", "better": "akla yatıyor"}
+  ],
+  "common_words": [
+    "tam", "kara", "ak", "er", "bay", "han", "bey", "ay", "can", "nur",
+    "gül", "su", "yol", "taş", "dağ", "kurt", "ateş", "demir", "kaya", "toprak",
+    "deniz", "yıldız", "umut", "savaş", "barış", "emir", "aslan", "kartal", "doğan", "çelik",
+    "tan", "gün", "kar", "kan", "baş", "el", "ok", "yay", "dost", "şah",
+    "ağa", "paşa", "hoca", "usta", "efe", "alp", "ışık", "bahar", "ozan", "ulu"
+  ],
+  "card": "Write Turkish as a native novelist would, not as translated English. Keep the verb last and drop subject pronouns unless they carry contrast. Address the player character with 'sen' unless the profile sets 'siz'; NPCs choose sen or siz by rank, age and closeness, and titles follow the name (Halvar Usta, Ayşe Hanım, Murat Bey). Use -miş for hearsay. Avoid calques such as 'yüzünde hiçbir şey yoktu' or 'sesi düzdü', chains of negated descriptions, and stock beats like 'bir an' or 'cevabını bekliyor'. Write days and numbers in words."
+}

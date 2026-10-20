@@ -1,4 +1,9 @@
-"""Produce a deterministic uncertainty envelope for an on-demand world update."""
+"""Produce a deterministic uncertainty envelope for an on-demand world update.
+
+One request names one domain.  A time skip that touches several domains can
+send them together as ``{"domains": [<request>, ...]}`` (at most 12); each
+result is identical to the matching single-domain call and keeps its order.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +16,7 @@ from typing import Any
 
 
 DIRECTIONS = ("advance", "setback", "opportunity", "complication", "stasis")
+MAX_BATCH_DOMAINS = 12
 
 
 def _fail(message: str) -> dict[str, Any]:
@@ -23,6 +29,15 @@ def _integer(value: Any, name: str) -> int:
     return value
 
 
+def _encodable(text: str) -> bool:
+    """False for strings with lone surrogates, which JSON escapes can smuggle in."""
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
+
+
 def _stable_seed(evaluation_id: str, domain: str) -> int:
     digest = hashlib.sha256(f"repog-world-pulse-v2\0{evaluation_id}\0{domain}".encode("utf-8")).digest()
     return int.from_bytes(digest[:8], "big")
@@ -32,6 +47,8 @@ def generate_pulse(payload: dict[str, Any]) -> dict[str, Any]:
     domain = payload.get("domain")
     if not isinstance(domain, str) or not domain.strip():
         return _fail("domain must be a non-empty string")
+    if not _encodable(domain):
+        return _fail("domain must be valid Unicode text (it contains a lone surrogate)")
 
     try:
         elapsed_steps = _integer(payload.get("elapsed_steps", 0), "elapsed_steps")
@@ -54,6 +71,8 @@ def generate_pulse(payload: dict[str, Any]) -> dict[str, Any]:
     raw_seed = payload.get("seed")
     if evaluation_id is not None and (not isinstance(evaluation_id, str) or not evaluation_id.strip()):
         return _fail("evaluation_id must be a non-empty string when provided")
+    if evaluation_id is not None and not _encodable(evaluation_id):
+        return _fail("evaluation_id must be valid Unicode text (it contains a lone surrogate)")
     if raw_seed is None:
         if not isinstance(evaluation_id, str) or not evaluation_id.strip():
             return _fail("evaluation_id is required unless a legacy seed is provided")
@@ -109,6 +128,40 @@ def generate_pulse(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def generate_batch(payload: dict[str, Any]) -> dict[str, Any]:
+    """Run several single-domain requests; any invalid entry fails the whole batch."""
+    extra = sorted(key for key in payload if key != "domains")
+    if extra:
+        return _fail(
+            f"a batch request takes only 'domains'; move {', '.join(extra)} into each domain entry"
+        )
+    requests = payload.get("domains")
+    if not isinstance(requests, list) or not requests:
+        return _fail("domains must be a non-empty array")
+    if len(requests) > MAX_BATCH_DOMAINS:
+        return _fail(f"domains accepts at most {MAX_BATCH_DOMAINS} entries")
+    results = []
+    for index, request in enumerate(requests):
+        if not isinstance(request, dict):
+            return _fail(f"domains[{index}] must be an object")
+        if "domains" in request:
+            return _fail(f"domains[{index}] cannot itself be a batch")
+        result = generate_pulse(request)
+        if not result["ok"]:
+            return _fail(f"domains[{index}]: {result['error']}")
+        results.append(result)
+    return {"ok": True, "results": results}
+
+
+def handle_request(payload: Any) -> dict[str, Any]:
+    """Dispatch a single-domain request or a ``domains`` batch."""
+    if not isinstance(payload, dict):
+        return _fail("input must be a JSON object")
+    if "domains" in payload:
+        return generate_batch(payload)
+    return generate_pulse(payload)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input-json", required=True, help="World pulse input as one JSON object.")
@@ -116,7 +169,10 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         payload = json.loads(args.input_json)
-    except json.JSONDecodeError as exc:
+    except RecursionError:
+        print(json.dumps(_fail("invalid JSON: it is nested too deeply"), indent=2))
+        return 2
+    except ValueError as exc:  # JSONDecodeError, or an integer literal too long to convert
         print(json.dumps(_fail(f"invalid JSON: {exc}"), indent=2))
         return 2
 
@@ -124,7 +180,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(_fail("input must be a JSON object"), indent=2))
         return 2
 
-    result = generate_pulse(payload)
+    result = handle_request(payload)
     print(json.dumps(result, indent=2, ensure_ascii=True))
     return 0 if result["ok"] else 2
 

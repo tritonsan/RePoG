@@ -32,6 +32,11 @@ When numeric grounding is active, stats use a 1 to 5 scale:
 - 4: exceptional.
 - 5: elite or defining.
 
+When `play_profile.yaml.mechanics.resolution` declares `stat_min` and
+`stat_max`, that range replaces 1 to 5 everywhere in this file; restate the
+meanings above and rescale the starting budgets below for the declared range.
+See Dice below.
+
 ### Declared Stat Axes
 
 Derive these axes from the researched world and the declared starting stage
@@ -262,9 +267,99 @@ If dice are used, also define:
 - what success, partial success, and failure mean;
 - how consequences are chosen.
 
-`tools/roll_dice.py` accepts only bounded `NdM`, `NdM+K`, or `NdM-K`
-expressions. Reuse its returned seed to reproduce a disputed roll. A roll
-supplies numbers, never the fictional meaning of success or failure.
+A roll supplies numbers, never the fictional meaning of success or failure.
+For a plain expression, `tools/roll_dice.py` accepts only bounded `NdM`,
+`NdM+K`, or `NdM-K` and returns a seed that reproduces a disputed roll. A
+contested roll that RePoG makes under a dice mode is a roll call instead,
+described below; a roll the Player makes is still declared first and its
+reported result is read against that declaration.
+
+### Resolution Scale
+
+Under numeric grounding, a campaign that rolls declares its scale in
+`play_profile.yaml` under `mechanics.resolution`: the die, the stat and
+difficulty ranges, an optional automatic-success margin, and ordered outcome
+bands. A roll totals the stat value, every declared modifier, and the die. The
+margin is that total minus the difficulty, and the first band whose `at_least`
+the margin reaches names the outcome. When the value plus modifiers already
+beats the difficulty by the automatic-success margin, the first band applies
+without a roll. Without the block, a margin of zero or more succeeds and
+anything lower fails.
+
+Band names are the campaign's own, such as success, a partial success with a
+small or heavy cost, and failure. Record here what each band means in this
+setting before the first roll, and which difficulty number each Obstacle
+Difficulty word stands for on this scale, so a declared difficulty does not
+drift from scene to scene.
+
+### Declare Before Rolling
+
+Declare every contested roll in full before the die is read, and do not change
+the declaration afterward:
+
+- the actor and the axis or recorded capability the action leans on, with its
+  value;
+- the difficulty, read from the opposition or obstacle on the same scale;
+- factors such as preparation, leverage, tools, help, injury, or position, each
+  a labelled whole-number modifier;
+- the stakes: in one line, what a result below the first band costs.
+
+Social pressure, persuasion, deception, and investigation roll the same way as
+violence whenever the outcome is genuinely uncertain and opposed. Routine
+competent action, and anything inside the automatic-success margin, succeeds
+without a roll. A success delivers what the action sought; a complication or
+cost belongs only to a lower band and comes from the declared stakes. A failed
+roll is not quietly reversed by an easier route, and an NPC does not hand over
+the solution in its place.
+
+### Roll Calls
+
+A roll call passes the declaration to
+`python tools/roll_dice.py --campaign <campaign> --input-json <request>`. The
+request is one JSON object: a short `roll_id`, and the declaration as `call`
+with `actor`, `axis`, `value`, `difficulty`, `stakes`, and optional `factors`,
+each a `label` and a `modifier`. Without `mechanics.resolution`, the request
+also names its die in `NdM` form as `die`, beside `call`. The tool derives the
+seed from the campaign, the continuity revision, the roll id, and the call,
+checks the value and difficulty against the declared ranges, records a receipt
+in the campaign's runtime folder, and returns the band. Repeating the same roll
+id and call at the same continuity revision returns the same receipt; a roll id
+is never reused for a different call or at a later revision. A new attempt
+needs a fictional reason and a new roll id, and the first roll stays on record.
+Never roll a contested outcome with any other random source. The durable commit
+that records the outcome references the roll id and its band, and a roll made
+but not used is listed as void with a reason.
+
+### Odds Table
+
+`python tools/odds.py <campaign>` prints the exact chance of each band for every
+stat and difficulty in the declared ranges. Read it when the scale is chosen at
+Session 0, before any scale change, and whenever advancement brings a value to
+the top of the range. A working scale leaves every stat level some difficulty it
+can still fail, and lets the lowest stat reach the first band against ordinary
+difficulties. When the top stat reaches the first band against every
+difficulty, the scale is exhausted: rolls at that level decide nothing, and the
+full check warns about it.
+
+### Scale Migration
+
+Progression can outgrow a scale. When the top stat no longer faces a difficulty
+it can fail, or the campaign stage expands, change the scale through an OOC
+rules change instead of inflating difficulties scene by scene:
+
+1. Propose the new die, ranges, and bands, with the odds table before and after.
+2. Map every existing value to the new range by one stated rule, so the relative
+   standing of characters, NPCs, factions, and obstacles survives.
+3. Once the Player accepts, change `mechanics.resolution` together with this
+   file's axis meanings, budgets, and difficulty numbers through the OOC
+   configuration procedure. Then remap the recorded values, meaning the player
+   character's stats, NPC and faction stats, and obstacle difficulties, through
+   the durable writer. Make no roll call until both writes are done and the
+   full check passes.
+4. Record the change under Recurring Rulings with the revision that applied it.
+
+Until the scale itself changes, a roll call refuses a value or difficulty
+outside the declared range.
 
 ## Deterministic Ledger
 

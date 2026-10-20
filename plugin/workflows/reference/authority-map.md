@@ -67,12 +67,15 @@ campaign/
   threads.md
   session_log.md
   rules.md
+  directives.md
+  glossary.md
   characters/
   places/
   factions/
   snapshots/
   visuals/
   dashboard/
+  .repog-runtime/
 ```
 
 The storage model is intentionally bounded and role-separated:
@@ -372,6 +375,15 @@ Mode rather than guessing.
   profile selects resolution grounding and enabled modules, and
   `mechanics_state.json` owns enabled quantified state; this file cannot
   activate or silently replace either contract.
+- `directives.md` owns the Player's standing table rules: one row per lasting
+  OOC ruling, preference, or correction, with id, scope, source, and
+  `active`/`retired` status. A change whose kind contains `directive` must
+  mutate it. Directives shape table behavior only; they create no fiction and
+  never override `AGENTS.md`, safety boundaries, or a locked profile.
+- `glossary.md` owns how recurring terms render in the play language: titles
+  and honorifics, units, place names, and address forms, with variants to
+  avoid. It governs wording only; who holds a title, where a place lies, and
+  who knows what stay with their owners.
 - `characters/`, `places/`, and `factions/` own readable per-entity stable
   identity, baseline agency and routine, capabilities and limits, appearance,
   behavior, and reference links. A character note may own that NPC's personal
@@ -397,6 +409,11 @@ Mode rather than guessing.
   and currently displayed player-safe tiles and assets. It is never campaign
   truth; stale output must be rebuilt from owning authorities rather than used
   to update them.
+- `.repog-runtime/` holds runtime working files and is never authority:
+  scene-capsule state, presentation-lint findings and history, roll receipts,
+  and staged curation with its applied and rejected records. The writer checks
+  receipts when a commit cites a roll and applies staged curation only to
+  unchanged files; deleting the folder loses no campaign truth.
 
 Example rows, placeholder values, allowed-value menus, comments, and blank
 template sections are scaffolding, not accepted campaign truth. Remove or

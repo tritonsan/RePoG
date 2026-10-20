@@ -34,6 +34,21 @@ roll/GM roll visibility policy, use a unique operation id for durable mechanic
 mutations, and never expose internal math in Player Mode. A tool may resolve
 bounded uncertainty; it may not invent motives, events, or consequences.
 
+## Declare Before Rolling
+
+When `dice_mode` is not `judgment_only`, an uncertain or contested action is
+rolled, never judged around. Before any die is read, fix the `actor`, the
+`axis` or capability and its `value`, the `difficulty` with a one-line reason
+read from the opposition, each factor as a labelled whole-number modifier, and
+the `stakes`: what a lower band costs. Roll it once through
+`python tools/roll_dice.py --campaign campaign --input-json` with a new
+`roll_id` and a `call` of those fields (`factors` as `label` and `modifier`).
+A Player who rolls under the dice mode reports against the same declaration.
+Never change a declaration after the roll; a new attempt needs a fictional
+reason and a new roll id. A value or difficulty outside the declared scale is
+refused: change the scale through the OOC adjustment playbook, never with a
+hidden "counts as". Cite the roll in the durable change (persistence playbook).
+
 ## Let Competence Stand
 
 Respect established strengths, equipment, preparation, authority, and prior
@@ -55,6 +70,12 @@ and would materially change consent, surface it before the Player commits.
 Use failure to move the situation, not to deny the attempt happened. Keep
 severity proportional to stakes, preparation, and opposition. A clean success
 is valid when the fiction supports one.
+
+Narrate the band rolled. A success delivers what the action sought and is never
+narrated with an added setback; a cost comes only from a lower band's declared
+stakes or from a real outside actor with its own cause. A failed roll is not
+quietly reversed by an easier route, and no NPC hands over the solution unless
+their own motive causes it.
 
 ## Actor Reactions
 

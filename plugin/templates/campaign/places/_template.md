@@ -6,6 +6,39 @@ First appeared:
 
 Linked elements:
 
+## Core
+
+Stable facts about the place that must survive a long session, a context reset,
+and a time skip. Record only established facts; leave a line blank rather than
+invent it. Keep each value on one line, and change a Core fact in the same
+commit as the owner whose change caused it.
+
+- Status: intact | damaged | destroyed | abandoned | unknown
+- Kind:
+- Region or parent place:
+- Held or run by:
+- Access:
+- Aliases:
+
+`Status` holds exactly one of the five listed words. `Access` says who may
+enter and on what terms; routes to and from the place stay in
+`location_graph.md`. `Aliases` lists other names or spellings people use for
+the place, separated by commas.
+
+## Now
+
+<!--
+One short paragraph, at most 800 characters: the place's present condition as
+of the latest revision, such as damage, repairs, closures, shortages, or a
+changed routine. `## Disruption` names the pressure acting on the place; this
+section says how the place stands now. Facts another owner holds stay there:
+in an RPG, `active_cast.md` and `current_state.yaml` own who is present, and
+`location_graph.md` owns routes and their conditions. Replace this section in
+place when it changes and never add a dated copy beside it. Earlier states
+stay in `session_log.md`; when stacked dated sections are consolidated, each
+superseded state may keep one short line in a `## History` list.
+-->
+
 ## Companion Grounding
 
 Fill this compact card when the place belongs to an AI Companion's life. A
@@ -149,7 +182,9 @@ Use this for recurring or important obstacles in the place.
 
 - Resolution factor: fictional capability/permission, broad band, or numeric
   stat according to `play_profile.yaml.mechanics.resolution_grounding`.
-- Difficulty: trivial, routine, challenging, hard, or extreme.
+- Difficulty: trivial, routine, challenging, hard, or extreme. With a declared
+  `mechanics.resolution` scale, add the word's number from `rules.md` in
+  parentheses, such as `hard (9)`.
 - Why this fits the current campaign stage:
 - Clean success:
 - Partial success:
@@ -166,7 +201,8 @@ Other places that can be reached from here.
 
 ## Current Changes
 
-How play has changed this location.
+How play has changed this location for good. The present moment belongs in
+`## Now`.
 
 ## Promotion Notes
 

@@ -74,11 +74,28 @@ def write_json_atomic(path: Path, value: Any) -> None:
         raise
 
 
+def _jsonl_lines(path: Path) -> list[str]:
+    """Existing lines of a JSONL store, keeping every decodable line.
+
+    A read failure raises instead of returning nothing, so an append can never
+    silently truncate the store. Undecodable bytes are replaced, which damages
+    at most the line they sit in; that line then fails JSON parsing and is
+    skipped by readers. Only `\\n` separates records.
+    """
+
+    if not path.exists():
+        return []
+    data = path.read_bytes()
+    if data.startswith(b"\xef\xbb\xbf"):
+        data = data[3:]
+    return [line.rstrip("\r") for line in data.decode("utf-8", errors="replace").split("\n") if line.strip()]
+
+
 def append_jsonl(path: Path, record: dict[str, Any], *, keep_last: int = 500) -> None:
     """Append one record and keep only the newest `keep_last` lines."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    lines = read_text(path).splitlines() if path.exists() else []
+    lines = _jsonl_lines(path)
     lines.append(json.dumps(record, ensure_ascii=False, sort_keys=True))
     lines = lines[-keep_last:]
     handle, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
@@ -96,7 +113,11 @@ def append_jsonl(path: Path, record: dict[str, Any], *, keep_last: int = 500) ->
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
-    for line in read_text(path).splitlines():
+    try:
+        lines = _jsonl_lines(path)
+    except OSError:
+        return records
+    for line in lines:
         try:
             value = json.loads(line)
         except json.JSONDecodeError:
@@ -287,22 +308,24 @@ def state_summary(campaign: Path) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def _tail_lines(path: Path, *, initial: int = 2_000_000) -> Iterable[str]:
-    """Yield the transcript's last lines, newest last, reading only the tail."""
+def _tail_rows(path: Path, size: int, window: int) -> list[dict[str, Any]]:
+    """Parsed rows from the transcript's last `window` bytes, oldest first."""
 
-    size = path.stat().st_size
-    window = min(size, initial)
-    while True:
-        with path.open("rb") as stream:
-            stream.seek(size - window)
-            data = stream.read(window)
-        text = data.decode("utf-8", errors="replace")
-        lines = text.splitlines()
-        if window < size:
-            lines = lines[1:]  # the first line may be cut in half
-        if window >= size or any('"type":"user"' in line or '"type": "user"' in line for line in lines):
-            return lines
-        window = min(size, window * 4)
+    with path.open("rb") as stream:
+        stream.seek(size - window)
+        data = stream.read(window)
+    lines = data.decode("utf-8", errors="replace").splitlines()
+    if window < size:
+        lines = lines[1:]  # the first line may be cut in half
+    rows: list[dict[str, Any]] = []
+    for line in lines:
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            rows.append(value)
+    return rows
 
 
 def _prompt_text(row: dict[str, Any]) -> str | None:
@@ -333,19 +356,20 @@ def last_turn(transcript: str | Path) -> dict[str, Any] | None:
     path = Path(transcript)
     if not path.is_file():
         return None
-    rows: list[dict[str, Any]] = []
-    for line in _tail_lines(path):
-        try:
-            value = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(value, dict):
-            rows.append(value)
-    start = None
-    for index in range(len(rows) - 1, -1, -1):
-        if _prompt_text(rows[index]) is not None:
-            start = index
+    size = path.stat().st_size
+    window = min(size, 2_000_000)
+    while True:
+        # Tool results are user rows too, so widen until a real prompt is in
+        # view; one long turn can span several megabytes.
+        rows = _tail_rows(path, size, window)
+        start = None
+        for index in range(len(rows) - 1, -1, -1):
+            if _prompt_text(rows[index]) is not None:
+                start = index
+                break
+        if start is not None or window >= size:
             break
+        window = min(size, window * 4)
     if start is None:
         return None
     texts: list[str] = []

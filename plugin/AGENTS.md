@@ -138,13 +138,17 @@ ordinary turn writes and checks nothing. The GM persistence playbook owns the
 exact matrix. Never manually patch a subset, increment continuity, or append the
 matching durable receipt. Companion mutations use its owning atomic transaction.
 
-Wait for successful persistence before narration. On failure, do not establish
-the result in prose or finish partial writes manually; follow typed recovery and
-reuse the same operation identity only for a valid unchanged retry. Required
-full distill finishes before narration. Fast/Balanced add no separate per-turn
-hot checker; structural validation occurs in the writer and the full check at
-the configured boundary. No ordinary-turn semantic checker or second judging
-model call is permitted.
+Order follows the locked `runtime.persistence_order`. Under
+`commit_then_narrate`, narrate only after successful persistence. Under
+`narrate_then_commit` (default), send the reply, then commit once in the same
+turn with nothing after; never narrate a result you will not persist. On
+failure, never finish partial writes manually; follow typed recovery, reuse the
+operation identity only for a valid unchanged retry, and correct an
+unpersistable narrated fact in one OOC line. A required full distill finishes
+in the same turn. Fast/Balanced add no per-turn hot checker; the writer and the
+boundary full check validate structure. No ordinary-turn semantic checker or
+second judging model call is permitted; the presentation lint and scene capsule
+hooks are deterministic file reads that judge no meaning.
 
 A missing/corrupt required owner or irreconcilable continuity conflict requires
 Designer recovery before play resumes. Never silently substitute a snapshot,
@@ -179,7 +183,8 @@ only a genuinely dependent next act waits for a required unresolved choice.
 
 Ordinary RPG turns and Companion exchanges remain single-agent and serial.
 Only the workflow's eligible structural boundaries admit read-only supporting
-proposals. The primary agent owns causal decisions, authoritative writes,
+proposals, plus the boundary curator, whose staged note edits the writer
+applies only while their base files are unchanged. The primary agent owns causal decisions, authoritative writes,
 revisions, validation, and final voice. Do not parallelize mechanics, persistence,
 projections, visual transactions, or final narration. Unsupported delegation
 falls back to the same serial semantics.

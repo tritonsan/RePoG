@@ -213,9 +213,13 @@ For each pending event:
    `pending_cold_targets`, stamps the edited files, and runs the full check.
    Pass `rotate_log: true` at a session end or when a writer result warns about
    the log: history before the previous marker moves unchanged to `archive/`.
-5. Narrate only when the returned `full_check` is clean. `unreconciled_targets`
-   names pending targets the payload did not touch; reconcile or justify them.
+5. Under `commit_then_narrate`, narrate only when the returned `full_check` is
+   clean; under `narrate_then_commit` the reply came first, so repair any error
+   before the turn ends. `unreconciled_targets` names pending targets the
+   payload did not touch; reconcile or justify them.
 6. Run the dashboard checker only if dashboard state changed.
+7. Apply the Boundary Curator policy below; under `inline` its folds belong in
+   the step 4 payload.
 
 If this pass only propagates already committed events, do not call
 `commit-durable` and do not create another continuity revision. If Distill
@@ -228,10 +232,34 @@ append its durable event by hand.
 
 A durable transaction may return `narration_allowed: false` because this gate
 is due; that means immediate truth is safe, not that it should be committed
-again. Complete the propagation and final full check before narration. The
-full check validates structure and consistency; it does not judge whether the
-model selected the right semantic changes, and no second semantic model call is
-added.
+again. Complete the propagation and final full check before narration, or
+under `narrate_then_commit` before the turn ends. The full check validates
+structure and consistency; it does not judge whether the model selected the
+right semantic changes, and no second semantic model call is added.
+
+## Boundary Curator
+
+`play_profile.yaml.runtime.boundary_curator` (default `background`) decides who
+folds the notes a distill flags. Collect the Markdown files that the
+commit-distill `warnings` or `full_check`, or a writer warning since the last
+distill, flag as `stacked_sections`, `owner_size_budget`, a `*_stale`
+projection, or `note_core_missing`. A `session_log_size` warning is answered by
+`rotate_log` instead; no curator edits the log.
+
+- `background`: build the packet with
+  `python tools/curation.py packet campaign --target PATH=REASON ...` and
+  launch the `repog:repog-curator` agent in the background with the packet
+  JSON as its prompt. Never wait for it. The prompt hook applies its staged
+  file through `rpg_state.py campaign commit-curation --apply-staged` only
+  while every target is unchanged; a file with a stale target is rejected
+  whole.
+- `inline`: make the same folds yourself in the commit-distill payload; a
+  finding that only its full check reports waits for the next distill.
+- `off`: skip this step.
+
+A fold keeps one current `## Now` plus a short `## History` line list, and a
+`## Core` holds only stated facts. Curation creates no truth, revision, or
+marker; a fact it would need is a durable commit.
 
 ## Selective Structural Delegation
 
@@ -671,6 +699,13 @@ warnings are surface evidence: a shared profession or deliberate motif may
 explain them. Use the separate literary dimensions and fresh-context protocol
 in `evaluation/README.md` at an explicit quality review. Structural validation
 and repetition counts alone do not establish story quality.
+
+Whatever the sampling policy, at a full distill with
+`runtime.presentation_lint: on`, run
+`python tools/presentation_lint.py report campaign --last 20` to see which
+presentation habits persist across replies. Fold a recurring one into the
+campaign avoid-list or a `directives.md` row whose Source names the lint report
+and revision.
 
 # World Voices Distill
 
