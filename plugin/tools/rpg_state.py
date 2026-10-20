@@ -187,7 +187,9 @@ def _atomic_bytes(path: Path, payload: bytes) -> None:
             stream.write(payload)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        # The hooks read notes while a staged curation is applied; on Windows a
+        # reader holding a note open makes a plain os.replace fail at once.
+        repog_runtime.replace_file(temporary, path)
     except Exception:
         temporary.unlink(missing_ok=True)
         raise
@@ -726,27 +728,113 @@ def _entity_titles(root: Path, *, exclude: str) -> list[str]:
     return titles
 
 
+def _table_names(text: str, columns: tuple[int, ...]) -> list[str]:
+    names: list[str] = []
+    for line in text.splitlines():
+        if not line.lstrip().startswith("|") or re.fullmatch(r"\s*\|[\s:|-]+\|?\s*", line):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        names.extend(cells[index] for index in columns if index < len(cells) and cells[index])
+    return names
+
+
+def _known_names(root: Path, *, exclude: str, own_title: str) -> list[str]:
+    """Names already in use: note titles, ledger entries, cast and relationship rows."""
+
+    names = _entity_titles(root, exclude=exclude)
+    ledger = repog_runtime.read_text(root / "creation_ledger.md")
+    names.extend(match.group(1).strip() for match in re.finditer(r"(?m)^-\s+([^|\n]+?)\s*\|", ledger))
+    names.extend(_table_names(repog_runtime.read_text(root / "active_cast.md"), (0,)))
+    names.extend(_table_names(repog_runtime.read_text(root / "relationship_map.md"), (0, 2)))
+    header_words = {"npc", "from", "to", "name", "example npc", "-", "—"}
+    seen: set[str] = set()
+    unique: list[str] = []
+    for name in names:
+        key = name.casefold()
+        if key in header_words or key == own_title.casefold() or key in seen or len(name) > 80:
+            continue
+        seen.add(key)
+        unique.append(name)
+    return unique
+
+
+def _play_language(root: Path, sample: str) -> str:
+    code = repog_runtime.runtime_settings(root).get("language", "auto")
+    if code not in {"", "auto"}:
+        return code
+    lint = repog_runtime.read_json(root / repog_runtime.RUNTIME_DIR / "lint_last.json", {})
+    if isinstance(lint, dict) and isinstance(lint.get("language"), str) and lint["language"]:
+        return lint["language"]
+    return lang_pack.detect_language(sample)[0] or "en"
+
+
+def _note_findings(root: Path, relative: str, text: str) -> list[dict[str, str]]:
+    """The full check's note rules, run on a new character note right away.
+
+    A note the writer accepts would otherwise fail the full check only at the
+    next distill, when its gaps are expensive to fix. Advisory here: the GM
+    fills the named fields in the next commit that touches the note.
+    """
+
+    if PurePosixPath(relative).parts[0] != "characters":
+        return []
+    import tempfile as _tempfile
+
+    checker = _candidate_checker()
+    state = repog_runtime.read_text(root / "current_state.yaml")
+    profile = repog_runtime.read_text(root / "play_profile.yaml")
+    level_band = repog_runtime.block_scalars(state, "player").get("level_band", "")
+    grounding = repog_runtime.block_scalars(profile, "mechanics").get("resolution_grounding", "fictional")
+    findings: list[dict] = []
+    with _tempfile.TemporaryDirectory() as temporary:
+        folder = Path(temporary) / "characters"
+        folder.mkdir()
+        (folder / PurePosixPath(relative).name).write_bytes(text.encode("utf-8"))
+        checker._check_character_notes(
+            Path(temporary),
+            level_band,
+            findings,
+            resolution_grounding=grounding or "fictional",
+            ready=True,
+            contract_v3=True,
+        )
+    return [
+        {
+            "rule": "note_incomplete",
+            "path": relative,
+            "message": f"{item.get('rule', 'note')}: {item.get('message', '')}",
+        }
+        for item in findings
+        if item.get("severity") in {"error", "warning"}
+    ]
+
+
 def _name_warnings(root: Path, relative: str, text: str) -> list[dict[str, str]]:
-    """Advisory checks for a new entity's name; never blocks a commit.
+    """Advisory checks for a new entity; never blocks a commit.
 
     Flags a name that equals a common word of the play language (a character
-    called "Tam" in Turkish reads as "exactly") and a name one or two letters
-    away from an existing one (Corran / Corlan).
+    called "Tam" in Turkish reads as "exactly"), a name one or two letters away
+    from one already in use (Corran / Corlan), and note fields the full check
+    will require.
     """
 
     try:
         title = _note_title(text) or PurePosixPath(relative).stem.replace("_", " ")
-        code = repog_runtime.runtime_settings(root).get("language", "auto")
-        if code in {"", "auto"}:
-            code = lang_pack.detect_language(text)[0] or "en"
-        findings = name_check.check_name(title, _entity_titles(root, exclude=relative), lang_pack.load_pack(code))
+        code = _play_language(root, text)
+        existing = _known_names(root, exclude=relative, own_title=title)
+        findings = name_check.check_name(title, existing, lang_pack.load_pack(code))
     except Exception:  # an advisory check must never break a commit
         return []
-    return [
+    warnings = [
         {"rule": str(item.get("rule", "name_check")), "path": relative, "message": str(item.get("message", ""))}
         for item in findings
         if item.get("level", "warning") == "warning"
     ]
+    try:
+        warnings.extend(_note_findings(root, relative, text))
+    except Exception:  # advisory only
+        pass
+    return warnings
 
 
 def _parse_void_rolls(value: Any) -> list[dict[str, str]]:
@@ -1591,7 +1679,9 @@ def _validate_checkpoint_payload(root: Path, payload: dict[str, Any], *, revisio
         payload.get("mutations", []),
         placeholders=owner_ops.PlaceholderContext(revision),
     )
-    invalid_paths = sorted(mutation_paths - {"current_state.yaml", "active_cast.md"})
+    # Directives and glossary rows are table preferences, not fiction, so an
+    # OOC-only change can ride a checkpoint instead of a durable revision.
+    invalid_paths = sorted(mutation_paths - {"current_state.yaml", "active_cast.md", "directives.md", "glossary.md"})
     if invalid_paths:
         raise RPGStateError("input_invalid", f"soft checkpoint cannot mutate durable owner files: {', '.join(invalid_paths)}")
     if checkpoint["active_cast_handoff"].lower() != "none" and "active_cast.md" not in mutation_paths:
@@ -1966,6 +2056,18 @@ def _rotate_log(log_text: str, through: int) -> tuple[str, str]:
     return kept, archived
 
 
+def _finding_path(root: Path, value: Any) -> str:
+    """A full-check finding's file as a campaign-relative path, so the GM knows
+    which note to curate; "" when the finding names no file."""
+
+    if not value:
+        return ""
+    try:
+        return Path(str(value)).resolve().relative_to(root.resolve()).as_posix()
+    except (OSError, ValueError):
+        return str(value)
+
+
 def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
     """Close a full distill in one transaction, without a continuity revision.
 
@@ -2055,7 +2157,12 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
     unreconciled = [target for target in meta["pending_cold_targets"] if target not in mutation_paths]
     check = _candidate_checker().check_campaign(root, scope="full")
     findings = [
-        {"severity": item["severity"], "rule": item["rule"], "message": item["message"]}
+        {
+            "severity": item["severity"],
+            "rule": item["rule"],
+            "message": item["message"],
+            "path": _finding_path(root, item.get("path")),
+        }
         for item in check["findings"]
         if item["severity"] in {"error", "warning"}
     ]
@@ -2081,7 +2188,10 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _curation_event(*, revision: int, curation_id: str, reason: str, files: list[str]) -> str:
+CURATION_BLOCK_RE = re.compile(r"(?ms)^###\s+Curation Applied At Revision\s+\d+\s*$\n(.*?)(?=^###\s|\Z)")
+
+
+def _curation_event(*, revision: int, curation_id: str, reason: str, files: list[str], payload_hash: str) -> str:
     return "\n".join(
         [
             f"### Curation Applied At Revision {revision}",
@@ -2089,27 +2199,90 @@ def _curation_event(*, revision: int, curation_id: str, reason: str, files: list
             f"- Curation: {curation_id}",
             f"- Reason: {reason}",
             f"- Files curated: {', '.join(files) if files else 'none (nothing safe to change)'}",
+            f"- Payload hash: sha256:{payload_hash}",
         ]
     )
 
 
-def _stage_errors(root: Path, path: Path, revision: int) -> tuple[dict[str, Any] | None, list[str]]:
-    """Validate one staged file under the lock; return its payload or the reasons to reject it."""
+def _applied_curations(log_text: str) -> set[tuple[str, str]]:
+    """(curation id, payload hash) of every proposal the session log records as applied."""
 
-    errors = curation.validate_file(root, path)
-    if errors:
-        return None, errors
+    found: set[tuple[str, str]] = set()
+    for match in CURATION_BLOCK_RE.finditer(log_text):
+        body = match.group(1)
+        curation_id = re.search(r"(?m)^- Curation:\s*(\S+)\s*$", body)
+        digest = re.search(r"(?m)^- Payload hash:\s*sha256:([0-9a-f]{64})\s*$", body)
+        if curation_id is not None and digest is not None:
+            found.add((curation_id.group(1), digest.group(1)))
+    return found
+
+
+def _stage_errors(root: Path, path: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    """Read and check one staged file once, under the lock: its payload, or the reasons to reject it.
+
+    Freshness and the dry run are checked separately (`_apply_errors`), after
+    the log has been asked whether this exact proposal was applied already.
+    """
+
     try:
-        payload = curation.read_staged(path)
-    except curation.CurationError as exc:
-        return None, [str(exc)]
-    fresh, stale = curation.split_by_freshness(root, payload)
-    if stale:
-        # All or nothing: a proposal written against text that changed since is
-        # never applied in part, because its edits may depend on each other.
-        return None, [f"target changed since the proposal was written: {', '.join(stale)}"]
-    errors = curation.dry_run(root, fresh, revision=revision)
-    return (None, errors) if errors else (payload, [])
+        return curation.load_staged(root, path)
+    except Exception as exc:  # a file that breaks the check must not block the files after it
+        return None, [f"internal_error: {type(exc).__name__}: {exc}"]
+
+
+def _apply_errors(root: Path, payload: dict[str, Any], revision: int) -> list[str]:
+    """Why a well-formed proposal cannot be applied to the current files; [] when it can."""
+
+    try:
+        fresh, stale = curation.split_by_freshness(root, payload)
+        if stale:
+            # All or nothing: a proposal written against text that changed since is
+            # never applied in part, because its edits may depend on each other.
+            return [f"target changed since the proposal was written: {', '.join(stale)}"]
+        return curation.dry_run(root, fresh, revision=revision)
+    except Exception as exc:  # see _stage_errors
+        return [f"internal_error: {type(exc).__name__}: {exc}"]
+
+
+def _staged_unchanged(path: Path, payload_hash: str) -> bool:
+    """True when the staging file still holds exactly the payload that was applied."""
+
+    try:
+        return _canonical_hash(curation.read_staged(path)) == payload_hash
+    except curation.CurationError:
+        return False
+
+
+def _file_staged(root: Path, path: Path, outcome: str, warnings: list[dict[str, str]]) -> None:
+    """Move a processed staging file into `outcome/`; a failed move never undoes or repeats the work.
+
+    Only a file directly in this campaign's staging folder is moved: a
+    `--staged` path naming another campaign's proposal is reported, not
+    touched. An applied file that cannot move (Windows refuses while another
+    process holds it) is recognised by its log entry on the next run and
+    filed then.
+    """
+
+    try:
+        here = Path(path).resolve().parent
+        folder = curation.curation_dir(root).resolve()
+    except (OSError, ValueError):
+        return
+    if os.path.normcase(str(here)) != os.path.normcase(str(folder)):
+        return
+    try:
+        curation.move_processed(path, outcome)
+    except curation.CurationError:
+        pass  # not a staging file (a `--staged` path elsewhere) or already gone; its reasons say why
+    except OSError as exc:
+        if path.exists():
+            warnings.append(
+                {
+                    "rule": "curation_file_not_moved",
+                    "path": "",
+                    "message": f"{path.name} stays staged until the next run files it in {outcome}/: {exc}",
+                }
+            )
 
 
 def commit_curation(
@@ -2123,18 +2296,23 @@ def commit_curation(
     Each staged file is one transaction: its typed edits to secondary records
     and notes are applied only when every target still has the hash the
     curator read, then the file moves to `applied/`. Anything stale or invalid
-    moves to `rejected/` with its reasons. Curation creates no revision, no
-    distill marker, and no new truth; it only records what it tidied.
+    moves to `rejected/` with its reasons. A commit that fails on file I/O
+    and rolls back leaves its file staged for the next run (`deferred`), and
+    a file whose exact payload the log already records as applied is only
+    filed away (`repeat`), never applied twice. Curation creates no revision,
+    no distill marker, and no new truth; it only records what it tidied.
     """
 
     root = _campaign_root(campaign)
     applied: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
+    deferred: list[dict[str, str]] = []
     waiting: list[str] = []
     warnings: list[dict[str, str]] = []
     with _transaction_lock(root):
         recovered = _recover_transactions(root)
         _, log_text, meta = _runtime(root)
+        done = _applied_curations(log_text)
         files = [Path(item) for item in staged] if staged is not None else curation.list_staged(root)
         now = time.time()
         for path in files:
@@ -2145,9 +2323,18 @@ def commit_curation(
                         continue
                 except OSError:
                     continue
-            payload, errors = _stage_errors(root, path, meta["revision"])
+            payload, errors = _stage_errors(root, path)
             curation_id = str((payload or {}).get("curation_id") or path.stem)
             if payload is not None:
+                payload_hash = _canonical_hash(payload)
+                if (curation_id, payload_hash) in done:
+                    # Applied by an earlier run that could not file this copy away.
+                    _file_staged(root, path, "applied", warnings)
+                    files_curated = sorted({str(item.get("path")) for item in payload["mutations"]})
+                    applied.append({"curation_id": curation_id, "files": files_curated, "repeat": True})
+                    continue
+                errors = _apply_errors(root, payload, meta["revision"])
+            if payload is not None and not errors:
                 try:
                     candidates, paths = _parse_mutations(
                         root,
@@ -2157,36 +2344,55 @@ def commit_curation(
                     )
                     file_warnings = _finish_candidates(candidates, paths, stamp_revision=meta["revision"])
                     files_curated = sorted(paths)
-                    log_text = _append_block(
+                    updated_log = _append_block(
                         log_text,
                         _curation_event(
                             revision=meta["revision"],
                             curation_id=curation_id,
                             reason=str(payload.get("reason", "")).strip(),
                             files=files_curated,
+                            payload_hash=payload_hash,
                         ),
                     )
-                    candidates["session_log.md"] = log_text.encode("utf-8")
+                    candidates["session_log.md"] = updated_log.encode("utf-8")
                     _commit_candidates(
                         root,
                         operation_id=f"curation-{curation_id}"[:MAX_OPERATION_ID],
-                        payload_hash=_canonical_hash(payload),
+                        payload_hash=payload_hash,
                         candidates=candidates,
                     )
                 except RPGStateError as exc:
                     if exc.category == "recovery_required":
                         raise
-                    log_text = _read_text(root / "session_log.md", "session log")
+                    if exc.category == "commit_rolled_back":
+                        # A file I/O failure, rolled back whole: the proposal is still
+                        # valid, so it stays staged and the next run tries again.
+                        deferred.append({"curation_id": curation_id, "reason": f"{exc.category}: {exc}"})
+                        continue
                     errors = [f"{exc.category}: {exc}"]
+                except OSError as exc:
+                    # The journal could not be prepared, so no campaign file changed.
+                    deferred.append({"curation_id": curation_id, "reason": f"io_error: {exc}"})
+                    continue
                 else:
-                    curation.move_processed(path, "applied")
+                    log_text = updated_log
+                    done.add((curation_id, payload_hash))
+                    if _staged_unchanged(path, payload_hash):
+                        _file_staged(root, path, "applied", warnings)
+                    else:
+                        # The curator saved another draft over the file meanwhile; that
+                        # draft was not applied, so it stays staged for the next run.
+                        warnings.append(
+                            {
+                                "rule": "curation_restaged",
+                                "path": "",
+                                "message": f"{path.name} changed after it was applied; the new draft waits for the next run",
+                            }
+                        )
                     applied.append({"curation_id": curation_id, "files": files_curated})
                     warnings.extend(file_warnings)
                     continue
-            try:
-                curation.move_processed(path, "rejected")
-            except curation.CurationError:
-                pass
+            _file_staged(root, path, "rejected", warnings)
             rejected.append({"curation_id": curation_id, "reasons": errors[:6]})
     return {
         "ok": True,
@@ -2194,6 +2400,7 @@ def commit_curation(
         "continuity_revision": meta["revision"],
         "applied": applied,
         "rejected": rejected,
+        "deferred": deferred,
         "waiting": waiting,
         "recovered_transactions": recovered,
         "warnings": warnings,

@@ -16,11 +16,15 @@ import json
 import os
 import re
 import tempfile
+import time
 from pathlib import Path
 from typing import Any, Iterable
 
 
 RUNTIME_DIR = ".repog-runtime"
+# Windows refuses to replace a file while another process has it open, as a
+# hook reading lint_last.json does for a moment; a short retry rides that out.
+REPLACE_ATTEMPTS = 4
 
 # Defaults apply when play_profile.yaml has no `runtime:` block, so an existing
 # campaign gets the runtime layer without a migration. Each switch is a locked
@@ -58,6 +62,19 @@ def read_json(path: Path, default: Any = None) -> Any:
         return default
 
 
+def replace_file(source: str | Path, target: Path) -> None:
+    """`os.replace`, retried briefly while another process holds the target open (Windows)."""
+
+    for attempt in range(REPLACE_ATTEMPTS):
+        try:
+            os.replace(source, target)
+            return
+        except PermissionError:
+            if attempt == REPLACE_ATTEMPTS - 1:
+                raise
+            time.sleep(0.05 * (attempt + 1))
+
+
 def write_json_atomic(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     handle, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
@@ -65,7 +82,7 @@ def write_json_atomic(path: Path, value: Any) -> None:
         with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
             json.dump(value, stream, indent=2, ensure_ascii=False)
             stream.write("\n")
-        os.replace(temporary, path)
+        replace_file(temporary, path)
     except BaseException:
         try:
             os.unlink(temporary)
@@ -102,7 +119,7 @@ def append_jsonl(path: Path, record: dict[str, Any], *, keep_last: int = 500) ->
     try:
         with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
             stream.write("\n".join(lines) + "\n")
-        os.replace(temporary, path)
+        replace_file(temporary, path)
     except BaseException:
         try:
             os.unlink(temporary)
@@ -314,7 +331,9 @@ def _tail_rows(path: Path, size: int, window: int) -> list[dict[str, Any]]:
     with path.open("rb") as stream:
         stream.seek(size - window)
         data = stream.read(window)
-    lines = data.decode("utf-8", errors="replace").splitlines()
+    # Rows end at LF only. JSON keeps U+2028, U+2029, and U+0085 raw inside
+    # strings, and `str.splitlines` would cut a row there and lose it.
+    lines = [line.rstrip("\r") for line in data.decode("utf-8", errors="replace").split("\n")]
     if window < size:
         lines = lines[1:]  # the first line may be cut in half
     rows: list[dict[str, Any]] = []
@@ -353,7 +372,8 @@ def last_turn(transcript: str | Path) -> dict[str, Any] | None:
     of tool calls, and the raw tool uses.
     """
 
-    path = Path(transcript)
+    # Hook events may name the transcript as `~/.claude/projects/...`.
+    path = Path(os.path.expanduser(str(transcript)))
     if not path.is_file():
         return None
     size = path.stat().st_size

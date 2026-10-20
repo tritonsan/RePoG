@@ -6,7 +6,11 @@ injects this capsule as hidden context: the scene header, the people in scope
 with their stable `## Core` facts, which protected facts each of them does
 not hold (by fact id only, never the secret text), the standing directives in
 scope, the play-language card, the last reply's presentation-lint summary,
-roll receipts not yet committed, and staged curation waiting to be applied.
+roll receipts not yet committed, staged curation waiting to be applied, and
+what the latest curation run rejected or deferred. The prompt hook records
+each run in `campaign/.repog-runtime/curation/last_result.json`; the capsule
+that follows the run shows its outcome once, and the capsule state keeps the
+run's `at` time so later capsules do not repeat it.
 
 The capsule is a read of the owners, never an owner. It decides nothing about
 meaning, invents nothing, and names the note that holds each fact so the GM can
@@ -21,10 +25,13 @@ changes, and on every 12th prompt. Otherwise the header is followed only by
 what changed since it was last shown in this session: changed sections, and
 for the cast only the changed lines of each person (with their protected
 Status and Kin lines), each line whole; what does not fit waits for the next
-prompt instead of being cut. Someone who leaves scope and comes back unchanged
-costs one roster line while their briefing is under 12 prompts old, and is
-briefed again in full after that. Per-session line hashes, a turn counter, and
-the names the last prompt mentioned live in
+prompt instead of being cut. A person whose view switches between the legacy
+Agency Card lines and the `## Core` lines is shown whole once, and a line is
+marked as no longer recorded only when its field is gone from the whole note,
+not when it merely left the view. Someone who leaves scope and comes back
+unchanged costs one roster line while their briefing is under 12 prompts old,
+and is briefed again in full after that. Per-session line hashes, a turn
+counter, and the names the last prompt mentioned live in
 `campaign/.repog-runtime/capsule_state.json`, which only the prompt hook and a
 reset write. Names from the last reply go to `capsule_names.json`, which only
 the (asynchronous) Stop hook writes, so the two hooks never overwrite each
@@ -53,7 +60,6 @@ import json
 import os
 import re
 import sys
-import time
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
@@ -80,6 +86,7 @@ from repog_runtime import (
 STATE_FILE = "capsule_state.json"
 NAMES_FILE = "capsule_names.json"
 LINT_FILE = "lint_last.json"
+RESULT_FILE = "last_result.json"  # in the curation folder: the prompt hook's latest curation run
 STATE_VERSION = 2
 NAMES_VERSION = 1
 
@@ -111,6 +118,8 @@ CARD_CHARS = 600
 GLOSSARY_CHARS = 240
 LINT_CHARS = 400
 ROSTER_CHARS = 300
+REASON_CHARS = 140  # a rejected curation proposal's first reason
+RESULT_CHARS = 500  # the latest curation run's lines, on top of the staged list's cap
 
 CHARACTER, PLACE, FACTION = "character", "place", "faction"
 NOTE_FOLDERS = ((CHARACTER, "characters"), (PLACE, "places"), (FACTION, "factions"))
@@ -436,36 +445,52 @@ def _filled(value: str) -> str:
     return value
 
 
-def _fields(body: str) -> dict[str, str]:
-    """`- Key: value` bullets keyed by casefolded key; the first occurrence wins.
+def _field_items(body: str) -> list[tuple[str, str]]:
+    """Every `- Key: value` bullet as (casefolded key, value), in order, repeats included.
 
     Indented lines continue the previous field (a wrapped sentence, or nested
     bullets joined with "; "). A blank line or other text ends the field.
     """
 
-    values: dict[str, str] = {}
-    current: str | None = None
+    items: list[tuple[str, str]] = []
+    open_field = False  # whether an indented line continues the last item
     for line in body.splitlines():
         if not line.strip():
-            current = None
+            open_field = False
             continue
         indent = len(line) - len(line.lstrip(" \t"))
         match = FIELD_RE.match(line) if indent <= 1 else None
         if match:
-            key = match.group(1).strip().casefold()
-            current = None if key in values else key
-            if current is not None:
-                values[current] = match.group(2).strip()
+            items.append((match.group(1).strip().casefold(), match.group(2).strip()))
+            open_field = True
             continue
-        if current is not None and indent >= 2:
+        if open_field and indent >= 2:
             item = line.strip()
             nested = BULLET_RE.match(item)
             item = item[nested.end() :] if nested else item
-            joiner = "; " if nested else " "
-            values[current] = f"{values[current]}{joiner}{item}" if values[current] else item
+            key, value = items[-1]
+            items[-1] = (key, f"{value}{'; ' if nested else ' '}{item}" if value else item)
             continue
-        current = None
+        open_field = False
+    return items
+
+
+def _fields(body: str) -> dict[str, str]:
+    """`- Key: value` bullets keyed by casefolded key; the first occurrence wins."""
+
+    values: dict[str, str] = {}
+    for key, value in _field_items(body):
+        values.setdefault(key, value)
     return values
+
+
+def _note_labels(text: str) -> frozenset[str]:
+    """Casefolded labels of every filled field anywhere in a note, `tier` included."""
+
+    labels = {key for key, value in _field_items(text) if _filled(value)}
+    if any(_filled(match.group(1)) for match in TIER_RE.finditer(text)):
+        labels.add("tier")
+    return frozenset(labels)
 
 
 def _items(body: str) -> list[str]:
@@ -880,8 +905,12 @@ def _header_lines(campaign: Path, summary: dict[str, Any], settings: dict[str, A
     policy = block_scalars(read_text(campaign / "play_profile.yaml"), "performance").get("cold_distill_policy", "")
     threshold = DISTILL_THRESHOLDS.get(policy)
     turns = summary.get("durable_turns_since_distill")
-    if threshold is not None and isinstance(turns, int) and turns >= threshold - 1:
-        lines.append("Full distill is due after this turn's commit.")
+    if threshold is not None and isinstance(turns, int):
+        if turns >= threshold:
+            # The writer refuses commit-durable until the owed distill is closed.
+            lines.append("Full distill is overdue: run it before any commit-durable.")
+        elif turns >= threshold - 1:
+            lines.append("Full distill is due after this turn's commit.")
     return lines
 
 
@@ -894,6 +923,11 @@ class _Line:
     note: bool = False  # a remark of the capsule's own, never recorded
     prefix: str = ""  # with `items`: the text before them
     items: tuple[str, ...] = ()  # fields shared out again when the line is cut, so each keeps its head
+    basis: str = ""  # what the change hash covers when more than the text (a block's layout)
+
+    @property
+    def fingerprint(self) -> str:
+        return _digest(self.basis or self.text)
 
     def cut(self, limit: int) -> str:
         if len(self.text) <= limit:
@@ -907,6 +941,10 @@ class _Line:
 class _Block:
     key: str
     lines: tuple[_Line, ...]
+    # Line keys whose fields the note still records somewhere: such a line
+    # that leaves the view (Tier once a Core block exists) is not gone.
+    held: frozenset[str] = frozenset()
+    complete: bool = True  # False when the note could not be read: nothing is claimed gone
 
     def line_key(self, line: _Line) -> str:
         return f"{self.key}|{line.key}"
@@ -927,18 +965,28 @@ def _core(sections: list[_Section]) -> dict[str, str]:
     return {}
 
 
-def _legacy_lines(note: _Note, sections: list[_Section]) -> list[_Line]:
+def _agency_card(note: _Note, sections: list[_Section]) -> dict[str, str]:
+    """The fields of the note's Agency Card, or of the whole note when it has none."""
+
+    card = next((section for section in sections if "agency card" in section.title.casefold()), None)
+    return _fields(card.body if card is not None else note.text)
+
+
+def _card_lines(labels: Iterable[str], card: dict[str, str]) -> list[_Line]:
+    lines: list[_Line] = []
+    for label in labels:
+        value = _filled(card.get(label.casefold(), ""))
+        if value:
+            lines.append(_Line(label, f"  {label}: {_safe_clip(value, FIELD_CHARS)}"))
+    return lines
+
+
+def _legacy_lines(note: _Note, card: dict[str, str]) -> list[_Line]:
     lines: list[_Line] = []
     tier = next((_filled(match.group(1)) for match in TIER_RE.finditer(note.text) if _filled(match.group(1))), "")
     if tier:
         lines.append(_Line("Tier", f"  Tier: {_safe_clip(tier, FIELD_CHARS)}"))
-    card = next((section for section in sections if "agency card" in section.title.casefold()), None)
-    fields = _fields(card.body if card is not None else note.text)
-    for label in LEGACY_FIELDS:
-        value = _filled(fields.get(label.casefold(), ""))
-        if value:
-            lines.append(_Line(label, f"  {label}: {_safe_clip(value, FIELD_CHARS)}"))
-    return lines
+    return lines + _card_lines(LEGACY_FIELDS, card)
 
 
 def _state_label(title: str) -> str:
@@ -1045,20 +1093,32 @@ def _member_block(
     matcher: _Matcher,
 ) -> _Block:
     lines: list[_Line] = []
+    held: frozenset[str] = frozenset()
     if member.note is None:
         lines.append(_Line("", f"- {member.name} (no note)", True))
     else:
         note = member.note
         sections = _sections(note.text)
-        lines.append(_Line("", f"- {note.title} ({note.path})", True))
         core = _core(sections)
+        card = _agency_card(note, sections)
         shown = [label for label in CORE_FIELDS if core.get(label.casefold())]
+        # The first line's hash covers the layout, so a note that gains or
+        # loses its Core block is shown whole once, not as a diff of two views.
+        title = f"- {note.title} ({note.path})"
+        lines.append(_Line("", title, True, basis=f"{title}\n{'core' if shown else 'legacy'}"))
         for label in shown:
             value = core[label.casefold()]
             limit = KIN_CHARS if label == "Kin" else FIELD_CHARS
             lines.append(_Line(label, f"  {label}: {_safe_clip(value, limit)}", label in PROTECTED_FIELDS))
-        if not shown:
-            lines.extend(_legacy_lines(note, sections))
+        if shown:
+            # The card still governs how the person talks: the hard boundary
+            # always, the voice rhythm when Core `Speaks` says nothing.
+            talk = ("Hard boundary",) if core.get("speaks") else ("Voice rhythm", "Hard boundary")
+            lines.extend(_card_lines(talk, card))
+        else:
+            lines.extend(_legacy_lines(note, card))
+        labels = _note_labels(note.text)
+        held = frozenset(label for label in ("Tier", *CORE_FIELDS, *LEGACY_FIELDS) if label.casefold() in labels)
         label, now = _state_text(sections)
         if now:
             # Each bullet of a state keeps its head, so a fact in a later
@@ -1078,17 +1138,18 @@ def _member_block(
         prefix = "  Knowledge: "
         text = prefix + _share(list(items), KNOWLEDGE_CHARS)
         lines.append(_Line("Knowledge", text, prefix=prefix, items=items))
-    return _Block(member.key, tuple(lines))
+    return _Block(member.key, tuple(lines), held)
 
 
 def _guarded_block(member: _Member, **context: Any) -> _Block:
-    """One member's block; a note that fails to read still names the member."""
+    """One member's block; a note that fails to read still names the member and claims nothing gone."""
 
     try:
         return _member_block(member, **context)
     except Exception:
         where = f" ({member.note.path})" if member.note is not None else ""
-        return _Block(member.key, (_Line("", f"- {member.name}{where}", True), _Line("Now", "  (could not be read this turn)")))
+        lines = (_Line("", f"- {member.name}{where}", True), _Line("Now", "  (could not be read this turn)"))
+        return _Block(member.key, lines, complete=False)
 
 
 def _roster(cast: list[_Member]) -> list[str]:
@@ -1257,12 +1318,54 @@ def _roll_lines(campaign: Path, revision: Any) -> list[str]:
     return ["[rolls]", *lines] if lines else []
 
 
-def _curation_lines(campaign: Path) -> list[str]:
-    ids = [path.stem for path in curation.list_staged(campaign)]
-    if not ids:
-        return []
+def _id_list(ids: list[str]) -> str:
     more = f" (+{len(ids) - MAX_STAGED} more)" if len(ids) > MAX_STAGED else ""
-    return [f"[curation] staged, waiting to be applied: {', '.join(ids[:MAX_STAGED])}{more}"]
+    return f"{', '.join(ids[:MAX_STAGED])}{more}"
+
+
+def _curation_lines(campaign: Path) -> list[str]:
+    # The run record lives in the same folder but is not a proposal.
+    ids = [path.stem for path in curation.list_staged(campaign) if path.name != RESULT_FILE]
+    return [f"[curation] staged, waiting to be applied: {_id_list(ids)}"] if ids else []
+
+
+def _run_entries(value: Any) -> list[tuple[str, dict[str, Any]]]:
+    """(curation id, entry) for each entry of a run's list that names an id; an id repeated counts once."""
+
+    found: dict[str, dict[str, Any]] = {}
+    for item in value if isinstance(value, list) else []:
+        if isinstance(item, dict) and isinstance(item.get("curation_id"), str) and item["curation_id"].strip():
+            found.setdefault(_clip(_flat(item["curation_id"]), MAX_NAME_CHARS), item)
+    return list(found.items())
+
+
+def _curation_result(campaign: Path) -> tuple[list[str], str]:
+    """The latest curation run's rejected and deferred proposals, and the run's stamp.
+
+    A rejected proposal was filed under `rejected/`; it shows its first reason.
+    A deferred one stays staged for the next run, so it is listed as waiting.
+    Applied proposals need no notice: their notes show the change. The stamp
+    is the record's `at` time (a digest of the record when it has none), so
+    each run is shown once. ([], "") when there is no record.
+    """
+
+    data = read_json(curation.curation_dir(campaign) / RESULT_FILE, None)
+    if not isinstance(data, dict):
+        return [], ""
+    at = data.get("at")
+    stamp = _flat(at) if isinstance(at, str) and at.strip() else _digest(json.dumps(data, sort_keys=True))
+    lines: list[str] = []
+    for curation_id, item in _run_entries(data.get("rejected")):
+        reasons = item.get("reasons")
+        if not isinstance(reasons, list):
+            reasons = [reasons]
+        reason = next((_flat(text) for text in reasons if isinstance(text, str) and text.strip()), "")
+        head = f"[curation] rejected {curation_id}"
+        lines.append(f"{head}: {_clip(reason, REASON_CHARS)}" if reason else head)
+    deferred = [curation_id for curation_id, _ in _run_entries(data.get("deferred"))]
+    if deferred:
+        lines.append(f"[curation] deferred, still waiting to be applied: {_id_list(deferred)}")
+    return lines, stamp
 
 
 def _guarded(key: str, render: Callable[[], list[str]]) -> list[str]:
@@ -1287,8 +1390,12 @@ def _delta_blocks(blocks: list[_Block], line_hashes: dict[str, str], previous: d
     """What each block shows in a delta, or nothing when it is unchanged since last shown.
 
     A block shown before in this session repeats only its first line, its
-    protected lines, its changed lines, and a marker for each line the note no
-    longer has; a block not shown before (or renamed) is shown whole.
+    protected lines, its changed lines, and a marker for each line whose
+    field the note no longer records anywhere. A line that only left the view
+    (Tier and Social tactic once a Core block exists) gets no marker and stays
+    recorded. A block not shown before, renamed, or switched between the
+    legacy and the Core layout (its first line's hash covers the layout) is
+    shown whole.
     """
 
     shown: list[_Block] = []
@@ -1296,10 +1403,11 @@ def _delta_blocks(blocks: list[_Block], line_hashes: dict[str, str], previous: d
         keys = {block.line_key(line) for line in block.lines}
         changed = [line for line in block.lines if previous.get(block.line_key(line)) != line_hashes[block.line_key(line)]]
         prefix = f"{block.key}|"
+        left = [key[len(prefix) :] for key in sorted(previous) if key.startswith(prefix) and key not in keys]
         gone = [
-            _Line(key[len(prefix) :], f"  {key[len(prefix) :] or 'Entry'}: {GONE_NOTE}", gone=True)
-            for key in sorted(previous)
-            if key.startswith(prefix) and key not in keys
+            _Line(name, f"  {name or 'Entry'}: {GONE_NOTE}", gone=True)
+            for name in left
+            if block.complete and name not in block.held
         ]
         if not changed and not gone:
             continue
@@ -1453,15 +1561,8 @@ def _save_sessions(path: Path, state: dict[str, Any]) -> None:
     if len(sessions) > MAX_SESSIONS:
         newest = sorted(sessions, key=lambda key: _int(sessions[key].get("seq")), reverse=True)[:MAX_SESSIONS]
         state["sessions"] = {key: value for key, value in sessions.items() if key in newest}
-    for attempt in range(3):
-        try:
-            write_json_atomic(path, state)
-            return
-        except PermissionError:
-            # Windows refuses the replace while the other hook is reading the file.
-            if attempt == 2:
-                raise
-            time.sleep(0.05 * (attempt + 1))
+    # write_json_atomic retries while the other hook holds the file open (Windows).
+    write_json_atomic(path, state)
 
 
 def _save_state(campaign: Path, state: dict[str, Any]) -> None:
@@ -1566,7 +1667,21 @@ def compose(
     section_hashes["lint"] = _digest(lint_basis)
     section_hashes["cast"] = _digest("\n".join(roster))
     secret_hashes = {key: _digest(", ".join(missing)) for key, _, missing in secrets}
-    line_hashes = {block.line_key(line): _digest(line.text) for block in blocks for line in block.lines}
+    line_hashes = {block.line_key(line): line.fingerprint for block in blocks for line in block.lines}
+    try:
+        result_lines, result_at = _curation_result(campaign)
+    except Exception:  # the run record is advisory: a broken one costs only its notice
+        result_lines, result_at = [], ""
+    # A curation run's outcome is shown once, in the capsule that follows the
+    # run. A session's first capsule skips a run another session already
+    # showed, so a new session does not repeat an old notice.
+    result_seen = entry.get("curation_at")
+    elsewhere = {other.get("curation_at") for key, other in state["sessions"].items() if key != session_id}
+    new_result = (
+        bool(result_at)
+        and result_at != result_seen
+        and (bool(_int(entry.get("prompts"))) or result_at not in elsewhere)
+    )
 
     scene_id = _flat(summary.get("scene_id") or "")
     number = _int(entry.get("prompts")) + 1
@@ -1631,6 +1746,11 @@ def compose(
         elif before not in (None, _EMPTY_HASH):
             pieces[key] = [CLEARED[key]]
         recorded[key] = section_hashes[key]
+    # The run's notice is not part of the curation hash: the staged list
+    # changes on its own schedule, and the notice is not shown again.
+    result_piece = _fit_lines(result_lines, RESULT_CHARS) if new_result else []
+    if result_piece:
+        pieces["curation"] = [*result_piece, *pieces.get("curation", [])]
 
     cast_blocks = blocks if is_full else _delta_blocks(blocks, line_hashes, previous)
     roster_changed = previous.get("cast") != section_hashes["cast"]
@@ -1662,6 +1782,10 @@ def compose(
     for key in SECTION_ORDER:
         body.extend(pieces.get(key, []))
     text = _clip("\n".join(line for line in body if line), limit)
+    # A notice cut off at the capsule's end by its size cap waits for the next capsule.
+    delivered = set(text.split("\n"))
+    if result_at and (not new_result or all(line in delivered for line in result_piece)):
+        result_seen = result_at
 
     new_state = json.loads(json.dumps(state))
     new_entry = _touch(new_state, session_id)
@@ -1679,6 +1803,8 @@ def compose(
     )
     if code and source == "detected":
         new_entry["language"] = code
+    if isinstance(result_seen, str) and result_seen:
+        new_entry["curation_at"] = result_seen
     return text, new_state
 
 

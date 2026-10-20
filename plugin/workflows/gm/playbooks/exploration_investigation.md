@@ -22,9 +22,9 @@ ambiguous, contested, time-sensitive, or risky to reach.
 
 That uncertainty is a contested check. When `dice_mode` is not
 `judgment_only`, declare it before any die is read: `actor`, `axis` and its
-`value`, `difficulty` with a one-line reason from how well the evidence is
+`value`, `difficulty` with a one-line `reason` from how well the evidence is
 hidden or guarded, `factors`, and `stakes`. Roll it once through
-`python tools/roll_dice.py --campaign campaign --input-json` with a new
+`python tools/roll_dice.py --campaign campaign --input-file -` with a new
 `roll_id` and that `call`. A success finds what the method sought with no added
 setback; a cost comes only from a lower band or a real actor with a cause. No
 witness volunteers the decisive fact without a cause in their own motives, and

@@ -1,4 +1,4 @@
-"""Presentation lint: the pure rules over tr, en and de replies, campaign context, the Stop hook and the CLI."""
+"""Presentation lint: the pure rules over tr, en, de, es and fr replies, campaign context, the Stop hook and the CLI."""
 
 from __future__ import annotations
 
@@ -187,6 +187,10 @@ def test_turkish_case_endings_after_names_do_not_read_as_english() -> None:
         "Koşarak yanına gelen çocuğun yanakları al al olmuş.",
         # A short quoted foreign phrase.
         'Kapıdaki yazıda "for the king" vardı.',
+        # A title that is a Spanish function word, beside a Turkish one.
+        "Ser Corwyn ve Nella kapıda bekliyor.",
+        # One German-looking word ("bin", a thousand) in a short line without a Turkish letter.
+        "Bin adam sabah erken yola koyuldu.",
     ],
 )
 def test_out_of_language_ignores_names_shared_words_and_short_quotes(sentence: str) -> None:
@@ -201,6 +205,25 @@ def test_out_of_language_reads_short_tool_descriptions_and_needs_a_pack() -> Non
     # Without a pack for the play language there is nothing to compare against.
     unknown = _lint("This is plainly an English sentence about the harbor and the gulls.", code="pt")
     assert "out_of_language" not in _rules(unknown)
+
+
+def test_out_of_language_reads_whole_status_lines_and_list_items() -> None:
+    # No sentence of it reads as English (one function word among names and
+    # numbers), but the line has no Turkish word or letter at all.
+    status = "Status: day 814, night. Raid party set: Marcus, Nella, Dunstan and nine men;"
+    result = _lint("Halvar kapıyı kapattı ve avluya çıktı.\n\n" + status, code="tr")
+    assert _rules(result)["out_of_language"]["evidence"] == [status]
+    assert result["summary"].startswith('Last reply: 1 English line: "Status: day 814')
+    # List items whose function words are too few for a sentence ("on" is Turkish too).
+    items = "- Watch: Marcus and Nella on the wall\n- Ford: Dunstan, Corwyn, Ilse, Edric, Varro and the scouts"
+    listed = _lint("Avluda kimse yoktu.\n\n" + items + "\n- Nöbet: Corwyn ve Ilse kapıda", code="tr")
+    assert _rules(listed)["out_of_language"]["evidence"] == items.split("\n")
+    # A German line in an English reply, its function words diluted by names.
+    german = "Wache auf der Mauer: Anna, Jörg, Lena, Kurt, Mia, Otto, Hans und zwei Bogenschützen."
+    result = _lint("The rain has not let up. Marta checks the lantern.\n" + german, code="en")
+    finding = _rules(result)["out_of_language"]
+    assert finding["count"] == 1 and finding["evidence"][0].startswith("Wache auf der Mauer:")
+    assert "1 Deutsch line" in result["summary"]
 
 
 def test_prose_hides_ooc_blocks_and_markdown_structure_in_place() -> None:
@@ -308,6 +331,28 @@ def test_quote_spans_pair_openers_with_their_closers_on_one_line() -> None:
     assert [text[start:end] for start, end in spans] == ['"kapalı"', "„Hallo“", "«salut»", "「やあ」"]
 
 
+def test_dash_dialogue_lines_are_speech_up_to_an_attached_tag() -> None:
+    text = (
+        "—¿Qué? —preguntó Marta—. Nada.\n"
+        "  — On adam dedin, der.\n"
+        "1. – Evet, dedi.\n"
+        "*— Kim var orada?*\n"
+        "Halvar durdu — bekledi.\n"
+        "— 10–12 kişi — belki on beş.\n"
+        'Halvar "Dur," dedi.'
+    )
+    spans = presentation_lint._speech_spans(text)
+    assert [text[start:end] for start, end in spans] == [
+        "—¿Qué? ",  # the tag "—preguntó Marta" is narration; its closing dash resumes the speech
+        "—. Nada.",
+        "— On adam dedin, der.",  # a tag after a comma stays inside the speech
+        "– Evet, dedi.",
+        "— Kim var orada?*",
+        "— 10–12 kişi — belki on beş.",  # neither a range nor a spaced dash opens a tag
+        '"Dur,"',
+    ]
+
+
 def test_a_pathological_reply_stays_fast() -> None:
     started = time.perf_counter()
     _lint([" “" * 30_000, '"' * 50_000, "kelime " * 50_000], code="tr", prompt="kelime " * 2_000)
@@ -369,6 +414,9 @@ def test_campaign_avoid_phrases_default_to_a_cap_of_zero() -> None:
         ("tr", '"Gidelim hemen buradan" diyorum.', '"Gidelim hemen buradan." Halvar atını çevirdi.', '"Gidelim hemen buradan."'),
         ("en", '"Not tonight, Marta," I say.', '"Not tonight, Marta." She shrugs and goes back to her loom.', '"Not tonight, Marta."'),
         ("de", '"Nicht heute Nacht", sage ich.', "„Nicht heute Nacht.“ Der Schmied zuckt mit den Schultern.", "„Nicht heute Nacht.“"),
+        # Dash dialogue is spoken, as quotes are, on either side.
+        ("es", "—Vámonos de aquí —le digo a Marta.", "—Vámonos de aquí.\n\nMarta no discute y recoge la linterna.", "—Vámonos de aquí."),
+        ("tr", "— Gidelim hemen buradan, diyorum.", "— Gidelim hemen buradan.\n\nHalvar atını çevirdi.", "— Gidelim hemen buradan."),
     ],
 )
 def test_restatement_flags_an_opening_that_echoes_the_players_words(code: str, prompt: str, reply: str, echo: str) -> None:
@@ -584,6 +632,49 @@ def test_pc_authoring_in_narration_but_not_in_quoted_speech() -> None:
     finding = _rules(_lint('"Olur," dedin. Halvar güldü.', code="tr"))["pc_authoring"]
     assert finding["evidence"] == ['"Olur," dedin. Halvar güldü.']
     assert "pc_authoring" not in _rules(_lint("*(OOC: Bunu sen dedin, ben not ettim.)*\n\nHalvar güldü.", code="tr"))
+
+
+@pytest.mark.parametrize(
+    ("code", "reply"),
+    [
+        (  # the tag follows a comma, so the whole line is speech
+            "tr",
+            "Halvar kapıyı kapattı ve sana döndü.\n\n"
+            "— On adam dedin, der. Ne korktu ne de kaçtı. Bakmıyordu ama her şeyi görüyordu.",
+        ),
+        (  # the tag hangs on a dash ("—le reprochó"), and the closing dash resumes the speech
+            "es",
+            "Marta dejó la lámpara sobre la mesa.\n\n"
+            "—Ayer dijiste que vendrías —le reprochó Marta—. No era miedo, sino rabia. Ni tú ni yo lo sabíamos.\n"
+            "—¿Qué? —preguntó el guardia.",
+        ),
+        (
+            "fr",
+            "Marthe posa la lampe sur la table.\n\n"
+            "— Tu dis toujours ça, répondit-elle. Ce n'était pas la peur, c'était la colère.\n"
+            "— Ni toi ni moi n'y pouvions rien.",
+        ),
+    ],
+)
+def test_dash_dialogue_is_speech_for_the_narration_rules(code: str, reply: str) -> None:
+    rules = _rules(_lint(reply, code=code))
+    assert "pc_authoring" not in rules and "negated_description" not in rules
+    # Without the dashes the same words are the narrator's own.
+    narrated = _rules(_lint(reply.replace("— ", "").replace("—", ""), code=code))
+    assert narrated["pc_authoring"]["count"] == 1 and narrated["negated_description"]["count"] == 2
+
+
+def test_a_dash_tag_is_narration_and_a_mid_sentence_dash_is_not_speech() -> None:
+    # Spanish hangs the narrator's tag on a dash; this one writes the player character's words.
+    tag = _rules(_lint("—Vamos —dices, y Marta toma la linterna.", code="es"))["pc_authoring"]
+    assert tag["evidence"] == ["—Vamos —dices, y Marta toma la linterna."]
+    # A dash inside a narrated sentence is punctuation, not dialogue.
+    for code, reply in (
+        ("tr", "Halvar kapıyı açtı — sen de başını salladın ve içeri girdin."),
+        ("es", "Marta abrió la puerta —sin una palabra— y asientes despacio."),
+        ("fr", "Il ouvrit la porte – lentement – et tu hoches la tête."),
+    ):
+        assert _rules(_lint(reply, code=code))["pc_authoring"]["count"] == 1
 
 
 def test_fingerprint_is_bounded_sorted_and_deterministic() -> None:

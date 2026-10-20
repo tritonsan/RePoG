@@ -18,7 +18,8 @@ asked for a new RePoG campaign or companion here.
    policies decide what it will write. If the user says they are younger,
    create nothing and stop.
 4. Run `sh "${CLAUDE_PLUGIN_ROOT}/scripts/repog.sh" plugin_campaign init .`
-   with the description "Creating the campaign".
+   with a short description in the user's language, such as "Creating the
+   campaign".
 5. If the result reports `"ok": false`, tell the user plainly what failed,
    using its `failure_reason`, and stop.
 6. Otherwise invoke the `repog:play` skill and begin Session 0 as if the user

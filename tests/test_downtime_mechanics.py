@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
+import subprocess
 import sys
 import unicodedata
 from pathlib import Path
@@ -719,14 +721,14 @@ def test_a_malformed_stored_obligation_is_not_reported_as_unknown() -> None:
 
 
 def test_insufficient_funds_error_gives_the_numbers() -> None:
-    with pytest.raises(rm.MechanicError, match=r"for period 'week-1': needs 50, has 20 \(minimum 0\)$"):
+    with pytest.raises(rm.MechanicError, match=r"for period 'week-1': needs 50, has 20 \(minimum 0\), short 30$"):
         _apply(_with_wages(), "settle_obligation", obligation_id="guard_wages", period="week-1", amount=50)
 
 
 @pytest.mark.parametrize("operation", [None, 7, [], {"name": "spend"}, "settle", "Advance_Time"])
 def test_unknown_or_non_string_operations_are_typed_errors(operation: Any) -> None:
     # Regression: a list or object used to escape as TypeError (unhashable type).
-    with pytest.raises(rm.MechanicError, match=r"^unsupported operation: .+; use one of add_condition, add_item, "):
+    with pytest.raises(rm.MechanicError, match=r"^unsupported operation: .+; use one of add_clock, add_condition, add_item, "):
         _apply(_state(), operation)
 
 
@@ -903,3 +905,408 @@ def test_commit_durable_settles_once_and_ticks_clocks_in_one_transaction(campaig
         commit("turn-002", 1, again)
     assert refused.value.category == "candidate_invalid"
     assert (campaign / "mechanics_state.json").read_bytes() == persisted
+
+
+# ---------------------------------------------------------------------------
+# Play-simulation gaps: obligations paid from an inventory item, clocks
+# started and retired during play, and request files for the world pulse
+# ---------------------------------------------------------------------------
+
+
+def _purse_state(**overrides: Any) -> dict[str, Any]:
+    """The player keeps silver as a counted inventory item, not as a resource."""
+    state = _state(**overrides)
+    state["actors"]["player"]["inventory"] = {"silver": {"quantity": 12}, "rope": {"quantity": 1, "consumable": False}}
+    return state
+
+
+def _silver_wages(**fields: Any) -> dict[str, Any]:
+    return {
+        "obligation_id": "guard_wages",
+        "actor_id": "player",
+        "item_id": "silver",
+        "amount": 5,
+        "period_label": "week",
+        **fields,
+    }
+
+
+def _with_silver_wages() -> dict[str, Any]:
+    state, _ = _apply(_purse_state(), "add_obligation", **_silver_wages())
+    return state
+
+
+def test_add_obligation_can_name_an_inventory_item() -> None:
+    state, result = _apply(_purse_state(), "add_obligation", **_silver_wages())
+    record = {"actor_id": "player", "item_id": "silver", "amount": 5, "period_label": "week", "settled": []}
+    assert state["obligations"] == {"guard_wages": record}
+    assert result["changes"] == [
+        {"kind": "obligation_added", "obligation": "guard_wages", "actor": "player", "after": record}
+    ]
+    assert state["actors"]["player"]["inventory"]["silver"]["quantity"] == 12
+
+
+def test_item_obligation_spends_its_quantity_once_per_period() -> None:
+    state, result = _apply(_with_silver_wages(), "settle_obligation", obligation_id="guard_wages", period="week-1")
+    assert state["actors"]["player"]["inventory"]["silver"]["quantity"] == 7
+    assert state["actors"]["player"]["resources"]["coin"]["current"] == 20  # the coin resource is untouched
+    assert result["changes"] == [
+        {"kind": "inventory", "item": "silver", "before": 12, "after": 7, "actor": "player"},
+        {
+            "kind": "obligation_settled",
+            "obligation": "guard_wages",
+            "actor": "player",
+            "item": "silver",
+            "period": "week-1",
+            "amount": 5,
+        },
+    ]
+    # Regression: wages paid with remove_item had no period guard and were charged twice.
+    before = copy.deepcopy(state)
+    with pytest.raises(rm.MechanicError, match=r"already settled for period 'Week-1' \(recorded as 'week-1'\)"):
+        _apply(state, "settle_obligation", operation_id="again", obligation_id="guard_wages", period="Week-1")
+    assert state == before
+    # An item may be spent down to 0.
+    state, _ = _apply(state, "settle_obligation", obligation_id="guard_wages", period="week-2", amount=7)
+    assert state["actors"]["player"]["inventory"]["silver"]["quantity"] == 0
+    assert state["obligations"]["guard_wages"]["settled"] == ["week-1", "week-2"]
+
+
+def test_item_obligation_never_takes_the_quantity_below_zero() -> None:
+    state = _with_silver_wages()
+    before = copy.deepcopy(state)
+    with pytest.raises(
+        rm.MechanicError,
+        match=r"^insufficient silver to settle guard_wages for period 'week-1': needs 13, has 12, short 1$",
+    ):
+        _apply(state, "settle_obligation", obligation_id="guard_wages", period="week-1", amount=13)
+    assert state == before
+
+
+def test_resource_shortfall_counts_from_the_minimum() -> None:
+    state = _state()
+    state["actors"]["player"]["resources"]["favor"] = {"current": 6, "minimum": 3, "maximum": 9}
+    state, _ = _apply(
+        state, "add_obligation", obligation_id="tithe", actor_id="player", resource_id="favor", amount=5, period_label="week"
+    )
+    with pytest.raises(rm.MechanicError, match=r"^insufficient favor to settle tithe for period 'w1': needs 5, has 6 \(minimum 3\), short 2$"):
+        _apply(state, "settle_obligation", obligation_id="tithe", period="w1")
+
+
+@pytest.mark.parametrize(
+    ("fields", "message"),
+    [
+        ({"resource_id": "coin"}, "^add_obligation needs exactly one of resource_id or item_id; both are given$"),
+        ({"item_id": None}, "^add_obligation needs exactly one of resource_id or item_id; neither is given$"),
+        ({"item_id": " "}, "^item_id must be a non-empty string$"),
+        ({"item_id": 7}, "^item_id must be a non-empty string$"),
+    ],
+)
+def test_add_obligation_names_exactly_one_holding(fields: dict[str, Any], message: str) -> None:
+    state = _purse_state()
+    with pytest.raises(rm.MechanicError, match=message):
+        _apply(state, "add_obligation", **_silver_wages(**fields))
+    assert "obligations" not in state
+
+
+def test_a_null_holding_key_counts_as_absent() -> None:
+    state, _ = _apply(_purse_state(), "add_obligation", **_silver_wages(resource_id=None))
+    assert state["obligations"]["guard_wages"] == {
+        "actor_id": "player",
+        "item_id": "silver",
+        "amount": 5,
+        "period_label": "week",
+        "settled": [],
+    }
+
+
+def test_an_unknown_holding_names_what_the_actor_holds() -> None:
+    # Regression: "unknown resource: silver" gave no hint that the silver was an inventory item.
+    holdings = r"\(player has resources: coin, stamina; items: rope, silver\)"
+    with pytest.raises(rm.MechanicError, match=rf"^unknown resource: silver {holdings}; silver is an inventory item, so name it with item_id$"):
+        _apply(_purse_state(), "add_obligation", **_silver_wages(item_id=None, resource_id="silver"))
+    with pytest.raises(rm.MechanicError, match=rf"^unknown item: coin {holdings}; coin is a resource, so name it with resource_id$"):
+        _apply(_purse_state(), "add_obligation", **_silver_wages(item_id="coin"))
+    with pytest.raises(rm.MechanicError, match=rf"^unknown item: gold {holdings}$"):
+        _apply(_purse_state(), "add_obligation", **_silver_wages(item_id="gold"))
+    with pytest.raises(rm.MechanicError, match=r"^unknown item: silver \(player has resources: coin, stamina; items: none\)$"):
+        _apply(_state(), "add_obligation", **_silver_wages())
+
+
+def test_settling_names_the_holdings_when_the_stored_item_is_gone() -> None:
+    base = {"actor_id": "player", "item_id": "silver", "amount": 5, "period_label": "week", "settled": []}
+    with pytest.raises(
+        rm.MechanicError,
+        match=r"^obligation guard_wages cannot be settled: unknown item: silver \(player has resources: coin, stamina; items: none\)$",
+    ):
+        _apply(_state(obligations={"guard_wages": base}), "settle_obligation", obligation_id="guard_wages", period="w1")
+
+
+@pytest.mark.parametrize(
+    ("record", "message"),
+    [
+        ({"item_id": "silver"}, "^obligation guard_wages needs exactly one of resource_id or item_id; both are given$"),
+        ({"resource_id": None}, "^obligation guard_wages needs exactly one of resource_id or item_id; neither is given$"),
+        ({"resource_id": None, "item_id": ""}, "^guard_wages.item_id must be a non-empty string$"),
+    ],
+)
+def test_stored_obligations_name_exactly_one_holding(record: dict[str, Any], message: str) -> None:
+    base = {"actor_id": "player", "resource_id": "coin", "amount": 5, "period_label": "week", "settled": []}
+    with pytest.raises(rm.MechanicError, match=message):
+        _apply(_purse_state(obligations={"guard_wages": {**base, **record}}), "advance_time", unit="day")
+
+
+WATCH = {
+    "current": 0,
+    "maximum": 3,
+    "owner": "Captain Ilse's watch",
+    "tick": {"unit": "day", "amount": 1},
+    "on_fill": "The watch kicks in the warehouse door.",
+}
+
+
+def test_add_clock_starts_a_ticking_clock_during_play() -> None:
+    fields = {key: value for key, value in WATCH.items() if key != "current"}
+    state, result = _apply(_state(), "add_clock", clock_id="watch_search", **fields)
+    assert state["clocks"] == {"siege": {"current": 1, "maximum": 4}, "watch_search": WATCH}
+    assert result["changes"] == [{"kind": "clock_added", "clock": "watch_search", "after": WATCH}]
+
+    state, result = _apply(state, "advance_time", unit="day", steps=5)
+    assert [change for change in result["changes"] if change["kind"] == "clock"] == [
+        {
+            "kind": "clock",
+            "clock": "watch_search",
+            "before": 0,
+            "after": 3,
+            "owner": "Captain Ilse's watch",
+            "filled": True,
+            "on_fill": "The watch kicks in the warehouse door.",
+            "reason": "tick",
+        }
+    ]
+
+
+def test_add_clock_defaults_and_null_fields() -> None:
+    state, result = _apply(_state(), "add_clock", clock_id="alarm", maximum=4, current=None, owner=None, tick=None, on_fill=None)
+    assert state["clocks"]["alarm"] == {"current": 0, "maximum": 4}
+    assert result["changes"] == [{"kind": "clock_added", "clock": "alarm", "after": {"current": 0, "maximum": 4}}]
+    state, _ = _apply(state, "add_clock", clock_id=" fuse ", maximum=2, current=2, tick={"unit": " hour ", "amount": 1})
+    assert state["clocks"]["fuse"] == {"current": 2, "maximum": 2, "tick": {"unit": "hour", "amount": 1}}
+    state, result = _apply(state, "advance_clock", clock_id="alarm")
+    assert result["changes"] == [{"kind": "clock", "clock": "alarm", "before": 0, "after": 1}]
+
+
+def test_add_clock_refuses_an_existing_id_and_retries_idempotently() -> None:
+    state = _state()
+    before = copy.deepcopy(state)
+    with pytest.raises(rm.MechanicError, match=r"^clock already exists: siege$"):
+        _apply(state, "add_clock", clock_id="siege", maximum=6)
+    assert state == before
+
+    payload = {
+        "operation_id": "start-watch",
+        "operation_sequence": 1,
+        "expected_revision": 0,
+        "expected_continuity_revision": 0,
+        "operation": "add_clock",
+        "clock_id": "watch",
+        "maximum": 4,
+    }
+    state, first = rm.apply_operation(state, payload)
+    state, retry = rm.apply_operation(state, payload)
+    assert first["duplicate"] is False and retry["duplicate"] is True and retry["changes"] == []
+    assert state["clocks"]["watch"] == {"current": 0, "maximum": 4}
+
+
+@pytest.mark.parametrize(
+    ("fields", "message"),
+    [
+        ({"maximum": 0}, "^maximum must be at least 1$"),
+        ({"maximum": "4"}, "^maximum must be an integer$"),
+        ({"maximum": None}, "^maximum must be an integer$"),
+        ({"current": -1}, "^current must be at least 0$"),
+        ({"current": 5}, "^current must be at most 4$"),
+        ({"current": True}, "^current must be an integer$"),
+        ({"clock_id": " "}, "^clock_id must be a non-empty string$"),
+        ({"clock_id": "watch\nsearch"}, "^clock_id must be one line$"),
+        ({"owner": ""}, "^owner must be a non-empty string$"),
+        ({"owner": "Ilse\ud800"}, "^owner must be valid Unicode text"),
+        ({"on_fill": "first second"}, "^on_fill must be one line$"),
+        ({"on_fill": "x" * (rm.MAX_LINE_TEXT + 1)}, f"^on_fill exceeds {rm.MAX_LINE_TEXT} characters$"),
+        ({"tick": "daily"}, "^tick must be an object with unit and amount$"),
+        ({"tick": {"amount": 1}}, r"^tick\.unit must be a non-empty string$"),
+        ({"tick": {"unit": "day"}}, r"^tick\.amount must be an integer$"),
+        ({"tick": {"unit": "day", "amount": 0}}, r"^tick\.amount must be at least 1$"),
+        ({"tick": {"unit": "day", "amount": 1, "every": 2}}, "^tick takes only unit and amount, not every$"),
+    ],
+)
+def test_add_clock_validates_like_a_stored_clock(fields: dict[str, Any], message: str) -> None:
+    state = _state()
+    before = copy.deepcopy(state)
+    with pytest.raises(rm.MechanicError, match=message):
+        _apply(state, "add_clock", **{"clock_id": "watch", "maximum": 4, **fields})
+    assert state == before
+
+
+def test_remove_clock_records_the_removed_clock() -> None:
+    state, result = _apply(_state(clocks=_downtime_clocks()), "remove_clock", clock_id="rent")
+    assert sorted(state["clocks"]) == ["patrol", "siege"]
+    assert result["changes"] == [{"kind": "clock_removed", "clock": "rent", "before": _downtime_clocks()["rent"]}]
+    # A retired clock no longer ticks, and its id is free for a new one.
+    state, result = _apply(state, "advance_time", unit="day", steps=2)
+    assert all(change["kind"] != "clock" for change in result["changes"])
+    state, _ = _apply(state, "add_clock", clock_id="rent", maximum=2)
+    assert state["clocks"]["rent"] == {"current": 0, "maximum": 2}
+
+
+def test_unknown_clock_errors_list_the_recorded_clocks() -> None:
+    with pytest.raises(rm.MechanicError, match=r"^unknown clock: rnt \(known: patrol, rent, siege\)$"):
+        _apply(_state(clocks=_downtime_clocks()), "remove_clock", clock_id="rnt")
+    with pytest.raises(rm.MechanicError, match=r"^unknown clock: siege \(no clocks are recorded\)$"):
+        _apply(_state(clocks={}), "advance_clock", clock_id="siege")
+    with pytest.raises(rm.MechanicError, match=r"^clock_id must be a non-empty string$"):
+        _apply(_state(), "remove_clock")
+
+
+def test_a_malformed_stored_clock_is_not_reported_as_unknown() -> None:
+    with pytest.raises(rm.MechanicError, match=r"^clock siege must be an object$"):
+        _apply(_state(clocks={"siege": 4}), "advance_time", unit="day")
+
+
+def _commit_mechanics(campaign: Path, operation_id: str, expected: int, operations: list[dict[str, Any]]) -> dict[str, Any]:
+    import rpg_state  # The Stage 2 writer, imported late like the commit test above.
+
+    return rpg_state.commit_durable(
+        campaign,
+        {
+            "operation_id": operation_id,
+            "expected_continuity_revision": expected,
+            "boundary": "ordinary",
+            "cause": "The watch began its search and the guards were paid.",
+            "resume_impact": "A restart must keep the search clock and the paid wages.",
+            "changes": [
+                {
+                    "id": "upkeep",
+                    "kind": "resource",
+                    "established_delta": "The guards were paid in silver; the watch is searching.",
+                    "owners": ["mechanics_state.json"],
+                }
+            ],
+            "mutations": [],
+            "mechanic_operations": operations,
+        },
+    )
+
+
+def test_commit_durable_runs_item_wages_and_clocks_started_in_play(campaign: Path) -> None:
+    import rpg_state
+
+    (campaign / "mechanics_state.json").write_text(json.dumps(_purse_state(), indent=2) + "\n", encoding="utf-8")
+    watch = {"maximum": 2, "owner": "Kaptan İlse'nin muhafızları", "tick": {"unit": "gün", "amount": 1}, "on_fill": "Muhafızlar depoya dalar."}
+    result = _commit_mechanics(
+        campaign,
+        "turn-001",
+        0,
+        [
+            {"operation_id": "watch-start", "operation": "add_clock", "clock_id": "watch_search", **watch},
+            {"operation_id": "wages-add", "operation": "add_obligation", **_silver_wages()},
+            {"operation_id": "wages-w1", "operation": "settle_obligation", "obligation_id": "guard_wages", "period": "week-1"},
+            {"operation_id": "skip-2", "operation": "advance_time", "unit": "gün", "steps": 2},
+            {"operation_id": "siege-over", "operation": "remove_clock", "clock_id": "siege"},
+        ],
+    )
+    assert result["ok"] is True and result["continuity_revision"] == 1
+    tick = next(change for change in result["mechanic_results"][3]["changes"] if change["kind"] == "clock")
+    assert tick["clock"] == "watch_search" and tick["filled"] is True and tick["on_fill"] == "Muhafızlar depoya dalar."
+    assert result["mechanic_results"][4]["changes"] == [
+        {"kind": "clock_removed", "clock": "siege", "before": {"current": 1, "maximum": 4}}
+    ]
+    saved = json.loads((campaign / "mechanics_state.json").read_text(encoding="utf-8"))
+    assert saved["clocks"] == {"watch_search": {"current": 2, **watch}}
+    assert saved["actors"]["player"]["inventory"]["silver"]["quantity"] == 7
+    assert saved["obligations"]["guard_wages"]["settled"] == ["week-1"]
+
+    persisted = (campaign / "mechanics_state.json").read_bytes()
+    again = [{"operation_id": "wages-w1-again", "operation": "settle_obligation", "obligation_id": "guard_wages", "period": "week-1"}]
+    with pytest.raises(rpg_state.RPGStateError, match=r"already settled for period 'week-1'"):
+        _commit_mechanics(campaign, "turn-002", 1, again)
+    assert (campaign / "mechanics_state.json").read_bytes() == persisted
+
+
+PULSE_PROSE = {"evaluation_id": "skip-d92", "domain": "the smugglers' guild of Kaçakçı Köyü", "elapsed_steps": 4, "volatility": 1}
+
+
+def test_pulse_cli_reads_a_request_file_like_input_json(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    request = {"domains": [*PULSE_REQUESTS, PULSE_PROSE]}
+    assert world_pulse.main(["--input-json", json.dumps(request)]) == 0
+    from_json = capsys.readouterr().out
+    assert json.loads(from_json) == world_pulse.handle_request(copy.deepcopy(request))
+
+    # A BOM and CRLF from a Windows editor, and raw UTF-8 prose with apostrophes.
+    path = tmp_path / "pulse.json"
+    path.write_bytes(b"\xef\xbb\xbf" + json.dumps(request, ensure_ascii=False, indent=2).replace("\n", "\r\n").encode("utf-8"))
+    assert world_pulse.main(["--input-file", str(path)]) == 0
+    assert capsys.readouterr().out == from_json
+
+
+def test_pulse_cli_reads_standard_input_as_utf8_bytes(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    data = b"\xef\xbb\xbf" + json.dumps(PULSE_PROSE, ensure_ascii=False).encode("utf-8")
+    # The text layer's code page must never be used: cp1252 would garble the Turkish letters.
+    monkeypatch.setattr(sys, "stdin", io.TextIOWrapper(io.BytesIO(data), encoding="cp1252"))
+    assert world_pulse.main(["--input-file", "-"]) == 0
+    assert json.loads(capsys.readouterr().out) == world_pulse.generate_pulse(PULSE_PROSE)
+
+
+def test_pulse_cli_reads_a_real_pipe() -> None:
+    completed = subprocess.run(
+        [sys.executable, "-B", world_pulse.__file__, "--input-file", "-"],
+        input=json.dumps(PULSE_PROSE, ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        timeout=60,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr.decode("utf-8", "replace")
+    assert json.loads(completed.stdout) == world_pulse.generate_pulse(PULSE_PROSE)
+
+
+def test_pulse_cli_input_file_failures_keep_the_error_shape(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    missing = tmp_path / "missing.json"
+    assert world_pulse.main(["--input-file", str(missing)]) == 2
+    output = json.loads(capsys.readouterr().out)
+    assert set(output) == {"ok", "error"} and output["ok"] is False
+    assert output["error"].startswith(f"cannot read --input-file {missing}: ")
+
+    legacy = tmp_path / "cp1254.json"
+    legacy.write_bytes('{"domain": "kıyı", "evaluation_id": "e"}'.encode("cp1254"))
+    assert world_pulse.main(["--input-file", str(legacy)]) == 2
+    assert json.loads(capsys.readouterr().out) == {
+        "ok": False,
+        "error": f"--input-file {legacy} is not valid UTF-8 (byte 13); save the request as UTF-8 and retry",
+    }
+    # With a byte order mark the offset still counts from the start of the file.
+    legacy.write_bytes(b"\xef\xbb\xbf" + legacy.read_bytes())
+    assert world_pulse.main(["--input-file", str(legacy)]) == 2
+    assert "is not valid UTF-8 (byte 16);" in json.loads(capsys.readouterr().out)["error"]
+
+    # A NUL in the path is a ValueError from the OS layer, never a traceback.
+    assert world_pulse.main(["--input-file", "bad\0name.json"]) == 2
+    assert json.loads(capsys.readouterr().out)["error"].startswith("cannot read --input-file bad")
+
+    broken = tmp_path / "broken.json"
+    broken.write_text("{oops", encoding="utf-8")
+    assert world_pulse.main(["--input-file", str(broken)]) == 2
+    assert json.loads(capsys.readouterr().out)["error"].startswith("invalid JSON: ")
+
+
+def test_pulse_cli_takes_exactly_one_input_source(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    path = tmp_path / "pulse.json"
+    path.write_text(json.dumps(PULSE_REQUESTS[0]), encoding="utf-8")
+    for argv in ([], ["--input-json", json.dumps(PULSE_REQUESTS[0]), "--input-file", str(path)]):
+        with pytest.raises(SystemExit) as exited:
+            world_pulse.main(argv)
+        assert exited.value.code == 2
+    errors = capsys.readouterr().err
+    assert "one of the arguments --input-json --input-file is required" in errors
+    assert "not allowed with argument" in errors

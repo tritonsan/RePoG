@@ -39,7 +39,10 @@ the first pointer to the present cast's Core lines, secret holders by fact id,
 directives in scope, open rolls, and the last reply's lint findings. It is a
 deterministic read of owners, and the owners stay authoritative: read the owner
 before asserting or changing a fact the capsule points to. `directives.md`
-holds the Player's standing table rules; follow every active row in scope.
+holds the Player's standing table rules; follow every active row in scope, and
+read the file with the hot owners when the capsule is off. Once per fresh
+context, also read `packs/languages/<code>.md` for the play language when it
+exists.
 
 Keep the current `threads.md` Arc Compass id, status, dramatic question, closure
 conditions, and reachable scope in this small context. Read its owner when it
@@ -226,7 +229,8 @@ choice. New promises, permissions, or relationship changes remain durable.
 For any durable result, checkpoint, or full-distill trigger, load
 `playbooks/persistence.md` and commit exactly once through the owning helper.
 No changed fact's sole owner may be deferred. `runtime.persistence_order` orders
-the reply and the commit; a required full distill finishes in the same turn.
+the reply and the commit (by default the step 4 reply comes first and the one
+commit follows it); a required full distill finishes in the same turn.
 Optional surfaces use their triggered playbooks; load only the relevant entry
 of `../reference/authority-map.md` when ownership is unclear.
 
@@ -293,8 +297,8 @@ recurring NPC drifts toward the same voice.
 Before a recurring NPC speaks at any length, confirm its note carries a tier and
 the Agency Card axes that govern speech: voice rhythm, social tactic, hard
 boundary, and routine/availability. A note that is only a descriptive paragraph
-is not enough. When they are missing, fill them in the same turn as part of that
-turn's write, then speak. This is one small write per NPC, not per turn, and it
+is not enough. When they are missing, settle them before it speaks and record
+them in that turn's write. This is one small write per NPC, not per turn, and it
 is what later turns read instead of reconstructing a voice from memory.
 
 For a significant returning character, also read the current relationship topic

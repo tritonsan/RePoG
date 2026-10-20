@@ -174,7 +174,7 @@ accepted truth. Locked active profiles outrank their readable mirrors.
 Summaries, logs, prep, snapshots, and projections never overwrite their owners.
 
 Apply the restart-loss test after resolving a result: if a newly established fact
-needed later would be lost, persist it as durable before presenting it as true.
+needed later would be lost, persist it as durable in the turn that presents it.
 Every changed fact's sole owner must be updated immediately; only duplicate
 summaries, preparation, archives, and enrichment may wait. Do not invent new
 truth merely to fill a template or force a durable write.
@@ -187,10 +187,10 @@ ordinary turn writes and checks nothing. The GM persistence playbook owns the
 exact matrix. Never manually patch a subset, increment continuity, or append the
 matching durable receipt. Companion mutations use its owning atomic transaction.
 
-Order follows the locked `runtime.persistence_order`. Under
+RPG order follows the locked `runtime.persistence_order`. Under
 `commit_then_narrate`, narrate only after successful persistence. Under
 `narrate_then_commit` (default), send the reply, then commit once in the same
-turn with nothing after; never narrate a result you will not persist. On
+turn with no text after; never narrate a result you will not persist. On
 failure, never finish partial writes manually; follow typed recovery, reuse the
 operation identity only for a valid unchanged retry, and correct an
 unpersistable narrated fact in one OOC line. A required full distill finishes
@@ -258,7 +258,7 @@ release/playtest evidence; do not claim scores or timing measurements not run.
   except a wait notice a workflow permits at a long boundary. Under
   `narrate_then_commit` the finished reply comes first and the commit follows
   with no text after it; otherwise persist and check silently, then reply.
-- Give each Bash call a short neutral description in the Player's language,
+- Give each tool call a short neutral description in the Player's language,
   with no helper names, ids, or paths; any progress note likewise.
 - Host instructions to link files, show commands, or summarize changes apply
   only in Designer Mode. Use no task list, AskUserQuestion, or plan mode in
@@ -270,7 +270,8 @@ release/playtest evidence; do not claim scores or timing measurements not run.
   briefly, outside the fiction, that the step needs approval, then retry it
   unchanged once allowed.
 - The Bash tool runs a POSIX shell, Git Bash on Windows. Feed JSON through a
-  quoted heredoc (`<<'JSON'`) so apostrophes in prose cannot break it.
+  quoted heredoc (`<<'JSON'`) so apostrophes in prose cannot break it; the
+  `rpg_state`, `roll_dice`, and `world_pulse` helpers take `--input-file -`.
 - Open the Dashboard only when asked or a policy calls for it:
   `serve_dashboard` on `campaign/dashboard` as a background command.
 
@@ -288,12 +289,13 @@ release/playtest evidence; do not claim scores or timing measurements not run.
   restart; then `scene_checkpoint` with a short anchor.
 - Update `active_cast.md` in the same commit when presence changes, and
   `location_graph.md` for a new route.
-- Roll a contested check with `roll_dice --campaign`, declaring actor, axis,
-  value, difficulty, and stakes first; cite it with its band as `outcome`, or
-  list it in `void_rolls` with a reason. Narrate the band rolled.
+- When RePoG rolls a contested check, use `roll_dice --campaign`, declaring
+  actor, axis, value, difficulty, and stakes first; cite it as `roll_reference`
+  with its band as `outcome`, or list it in `void_rolls` with a reason. Narrate
+  the band rolled.
 - Close a full distill with one `commit-distill` call; run `check_style` there,
   never per turn; pass `rotate_log` when the writer warns.
-- Run helpers from the project folder, each state-changing one on its own call.
+- Run each state-changing helper on its own call.
 
 ## Scene Capsule
 
@@ -325,9 +327,9 @@ release/playtest evidence; do not claim scores or timing measurements not run.
   neither this conversation nor this skill: put the frozen packet and absolute
   paths in each prompt, launch a boundary's lanes in one message, merge only
   after all return, and hold new Player messages until it is written and checked.
-- With `runtime.boundary_curator: background`, after a full distill that
-  reports stacked sections, oversized owners, stale projections, or notes
-  without `## Core`, run `curation packet` and launch `repog:repog-curator` in
-  the background with it. Do not wait: the prompt hook applies the staged file
-  while its targets are unchanged. Answer its completion notice with no
-  visible text. With `inline`, make those edits in the distill yourself.
+- With `runtime.boundary_curator: background`, when a full distill flags notes
+  to fold (Distill workflow), run `curation packet` and launch
+  `repog:repog-curator` in the background with it. Do not wait: the prompt hook
+  applies the staged file while its targets are unchanged. Answer its
+  completion notice with no visible text. With `inline`, make those edits in
+  the distill yourself.

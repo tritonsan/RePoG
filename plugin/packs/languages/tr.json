@@ -94,5 +94,5 @@
     "tan", "gün", "kar", "kan", "baş", "el", "ok", "yay", "dost", "şah",
     "ağa", "paşa", "hoca", "usta", "efe", "alp", "ışık", "bahar", "ozan", "ulu"
   ],
-  "card": "Write Turkish as a native novelist would, not as translated English. Keep the verb last and drop subject pronouns unless they carry contrast. Address the player character with 'sen' unless the profile sets 'siz'; NPCs choose sen or siz by rank, age and closeness, and titles follow the name (Halvar Usta, Ayşe Hanım, Murat Bey). Use -miş for hearsay. Avoid calques such as 'yüzünde hiçbir şey yoktu' or 'sesi düzdü', chains of negated descriptions, and stock beats like 'bir an' or 'cevabını bekliyor'. Write days and numbers in words."
+  "card": "Write Turkish as a native novelist would, not as translated English. Keep the verb last and drop subject pronouns unless they carry contrast. Address the player character with 'sen' unless the profile sets 'siz'; NPCs choose sen or siz by rank, age and closeness, and titles follow the name (Halvar Usta, Ayşe Hanım, Murat Bey). Use -miş for hearsay. Avoid calques such as 'yüzünde hiçbir şey yoktu' or 'sesi düzdü', chains of negated descriptions, and stock beats like 'bir an' or 'cevabını bekliyor'. Keep the day count out of prose: 'iki hafta sonra', not 'seksen ikinci gün'."
 }

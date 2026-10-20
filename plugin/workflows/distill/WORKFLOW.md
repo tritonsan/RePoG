@@ -207,10 +207,11 @@ For each pending event:
 4. Close the boundary with one
    `python tools/rpg_state.py campaign commit-distill --input-file -` call. Its
    payload carries `operation_id`, `expected_continuity_revision`, `trigger`,
-   an optional `summary`, and the secondary edits as typed `ops` (persistence
-   playbook 3D). It appends the summary and the distilled-through marker, sets
-   `last_distilled_revision`, resets `durable_turns_since_distill`, clears
-   `pending_cold_targets`, stamps the edited files, and runs the full check.
+   an optional `summary`, and `mutations` (the secondary edits as typed `ops`,
+   persistence playbook 3D). It appends the summary and the distilled-through
+   marker, sets `last_distilled_revision`, resets `durable_turns_since_distill`,
+   clears `pending_cold_targets`, stamps the edited files, and runs the full
+   check.
    Pass `rotate_log: true` at a session end or when a writer result warns about
    the log: history before the previous marker moves unchanged to `archive/`.
 5. Under `commit_then_narrate`, narrate only when the returned `full_check` is
@@ -242,9 +243,12 @@ right semantic changes, and no second semantic model call is added.
 `play_profile.yaml.runtime.boundary_curator` (default `background`) decides who
 folds the notes a distill flags. Collect the Markdown files that the
 commit-distill `warnings` or `full_check`, or a writer warning since the last
-distill, flag as `stacked_sections`, `owner_size_budget`, a `*_stale`
-projection, or `note_core_missing`. A `session_log_size` warning is answered by
-`rotate_log` instead; no curator edits the log.
+distill, flag as `stacked_sections`, `owner_size_budget`, `active_cast_stale`,
+`location_graph_stale`, `relationship_map_stale`, `session_brief_stale`, or
+`note_core_missing`. Each finding names its file in `path` (campaign-relative);
+`note_core_missing` names the `characters` folder and lists the notes in its
+message. A `session_log_size` warning is answered by `rotate_log` instead; no
+curator edits the log.
 
 - `background`: build the packet with
   `python tools/curation.py packet campaign --target PATH=REASON ...` and
@@ -252,14 +256,22 @@ projection, or `note_core_missing`. A `session_log_size` warning is answered by
   JSON as its prompt. Never wait for it. The prompt hook applies its staged
   file through `rpg_state.py campaign commit-curation --apply-staged` only
   while every target is unchanged; a file with a stale target is rejected
-  whole.
+  whole. The hook records each run in
+  `campaign/.repog-runtime/curation/last_result.json`, and the next capsule
+  shows a rejected or deferred proposal once.
 - `inline`: make the same folds yourself in the commit-distill payload; a
   finding that only its full check reports waits for the next distill.
 - `off`: skip this step.
 
-A fold keeps one current `## Now` plus a short `## History` line list, and a
-`## Core` holds only stated facts. Curation creates no truth, revision, or
-marker; a fact it would need is a durable commit.
+When a capsule reports `[curation] rejected <id>`, those notes are still
+unfolded: at the next distill, build a new packet from the current files and
+launch the curator again; never move the rejected file back. A `deferred`
+proposal stays staged, and the next prompt retries it.
+
+A fold keeps one current `## Now`, a short `## Details` list for still-true
+facts that do not fit it, and a short `## History` line list; a `## Core` holds
+only stated facts. Curation creates no truth, revision, or marker; a fact it
+would need is a durable commit.
 
 ## Selective Structural Delegation
 
@@ -677,15 +689,28 @@ do not mutate the domain merely because it was reviewed.
 Run this review only when `style_review_policy` selects the distill output or a
 representative sample. Keep fingerprints short and categorical: dramatic beat,
 GM move, ending form, sensory channel, complication type, NPC social tactic,
-and metaphor family. Review recent findings and table feel:
+and metaphor family. Check the selected sample once:
 
-- add genuinely overused phrases, gestures, sensory tells, or similes to the
-  campaign avoid-list;
+```sh
+python tools/check_style.py campaign/style_state.json --scene-id SCENE_ID --beat-id BEAT_ID --dramatic-beat LABEL --gm-move LABEL --ending-form LABEL --record --text "$(cat <<'TEXT'
+<the sampled reply, verbatim>
+TEXT
+)"
+```
+
+Add `--sensory-channel`, `--complication-type`, `--npc-social-tactic`, or
+`--metaphor-family` when that label applies, and
+`--speaker-type npc --speaker-id ID` for an NPC-only excerpt; without
+`--record` the sample is checked but not remembered. Then review the findings
+and table feel:
+
+- note genuinely overused phrases, gestures, sensory tells, or similes, and
+  keep them out of the next replies;
 - note whether response length has become mechanically uniform;
 - preserve effective NPC voices while separating narrator habits from
   character speech;
-- remove stale avoid-list entries only when the Designer deliberately wants
-  them available again.
+- leave the avoid-list as the Player set it; it changes only at the Player's
+  request (OOC adjustment playbook).
 
 `tools/check_style.py` is warning-only and never rewrites prose. Causality,
 Player authorship, NPC agency/presence, knowledge limits, voice contrast,
@@ -703,9 +728,12 @@ and repetition counts alone do not establish story quality.
 Whatever the sampling policy, at a full distill with
 `runtime.presentation_lint: on`, run
 `python tools/presentation_lint.py report campaign --last 20` to see which
-presentation habits persist across replies. Fold a recurring one into the
-campaign avoid-list or a `directives.md` row whose Source names the lint report
-and revision.
+presentation habits persist across replies, and keep them out of the replies
+that follow. A habit the report keeps finding is the Player's call: raise it at
+a session pause in a line or two out of character, and record a directive
+(OOC adjustment playbook) only if the Player wants one. Directives are the
+Player's rules: never add one on your own, and never edit `style_state.json`
+by hand.
 
 # World Voices Distill
 

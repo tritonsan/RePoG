@@ -258,9 +258,17 @@ def curation_dir(campaign: Path) -> Path:
     return campaign / RUNTIME_DIR / CURATION_DIR
 
 
+# The prompt hook records each curation run here, beside the proposals; it is
+# never a proposal itself, and no proposal may take its name.
+RESULT_FILE = "last_result.json"
+RESERVED_IDS = frozenset({RESULT_FILE.removesuffix(".json")})
+
+
 def staging_path(campaign: Path, curation_id: str) -> Path:
     if not isinstance(curation_id, str) or CURATION_ID_RE.fullmatch(curation_id) is None:
         raise CurationError("input_invalid", f"curation id {curation_id!r} must match {CURATION_ID_RE.pattern}")
+    if curation_id in RESERVED_IDS:
+        raise CurationError("input_invalid", f"curation id {curation_id!r} is reserved for the run record")
     return curation_dir(campaign) / f"{curation_id}.json"
 
 
@@ -268,7 +276,8 @@ def is_staging_path(campaign: Path, path: str | Path, curation_id: str | None = 
     """True only for `<campaign>/.repog-runtime/curation/<valid id>.json`.
 
     Lets a write guard confine the curator to the one file it may create; pass
-    the packet's `curation_id` to allow that one name only.
+    the packet's `curation_id` to allow that one name only. The run record is
+    never a staging file, so the curator cannot overwrite it.
     """
 
     try:
@@ -280,6 +289,7 @@ def is_staging_path(campaign: Path, path: str | Path, curation_id: str | None = 
         os.path.normcase(str(candidate.parent)) == os.path.normcase(str(folder))
         and candidate.suffix == ".json"
         and CURATION_ID_RE.fullmatch(candidate.stem) is not None
+        and candidate.stem not in RESERVED_IDS
         and (curation_id is None or candidate.stem == curation_id)
     )
 
@@ -292,7 +302,10 @@ def list_staged(campaign: Path) -> list[Path]:
         entries = [
             entry
             for entry in folder.iterdir()
-            if entry.is_file() and entry.suffix == ".json" and not entry.name.startswith(".")
+            if entry.is_file()
+            and entry.suffix == ".json"
+            and not entry.name.startswith(".")
+            and entry.name != RESULT_FILE
         ]
     except OSError:
         return []
@@ -619,20 +632,32 @@ def dry_run(campaign: Path, mutations: list[dict[str, Any]], *, revision: int) -
     return errors
 
 
-def validate_file(campaign: Path, path: Path) -> list[str]:
-    """`validate_staged` plus the file's own location and name."""
+def load_staged(campaign: Path, path: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    """Read one staging file once and check it: `(payload, [])` when valid, else `(None, errors)`.
+
+    The writer applies exactly the payload this check read. Reading the file
+    again for use would let a rewrite between the two reads (the curator
+    saving a second draft) slip an unchecked payload, such as a reason with a
+    line break, into the session log.
+    """
 
     try:
         payload = read_staged(path)
     except CurationError as exc:
-        return [str(exc)]
+        return None, [str(exc)]
     errors = validate_staged(campaign, payload)
     if not is_staging_path(campaign, path):
         errors.append("staged file must be named <curation_id>.json directly in .repog-runtime/curation/")
     curation_id = payload.get("curation_id")
     if isinstance(curation_id, str) and Path(path).stem != curation_id:
         errors.append(f"file name '{Path(path).name}' does not match curation_id '{curation_id}'")
-    return errors
+    return (None, errors) if errors else (payload, [])
+
+
+def validate_file(campaign: Path, path: Path) -> list[str]:
+    """`validate_staged` plus the file's own location and name."""
+
+    return load_staged(campaign, path)[1]
 
 
 # ---------------------------------------------------------------------------
@@ -888,15 +913,9 @@ def _validate_report(campaign: Path, files: list[Path]) -> dict[str, Any]:
     revision = state_summary(campaign).get("revision")
     reports: list[dict[str, Any]] = []
     for path in files:
-        errors = validate_file(campaign, path)
+        payload, errors = load_staged(campaign, path)
         report: dict[str, Any] = {"path": str(path), "errors": errors, "ready": False}
-        if not errors:
-            try:
-                payload = read_staged(path)
-            except CurationError as exc:  # rewritten or removed since the check above
-                report["errors"] = [str(exc)]
-                reports.append(report)
-                continue
+        if payload is not None:
             fresh, stale = split_by_freshness(campaign, payload)
             report["curation_id"] = payload["curation_id"]
             report["fresh_paths"] = [mutation["path"] for mutation in fresh]

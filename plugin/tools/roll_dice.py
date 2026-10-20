@@ -2,16 +2,21 @@
 
 Two modes share this helper:
 
-- Expression mode (`--input-json` alone) rolls a free `NdM+/-K` expression
+- Expression mode (no `--campaign`) rolls a free `NdM+/-K` expression
   with an optional caller seed. Its output shape is unchanged since 0.2.0.
-- Call mode (`--campaign <path> --input-json {"call": ..., "roll_id": ...}`)
-  rolls a declared check: actor, axis, stat value, difficulty, modifiers, and
-  stakes are fixed before the die is seen. The seed is derived from the
+- Call mode (`--campaign <path>` with `{"call": ..., "roll_id": ...}`)
+  rolls a declared check: actor, axis, stat value, difficulty (with an
+  optional one-line `reason`), modifiers, and stakes are fixed before the die
+  is seen. The seed is derived from the
   campaign id, the continuity revision, the roll id, and the canonical call,
   so repeating the same call returns the same receipt and a different result
   needs a new roll id, which stays on record. Receipts are appended to
   `campaign/.repog-runtime/rolls.jsonl`, the runtime store the writer checks
   when a commit cites a roll.
+
+The request is one JSON object, given as `--input-json` or read with
+`--input-file` from a UTF-8 file (or standard input for `-`), which keeps
+apostrophes in prose clear of shell quoting.
 
 A roll supplies numbers and a band name, never the fictional meaning of the
 result; that stays with the GM.
@@ -32,7 +37,7 @@ import time
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 import odds
 from repog_runtime import RUNTIME_DIR, top_scalar
@@ -46,10 +51,15 @@ MAX_ABS_MODIFIER = 100_000
 # Call mode limits. A call is a short declaration, not a narration.
 MAX_ROLL_ID = 80
 ROLL_ID_PUNCTUATION = frozenset("_.:-")
-REQUEST_KEYS = frozenset({"call", "roll_id", "die"})
-CALL_KEYS = frozenset({"actor", "axis", "value", "difficulty", "factors", "stakes"})
+REQUEST_REQUIRED = ("roll_id", "call")
+REQUEST_OPTIONAL = ("die",)
+REQUEST_KEYS = frozenset(REQUEST_REQUIRED + REQUEST_OPTIONAL)
+CALL_REQUIRED = ("actor", "axis", "value", "difficulty", "stakes")
+CALL_OPTIONAL = ("factors", "reason")
+CALL_KEYS = frozenset(CALL_REQUIRED + CALL_OPTIONAL)
 FACTOR_KEYS = frozenset({"label", "modifier"})
 MAX_NAME = 80
+MAX_REASON = 200
 MAX_STAKES = 500
 MAX_FACTORS = 12
 MAX_ABS_CALL_NUMBER = 1000
@@ -58,6 +68,9 @@ RECEIPT_KEEP = 2000
 RECEIPT_FIELDS = ("roll_id", "revision", "call", "die", "dice", "total", "margin", "band", "auto", "at")
 SEED_DOMAIN = "repog-roll-call-v1"
 UTF8_BOM = b"\xef\xbb\xbf"
+# The writer reads a `roll_reference` starting with this as the Player's own
+# physical roll, never as a receipt, so no receipt may carry such an id.
+PLAYER_ROLL_PREFIX = "player:"
 
 
 class DiceError(ValueError):
@@ -172,14 +185,28 @@ def _whole(value: Any, label: str, maximum: int = MAX_ABS_CALL_NUMBER) -> int:
     return value
 
 
+def _unknown_keys(prefix: str, unknown: list[str], required: tuple[str, ...], optional: tuple[str, ...]) -> RollCallError:
+    """An unknown-key refusal that names every key the object accepts."""
+
+    return RollCallError(
+        "input_invalid",
+        f"{prefix}: {', '.join(unknown)}; accepted keys: {', '.join(required)} (required); "
+        f"{', '.join(optional)} (optional)",
+    )
+
+
 def normalize_call(call: Any) -> dict[str, Any]:
-    """The canonical call: trimmed text, integer numbers, factors always listed."""
+    """The canonical call: trimmed text, integer numbers, factors always listed.
+
+    `reason` appears only when given, so a call without one keeps the seed and
+    receipt it had before the field existed.
+    """
 
     if not isinstance(call, dict):
         raise RollCallError("input_invalid", "call must be an object")
     unknown = sorted(set(call) - CALL_KEYS)
     if unknown:
-        raise RollCallError("input_invalid", f"call has unknown keys: {', '.join(unknown)}")
+        raise _unknown_keys("call has unknown keys", unknown, CALL_REQUIRED, CALL_OPTIONAL)
     raw_factors = call.get("factors")
     if raw_factors is None:
         raw_factors = []
@@ -196,7 +223,7 @@ def normalize_call(call: Any) -> dict[str, Any]:
                 "modifier": _whole(factor["modifier"], f"{label}.modifier", 100),
             }
         )
-    return {
+    canonical = {
         "actor": _line(call.get("actor"), "call.actor", MAX_NAME),
         "axis": _line(call.get("axis"), "call.axis", MAX_NAME),
         "value": _whole(call.get("value"), "call.value"),
@@ -204,6 +231,10 @@ def normalize_call(call: Any) -> dict[str, Any]:
         "factors": factors,
         "stakes": _line(call.get("stakes"), "call.stakes", MAX_STAKES),
     }
+    # The one-line reason for the difficulty; a null value counts as absent.
+    if call.get("reason") is not None:
+        canonical["reason"] = _line(call["reason"], "call.reason", MAX_REASON)
+    return canonical
 
 
 def _canonical_id(value: str) -> str:
@@ -231,7 +262,14 @@ def _roll_id(value: Any) -> str:
             f"roll_id must be 1-{MAX_ROLL_ID} letters, digits, '_', '.', ':' or '-', "
             "starting with a letter, digit, or '_'",
         )
-    return _canonical_id(value)
+    roll_id = _canonical_id(value)
+    if roll_id.casefold().startswith(PLAYER_ROLL_PREFIX):
+        raise RollCallError(
+            "input_invalid",
+            f"roll ids starting with '{PLAYER_ROLL_PREFIX}' are reserved for citing the Player's own dice; "
+            "choose another roll id",
+        )
+    return roll_id
 
 
 def _die(requested: Any, resolution: dict[str, Any] | None) -> tuple[str, int, int]:
@@ -403,7 +441,7 @@ def roll_call(campaign: str | Path, payload: dict[str, Any], *, now: str | None 
         )
     unknown = sorted(set(payload) - REQUEST_KEYS)
     if unknown:
-        raise RollCallError("input_invalid", f"unknown keys: {', '.join(unknown)}")
+        raise _unknown_keys("unknown keys", unknown, REQUEST_REQUIRED, REQUEST_OPTIONAL)
     roll_id = _roll_id(payload.get("roll_id"))
     call = normalize_call(payload.get("call"))
     resolution = _resolution(root)
@@ -620,9 +658,39 @@ def _parse_request(raw: str) -> dict[str, Any]:
     return payload
 
 
-def _expression_main(raw: str) -> int:
+def read_input_file(path: str) -> str:
+    """The request text from a UTF-8 file, or from standard input when `path` is '-'.
+
+    Read as bytes and decoded strictly as UTF-8 with a leading byte order mark
+    dropped, never in the console or locale code page.
+    """
+
+    label = "standard input" if path == "-" else f"--input-file {path}"
+    if path == "-":
+        stream = getattr(sys.stdin, "buffer", None)
+        if stream is None:
+            raise RollCallError("io_error", "standard input is not available; pass --input-file PATH or --input-json")
+        read = stream.read
+    else:
+        read = Path(path).read_bytes
     try:
-        payload = _parse_request(raw)
+        data = read()
+    except (OSError, ValueError) as exc:  # ValueError: a NUL in the path, or a closed stream
+        raise RollCallError("io_error", f"cannot read {label}: {getattr(exc, 'strerror', None) or exc}") from None
+    # Strip the mark here rather than with utf-8-sig, which counts error offsets after it.
+    offset = len(UTF8_BOM) if data.startswith(UTF8_BOM) else 0
+    try:
+        return data[offset:].decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RollCallError(
+            "input_invalid",
+            f"{label} is not valid UTF-8 (byte {offset + exc.start}); save the request as UTF-8 and retry",
+        ) from None
+
+
+def _expression_main(read_request: Callable[[], str]) -> int:
+    try:
+        payload = _parse_request(read_request())
         if "call" in payload:
             raise DiceError("a roll call needs --campaign <campaign folder>")
         result = roll(payload)
@@ -633,13 +701,13 @@ def _expression_main(raw: str) -> int:
     return 0
 
 
-def _call_main(campaign: str, raw: str) -> int:
+def _call_main(campaign: str, read_request: Callable[[], str]) -> int:
     def failure(category: str, reason: str) -> dict[str, Any]:
         return {"ok": False, "failure_category": category, "failure_reason": reason}
 
     exit_code = 2
     try:
-        payload = _parse_request(raw)
+        payload = _parse_request(read_request())
         result = roll_call(campaign, payload)
         exit_code = 0
     except json.JSONDecodeError as exc:
@@ -657,15 +725,26 @@ def _call_main(campaign: str, raw: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     # `python -OO` (or PYTHONOPTIMIZE=2) strips docstrings, so __doc__ may be None.
     parser = argparse.ArgumentParser(description=(__doc__ or "").partition("\n")[0] or None)
-    parser.add_argument("--input-json", required=True, help="Dice request as one JSON object.")
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--input-json", help="Dice request as one JSON object.")
+    source.add_argument(
+        "--input-file",
+        metavar="PATH",
+        help="Read the request from a UTF-8 file, or from standard input when PATH is -, so prose needs no shell quoting.",
+    )
     parser.add_argument(
         "--campaign",
         help="Campaign folder: roll a declared call and record its receipt instead of a free expression.",
     )
     args = parser.parse_args(argv)
+
+    def read_request() -> str:
+        # Read inside each mode's error handling, so a bad file reports in that mode's shape.
+        return args.input_json if args.input_file is None else read_input_file(args.input_file)
+
     if args.campaign is None:
-        return _expression_main(args.input_json)
-    return _call_main(args.campaign, args.input_json)
+        return _expression_main(read_request)
+    return _call_main(args.campaign, read_request)
 
 
 if __name__ == "__main__":

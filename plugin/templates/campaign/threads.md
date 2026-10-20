@@ -165,8 +165,8 @@ transaction; reading or reviewing the list creates no revision by itself.
 
 ## Resolved Threads
 
-Move completed threads here with a short note about how they resolved and what
-consequence remains.
+Move completed threads here with a `Resolution:` line naming what resolved them
+(a roll id, a Player decision, or a played scene) and what consequence remains.
 
 ## Dormant Threads
 

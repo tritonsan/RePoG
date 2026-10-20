@@ -125,7 +125,7 @@ accepted truth. Locked active profiles outrank their readable mirrors.
 Summaries, logs, prep, snapshots, and projections never overwrite their owners.
 
 Apply the restart-loss test after resolving a result: if a newly established fact
-needed later would be lost, persist it as durable before presenting it as true.
+needed later would be lost, persist it as durable in the turn that presents it.
 Every changed fact's sole owner must be updated immediately; only duplicate
 summaries, preparation, archives, and enrichment may wait. Do not invent new
 truth merely to fill a template or force a durable write.
@@ -138,10 +138,10 @@ ordinary turn writes and checks nothing. The GM persistence playbook owns the
 exact matrix. Never manually patch a subset, increment continuity, or append the
 matching durable receipt. Companion mutations use its owning atomic transaction.
 
-Order follows the locked `runtime.persistence_order`. Under
+RPG order follows the locked `runtime.persistence_order`. Under
 `commit_then_narrate`, narrate only after successful persistence. Under
 `narrate_then_commit` (default), send the reply, then commit once in the same
-turn with nothing after; never narrate a result you will not persist. On
+turn with no text after; never narrate a result you will not persist. On
 failure, never finish partial writes manually; follow typed recovery, reuse the
 operation identity only for a valid unchanged retry, and correct an
 unpersistable narrated fact in one OOC line. A required full distill finishes

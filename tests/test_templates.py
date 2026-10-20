@@ -668,7 +668,7 @@ def test_rules_roll_call_matches_the_dice_tool(capsys: pytest.CaptureFixture[str
     roll_calls = re.search(r"(?ms)^### Roll Calls\s*$(.*?)^###? ", text).group(1)
     command = re.search(r"`(?:python )?tools/roll_dice\.py ([^`]+)`", roll_calls).group(1)
     flags = re.findall(r"--[a-z][a-z-]*", command)
-    assert flags == ["--campaign", "--input-json"]
+    assert flags == ["--campaign", "--input-file"]
     with pytest.raises(SystemExit):
         roll_dice.main(["--help"])
     usage = capsys.readouterr().out
@@ -768,3 +768,22 @@ def test_blank_template_campaign_passes_the_full_check(tmp_path: Path, resolutio
     profile.write_bytes(profile.read_bytes().replace(b"presentation_lint: on", b"presentation_lint: maybe"))
     findings = check_state.check_campaign(campaign, scope="full")["findings"]
     assert any("runtime.presentation_lint" in finding["message"] for finding in findings)
+
+
+@pytest.mark.parametrize(
+    ("block", "reported"),
+    [
+        ("runtime: {scene_capsule: off}\n", True),
+        ("runtime: {}\n", False),
+        ("runtime:  # switches\n  scene_capsule: off\n", False),
+        ("runtime:\n  scene_capsule: off\n", False),
+    ],
+)
+def test_an_inline_runtime_block_is_reported_not_silently_ignored(block: str, reported: bool) -> None:
+    import check_runtime
+
+    found: list[tuple[str, str]] = []
+    check_runtime.check_profile(block, Path("play_profile.yaml"), lambda severity, rule, message, path: found.append((severity, rule)))
+    # The hooks read `runtime:` only as indented `key: value` lines, so an inline
+    # mapping leaves every switch at its default without a word.
+    assert (("error", "runtime_block_inline") in found) is reported

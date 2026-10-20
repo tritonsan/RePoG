@@ -55,6 +55,31 @@ def _ready_campaign(event: dict[str, Any]) -> tuple[Path | None, dict[str, str]]
     return campaign, repog_runtime.runtime_settings(campaign)
 
 
+def _record_curation(campaign: Path, result: dict[str, Any]) -> None:
+    """Keep the outcome of a curation run where the next capsule can show it.
+
+    Without this, a proposal rejected as stale would vanish silently and the
+    GM would never learn the note still needs folding.
+    """
+
+    if not any(result.get(key) for key in ("applied", "rejected", "deferred")):
+        return
+    import datetime as dt
+
+    import curation
+    import repog_runtime
+
+    repog_runtime.write_json_atomic(
+        curation.curation_dir(campaign) / curation.RESULT_FILE,
+        {
+            "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "applied": result.get("applied", []),
+            "rejected": result.get("rejected", []),
+            "deferred": result.get("deferred", []),
+        },
+    )
+
+
 def prompt(event: dict[str, Any]) -> None:
     campaign, settings = _ready_campaign(event)
     if campaign is None:
@@ -65,7 +90,7 @@ def prompt(event: dict[str, Any]) -> None:
             import rpg_state
 
             if curation.list_staged(campaign):
-                rpg_state.commit_curation(campaign)
+                _record_curation(campaign, rpg_state.commit_curation(campaign))
         except Exception:
             pass  # a waiting proposal is retried on the next prompt
     if settings.get("scene_capsule") != "on":

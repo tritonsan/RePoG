@@ -362,22 +362,30 @@ def test_header_names_revision_time_place_scene_and_persistence(campaign: Path) 
     assert _build(campaign, session="other").splitlines()[0].endswith("persistence: commit_then_narrate")
 
 
+DUE_LINE = "Full distill is due after this turn's commit."
+OVERDUE_LINE = "Full distill is overdue: run it before any commit-durable."
+
+
 @pytest.mark.parametrize(
-    ("policy", "turns", "due"),
+    ("policy", "turns", "line"),
     [
-        ("scene_checkpoint_or_5_durable", 3, False),
-        ("scene_checkpoint_or_5_durable", 4, True),
-        ("scene_checkpoint_or_5_durable", 6, True),
-        ("every_durable", 0, True),
-        ("scene_checkpoint_only", 40, False),
+        ("scene_checkpoint_or_5_durable", 3, None),
+        ("scene_checkpoint_or_5_durable", 4, DUE_LINE),
+        # At the threshold the writer refuses commit-durable until the distill
+        # runs, so "after this turn's commit" would send the GM into a refusal.
+        ("scene_checkpoint_or_5_durable", 5, OVERDUE_LINE),
+        ("scene_checkpoint_or_5_durable", 6, OVERDUE_LINE),
+        ("every_durable", 0, DUE_LINE),
+        ("every_durable", 1, OVERDUE_LINE),
+        ("scene_checkpoint_only", 40, None),
     ],
 )
-def test_full_distill_due_line(campaign: Path, policy: str, turns: int, due: bool) -> None:
+def test_full_distill_due_line(campaign: Path, policy: str, turns: int, line: str | None) -> None:
     _replace(campaign / "play_profile.yaml", "scene_checkpoint_or_5_durable", policy)
     _state(campaign, "durable_turns_since_distill: 0", f"durable_turns_since_distill: {turns}")
-    text = _build(campaign)
-    assert ("Full distill is due after this turn's commit." in text) is due
-    assert ("Full distill is due after this turn's commit." in _build(campaign)) is due  # deltas keep the header
+    for text in (_build(campaign), _build(campaign)):  # deltas keep the header
+        assert (DUE_LINE in text) is (line == DUE_LINE)
+        assert (OVERDUE_LINE in text) is (line == OVERDUE_LINE)
 
 
 # ---------------------------------------------------------------------------
@@ -439,6 +447,95 @@ def test_legacy_note_falls_back_to_tier_agency_card_and_last_state(campaign: Pat
         "  Hard boundary: never betrays kin",
         "  Routine and availability: mornings at the forge",
         "  State On Day 72: Back in town; the mill burned.",
+    ]
+
+
+CORE_BLOCK = "## Core\n\n- Status: alive\n- Kin: Ilse (sister, dead)\n- Role: smith\n\n"
+
+
+def test_a_core_view_keeps_the_hard_boundary_and_a_voice_rhythm_without_speaks(campaign: Path) -> None:
+    path = _write(campaign / "characters" / "corran.md", LEGACY_NOTE.replace("## Agency Card", CORE_BLOCK + "## Agency Card"))
+    _present(campaign, "Corran")
+    assert _block(_build(campaign), "Corran") == [
+        "- Corran (characters/corran.md)",
+        "  Status: alive",
+        "  Kin: Ilse (sister, dead)",
+        "  Role: smith",
+        "  Voice rhythm: clipped",
+        "  Hard boundary: never betrays kin",
+        "  State On Day 72: Back in town; the mill burned.",
+    ]
+    _replace(path, "- Role: smith\n", '- Role: smith\n- Speaks: Common, gruff; calls Mira "girl"\n')
+    delta = _build(campaign)
+    # Speaks now says how he talks, so the voice rhythm leaves the view; it is
+    # still on the card, so it is not reported as gone.
+    assert _block(delta, "Corran") == [
+        "- Corran (characters/corran.md): changed lines only",
+        "  Status: alive",
+        "  Kin: Ilse (sister, dead)",
+        '  Speaks: Common, gruff; calls Mira "girl"',
+    ]
+    assert scene_capsule.GONE_NOTE not in delta
+
+
+def test_a_legacy_note_that_gains_a_core_block_is_shown_whole_once(campaign: Path) -> None:
+    path = _write(campaign / "characters" / "corran.md", LEGACY_NOTE)
+    _present(campaign, "Corran")
+    _build(campaign)
+    # The curator adds a Core block and folds the stacked states into one Now section.
+    _replace(path, "## Agency Card", CORE_BLOCK + "## Agency Card")
+    _replace(path, "## Current State (day 22)\n\nGuarding the mill.\n\n## State On Day 72\n", "## Now\n")
+    delta = _build(campaign)
+    assert _is_delta(delta)
+    assert _block(delta, "Corran") == [
+        "- Corran (characters/corran.md)",
+        "  Status: alive",
+        "  Kin: Ilse (sister, dead)",
+        "  Role: smith",
+        "  Voice rhythm: clipped",
+        "  Hard boundary: never betrays kin",
+        "  Now: Back in town; the mill burned.",
+    ]
+    assert scene_capsule.GONE_NOTE not in delta  # Tier, Social tactic, and Routine are still on the card
+    assert _build(campaign).splitlines()[1:] == ["Delta: nothing changed since the last capsule."]
+
+
+def test_a_note_that_loses_its_core_block_marks_only_fields_gone_from_the_note(campaign: Path) -> None:
+    path = _write(campaign / "characters" / "corran.md", LEGACY_NOTE.replace("## Agency Card", CORE_BLOCK + "## Agency Card"))
+    _present(campaign, "Corran")
+    _build(campaign)
+    _replace(path, CORE_BLOCK, "## Notes\n\n- Role: smith\n\n")  # the role is still written down
+    assert _block(_build(campaign), "Corran") == [
+        "- Corran (characters/corran.md)",
+        "  Tier: T3",
+        "  Voice rhythm: clipped",
+        "  Social tactic: flattery",
+        "  Hard boundary: never betrays kin",
+        "  Routine and availability: mornings at the forge",
+        "  State On Day 72: Back in town; the mill burned.",
+        "  Kin: (no longer recorded)",
+        "  Status: (no longer recorded)",
+    ]
+
+
+def test_a_note_that_cannot_be_read_claims_nothing_gone(campaign: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _character(campaign, "n1", "Sedra Vold", core={"Status": "alive", "Kin": "Tavin (brother, dead)"}, now="Waits at the landing.")
+    _present(campaign, "Sedra Vold")
+    _build(campaign)
+
+    def unreadable(*args: Any, **kwargs: Any) -> Any:
+        raise OSError("the note is locked")
+
+    monkeypatch.setattr(scene_capsule, "_relation_rows", unreadable)
+    delta = _build(campaign)
+    assert _block(delta, "Sedra Vold") == ["- Sedra Vold (characters/n1.md)", "  (could not be read this turn)"]
+    assert scene_capsule.GONE_NOTE not in delta
+    monkeypatch.undo()
+    assert _block(_build(campaign), "Sedra Vold") == [
+        "- Sedra Vold (characters/n1.md)",
+        "  Status: alive",
+        "  Kin: Tavin (brother, dead)",
+        "  Now: Waits at the landing.",
     ]
 
 
@@ -1022,6 +1119,92 @@ def test_staged_curation_is_listed_by_id(campaign: Path) -> None:
     assert "r0-done" not in text and "r0-stale" not in text
     (folder / "r0-abc123.json").unlink()
     assert "[curation] nothing staged." in _build(campaign)
+
+
+def _run_record(campaign: Path, at: Any, **outcomes: Any) -> None:
+    """The prompt hook's record of its latest curation run."""
+
+    _write(_runtime(campaign) / "curation" / "last_result.json", json.dumps({"at": at, **outcomes}))
+
+
+def test_a_curation_run_is_reported_once_in_the_capsule_that_follows_it(campaign: Path) -> None:
+    folder = _runtime(campaign) / "curation"
+    _write(folder / "fold-2.json", "{}\n")
+    assert "[curation] staged, waiting to be applied: fold-2" in _build(campaign)
+    _run_record(
+        campaign,
+        "2026-10-20T10:00:00.000000Z",
+        applied=[{"curation_id": "fold-0", "files": ["characters/witness.md"]}],
+        rejected=[
+            {"curation_id": "fold-1", "reasons": ["target changed since the proposal was written: characters/witness.md", "a second reason"]},
+            {"curation_id": "fold-1", "reasons": ["the same id again"]},
+        ],
+        deferred=[{"curation_id": "fold-2", "reason": "commit_rolled_back: the note was locked"}],
+    )
+    # The record sits in the staging folder but is not listed as a proposal.
+    assert _build(campaign).splitlines()[1:] == [
+        "Delta: curation changed; other sections are as last shown.",
+        "[curation] rejected fold-1: target changed since the proposal was written: characters/witness.md",
+        "[curation] deferred, still waiting to be applied: fold-2",
+    ]
+    assert _build(campaign).splitlines()[1:] == ["Delta: nothing changed since the last capsule."]
+    scene_capsule.reset(campaign, SESSION)  # a compaction does not bring the notice back
+    full = _build(campaign)
+    assert not _is_delta(full) and "[curation] staged, waiting to be applied: fold-2" in full
+    assert "rejected" not in full and "deferred" not in full
+
+    (folder / "fold-2.json").unlink()  # the next run filed it under rejected/
+    _run_record(campaign, "2026-10-20T11:00:00.000000Z", rejected=[{"curation_id": "fold-2", "reasons": ["unknown op 'merge'"]}])
+    assert _build(campaign).splitlines()[1:] == [
+        "Delta: curation changed; other sections are as last shown.",
+        "[curation] rejected fold-2: unknown op 'merge'",
+        "[curation] nothing staged.",
+    ]
+
+
+def test_a_long_rejection_reason_is_clipped(campaign: Path) -> None:
+    reason = "target changed since the proposal was written: " + ", ".join(f"characters/person_{n:02d}.md" for n in range(20))
+    _run_record(campaign, "t1", rejected=[{"curation_id": "fold-3", "reasons": [reason]}])
+    head = "[curation] rejected fold-3: "
+    shown = next(line for line in _build(campaign).splitlines() if line.startswith(head))[len(head) :]
+    assert len(shown) <= scene_capsule.REASON_CHARS and shown.endswith("…")
+    assert reason.startswith(shown[:-1])
+
+
+def test_a_new_session_does_not_repeat_a_run_another_session_showed(campaign: Path) -> None:
+    _build(campaign, session="a")
+    _build(campaign, session="b")
+    _run_record(campaign, "t1", rejected=[{"curation_id": "fold-4", "reasons": ["stale"]}])
+    assert "[curation] rejected fold-4: stale" in _build(campaign, session="a")
+    assert "[curation] rejected fold-4: stale" in _build(campaign, session="b")  # it had not seen this run yet
+    assert "fold-4" not in _build(campaign, session="c")  # a new session: already shown elsewhere
+    _run_record(campaign, "t2", rejected=[{"curation_id": "fold-5", "reasons": ["stale"]}])
+    assert "[curation] rejected fold-5: stale" in _build(campaign, session="d")  # nobody has shown this run
+
+
+def test_a_run_notice_cut_off_by_the_size_cap_waits_for_the_next_capsule(campaign: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _build(campaign)
+    _run_record(campaign, "t1", rejected=[{"curation_id": "fold-7", "reasons": ["stale"]}])
+    monkeypatch.setattr(scene_capsule, "DELTA_MAX", 150)
+    assert "[curation] rejected fold-7: stale" not in _build(campaign).splitlines()
+    monkeypatch.undo()
+    assert "[curation] rejected fold-7: stale" in _build(campaign).splitlines()
+    assert "fold-7" not in _build(campaign)
+
+
+def test_a_broken_or_partial_run_record_never_raises(campaign: Path) -> None:
+    record = _runtime(campaign) / "curation" / "last_result.json"
+    _write(record, b"\xff{ not json")
+    assert "[curation]" not in _build(campaign)
+    _write(record, "[1, 2]")
+    assert "[curation]" not in _build(campaign)
+    _run_record(campaign, "t1", applied=[{"curation_id": "fold-6", "files": ["characters/witness.md"]}])
+    assert "[curation]" not in _build(campaign)  # an applied proposal needs no notice
+    rejected = [{"curation_id": 7}, "x", {"curation_id": "fold-8", "reasons": "a plain reason"}, {"curation_id": "fold-9", "reasons": []}]
+    _write(record, json.dumps({"rejected": rejected, "deferred": {"curation_id": "fold-10"}}))  # no `at`
+    lines = [line for line in _build(campaign).splitlines() if line.startswith("[curation]")]
+    assert lines == ["[curation] rejected fold-8: a plain reason", "[curation] rejected fold-9"]
+    assert "fold-8" not in _build(campaign)  # without `at` the record itself identifies the run
 
 
 # ---------------------------------------------------------------------------

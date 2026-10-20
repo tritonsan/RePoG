@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import re
 import shutil
@@ -671,3 +672,192 @@ def test_call_cli_output_stays_ascii_with_turkish_text(scaled: Path, capsys: pyt
     receipt = json.loads(out)
     assert receipt["roll_id"] == "tuzak-çözme"
     assert receipt["call"]["actor"] == "Işıl" and receipt["call"]["stakes"] == "İpler kopar ve ışık söner"
+
+
+# ---------------------------------------------------------------------------
+# Play-simulation gaps: the difficulty's reason, accepted keys, request files
+# ---------------------------------------------------------------------------
+
+
+REASON = "the bell warned the guards, so they watch the alley"
+
+
+def test_reason_is_part_of_the_canonical_call_and_the_receipt(scaled: Path) -> None:
+    first = roll_dice.roll_call(scaled, {"roll_id": "alley", "call": _call(reason=f"  {REASON} ")}, now=NOW)
+    assert first["call"]["reason"] == REASON
+    (line,) = _store_lines(scaled)
+    assert json.loads(line)["call"]["reason"] == REASON
+    assert roll_dice.find_receipt(scaled, "alley")["call"]["reason"] == REASON
+    # The same reason repeats the receipt; another reason, or none, is another call.
+    assert roll_dice.roll_call(scaled, {"roll_id": "alley", "call": _call(reason=REASON)})["repeat"] is True
+    for changed in (_call(reason="the alley is dark"), _call()):
+        with pytest.raises(roll_dice.RollCallError, match="different call") as caught:
+            roll_dice.roll_call(scaled, {"roll_id": "alley", "call": changed})
+        assert caught.value.category == "roll_id_conflict"
+    assert len(_store_lines(scaled)) == 1
+
+
+def test_a_null_reason_is_absent_from_the_canonical_call() -> None:
+    plain = roll_dice.normalize_call(_call())
+    assert "reason" not in plain
+    assert roll_dice.normalize_call(_call(reason=None)) == plain
+
+
+# Dice the 0.3.0 call mode rolled before a call could carry a reason; a call
+# without one must keep exactly these receipts (same campaign id and revision).
+PINNED_2D20 = {"pin-0": [12, 20], "pin-1": [12, 17], "pin-2": [15, 5], "pin-3": [12, 2], "pin-4": [17, 3], "pin-5": [12, 2]}
+
+
+def test_a_call_without_a_reason_rolls_as_before(tmp_path: Path) -> None:
+    root = tmp_path / "campaign"
+    root.mkdir()
+    (root / "current_state.yaml").write_text("campaign_id: test_campaign\ncontinuity_revision: 0\n", encoding="utf-8")
+
+    def dice(call: dict) -> dict[str, list[int]]:
+        rolled = {r: roll_dice.roll_call(root, {"roll_id": r, "die": "2d20", "call": call})["dice"] for r in PINNED_2D20}
+        roll_dice.receipts_path(root).unlink()
+        return rolled
+
+    assert dice(_call()) == PINNED_2D20
+    assert dice(_call(reason=None)) == PINNED_2D20
+    # A reason is part of the call, so it is part of the seed.
+    assert dice(_call(reason=REASON)) != PINNED_2D20
+
+
+@pytest.mark.parametrize(
+    "reason, fragment",
+    [
+        ("r" * 201, "call.reason must be at most 200 characters"),
+        ("", "call.reason must be non-empty text"),
+        ("  ", "call.reason must be non-empty text"),
+        (7, "call.reason must be non-empty text"),
+        ("bell\nalley", "call.reason must be one line"),
+        ("bell alley", "call.reason must be one line"),
+        ("bell\ud800", "call.reason holds a lone surrogate"),
+    ],
+)
+def test_reason_is_one_short_line(scaled: Path, reason: object, fragment: str) -> None:
+    with pytest.raises(roll_dice.RollCallError) as caught:
+        roll_dice.roll_call(scaled, {"roll_id": "why", "call": _call(reason=reason)})
+    assert caught.value.category == "input_invalid"
+    assert fragment in str(caught.value)
+    assert _store_lines(scaled) == []
+
+
+def test_a_reason_of_200_characters_is_accepted(scaled: Path) -> None:
+    result = roll_dice.roll_call(scaled, {"roll_id": "why", "call": _call(reason="r" * roll_dice.MAX_REASON)})
+    assert roll_dice.MAX_REASON == 200 and len(result["call"]["reason"]) == 200
+
+
+def test_unknown_key_errors_list_the_accepted_keys(scaled: Path) -> None:
+    # Regression: a GM declaring "the difficulty with a one-line reason" got a bare refusal.
+    with pytest.raises(roll_dice.RollCallError) as caught:
+        roll_dice.roll_call(scaled, {"roll_id": "a", "call": _call(difficulty_reason="alert guards")})
+    assert caught.value.category == "input_invalid"
+    assert str(caught.value) == (
+        "call has unknown keys: difficulty_reason; accepted keys: actor, axis, value, difficulty, stakes (required); "
+        "factors, reason (optional)"
+    )
+    assert all(key in str(caught.value) for key in roll_dice.CALL_KEYS)
+    with pytest.raises(roll_dice.RollCallError) as caught:
+        roll_dice.roll_call(scaled, {"roll_id": "a", "call": _call(), "note": "x"})
+    assert str(caught.value) == "unknown keys: note; accepted keys: roll_id, call (required); die (optional)"
+
+
+def test_input_file_matches_input_json_in_both_modes(scaled: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    legacy = tmp_path / "legacy.json"
+    legacy.write_bytes(json.dumps({"expression": "2d6+1", "seed": "turn-12-lock", "roll_id": "turn-12-lock"}).encode("utf-8"))
+    assert roll_dice.main(["--input-file", str(legacy)]) == 0
+    assert capsys.readouterr().out == LEGACY_LOCK
+
+    # Apostrophes and Turkish letters in the prose, a BOM, and CRLF: nothing for a shell to quote.
+    request = {
+        "roll_id": "alley",
+        "call": _call(actor="Işıl", stakes="the guard's dog hears Işıl's step", reason="the watch's bell rang"),
+    }
+    path = tmp_path / "call.json"
+    text = json.dumps(request, ensure_ascii=False, indent=2).replace("\n", "\r\n")
+    path.write_bytes(b"\xef\xbb\xbf" + text.encode("utf-8"))
+    assert roll_dice.main(["--campaign", str(scaled), "--input-file", str(path)]) == 0
+    from_file = capsys.readouterr().out
+    assert roll_dice.main(["--campaign", str(scaled), "--input-json", json.dumps(request)]) == 0
+    assert capsys.readouterr().out == from_file.replace('"repeat": false', '"repeat": true')
+    receipt = json.loads(from_file)
+    assert receipt["call"]["stakes"] == "the guard's dog hears Işıl's step"
+    assert receipt["call"]["reason"] == "the watch's bell rang"
+    assert from_file.isascii()
+
+
+def test_input_file_dash_reads_standard_input_as_utf8_bytes(
+    scaled: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    request = {"roll_id": "stdin", "call": _call(actor="Işıl", stakes="the guard's dog barks")}
+    data = b"\xef\xbb\xbf" + json.dumps(request, ensure_ascii=False).encode("utf-8")
+    # The text layer's code page must never be used: cp1252 would garble the Turkish letters.
+    monkeypatch.setattr(sys, "stdin", io.TextIOWrapper(io.BytesIO(data), encoding="cp1252"))
+    assert roll_dice.main(["--campaign", str(scaled), "--input-file", "-"]) == 0
+    receipt = json.loads(capsys.readouterr().out)
+    assert receipt["roll_id"] == "stdin" and receipt["call"]["actor"] == "Işıl"
+
+
+def test_input_file_dash_reads_a_real_pipe(scaled: Path) -> None:
+    request = {"roll_id": "pipe", "call": _call(actor="Işıl", stakes="the guard's dog barks", reason="it's dark")}
+    completed = subprocess.run(
+        [sys.executable, "-B", roll_dice.__file__, "--campaign", str(scaled), "--input-file", "-"],
+        input=b"\xef\xbb\xbf" + json.dumps(request, ensure_ascii=False).encode("utf-8"),
+        capture_output=True,
+        timeout=60,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr.decode("utf-8", "replace")
+    receipt = json.loads(completed.stdout)
+    assert receipt["call"]["actor"] == "Işıl" and receipt["call"]["reason"] == "it's dark"
+    assert roll_dice.find_receipt(scaled, "pipe")["band"] == receipt["band"]
+
+
+def test_input_file_failures_keep_each_mode_s_shape(
+    scaled: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    missing = tmp_path / "missing.json"
+    assert roll_dice.main(["--input-file", str(missing)]) == 2
+    legacy = json.loads(capsys.readouterr().out)
+    assert set(legacy) == {"ok", "error"} and legacy["ok"] is False
+    assert legacy["error"].startswith(f"cannot read --input-file {missing}: ")
+    assert roll_dice.main(["--campaign", str(scaled), "--input-file", str(missing)]) == 2
+    failure = json.loads(capsys.readouterr().out)
+    assert set(failure) == {"ok", "failure_category", "failure_reason"}
+    assert failure["failure_category"] == "io_error"
+
+    cp1254 = tmp_path / "cp1254.json"
+    body = json.dumps({"roll_id": "x", "call": _call(actor="Işıl")}, ensure_ascii=False).encode("cp1254")
+    first_bad = body.index("ş".encode("cp1254"))
+    cp1254.write_bytes(body)
+    assert roll_dice.main(["--campaign", str(scaled), "--input-file", str(cp1254)]) == 2
+    failure = json.loads(capsys.readouterr().out)
+    assert failure["failure_category"] == "input_invalid"
+    assert failure["failure_reason"] == (
+        f"--input-file {cp1254} is not valid UTF-8 (byte {first_bad}); save the request as UTF-8 and retry"
+    )
+    # With a byte order mark the offset still counts from the start of the file.
+    cp1254.write_bytes(b"\xef\xbb\xbf" + body)
+    assert roll_dice.main(["--input-file", str(cp1254)]) == 2
+    assert f"is not valid UTF-8 (byte {first_bad + 3});" in json.loads(capsys.readouterr().out)["error"]
+
+    # A NUL in the path is a ValueError from the OS layer, never a traceback.
+    assert roll_dice.main(["--campaign", str(scaled), "--input-file", "bad\0name.json"]) == 2
+    failure = json.loads(capsys.readouterr().out)
+    assert failure["failure_category"] == "io_error" and failure["failure_reason"].startswith("cannot read --input-file bad")
+    assert _store_lines(scaled) == []
+
+
+def test_cli_takes_exactly_one_input_source(scaled: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    path = tmp_path / "request.json"
+    path.write_text(json.dumps({"roll_id": "x", "call": _call()}), encoding="utf-8")
+    for argv in (["--campaign", str(scaled)], ["--input-json", "{}", "--input-file", str(path)]):
+        with pytest.raises(SystemExit) as exited:
+            roll_dice.main(argv)
+        assert exited.value.code == 2
+    errors = capsys.readouterr().err
+    assert "one of the arguments --input-json --input-file is required" in errors
+    assert "not allowed with argument" in errors
+    assert _store_lines(scaled) == []

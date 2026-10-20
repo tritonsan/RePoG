@@ -23,6 +23,9 @@ IMPORTANT_TIER_RE = re.compile(r"(?im)^(?:-\s*)?Tier:\s*T[23]\b")
 CORE_HEADING_RE = re.compile(r"(?m)^##[ \t]+Core[ \t]*$")
 STATUS_RE = re.compile(r"(?im)^-[ \t]*Status:[ \t]*(\S.*?)[ \t]*$")
 TITLE_RE = re.compile(r"(?m)^#[ \t]+(.+?)[ \t]*$")
+# The runtime reader takes `runtime:` as a block of `key: value` lines only; an
+# inline mapping (`runtime: {scene_capsule: off}`) would be ignored silently.
+INLINE_RUNTIME_RE = re.compile(r"(?m)^runtime:[ \t]*([^\s#].*?)[ \t]*$")
 
 
 def resolution(profile_text: str) -> dict[str, Any] | None:
@@ -44,6 +47,15 @@ def stat_range(profile_text: str) -> tuple[int, int]:
 def check_profile(profile_text: str, path: Path, add: Add) -> None:
     """Runtime switches, play language, and the dice scale's odds."""
 
+    inline = INLINE_RUNTIME_RE.search(profile_text)
+    if inline is not None and inline.group(1).split(" #", 1)[0].strip() not in {"{}", "null", "Null", "NULL", "~"}:
+        add(
+            "error",
+            "runtime_block_inline",
+            f"runtime: holds the inline value '{inline.group(1)[:80]}', which the hooks ignore; "
+            "write each setting on its own indented `key: value` line under runtime:.",
+            path,
+        )
     runtime = block_scalars(profile_text, "runtime")
     for key, value in runtime.items():
         allowed = RUNTIME_ALLOWED.get(key)
@@ -121,7 +133,8 @@ def check_notes(campaign: Path, present_npcs: list[str], add: Add) -> None:
                 note,
             )
     if missing:
-        shown = ", ".join(missing[:6]) + (f", and {len(missing) - 6} more" if len(missing) > 6 else "")
+        # Name them all (within reason): the curator packet needs every target.
+        shown = ", ".join(missing[:40]) + (f", and {len(missing) - 40} more" if len(missing) > 40 else "")
         add(
             "warning",
             "note_core_missing",

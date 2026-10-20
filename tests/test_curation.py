@@ -432,6 +432,7 @@ def test_staging_path_and_guard(campaign: Path) -> None:
     assert not curation.is_staging_path(campaign, campaign / "characters" / "witness.md")
     assert not curation.is_staging_path(campaign, campaign / ".repog-runtime" / "lint_last.json")
     assert not curation.is_staging_path(campaign, folder / ".." / "capsule_state.json")
+    assert not curation.is_staging_path(campaign, folder / curation.RESULT_FILE)
 
 
 def test_staging_path_rejects_a_bad_id(campaign: Path) -> None:

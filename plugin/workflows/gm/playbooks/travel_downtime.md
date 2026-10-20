@@ -84,23 +84,31 @@ change it produced.
    - each significant relationship's change, weighted by what `player.md` says
      the Player values;
    - each active threat, faction, or domain's move: due domains go through one
-     `python tools/world_pulse.py` call with a `domains` batch (at most 12,
-     stable evaluation ids, so a redraft returns the same envelopes); clocks
-     tick through `advance_time`, and a clock that fills reports its `on_fill`;
+     `python tools/world_pulse.py --input-file -` call with a `domains` batch
+     (at most 12, stable evaluation ids, so a redraft returns the same
+     envelopes). `elapsed_steps` counts the domain's own step: one week unless
+     its `world_dynamics.md` entry names another unit. Clocks tick only through
+     `advance_time` in the step 3 commit, so count from each clock's `tick`
+     which ones fill and draft their `on_fill`; a threat that starts during the
+     skip gets its clock through `add_clock`;
    - closures: a threat closes only on evidence the record names (a roll id, a
-     Player decision, or a played scene), never silently;
+     Player decision, or a played scene), never silently; `remove_clock`
+     retires its clock;
    - the ledger per period, where `mechanics_state.json` tracks it: one
-     `settle_obligation` per period key `<period_label>:<n>`, with n counted on
-     the campaign calendar rather than within this skip, so a period already
-     paid is refused instead of charged twice (`add_obligation` records a new
-     recurring cost first);
+     `settle_obligation` for each period the skip covers. Derive the period key
+     from `fictional_time.day` so it is stable, such as `week:<day // 7>` or
+     `month:<day // 30>`, never from a count within this skip; a period already
+     paid is then refused instead of charged twice. An obligation is paid from
+     a resource, or from an inventory item (`item_id`) when the money is kept
+     as one; `add_obligation` records a new recurring cost first;
    - projects, pending rewards, and whether the skip answers or forecloses the
      act's question.
 2. Wait for the Player's approval or edits, and redraft until approved. An
    edit may change what the character did; world moves change only where that
    causes them to.
-3. Commit the approved skip in one `commit-durable` call: its owner mutations,
-   mechanic operations (at most 16 per commit), every roll cited or voided, and
+3. Commit the approved skip in one `commit-durable` call: its owner mutations
+   (the new `fictional_time.day` among them), mechanic operations (at most 16
+   per commit), every roll cited or voided, and
    a checkpoint with scene mode `downtime` (boundary `scene_checkpoint` unless a
    full distill is due). Narrate the arrival scene with the scene-entry
    playbook; `runtime.persistence_order` sets whether the reply or the commit

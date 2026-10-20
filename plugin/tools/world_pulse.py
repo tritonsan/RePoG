@@ -3,6 +3,8 @@
 One request names one domain.  A time skip that touches several domains can
 send them together as ``{"domains": [<request>, ...]}`` (at most 12); each
 result is identical to the matching single-domain call and keeps its order.
+The request is given as ``--input-json`` or read with ``--input-file`` from a
+UTF-8 file (or standard input for ``-``), so prose needs no shell quoting.
 """
 
 from __future__ import annotations
@@ -12,11 +14,13 @@ import hashlib
 import json
 import random
 import sys
+from pathlib import Path
 from typing import Any
 
 
 DIRECTIONS = ("advance", "setback", "opportunity", "complication", "stasis")
 MAX_BATCH_DOMAINS = 12
+UTF8_BOM = b"\xef\xbb\xbf"
 
 
 def _fail(message: str) -> dict[str, Any]:
@@ -162,13 +166,54 @@ def handle_request(payload: Any) -> dict[str, Any]:
     return generate_pulse(payload)
 
 
+def read_input_file(path: str) -> str:
+    """The request text from a UTF-8 file, or from standard input when ``path`` is "-".
+
+    Read as bytes and decoded strictly as UTF-8 with a leading byte order mark
+    dropped, never in the console or locale code page.  A failure raises
+    ValueError with the message for the CLI's error envelope.
+    """
+    label = "standard input" if path == "-" else f"--input-file {path}"
+    if path == "-":
+        stream = getattr(sys.stdin, "buffer", None)
+        if stream is None:
+            raise ValueError("standard input is not available; pass --input-file PATH or --input-json")
+        read = stream.read
+    else:
+        read = Path(path).read_bytes
+    try:
+        data = read()
+    except (OSError, ValueError) as exc:  # ValueError: a NUL in the path, or a closed stream
+        raise ValueError(f"cannot read {label}: {getattr(exc, 'strerror', None) or exc}") from None
+    # Strip the mark here rather than with utf-8-sig, which counts error offsets after it.
+    offset = len(UTF8_BOM) if data.startswith(UTF8_BOM) else 0
+    try:
+        return data[offset:].decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(
+            f"{label} is not valid UTF-8 (byte {offset + exc.start}); save the request as UTF-8 and retry"
+        ) from None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input-json", required=True, help="World pulse input as one JSON object.")
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--input-json", help="World pulse input as one JSON object.")
+    source.add_argument(
+        "--input-file",
+        metavar="PATH",
+        help="Read the input from a UTF-8 file, or from standard input when PATH is -, so prose needs no shell quoting.",
+    )
     args = parser.parse_args(argv)
 
     try:
-        payload = json.loads(args.input_json)
+        raw = args.input_json if args.input_file is None else read_input_file(args.input_file)
+    except ValueError as exc:
+        print(json.dumps(_fail(str(exc)), indent=2))
+        return 2
+
+    try:
+        payload = json.loads(raw)
     except RecursionError:
         print(json.dumps(_fail("invalid JSON: it is nested too deeply"), indent=2))
         return 2

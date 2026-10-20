@@ -11,8 +11,9 @@ python tools/check_state.py campaign --scope full
 python tools/check_dashboard.py campaign/dashboard/dashboard_state.json
 ```
 
-`hot` is the bounded per-durable-turn check used by Fast and Balanced. `full`
-is the default when `--scope` is omitted and is required at full distill,
+`hot` is a bounded diagnostic for an explicit check; play adds no per-turn
+check because the writer validates every durable commit. `full` is the
+default when `--scope` is omitted and is required at full distill,
 session stop, closure, advancement, migration, and audit boundaries. A scene
 checkpoint alone persists its small handoff contract and does not force a full
 distill.
@@ -109,9 +110,12 @@ work, while ambiguous recovery blocks further mutation.
 
 `commit-checkpoint` is only for a resumability-only handoff with no new durable
 fiction; it updates the scene frame and optional active-cast handoff without a
-continuity revision. A successful durable response with
-`full_distill_required: true` has safely stored current truth but sets
-`narration_allowed: false` until the routed full distill completes. Neither
+continuity revision. It may also edit `directives.md` and `glossary.md`, so an
+OOC-only table rule needs no fictional revision. A successful durable response
+with `full_distill_required: true` has safely stored current truth but sets
+`narration_allowed: false` until the routed full distill completes (under
+`narrate_then_commit` the reply has already gone out, and the distill follows
+it in the same turn). Neither
 command decides whether a turn was soft, what happened in the fiction, which
 facts matter, or what the Player should be told.
 
@@ -124,9 +128,17 @@ the expected revision is neither cited nor listed in the payload's `void_rolls`
 are marked consumed after the commit. Until a campaign has a receipt store, a
 free-text `roll_reference` without `outcome` passes with a `roll_unrecorded`
 warning. A checkpoint may use scene mode `downtime`; a kind containing
-`directive` requires `directives.md`, and `glossary.md` is an owner as well.
-`create_text` for a new entity note adds advisory `name_common_word` and
-`name_near_duplicate` warnings from `name_check.py`.
+`directive` requires `directives.md`, and `glossary.md` is an owner as well
+(either starts from the shipped template when missing).
+
+`create_text` for a new entity note adds advisory warnings that never block the
+commit. `name_common_word` and `name_near_duplicate` (from `name_check.py`)
+compare the new title, in the play language, with the other note titles, the
+`creation_ledger.md` entries, and the names in `active_cast.md` and
+`relationship_map.md`. A new character note also gets a `note_incomplete`
+warning for each gap the full check's character-note rules find, such as a
+missing Power Band or missing T2/T3 Agency Card fields; a missing `## Core`
+block shows up only in the full check, as `note_core_missing`.
 
 `commit-curation` applies staged curator proposals (see Boundary Curation).
 Each staged file is one transaction, applied whole only while every target
@@ -316,48 +328,68 @@ The player-facing check reads exact unrevealed names from
 python tools/world_pulse.py --input-json "{\"evaluation_id\":\"harbor-trade-rev-12\",\"domain\":\"harbor_trade\",\"elapsed_steps\":3,\"volatility\":2,\"pressure\":1}"
 python tools/roll_dice.py --input-json "{\"expression\":\"2d6+1\",\"seed\":\"turn-12-lock\",\"roll_id\":\"turn-12-lock\"}"
 python tools/resolve_mechanic.py campaign/mechanics_state.json --input-json "{\"operation_id\":\"turn-12-fire\",\"operation_sequence\":1,\"expected_revision\":0,\"expected_continuity_revision\":0,\"resulting_continuity_revision\":1,\"operation\":\"use_ability\",\"actor_id\":\"player\",\"action_id\":\"fire_spell\"}"
-python tools/world_pulse.py --input-json "{\"domains\":[{\"evaluation_id\":\"skip-r41-harbor\",\"domain\":\"harbor_trade\",\"elapsed_steps\":3,\"volatility\":2,\"pressure\":1},{\"evaluation_id\":\"skip-r41-guild\",\"domain\":\"guild_feud\",\"elapsed_steps\":3,\"volatility\":1,\"pressure\":3}]}"
+python tools/world_pulse.py --input-file - <<'JSON'
+{"domains": [
+ {"evaluation_id": "skip-r41-harbor", "domain": "harbor_trade", "elapsed_steps": 3, "volatility": 2, "pressure": 1},
+ {"evaluation_id": "skip-r41-guild", "domain": "guild_feud", "elapsed_steps": 3, "volatility": 1, "pressure": 3}]}
+JSON
 python tools/resolve_mechanic.py campaign/mechanics_state.json --input-json "{\"operation_id\":\"skip-r41-wages-14\",\"operation_sequence\":8,\"expected_revision\":7,\"expected_continuity_revision\":41,\"resulting_continuity_revision\":42,\"operation\":\"settle_obligation\",\"obligation_id\":\"crew_wages\",\"period\":\"week:14\"}"
 ```
 
 An `evaluation_id` gives the same world-pulse envelope on every retry. A
 legacy explicit integer `seed` remains accepted. A `domains` batch (at most 12)
 returns `{"ok": true, "results": [...]}` in request order, each result identical
-to its single-domain call; one invalid entry fails the batch. Without
-`--campaign`, `roll_dice.py` rolls one bounded `NdM+/-K` expression and returns
-its seed for reproduction; call mode is described under Roll Calls And Odds.
+to its single-domain call; one invalid entry fails the batch. `elapsed_steps`
+counts the domain's own step: one week unless its `world_dynamics.md` entry
+names another unit. Without `--campaign`, `roll_dice.py` rolls one bounded
+`NdM+/-K` expression and returns its seed for reproduction; call mode is
+described under Roll Calls And Odds. `world_pulse.py` and `roll_dice.py` take
+the request as `--input-json`, from a UTF-8 file with `--input-file PATH`, or
+from standard input with `--input-file -`, so a quoted heredoc keeps prose
+apostrophes clear of shell quoting. `resolve_mechanic.py` takes only
+`--input-json`.
 
 `resolve_mechanic.py` handles only mechanics explicitly configured by the
 campaign. Schema v2 rejects numeric strings and floats, requires a monotonic
 operation sequence, checks both ledger and campaign continuity revisions, and
-supports resources, configured abilities, inventory, conditions, clocks, and
-time. Its operation registry does not discard old ids, so an operation cannot
-become valid again after an arbitrary history limit. It never interprets what
-those changes mean in the fiction. A schema-v1
-ledger is migrated on its next successful operation; after migration, callers
-must supply the sequence and expected revisions shown above.
+supports resources, configured abilities, inventory, conditions, clocks,
+obligations, and time. Its operation registry does not discard old ids, so an
+operation cannot become valid again after an arbitrary history limit. It never
+interprets what those changes mean in the fiction. A schema-v1 ledger is
+migrated on its next successful operation; after migration, callers must
+supply the sequence and expected revisions shown above.
 
 For downtime, a clock may also carry `owner`, `tick: {unit, amount}`, and
-`on_fill`. `advance_time` ticks every clock whose tick unit matches (amount
-times steps, capped at the maximum) and marks the change `filled`, with its
-`on_fill` line, when the clock reaches its maximum. `add_obligation`
-(`obligation_id`, `actor_id`, `resource_id`, `amount`, `period_label`) records a
-recurring cost such as wages or rent; `settle_obligation` (`obligation_id`,
-`period`, optional `amount`) spends it from the actor's resource once per
-period key, so settling a period again is refused by name. During play these
-run as `mechanic_operations` inside `commit-durable`, which fills in the
-sequence and revisions.
+`on_fill`. `add_clock` (`clock_id`, `maximum`, optional `current`, `owner`,
+`tick`, `on_fill`) starts a clock during play, and `remove_clock` (`clock_id`)
+retires a resolved one, reporting the clock it removed. `advance_time` ticks
+every clock whose tick unit matches (amount times steps, capped at the maximum)
+and marks the change `filled`, with its `on_fill` line, when the clock reaches
+its maximum. `add_obligation` (`obligation_id`, `actor_id`, exactly one of
+`resource_id` or `item_id`, `amount`, `period_label`) records a recurring cost
+such as wages or rent, paid from a resource or from an inventory item counted
+by quantity, such as coins kept in a purse. `settle_obligation`
+(`obligation_id`, `period`, optional `amount`) spends it from that holding once
+per period key, so settling a period again is refused by name; keys compare
+without case, so `Week:3` and `week:3` are one period. During play these run as
+`mechanic_operations` inside `commit-durable`, which fills in the sequence and
+revisions.
 
 ## Roll Calls And Odds
 
 ```bash
-python tools/roll_dice.py --campaign campaign --input-json "{\"roll_id\":\"gate-shove\",\"call\":{\"actor\":\"Mira\",\"axis\":\"might\",\"value\":3,\"difficulty\":6,\"factors\":[{\"label\":\"crowbar\",\"modifier\":1}],\"stakes\":\"the guards hear the gate give\"}}"
+python tools/roll_dice.py --campaign campaign --input-file - <<'JSON'
+{"roll_id": "gate-shove", "call": {"actor": "Mira", "axis": "might", "value": 3, "difficulty": 6,
+ "reason": "the bar is rusted into its brackets",
+ "factors": [{"label": "crowbar", "modifier": 1}], "stakes": "the guards hear the gate give"}}
+JSON
 python tools/odds.py campaign
 ```
 
 Call mode rolls a check declared before the die is seen. The call needs
 `actor`, `axis`, integer `value` and `difficulty`, and `stakes`; `factors` are
-optional labelled integer modifiers. The die comes from `play_profile.yaml`
+optional labelled integer modifiers, and an optional one-line `reason` says
+why the difficulty is set there. The die comes from `play_profile.yaml`
 `mechanics.resolution`, or from a `die` key in `NdM` form when the campaign
 declares no scale, and a value or difficulty outside the declared ranges is
 refused as `out_of_range`. No seed is accepted: it derives from the campaign
@@ -369,7 +401,10 @@ whose `at_least` the margin reaches is the outcome (`success` at margin 0 or
 more, else `failure`, without a configured scale). When value plus modifiers
 beats the difficulty by `auto_success_margin` or more, the call takes the first
 band without dice (`auto: true`). Receipts append to
-`campaign/.repog-runtime/rolls.jsonl`, newest 2,000 kept.
+`campaign/.repog-runtime/rolls.jsonl`, newest 2,000 kept. `--input-file -`
+reads the request from standard input, so the quoted heredoc above keeps
+apostrophes in the stakes safe; `--input-file PATH` reads a UTF-8 file, and
+`--input-json` takes the request inline.
 
 `odds.py` prints the exact chance of each band for every stat and difficulty
 on the declared scale as Markdown, then its findings: `scale_exhausted` when
@@ -387,12 +422,29 @@ python tools/curation.py validate campaign
 `packet` builds the frozen packet for the `repog-curator` agent: curation id,
 staging path, base revision, play language, targets with reasons, the sha256
 of each target, and every active directive. It refuses `session_log.md`,
-`archive/`, `snapshots/`, hidden folders, and non-Markdown targets, and refuses
-a packet whose staged file is still waiting. The agent writes exactly one file,
-`campaign/.repog-runtime/curation/<curation_id>.json`, holding `curation_id`,
-`base_revision`, `reason`, `base_hashes`, and `mutations` of typed Markdown ops
-without placeholders or `create_text`. `validate` reports each staged file's
-shape, freshness, and a dry run. `rpg_state.py commit-curation` applies it.
+`directives.md`, `archive/`, `snapshots/`, hidden folders, and non-Markdown
+targets, and refuses a packet whose staged file is still waiting. The agent
+writes exactly one file, `campaign/.repog-runtime/curation/<curation_id>.json`,
+holding `curation_id`, `base_revision`, `reason`, `base_hashes`, and `mutations`
+of typed Markdown ops without placeholders or `create_text`. `validate` reports
+each staged file's shape, freshness, and a dry run, and
+`rpg_state.py commit-curation` applies it: a file whose targets changed is
+rejected whole, a commit that rolls back on file I/O leaves the file staged
+(`deferred`), and a file whose exact payload the log already records is only
+filed away (`"repeat": true`), never applied twice. Each applied file logs a
+`### Curation Applied At Revision N` block with its payload hash. Warnings
+`curation_file_not_moved` and `curation_restaged` mean the file stays staged
+for the next run.
+
+The prompt hook records each run that applied, rejected, or deferred a file in
+`campaign/.repog-runtime/curation/last_result.json`. It is a run record, never
+a proposal, so the id `last_result` is reserved and `packet` refuses it. The
+next capsule shows a rejected proposal, with its first reason, or a deferred
+one once.
+
+Roll ids starting with `player:` are reserved for citing the Player's own
+dice, and an inline `runtime: {...}` block is a full-check error
+(`runtime_block_inline`): write the switches one per line.
 
 ## Runtime Layer And Hooks
 
@@ -417,10 +469,13 @@ deleting it loses none. `repog_runtime.py` reads four `play_profile.yaml`
   header with revision, day, location, scene, and persistence order; the cast
   in scope with Core lines, current state, relationship rows, and knowledge;
   which protected facts each does not hold, by fact id; directives in scope;
-  the language card; the last lint summary; open roll receipts; and staged
-  curation. A new or reset session, a changed scene, and every 12th prompt get
-  the full capsule, otherwise only changed sections. `show` prints the next
-  capsule without recording it.
+  the language card; the last lint summary; open roll receipts; staged
+  curation; and, once, what the last curation run rejected or deferred. A new
+  or reset session, a changed scene, and every 12th prompt get the full
+  capsule. Otherwise the header is followed only by what changed: changed
+  sections, and for each person the changed lines plus Status and Kin; a
+  person whose note switches to the `## Core` layout is re-sent whole. `show`
+  prints the next capsule without recording it.
 - `presentation_lint.py` checks the reply that just ended, after it is sent:
   out-of-language lines, backend words, tracker numbers in prose, avoid
   phrases, repeated n-grams, a restated prompt, PC-authoring patterns,

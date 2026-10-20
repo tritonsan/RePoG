@@ -93,7 +93,11 @@ def test_typed_durable_commit_places_text_and_stamps(campaign: Path) -> None:
     baseline = _error_rules(campaign, "hot")
     result = rpg_state.commit_durable(campaign, _durable())
 
-    assert result["ok"] and result["continuity_revision"] == 1 and result["warnings"] == []
+    assert result["ok"] and result["continuity_revision"] == 1
+    # The new T2 note is minimal, so the writer names the fields the full check
+    # will require; nothing else warns.
+    assert result["warnings"] and {item["rule"] for item in result["warnings"]} == {"note_incomplete"}
+    assert any("Power Band" in item["message"] for item in result["warnings"])
     state = _read(campaign, "current_state.yaml")
     assert '  summary: "The witness named the courier."' in state
     assert '    - "Witness"\n    - "Ilse"\n' in state

@@ -9,9 +9,12 @@ Downtime support (all optional, so older v2 ledgers stay valid unchanged):
 - A clock may carry ``owner`` (one line), ``tick: {unit, amount}`` and
   ``on_fill`` (one line).  ``advance_time`` ticks every clock whose tick unit
   matches, capped at its maximum, and marks the change ``filled`` when the
-  clock reaches its maximum.
-- ``obligations`` records recurring costs such as wages or rent.
-  ``settle_obligation`` spends from the actor's resource at most once per
+  clock reaches its maximum.  ``add_clock`` starts a new clock during play and
+  ``remove_clock`` retires a resolved one, reporting the clock it removed.
+- ``obligations`` records recurring costs such as wages or rent, paid from
+  one holding of the actor: a resource (``resource_id``) or an inventory item
+  counted by quantity (``item_id``), such as coins kept in a purse.
+  ``settle_obligation`` spends from that holding at most once per
   period key, so a time skip cannot charge the same wages twice.  A key is
   stored trimmed and NFC-normalised as given, and compared without case or
   compatibility differences: "Week-3", "week-3" and a fullwidth or no-break
@@ -53,8 +56,10 @@ SUPPORTED_OPERATIONS = {
     "set_item_quantity",
     "add_condition",
     "remove_condition",
+    "add_clock",
     "advance_clock",
     "set_clock",
+    "remove_clock",
     "advance_time",
     "add_obligation",
     "settle_obligation",
@@ -114,6 +119,12 @@ def _brief(value: Any) -> str:
     """A bounded repr for error messages about arbitrary input values."""
     text = repr(value)
     return text if len(text) <= 80 else f"{text[:77]}..."
+
+
+def _id_list(container: Any) -> str:
+    """Up to ten sorted ids of a mapping for an error message; empty when it holds none."""
+    ids = sorted(str(key) for key in container) if isinstance(container, dict) else []
+    return ", ".join(ids[:10]) + (", ..." if len(ids) > 10 else "")
 
 
 def _period_key(value: Any, name: str) -> str:
@@ -225,9 +236,13 @@ def _condition(actor: dict[str, Any], condition_id: str) -> dict[str, Any]:
 
 def _clock(state: dict[str, Any], clock_id: str) -> dict[str, Any]:
     clocks = state.get("clocks")
-    if not isinstance(clocks, dict) or clock_id not in clocks or not isinstance(clocks[clock_id], dict):
-        raise MechanicError(f"unknown clock: {clock_id}")
+    if not isinstance(clocks, dict) or clock_id not in clocks:
+        known = _id_list(clocks)
+        hint = f"known: {known}" if known else "no clocks are recorded"
+        raise MechanicError(f"unknown clock: {clock_id} ({hint})")
     clock = clocks[clock_id]
+    if not isinstance(clock, dict):
+        raise MechanicError(f"clock {clock_id} must be an object")
     current = _integer(clock.get("current"), f"{clock_id}.current", 0)
     maximum = _integer(clock.get("maximum"), f"{clock_id}.maximum", 1)
     if current > maximum:
@@ -258,21 +273,58 @@ def _clock_change(clock_id: str, clock: dict[str, Any], before: int, after: int)
     return change
 
 
+# An obligation spends from exactly one holding of its actor: a resource with
+# bounds, or an inventory item counted by quantity (coins kept in a purse).
+SPEND_KEYS = ("resource_id", "item_id")
+
+
+def _spend_target(source: dict[str, Any], prefix: str, owner: str) -> tuple[str, str]:
+    """``(key, id)`` of the holding named by exactly one of resource_id or item_id.
+
+    A null value counts as absent, like the other optional fields.
+    """
+    keys = [key for key in SPEND_KEYS if source.get(key) is not None]
+    if len(keys) != 1:
+        given = "both are given" if keys else "neither is given"
+        raise MechanicError(f"{owner} needs exactly one of resource_id or item_id; {given}")
+    return keys[0], _identifier(source[keys[0]], f"{prefix}{keys[0]}")
+
+
+def _holding(actor_id: str, actor: dict[str, Any], key: str, holding_id: str) -> dict[str, Any]:
+    """The validated resource or inventory item an obligation spends from.
+
+    An unknown id names what the actor does hold and, when the id belongs to
+    the other kind of holding, the key that names it: money kept as an
+    inventory item is an ``item_id``, not a ``resource_id``.
+    """
+    is_resource = key == "resource_id"
+    held = actor.get("resources" if is_resource else "inventory")
+    if isinstance(held, dict) and holding_id in held:
+        return _resource(actor, holding_id) if is_resource else _item(actor, holding_id)
+    message = (
+        f"unknown {'resource' if is_resource else 'item'}: {holding_id} "
+        f"({actor_id} has resources: {_id_list(actor.get('resources')) or 'none'}; "
+        f"items: {_id_list(actor.get('inventory')) or 'none'})"
+    )
+    elsewhere = actor.get("inventory" if is_resource else "resources")
+    if isinstance(elsewhere, dict) and holding_id in elsewhere:
+        kind, other_key = ("an inventory item", "item_id") if is_resource else ("a resource", "resource_id")
+        message += f"; {holding_id} is {kind}, so name it with {other_key}"
+    raise MechanicError(message)
+
+
 def _obligation(state: dict[str, Any], obligation_id: str) -> dict[str, Any]:
     obligations = state.get("obligations")
     if not isinstance(obligations, dict) or obligation_id not in obligations:
         # Name the recorded ids: a settlement often comes long after the obligation was added.
-        known = sorted(obligations) if isinstance(obligations, dict) else []
-        if not known:
-            hint = "no obligations are recorded"
-        else:
-            hint = "known: " + ", ".join(known[:10]) + (", ..." if len(known) > 10 else "")
+        known = _id_list(obligations)
+        hint = f"known: {known}" if known else "no obligations are recorded"
         raise MechanicError(f"unknown obligation: {obligation_id} ({hint})")
     record = obligations[obligation_id]
     if not isinstance(record, dict):
         raise MechanicError(f"obligation {obligation_id} must be an object")
     _identifier(record.get("actor_id"), f"{obligation_id}.actor_id")
-    _identifier(record.get("resource_id"), f"{obligation_id}.resource_id")
+    _spend_target(record, f"{obligation_id}.", f"obligation {obligation_id}")
     _integer(record.get("amount"), f"{obligation_id}.amount", 0)
     _one_line(record.get("period_label"), f"{obligation_id}.period_label")
     settled = record.get("settled")
@@ -530,8 +582,8 @@ def _advance_time(state: dict[str, Any], payload: dict[str, Any], changes: list[
 def _add_obligation(state: dict[str, Any], payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
     obligation_id = _one_line(payload.get("obligation_id"), "obligation_id")
     actor_id = _identifier(payload.get("actor_id"), "actor_id")
-    resource_id = _identifier(payload.get("resource_id"), "resource_id")
-    _resource(_actor(state, actor_id), resource_id)
+    key, holding_id = _spend_target(payload, "", "add_obligation")
+    _holding(actor_id, _actor(state, actor_id), key, holding_id)
     amount = _integer(payload.get("amount"), "amount", 0)
     period_label = _one_line(payload.get("period_label"), "period_label")
     obligations = state.setdefault("obligations", {})
@@ -539,7 +591,7 @@ def _add_obligation(state: dict[str, Any], payload: dict[str, Any], changes: lis
         raise MechanicError(f"obligation already exists: {obligation_id}")
     record = {
         "actor_id": actor_id,
-        "resource_id": resource_id,
+        key: holding_id,
         "amount": amount,
         "period_label": period_label,
         "settled": [],
@@ -562,19 +614,29 @@ def _settle_obligation(state: dict[str, Any], payload: dict[str, Any], changes: 
     raw_amount = payload.get("amount")
     amount = record["amount"] if raw_amount is None else _integer(raw_amount, "amount", 0)
     actor_id = record["actor_id"].strip()
-    resource_id = record["resource_id"].strip()
+    key, holding_id = _spend_target(record, f"{obligation_id}.", f"obligation {obligation_id}")
     try:
         actor = _actor(state, actor_id)
-        resource = _resource(actor, resource_id)
+        holding = _holding(actor_id, actor, key, holding_id)
     except MechanicError as exc:
         raise MechanicError(f"obligation {obligation_id} cannot be settled: {exc}") from None
-    if resource["current"] - amount < resource["minimum"]:
+    if key == "resource_id":
+        has, floor = holding["current"], holding["minimum"]
+        numbers = f"has {has} (minimum {floor})"
+    else:
+        # An item is counted, so its quantity may reach 0 but never go below it.
+        has, floor = holding["quantity"], 0
+        numbers = f"has {has}"
+    if has - amount < floor:
         raise MechanicError(
-            f"insufficient {resource_id} to settle {obligation_id} for period {period!r}: "
-            f"needs {amount}, has {resource['current']} (minimum {resource['minimum']})"
+            f"insufficient {holding_id} to settle {obligation_id} for period {period!r}: "
+            f"needs {amount}, {numbers}, short {amount - (has - floor)}"
         )
     local: list[dict[str, Any]] = []
-    _change_resource(actor, resource_id, -amount, local)
+    if key == "resource_id":
+        _change_resource(actor, holding_id, -amount, local)
+    else:
+        _change_item(actor, holding_id, -amount, local)
     for change in local:
         change["actor"] = actor_id
     changes.extend(local)
@@ -584,11 +646,52 @@ def _settle_obligation(state: dict[str, Any], payload: dict[str, Any], changes: 
             "kind": "obligation_settled",
             "obligation": obligation_id,
             "actor": actor_id,
-            "resource": resource_id,
+            ("resource" if key == "resource_id" else "item"): holding_id,
             "period": period,
             "amount": amount,
         }
     )
+
+
+def _add_clock(state: dict[str, Any], payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
+    """Start a clock during play, such as a threat that begins ticking mid-scene."""
+    clock_id = _one_line(payload.get("clock_id"), "clock_id")
+    clocks = state.setdefault("clocks", {})
+    if clock_id in clocks:
+        raise MechanicError(f"clock already exists: {clock_id}")
+    maximum = _integer(payload.get("maximum"), "maximum", 1)
+    # The optional fields follow a stored clock: a null value counts as absent.
+    current = payload.get("current")
+    clock: dict[str, Any] = {
+        "current": 0 if current is None else _integer(current, "current", 0, maximum),
+        "maximum": maximum,
+    }
+    if payload.get("owner") is not None:
+        clock["owner"] = _one_line(payload["owner"], "owner")
+    tick = payload.get("tick")
+    if tick is not None:
+        if not isinstance(tick, dict):
+            raise MechanicError("tick must be an object with unit and amount")
+        extra = sorted(str(name) for name in tick if name not in ("unit", "amount"))
+        if extra:
+            # A stray key such as "every" would otherwise be dropped while the GM relies on it.
+            raise MechanicError(f"tick takes only unit and amount, not {', '.join(extra)}")
+        clock["tick"] = {
+            "unit": _identifier(tick.get("unit"), "tick.unit"),
+            "amount": _integer(tick.get("amount"), "tick.amount", 1),
+        }
+    if payload.get("on_fill") is not None:
+        clock["on_fill"] = _one_line(payload["on_fill"], "on_fill")
+    clocks[clock_id] = clock
+    _clock(state, clock_id)  # the same checks every stored clock passes
+    changes.append({"kind": "clock_added", "clock": clock_id, "after": copy.deepcopy(clock)})
+
+
+def _remove_clock(state: dict[str, Any], payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
+    """Retire a clock whose threat is resolved; the change keeps the removed clock."""
+    clock_id = _identifier(payload.get("clock_id"), "clock_id")
+    _clock(state, clock_id)
+    changes.append({"kind": "clock_removed", "clock": clock_id, "before": state["clocks"].pop(clock_id)})
 
 
 def _apply_actor_operation(state: dict[str, Any], operation: str, payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
@@ -754,6 +857,10 @@ def apply_operation(state: dict[str, Any], payload: dict[str, Any]) -> tuple[dic
         _add_obligation(updated, payload, changes)
     elif operation == "settle_obligation":
         _settle_obligation(updated, payload, changes)
+    elif operation == "add_clock":
+        _add_clock(updated, payload, changes)
+    elif operation == "remove_clock":
+        _remove_clock(updated, payload, changes)
     elif operation in {"advance_clock", "set_clock"}:
         clock_id = _identifier(payload.get("clock_id"), "clock_id")
         clock = _clock(updated, clock_id)

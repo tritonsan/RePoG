@@ -38,16 +38,19 @@ bounded uncertainty; it may not invent motives, events, or consequences.
 
 When `dice_mode` is not `judgment_only`, an uncertain or contested action is
 rolled, never judged around. Before any die is read, fix the `actor`, the
-`axis` or capability and its `value`, the `difficulty` with a one-line reason
-read from the opposition, each factor as a labelled whole-number modifier, and
-the `stakes`: what a lower band costs. Roll it once through
-`python tools/roll_dice.py --campaign campaign --input-json` with a new
+`axis` or capability and its `value`, the `difficulty` with a one-line
+`reason` read from the opposition, each factor as a labelled whole-number
+modifier, and the `stakes`: what a lower band costs. Roll it once through
+`python tools/roll_dice.py --campaign campaign --input-file -` with a new
 `roll_id` and a `call` of those fields (`factors` as `label` and `modifier`).
 A Player who rolls under the dice mode reports against the same declaration.
 Never change a declaration after the roll; a new attempt needs a fictional
 reason and a new roll id. A value or difficulty outside the declared scale is
 refused: change the scale through the OOC adjustment playbook, never with a
-hidden "counts as". Cite the roll in the durable change (persistence playbook).
+hidden "counts as". When the odds table (`python tools/odds.py campaign`) shows
+the actor cannot miss on this scale, offer that OOC scale change once, at a
+natural pause; until the Player decides, roll as declared. Cite the roll in the
+durable change (persistence playbook).
 
 ## Let Competence Stand
 

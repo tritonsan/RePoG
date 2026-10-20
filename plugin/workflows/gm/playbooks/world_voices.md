@@ -141,9 +141,9 @@ visibility flag.
 
 Show a document only when the character can publicly access, receive,
 discover, intercept, or credibly hear it. If delivery reveals a protected fact,
-update its knowledge holder/status in the same durable revision before Player
-Mode. Hidden artifacts must be absent from Dashboard state, files, counts, and
-silhouettes.
+update its knowledge holder/status in the same durable revision, committed in
+the turn that shows the document. Hidden artifacts must be absent from
+Dashboard state, files, counts, and silhouettes.
 
 Present the artifact in-world, explain its acquisition context naturally, show
 immediate affordances, and return control. Do not mention ids, files, schemas,

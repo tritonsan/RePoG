@@ -120,9 +120,9 @@ Genuine resistance is contested: persuading, deceiving, pressuring, or
 bargaining with someone who has a real reason to refuse is rolled like any
 other contest when `dice_mode` is not `judgment_only`. Declare it before any
 die is read: `actor`, `axis` and its `value`, `difficulty` from the NPC's stake
-and position with a one-line reason, `factors` such as leverage or a favor owed,
-and `stakes`. Roll it once through
-`python tools/roll_dice.py --campaign campaign --input-json` with a new
+and position with a one-line `reason`, `factors` such as leverage or a favor
+owed, and `stakes`. Roll it once through
+`python tools/roll_dice.py --campaign campaign --input-file -` with a new
 `roll_id` and that `call`, then play the band: a success gets the access,
 disclosure, or terms sought with no added setback; a cost comes only from a
 lower band or from another actor with a real cause.

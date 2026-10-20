@@ -48,26 +48,34 @@ can reveal material the Game Master keeps hidden.
   (turns Claude Code auto memory off and selects the RePoG output style for
   that folder) and a short `CLAUDE.md`. Existing files are never overwritten.
 - **Hooks:** four, each a shell script in `scripts/` whose Python step runs
-  `tools/hook_entry.py` and is skipped without Python 3.10 or later. They
-  never stop your prompt or Claude's reply, the curation, capsule, and lint
-  steps follow their runtime switches below, and nothing they read or write
-  leaves your computer. The first three do nothing outside a folder that holds
-  a plugin campaign.
+  `tools/hook_entry.py` and is skipped without Python 3.10 or later; the
+  Python command they find is cached in the plugin's data folder. They never
+  stop your prompt or Claude's reply, the curation, capsule, and lint steps
+  follow their runtime switches below, and nothing they read or write leaves
+  your computer. The first three do nothing outside a folder that holds a
+  plugin campaign.
   - `SessionStart`: adds a one-line reminder to load `repog:play` and marks
     the scene capsule for a full refresh in `campaign/.repog-runtime/`.
   - `UserPromptSubmit`: in a ready RPG campaign, first applies waiting curator
-    edits whose target notes are unchanged (editing those notes and adding an
-    entry to `campaign/session_log.md`), then adds a hidden scene capsule to
-    Claude's context, matching names in your prompt against campaign notes:
-    the scene, the cast in it, secret holders by id, your standing directives,
-    open dice rolls, and the last reply's presentation findings. It keeps its
-    capsule state in `campaign/.repog-runtime/`.
-  - `Stop` (runs in the background): reads the last reply from Claude Code's
-    local transcript, runs the presentation lint over it, and writes the
-    findings to `campaign/.repog-runtime/`.
-  - `PreToolUse`: runs on file-writing and Bash tool calls in any folder, but
-    only reads the call and lets it through unless it comes from the curator
-    agent, which may write nothing except its one staging file.
+    edits whose target notes are unchanged (editing those notes, adding an
+    entry to `campaign/session_log.md`, moving each processed proposal into
+    the `applied/` or `rejected/` folder next to it, and recording the run's
+    outcome in `campaign/.repog-runtime/curation/last_result.json`), then
+    adds a hidden scene capsule to Claude's context, matching names in your
+    prompt against campaign notes: the scene, the cast in it, secret holders by
+    id, your standing directives, language guidance, open dice rolls, the last
+    reply's presentation findings, and, once, a curator proposal the last run
+    rejected or deferred. It keeps its capsule state in
+    `campaign/.repog-runtime/`.
+  - `Stop` (runs in the background): reads your last message and the reply
+    from Claude Code's local transcript, runs the presentation lint over the
+    reply, and writes its findings and a short history (rule counts, phrase
+    fingerprints, and the first 300 characters of your message) to
+    `campaign/.repog-runtime/`; messages starting with `OOC` are skipped. With
+    the capsule on, it also records which campaign notes the reply named.
+  - `PreToolUse`: runs on each Write tool call in any folder, but only reads
+    the call and lets it through unless it comes from the curator agent, which
+    may write nothing except its one staging file.
 - **Supporting agents:** two read-only proposal lanes for large structural
   steps, and the boundary curator, which reads campaign notes after a full
   distill and writes one proposal file under `campaign/.repog-runtime/curation/`
@@ -134,7 +142,8 @@ helpers and hooks make no network calls and it has no telemetry or accounts.
 Web research happens only when you ask for it, through Claude's own web tools.
 Campaign files stay in your project folder, and your conversation is processed
 by Claude under your Anthropic account's terms. The hooks read campaign files
-and Claude Code's local transcript and write only inside `campaign/`. RePoG's
+and Claude Code's local transcript and write only inside `campaign/`, apart
+from the cached Python command in the plugin's data folder. RePoG's
 forget operation removes campaign content; it does not erase Claude Code's own
 session transcripts on your computer.
 

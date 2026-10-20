@@ -14,7 +14,10 @@ The visibility rules (another language, backend vocabulary, protected names)
 read everything the Player saw. The narration rules read only the prose:
 out-of-character blocks and Markdown structure (headings, list items, tables,
 block quotes) are left out, so an OOC time-skip plan that counts days is not a
-tracker leak and a stat list is not a repeated phrase.
+tracker leak and a stat list is not a repeated phrase. The rules on the
+narrator's own words (the player character's words, negated descriptions) also
+skip speech: quoted, or a dialogue line opened with a dash as Turkish, Spanish
+and French write it ("— On adam dedin, der.").
 
 The lint never judges meaning, never blocks, and never writes campaign truth.
 Findings go to `campaign/.repog-runtime/lint_last.json`, whose short English
@@ -126,6 +129,16 @@ SENTENCE_MIN_HITS = 2
 # of the other language decides there.
 DESCRIPTION_MIN_WORDS = 3
 DESCRIPTION_MIN_HITS = 1
+# Whole lines are read too: status lines and list items break into short
+# sentences ("Status: day 814, night.") or bury their function words among
+# names ("Marcus, Nella, Dunstan and nine men"). A line of LINE_MIN_WORDS words
+# with no sign of the play language is in another language when LINE_MIN_HITS
+# distinct function words of it appear...
+LINE_MIN_WORDS = 5
+LINE_MIN_HITS = 2
+# ...or one, when the play language writes letters the other never does
+# (Turkish ı, ş, ğ against English) and this many ordinary words show none.
+LINE_LETTER_WORDS = 8
 DETECT_PROMPTS = 5
 PROMPT_SAMPLE_CHARS = 300
 
@@ -185,6 +198,10 @@ _STRUCTURAL = (_PATH_RE, _DIR_RE, _CODE_RE, _SNAKE_RE)
 # An opener without a closer later on its line quotes nothing.
 _QUOTE_CLOSERS = {'"': '"', "“": "”", "„": "“”", "«": "»", "「": "」", "『": "』"}
 _HABIT_QUOTE_RE = re.compile(r'"([^"\n]+)"|“([^”\n]+)”|„([^“”\n]+)[“”]|«([^»\n]+)»')
+# Dash dialogue (Turkish, Spanish, French): a line that opens with an em or en
+# dash, after indentation, a list marker or emphasis, is speech.
+_DASHES = "—–"
+_DASH_LINE_RE = re.compile(r"^\s*(?:(?:[-*+]|\d{1,9}[.)])\s+)?[*_]{0,3}\s*(?P<dash>[—–]+)")
 # A short letter run after an apostrophe is a clitic or case ending (Halvar'ın,
 # it's, l'un), not a word of its own; dropped before language detection so
 # "ın"/"in"/"a" do not read as another language's function words, and before
@@ -208,10 +225,9 @@ _TABLE_SEPARATOR_RE = re.compile(r"^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?\
 @dataclass(frozen=True)
 class _Reply:
     text: str  # everything the Player saw, NFC
-    sentences: tuple[str, ...]  # sentences of `text`
     prose: str  # `text` without OOC blocks and Markdown structure; same offsets
     prose_sentences: tuple[str, ...]
-    narration: str  # `prose` without quoted speech; same offsets
+    narration: str  # `prose` without speech (quoted or dash dialogue); same offsets
 
 
 @dataclass(frozen=True)
@@ -334,6 +350,68 @@ def _quotes_blanked(text: str) -> str:
     """`text` with quoted speech replaced by spaces, keeping offsets."""
 
     return _blank(text, _quote_spans(text))
+
+
+def _dash_spans(text: str) -> list[tuple[int, int]]:
+    """Spans of dash dialogue, each within one line, in text order.
+
+    A line that opens with an em or en dash is speech. A later dash attached to
+    a lower-case word opens the narrator's tag, as Spanish writes it ("—¿Qué?
+    —preguntó"), and the next dash after the tag resumes the speech ("—dijo
+    él—. Quizá"). Any other dash stays inside the speech: a spaced one is a
+    pause as often as a tag, one between letters or digits ("10–12") belongs
+    to a word, and Turkish and French tags follow a comma without a dash
+    ("— On adam dedin, der."), so there the whole line is speech.
+    """
+
+    spans: list[tuple[int, int]] = []
+    offset = 0
+    for piece in text.splitlines(keepends=True):
+        line = piece.rstrip(_LINE_ENDS)
+        opened = _DASH_LINE_RE.match(line)
+        if opened is not None:
+            start = opened.start("dash")
+            speaking = True
+            index = opened.end()
+            size = len(line)
+            while index < size:
+                if line[index] not in _DASHES:
+                    index += 1
+                    continue
+                end = index
+                while end < size and line[end] in _DASHES:
+                    end += 1
+                after = line[end] if end < size else ""
+                if not (line[index - 1].isalnum() and after.isalnum()):
+                    if speaking and after.islower():
+                        spans.append((offset + start, offset + index))
+                        speaking = False
+                    elif not speaking:
+                        start = index
+                        speaking = True
+                index = end
+            if speaking:
+                spans.append((offset + start, offset + size))
+        offset += len(piece)
+    return spans
+
+
+def _merged(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """The union of `spans` as sorted spans that do not overlap."""
+
+    merged: list[tuple[int, int]] = []
+    for start, end in sorted(spans):
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def _speech_spans(text: str) -> list[tuple[int, int]]:
+    """Spans of speech, quoted or dash dialogue, in text order."""
+
+    return _merged(_quote_spans(text) + _dash_spans(text))
 
 
 def _pattern_spans(folded: str, pack: dict[str, Any], key: str) -> list[tuple[int, int]]:
@@ -526,6 +604,83 @@ def _foreign(text: str, language: str, *, min_words: int, min_hits: int) -> str 
     return code if (best - rival) / total >= LANGUAGE_CONFIDENCE else None
 
 
+@lru_cache(maxsize=4)
+def _pack_letters(directory: str) -> dict[str, frozenset[str]]:
+    """Letters beyond basic Latin in each shipped pack's folded stopwords.
+
+    A stopword list is a small sample of its language (the English one has no
+    "z", the French one no "g"), so only letters a language either writes or
+    never writes, those outside basic Latin, tell two languages apart.
+    """
+
+    return {
+        code: frozenset(char for word in stopwords for char in word if char > "\x7f" and char.isalpha())
+        for code, _, stopwords in _stopword_table(directory)
+    }
+
+
+def _line_words(sentences: list[str], min_words: int) -> list[tuple[str, bool]]:
+    """`(word, is_name)` for the sentences of one line, each read as `_foreign` reads one.
+
+    Digits, apostrophe case endings and quoted phrases shorter than
+    `min_words` are dropped; a capitalized word that does not open its
+    sentence is a name or title.
+    """
+
+    found: list[tuple[str, bool]] = []
+    for sentence in sentences:
+        short = [span for span in _quote_spans(sentence) if _word_count(sentence[span[0] : span[1]]) < min_words]
+        raw = [token for token in tokens(_CLITIC_RE.sub("", _blank(sentence, short))) if not _has_digit(token)]
+        found.extend((token, index > 0 and token[:1].isupper()) for index, token in enumerate(raw))
+    return found
+
+
+def _foreign_line(sentences: list[str], language: str) -> str | None:
+    """The other pack language a whole line is written in, or None.
+
+    Catches the status lines and list items `_foreign` misses sentence by
+    sentence. The line needs LINE_MIN_WORDS words, not all capitalized, and no
+    sign of the play language in its ordinary (non-name) words: none of its
+    function words and none of the letters it writes and the other language
+    never does. A function word of both languages is evidence for neither
+    (Turkish and English "on"). The other language then needs LINE_MIN_HITS
+    distinct function words, or one when the play language has such letters
+    and LINE_LETTER_WORDS ordinary words show none of them, and it must lead
+    every other language.
+    """
+
+    table = _stopword_table(str(lang_pack.PACK_DIR))
+    own = next((row for row in table if row[0] == language), None)
+    if own is None or not own[2]:
+        return None
+    found = _line_words(sentences, LINE_MIN_WORDS)
+    if len(found) < LINE_MIN_WORDS or all(word[:1].isupper() for word, _ in found):
+        return None  # too short, or only names and numbers
+    plain = [word for word, name in found if not name]
+    by_mode = {mode: [fold(word, {"casefold": mode}) for word in plain] for mode in {row[1] for row in table}}
+    own_words = by_mode[own[1]]
+    # Letters as written: the Turkish fold would turn the "I" of an English word into "ı".
+    shapes = [fold(word, None) for word in plain]
+    letters = _pack_letters(str(lang_pack.PACK_DIR))
+    ranked: list[tuple[int, str, bool]] = []
+    for code, mode, stopwords in table:
+        if code == language:
+            continue
+        theirs = by_mode[mode]
+        hits = {word for word, mine in zip(theirs, own_words) if word in stopwords and mine not in own[2]}
+        own_hits = sum(1 for word, mine in zip(theirs, own_words) if mine in own[2] and word not in stopwords)
+        marks = letters.get(language, frozenset()) - letters.get(code, frozenset())
+        marked = any(not marks.isdisjoint(shape) for shape in shapes)
+        needed = 1 if marks and len(plain) >= LINE_LETTER_WORDS else LINE_MIN_HITS
+        ranked.append((len(hits), code, not own_hits and not marked and len(hits) >= needed))
+    if not ranked:
+        return None
+    ranked.sort(key=lambda item: (-item[0], item[1]))
+    hits, code, qualifies = ranked[0]
+    runner_up = ranked[1][0] if len(ranked) > 1 else 0
+    return code if qualifies and hits > runner_up else None
+
+
 def _language_note(items: list[tuple[str, str]], noun: str) -> str:
     codes = Counter(code for code, _ in items)
     label = _language_name(next(iter(codes))) if len(codes) == 1 else "other-language"
@@ -535,11 +690,17 @@ def _language_note(items: list[tuple[str, str]], noun: str) -> str:
 def _out_of_language(reply: _Reply, descriptions: list[str], language: str) -> _Hit | None:
     if not language:
         return None
-    lines = [
-        (code, sentence)
-        for sentence in reply.sentences
-        if (code := _foreign(sentence, language, min_words=SENTENCE_MIN_WORDS, min_hits=SENTENCE_MIN_HITS))
-    ]
+    lines: list[tuple[str, str]] = []
+    for line in reply.text.splitlines():
+        sentences = sentence_split(line)
+        found = [
+            (code, sentence)
+            for sentence in sentences
+            if (code := _foreign(sentence, language, min_words=SENTENCE_MIN_WORDS, min_hits=SENTENCE_MIN_HITS))
+        ]
+        if not found and (code := _foreign_line(sentences, language)):
+            found = [(code, line.strip())]
+        lines.extend(found)
     tools = [
         (code, description)
         for description in descriptions
@@ -868,16 +1029,19 @@ def _common_words(first: list[str], second: list[str]) -> int:
 def _echoed_quote(
     reply: _Reply, start: int, end: int, prompt: str, pack: dict[str, Any]
 ) -> tuple[tuple[int, int], tuple[int, int]] | None:
-    """A quoted line in the opening made of the Player's quoted words: (reply span, prompt span)."""
+    """A spoken line in the opening made of the Player's spoken words: (reply span, prompt span).
+
+    Spoken means quoted or dash dialogue, on either side.
+    """
 
     asked = []
-    for span in _quote_spans(prompt):
+    for span in _speech_spans(prompt):
         keys = _matchable(prompt[span[0] : span[1]], pack).keys[:RESTATE_QUOTE_MAX_WORDS]
         if len(keys) >= RESTATE_QUOTE_WORDS:
             asked.append((span, keys))
     if not asked:
         return None
-    for span in _quote_spans(reply.prose):
+    for span in _speech_spans(reply.prose):
         if span[1] <= start:
             continue  # the opening starts at its first word, so a leading quote mark lies just before it
         if span[0] >= end:
@@ -923,7 +1087,7 @@ def _restatement(prompt: str, reply: _Reply, pack: dict[str, Any], ignored: froz
 
 
 def _pc_authoring(reply: _Reply, pack: dict[str, Any]) -> _Hit | None:
-    # Quoted speech is skipped: an NPC may well say "you said".
+    # Speech, quoted or dash dialogue, is skipped: an NPC may well say "you said".
     folded = fold(reply.narration, pack)
     spans = _pattern_spans(folded, pack, "pc_speech_patterns")
     if not spans:
@@ -1052,10 +1216,9 @@ def _reply(texts: list[str]) -> _Reply:
     prose = _prose(text)
     return _Reply(
         text,
-        tuple(sentence_split(text)),
         prose,
         tuple(sentence_split(prose)),
-        _quotes_blanked(prose),
+        _blank(prose, _speech_spans(prose)),
     )
 
 

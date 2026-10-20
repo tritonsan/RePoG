@@ -27,11 +27,20 @@ script="$root/tools/$helper.py"
 [ -f "$script" ] || fail helper_invalid "unknown helper: $helper" 2
 
 check='import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)'
-if python3 -c "$check" >/dev/null 2>&1; then
+
+# usable NAME: a real Python 3.10+ on PATH. The Windows Store alias under
+# WindowsApps only opens the Store, and probing it costs a noticeable delay.
+usable() {
+  found=$(command -v "$1" 2>/dev/null) || return 1
+  case "$found" in *WindowsApps*) return 1 ;; esac
+  "$1" -c "$check" >/dev/null 2>&1
+}
+
+if usable python3; then
   exec python3 -B "$script" "$@"
-elif python -c "$check" >/dev/null 2>&1; then
+elif usable python; then
   exec python -B "$script" "$@"
-elif py -3 -c "$check" >/dev/null 2>&1; then
+elif command -v py >/dev/null 2>&1 && py -3 -c "$check" >/dev/null 2>&1; then
   exec py -3 -B "$script" "$@"
 fi
 

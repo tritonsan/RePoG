@@ -31,14 +31,20 @@ rules in `storytelling.md` or a reminder file. Add each row with an `append` op
 on heading `Standing Directives` holding exactly one `{{next_id:D}}`, such as
 `| {{next_id:D}} | global | Do not end replies with a question. | OOC request, revision {{revision}} | active |`.
 Scope is `global`, `scene:<scene id>`, or `entity:<note title>`; Source is the
-Player's OOC request with its date or revision. Commit it in the turn's one
-`commit-durable` call as a change whose kind contains `directive`, owned by
-`directives.md`. Retire a row by setting its Status to `retired` (`upsert_row`
-keyed by its id, never a deletion); a replacement is a new row that names the
-id it supersedes. Directives shape table behavior only: they create no fiction
-and never override `AGENTS.md`, safety boundaries, or a locked profile. A
-campaign begun before 0.3.0 first needs the blank `directives.md` from the
-plugin's campaign template, copied in Designer Mode.
+Player's OOC request with its date or revision. When the turn changes no
+fiction, commit the row with one `commit-checkpoint` call that repeats the
+current scene frame as its checkpoint; it may edit `directives.md` and
+`glossary.md` and makes no fictional revision. When the turn also commits
+durable fiction, put the row in that turn's one `commit-durable` call instead,
+as a change whose kind contains `directive`, owned by `directives.md`. Retire a
+row by setting its Status to `retired` (`upsert_row` keyed by its id, never a
+deletion); a replacement is a new row that names the id it supersedes.
+Directives shape table behavior only: they create no fiction and never override
+`AGENTS.md`, safety boundaries, or a locked profile. A lasting correction to
+how a recurring term, title, unit, or form of address is rendered is a
+`glossary.md` row under `Terms` instead, committed the same way. In a campaign
+without `directives.md` or `glossary.md`, the first such commit starts it from
+the blank template.
 
 ## Persist Configuration Without Inventing Fiction
 
@@ -98,9 +104,10 @@ not a competing current version.
 Apply the coherent current-truth correction through one `rpg_state.py
 commit-durable` transaction and any supported mechanic operations. Never edit
 only a recap, erase receipts, restore an old snapshot over later independent
-events, or narrate a correction before persistence succeeds. Reconcile dependent
-prep/projections at the required boundary. If a necessary dependent change cannot
-be represented safely, use Designer recovery instead of a partial retcon.
+events, or narrate a correction that is not persisted in the same turn.
+Reconcile dependent prep/projections at the required boundary. If a necessary
+dependent change cannot be represented safely, use Designer recovery instead of
+a partial retcon.
 
 After a successful correction, refresh only affected source pointers/preparation
 and continue from the retained scene anchor. A preference correction does not

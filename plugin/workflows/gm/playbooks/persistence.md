@@ -102,7 +102,10 @@ it is durable and carries the anchor in that same commit. See
   `python tools/rpg_state.py campaign commit-checkpoint --input-file -` once,
   with the JSON in a quoted heredoc, the checkpoint, and optional active-cast
   ops. The writer copies the scene id, mode, and anchor into `scene_frame`. It
-  creates no continuity revision.
+  creates no continuity revision. It may also carry `directives.md` and
+  `glossary.md` ops, so a turn whose only change is an OOC table rule commits
+  here, with the unchanged scene frame as its checkpoint (OOC adjustment
+  playbook).
 - `durable + any boundary`: invoke
   `python tools/rpg_state.py campaign commit-durable --input-file -` exactly
   once the same way. When a checkpoint is needed, include it in this payload;
@@ -185,13 +188,17 @@ python tools/rpg_state.py campaign commit-durable --input-file - <<'JSON'
   {"path": "current_state.yaml", "ops": [{"op": "set", "values": {
     "scene_frame.last_causal_beat.changed_fact": "The courier is Ilse.",
     "scene_frame.last_causal_beat.returned_control_at": "The witness waits."}}]},
-  {"path": "knowledge_boundaries.md", "ops": [{"op": "append", "heading": "Player Knowledge",
+  {"path": "knowledge_boundaries.md", "ops": [{"op": "append", "heading": "Player And Character Knowledge",
     "text": "- Fact: the courier is Ilse.\n  - Fact id: {{next_id:PC}}\n  - Last confirmed: revision {{revision}}"}]}]}
 JSON
 ```
 
 A result may list `warnings`: an owner near the size cap, stacked note
 sections, or a long session log. Handle them at the next distill, not mid-scene.
+A new note's warnings are the exception: act on `name_common_word` or
+`name_near_duplicate` before the name settles in play, and fill the fields a
+new character note's `note_incomplete` warnings name in the next commit that
+touches it (`workflows/reference/creation.md`).
 
 For interrupted writes, shared locking, and legacy lock recovery, load
 `docs/file-transactions.md` in Designer Mode. Never delete a transaction journal

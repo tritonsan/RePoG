@@ -315,9 +315,10 @@ the solution in its place.
 ### Roll Calls
 
 A roll call passes the declaration to
-`python tools/roll_dice.py --campaign <campaign> --input-json <request>`. The
-request is one JSON object: a short `roll_id`, and the declaration as `call`
-with `actor`, `axis`, `value`, `difficulty`, `stakes`, and optional `factors`,
+`python tools/roll_dice.py --campaign <campaign> --input-file -` (or
+`--input-json`). The request is one JSON object: a short `roll_id`, and the
+declaration as `call` with `actor`, `axis`, `value`, `difficulty`, `stakes`,
+an optional one-line `reason` for the difficulty, and optional `factors`,
 each a `label` and a `modifier`. Without `mechanics.resolution`, the request
 also names its die in `NdM` form as `die`, beside `call`. The tool derives the
 seed from the campaign, the continuity revision, the roll id, and the call,
