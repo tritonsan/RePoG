@@ -446,11 +446,23 @@ def test_distill_findings_name_the_file_to_curate(campaign: Path, monkeypatch: p
     }
     monkeypatch.setattr(checker, "check_campaign", lambda root, scope="full": fake)
     result = rpg_state.commit_distill(
-        campaign, {"operation_id": "d-paths", "expected_continuity_revision": 0, "trigger": "manual"}
+        campaign,
+        {
+            "operation_id": "d-paths",
+            "expected_continuity_revision": 0,
+            "trigger": "manual",
+            # stacked_sections is a distill gate: the note is fixed here or handed to the curator.
+            "deferred_reconcile": [{"path": "characters/witness.md", "reason": "fold the stacked sections"}],
+        },
     )
     assert result["full_check"]["findings"] == [
         {"severity": "warning", "rule": "stacked_sections", "message": "3 sections", "path": "characters/witness.md"}
     ]
+    # One target per file, as a curation packet requires; the deferral reason rides along.
+    assert [(item["path"], item["rule"]) for item in result["curation_due"]] == [
+        ("characters/witness.md", "stacked_sections")
+    ]
+    assert "fold the stacked sections" in result["curation_due"][0]["reason"]
 
 
 def test_name_check_compares_ledger_cast_and_relationship_names(campaign: Path) -> None:

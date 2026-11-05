@@ -83,8 +83,9 @@ Profiles:
   after at most five durable turns or another full trigger; use targeted hot
   checks during play.
 - `balanced`: write a compact scene checkpoint at boundaries and full-distill
-  at a meaningful full trigger or after at most three durable turns; refresh
-  the dashboard for player-visible changes.
+  at a meaningful full trigger or after at most five durable turns
+  (`scene_checkpoint_or_5_durable`); refresh the dashboard for player-visible
+  changes.
 - `maximum_continuity`: propagate affected notes and run full checks on every
   durable turn.
 - `custom`: choose individual policies without disabling authoritative state,

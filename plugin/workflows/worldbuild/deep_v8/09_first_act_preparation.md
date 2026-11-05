@@ -17,6 +17,12 @@ Ask one decision per message:
    routine/arrival, visible situation, scene mode, pressure or calm affordance,
    competence/counterplay opportunity, and neutral actions.
 
+Record each with the fields in `decisions.md`; recorded as `derived` or
+`defaulted`, they depend on `01_creation_authority`. The two approvals have
+their own order: `09_design_direction_review` is recorded only after
+`first_act_design_complete`, and `09_preparation_approval` only after
+`cross_read_passed`.
+
 Write the accepted frame immediately to its design owners. For a new campaign,
 assign its stable `Act id` and `Act status: planned` in `threads.md`, with
 `Previous act id: none`. Keep any horizon link conditional and its Closure Record
@@ -67,6 +73,10 @@ steer the Player back. Prepare only the detail the accepted scale needs.
 Read-only proposal lanes are optional; the coordinator owns all writes, ids,
 classification, and delivery.
 
+Before the cross-read, calibrate every NPC card to the accepted NPC power
+scale: each T2/T3 `Power Band:` inside the scale and its tier cap, and no stat
+above its band. `finalize` refuses readiness while calibration warnings remain.
+
 Record a materialization digest and pass `preparation_materialized`. Run the RPG
 cross-read and player-facing leakage checks. Correct structural or consistency
 defects before review; a correction that changes approved design returns to Part
@@ -89,16 +99,15 @@ earlier gate and invalidates this acceptance.
 
 ## Part E — Readiness
 
-Run draft preflight with setup `in_progress`, selected profile `pending`, and
-`ready_for_play: false`. After zero errors, record `draft_preflight_passed`,
-then use its resulting revision to lock the selected/unused profiles while setup
-remains `in_progress` and not ready. Build approved projections and create a
-content-bound `session-zero-start` snapshot. Append `snapshot_manifest.json` to
-the returned snapshot path and convert it to a campaign-relative ref. Run
-`prepare-ready-evidence` with that ref, the unchanged expected revision, and an
-authorized readiness-report target; it performs the final aggregate check and
-returns the validated evidence object. Record `ready_and_snapshotted` at the same
-revision, passing that object unchanged through `--evidence-json`, its snapshot
-digest as the output digest, and the preflight-gate digest as the input digest.
-This final gate atomically marks setup complete and ready. Deliver the opening
-only after the final gate.
+Complete Stage 9 with the approved preparation refs, then run
+`session_zero_state.py campaign finalize --operation-id <id> --expected-revision
+<current>`. It runs the readiness sequence in one call: draft preflight (zero
+errors, and no NPC calibration, records-language, or age-rule warning),
+`draft_preflight_passed`, profile locks at the resulting revision, the
+`session-zero-start` snapshot, the ready evidence, and `ready_and_snapshotted`,
+which atomically marks setup complete and ready. It stops at the first failing
+step with a typed error, `failed_step`, and `completed_steps`; fix that step
+and run it again with the current revision, and it resumes without repeating a
+passed preflight gate. With approved projections (Dashboard, Atlas), run it
+with `--stop-after lock_profiles`, build them, then run it again. Deliver the
+opening only after the final gate, as `playbooks/finalization.md` step 8 says.

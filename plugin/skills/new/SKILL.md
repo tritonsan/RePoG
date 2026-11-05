@@ -13,10 +13,15 @@ asked for a new RePoG campaign or companion here.
 2. If the folder holds other files or folders, name the folder and ask the
    user to confirm before creating anything. One empty folder per campaign
    keeps campaigns apart.
-3. Tell the user in two plain sentences that RePoG is for adults aged 18 or
-   older, and that its content settings are preferences: Claude's own safety
-   policies decide what it will write. If the user says they are younger,
-   create nothing and stop.
+3. Give the user this two-sentence summary of the content notice, in their
+   language: RePoG is for adults aged 18 or older and runs on their own Claude
+   account, where Anthropic's Usage Policy applies to everything in the
+   session, their own requests included. Its content settings are preferences,
+   not permissions: intimate scenes stay implied, nothing sexual involving
+   anyone under 18 is ever written, and repeatedly pushing for explicit content
+   can lead to warnings or account suspension. If the user says they are
+   younger, create nothing and stop. Session 0 shows the full notice at its
+   content step.
 4. Run `sh "${CLAUDE_PLUGIN_ROOT}/scripts/repog.sh" plugin_campaign init .`
    with a short description in the user's language, such as "Creating the
    campaign".

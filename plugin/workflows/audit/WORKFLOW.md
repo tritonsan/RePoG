@@ -162,11 +162,12 @@ For RPG, check:
   durable-turn counter, and deduplicated pending cold targets;
 - every schema-v2 durable revision has a matching append-only event, and each
   recorded distilled revision has a matching distilled-through marker;
-- Fast never exceeds five undistilled durable turns and Balanced never exceeds
-  three; Maximum Continuity leaves no durable turn pending;
-- new Fast/Balanced profiles use `scene_checkpoint_or_5_durable` or
-  `scene_checkpoint_or_3_durable`; legacy `scene_or_*` values are accepted only
-  through the V1/V2 compatibility path;
+- `scene_checkpoint_or_5_durable` never exceeds five undistilled durable turns
+  and `scene_checkpoint_or_3_durable` never exceeds three; Maximum Continuity
+  leaves no durable turn pending;
+- new Fast/Balanced profiles use `scene_checkpoint_or_5_durable` (Balanced
+  campaigns made before 0.4.0 may keep `scene_checkpoint_or_3_durable`); legacy
+  `scene_or_*` values are accepted only through the V1/V2 compatibility path;
 - a scene checkpoint updates scene frame, active cast, and resume anchor without
   resetting the durable counter, appending a distilled marker, or forcing a
   full check;

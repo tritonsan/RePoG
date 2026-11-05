@@ -140,12 +140,15 @@ after the anchor and run the Research Gate before offering source-dependent
 options.
 
 Ask the content boundary on its own, with the same structure in every route and
-setting. Use the standard categories recorded in `boundaries.md`, each as open,
-fade, or avoid, keep "everything open" a real answer, and say both guarantees
-aloud: a limit may be added at any time including mid-play, and adding one is
-never a cost. Never place it inside a card, and never let a card acceptance set
-it. Keep authorship breadth and consequence weight as separate axes so they can
-be mixed, treat clarification as a default rather than a question, and settle
+setting, as `workflows/worldbuild/playbooks/content_boundaries.md` sets out: the
+notice first, the categories recorded in `boundaries.md` with their listed
+options (sexual content is avoid, fade before it starts, or implied; the two
+fixed rows are never offered as choices), "everything open" as a real answer
+for the changeable rows, and both guarantees said aloud: a limit may be added
+at any time including mid-play, and adding one is never a cost. Never place it
+inside a card, and never let a card acceptance set it. Keep authorship breadth
+and consequence weight as separate axes so they can be mixed, treat
+clarification as a default rather than a question, and settle
 character-specific authorship limits once the character exists.
 
 State host dependencies before a layer is chosen: image generation only works when
@@ -688,9 +691,9 @@ Then ask one Turn Protocol decision:
   check wait for five durable turns or another full trigger. Scene boundaries
   write the compact checkpoint without forcing full distill.
 - Balanced: light 1–2 minutes, durable 1.5–3 minutes; use
-  `scene_checkpoint_or_3_durable` with `validation_policy: full_on_distill`.
+  `scene_checkpoint_or_5_durable` with `validation_policy: full_on_distill`.
   Current truth and atomic candidate validation remain immediate; secondary
-  notes and the full check reconcile at a meaningful trigger or after three
+  notes and the full check reconcile at a meaningful trigger or after five
   durable turns. Scene boundaries write the compact checkpoint.
 - Maximum Continuity: durable 2–4 minutes, structural 3–6 minutes; use
   `every_durable` with `validation_policy: full_each_durable`, so every affected

@@ -17,8 +17,9 @@ setting goes through that profile's OOC change procedure instead.
 - `Id`: `D-` and a three-digit number. Numbers count up in creation order from
   `D-000`, which is never assigned itself. Never reuse an id.
 - `Scope`: `global`; `scene:<scene id>`, where the id is `scene_frame.scene_id`
-  in `current_state.yaml`; or `entity:<name>`, where the name is the title of
-  the character, place, or faction note.
+  in `current_state.yaml`; `entity:<name>`, where the name is the title of
+  the character, place, or faction note; or `check`, for a row addressed to
+  the full check (below).
 - `Directive`: one imperative line, in the Player's words or a faithful
   paraphrase, specific enough to check a reply against.
 - `Source`: where the Player asked for it, such as an OOC request and the
@@ -28,6 +29,15 @@ setting goes through that profile's OOC change procedure instead.
   supersedes.
 
 Keep `|` out of every cell; it would split the row.
+
+A `check` row acknowledges a full-check warning the Player has accepted, so a
+healthy campaign carries no standing warnings. Its `Directive` begins with
+`acknowledge <rule_id>`, optionally followed by `for <path or name>`, such as
+`acknowledge power_band_mismatch for characters/branak.md`. Each matching
+warning becomes info, and its message ends with `(acknowledged by D-NNN)`
+naming the row. Only warnings can be acknowledged, never errors. Add a `check`
+row only when the Player accepts the finding, and retire it when the reason no
+longer holds.
 
 ## Standing Directives
 
@@ -39,6 +49,7 @@ the "e.g." prefix and with a real id.
 e.g. | D-NNN | global | Keep replies under 250 words unless a scene needs more. | OOC request, revision 12 | active |
 e.g. | D-NNN | entity:Harbor Warden | The warden addresses the player's character formally. | OOC request, revision 30 | active |
 e.g. | D-NNN | scene:night-market | Mention crowd noise only when it changes. | OOC request, revision 41 | retired |
+e.g. | D-NNN | check | acknowledge power_band_mismatch for Harbor Warden | OOC request, revision 52 | active |
 -->
 
 | Id | Scope | Directive | Source | Status |

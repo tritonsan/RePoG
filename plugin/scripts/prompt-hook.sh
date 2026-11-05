@@ -3,8 +3,9 @@
 #
 # In a ready RePoG campaign, apply any staged curation whose base files are
 # unchanged, then inject the scene capsule (present cast, secrets by id,
-# directives, last reply's presentation findings) as hidden context for the
-# next reply. Print nothing anywhere else. Never block the prompt.
+# directives, last reply's presentation findings, the reply-order and
+# curation-due reminders) as hidden context for the next reply. Print
+# nothing anywhere else. Never block the prompt.
 
 project="${CLAUDE_PROJECT_DIR:-$PWD}"
 [ -f "$project/campaign/setup_profile.yaml" ] || exit 0

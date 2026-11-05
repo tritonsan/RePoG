@@ -411,6 +411,77 @@ def test_cli_reads_the_profile_strictly_as_utf8(tmp_path: Path, capsys: pytest.C
     assert "## Chance of başarı" in capsys.readouterr().out
 
 
+def test_first_band_unreachable_is_one_summary_line() -> None:
+    resolution = odds.load_resolution(LIVE_SCALE)
+    (info,) = [f for f in odds.exhaustion_findings(resolution) if f["rule"] == "first_band_unreachable"]
+    assert info["message"] == (
+        "success cannot occur in 3 of 25 stat/difficulty pairs: stat 1 vs difficulty 4-5; stat 2 vs difficulty 5"
+    )
+    wide = odds.normalize_resolution(
+        {"die": "1d2", "stat_min": 1, "stat_max": 40, "difficulty_min": 1, "difficulty_max": 60}
+    )
+    (info,) = [f for f in odds.exhaustion_findings(wide) if f["rule"] == "first_band_unreachable"]
+    unreachable = sum(
+        1 for stat, difficulty in odds._pairs(wide) if odds.band_ways(wide, stat, difficulty)[0]["success"] == 0
+    )
+    assert info["message"].startswith(f"success cannot occur in {unreachable} of 2400 stat/difficulty pairs: ")
+    assert info["message"].count(" vs difficulty ") == 3  # three stats named, then the rest counted
+    assert info["message"].endswith("; and 37 more stats") and "\n" not in info["message"]
+
+
+@pytest.mark.parametrize(
+    "bands, expected",
+    [
+        ([("success", 0), ("failure", -99)], "success"),
+        ([("critical", 3), ("success", 0), ("partial", -2), ("failure", -99)], "success"),
+        ([("success", 1), ("failure", -99)], "success"),  # 0 lands in the floor band
+        ([("strong", 2), ("weak", 1), ("miss", -99)], "weak"),
+        ([("success", 0)], "success"),
+    ],
+)
+def test_success_band_is_where_a_zero_margin_lands(bands: list[tuple[str, int]], expected: str) -> None:
+    assert odds.success_band([{"band": name, "at_least": at_least} for name, at_least in bands])["band"] == expected
+
+
+def test_auto_success_dead_zone() -> None:
+    live = odds.load_resolution(LIVE_SCALE)
+    (warning,) = odds.dead_zone_findings(live)
+    assert warning["rule"] == "auto_success_dead_zone" and warning["severity"] == "warning"
+    # 1d2 adds at least 1, so a margin of -1 already reaches success, yet the rule rolls until 2.
+    assert "margins -1 to 1" in warning["message"] and "set auto_success_margin to -1" in warning["message"]
+    # The dice helper already records those calls as certain; the setting only disagrees with it.
+    assert "records them as certain without rolling" in warning["message"]
+    assert odds.dead_zone(live) == (-1, 1)
+    # The suggested value closes the zone: no certain call is rolled any more.
+    assert odds.dead_zone_findings({**live, "auto_success_margin": -1}) == []
+    for stat, difficulty in odds._pairs({**live, "auto_success_margin": -1}):
+        ways, total = odds.band_ways({**live, "auto_success_margin": None}, stat, difficulty)
+        if stat - difficulty < -1:
+            assert ways["success"] < total
+    # No margin rule, or a zone the scale never reaches, is no finding.
+    assert odds.dead_zone_findings(odds.load_resolution(HEALTHY_SCALE)) == []
+    far = odds.normalize_resolution({"die": "1d6", "difficulty_min": 20, "difficulty_max": 30, "auto_success_margin": 2})
+    assert odds.dead_zone(far) is None
+    two_d6 = odds.normalize_resolution(
+        {"die": "2d6", "difficulty_min": 4, "difficulty_max": 13, "auto_success_margin": 2,
+         "bands": [{"at_least": 0, "band": "success"}, {"at_least": -99, "band": "failure"}]}
+    )
+    assert odds.dead_zone(two_d6) == (-2, 1)
+
+
+def test_findings_and_the_table_include_the_dead_zone() -> None:
+    live = odds.load_resolution(LIVE_SCALE)
+    assert [f["rule"] for f in odds.findings(live)] == ["scale_exhausted", "first_band_unreachable", "auto_success_dead_zone"]
+    assert [f["rule"] for f in odds.exhaustion_findings(live)] == ["scale_exhausted", "first_band_unreachable"]
+    assert "- auto_success_dead_zone (warning): " in odds.format_table(live)
+
+
+def test_worst_band_unreachable_counts_pairs() -> None:
+    assert odds.worst_band_unreachable(odds.load_resolution(LIVE_SCALE)) == (24, 25)
+    # 1d6 vs difficulty 3-10: failure is out of reach only where stat + 1 meets the difficulty.
+    assert odds.worst_band_unreachable(odds.load_resolution(HEALTHY_SCALE)) == (10, 40)
+
+
 def test_percent_formatting_keeps_tiny_odds_visible() -> None:
     assert odds._percent(1, 3) == "33.3%"
     assert odds._percent(1, 3000) == "<0.1%"

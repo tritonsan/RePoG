@@ -183,7 +183,7 @@ def test_stamp_and_stacked_heading_detection() -> None:
     assert owner_ops.stamp_revision("# A\n", 9) == "# A\n"
     stacked = "# N\n\n## State On Day 289\n\na\n\n## State On Day 389\n\nb\n\n## State On Day 737 (current)\n\nc\n"
     assert owner_ops.stacked_headings(stacked) == [("State On Day 289", 3)]
-    distinct = "# N\n\n### Maren\n\na\n\n### Nella\n\nb\n\n### Tom\n\nc\n"
+    distinct = "# N\n\n### Tamsin\n\na\n\n### Tessa\n\nb\n\n### Tom\n\nc\n"
     assert owner_ops.stacked_headings(distinct) == []
 
 
@@ -192,3 +192,35 @@ def test_yaml_ops_are_refused_for_markdown_and_vice_versa() -> None:
         owner_ops.parse_ops([{"op": "append", "text": "x"}], relative="current_state.yaml", label="m")
     with pytest.raises(owner_ops.OwnerOpError, match="not available"):
         owner_ops.parse_ops([{"op": "set", "key": "a", "value": "b"}], relative="threads.md", label="m")
+
+
+def test_fold_now_keeps_crlf_line_endings() -> None:
+    note = (
+        "# N\r\n\r\n## Now\r\n\r\n- Day 1: a.\r\n- Day 2: b.\r\n- Day 3: c.\r\n- Day 4: d.\r\n"
+        "\r\n## Agency Card\r\n\r\n- Tier: T2\r\n"
+    )
+    folded, moved = owner_ops.fold_now(note)
+    assert moved == 1 and "\n" not in folded.replace("\r\n", "")
+    assert "## Now\r\n\r\n- Day 2: b.\r\n- Day 3: c.\r\n- Day 4: d.\r\n\r\n## History\r\n\r\n- Day 1: a.\r\n\r\n## Agency Card" in folded
+    assert owner_ops.fold_now(folded) == (folded, 0)
+
+
+def test_set_fields_replaces_in_place_and_appends_missing_fields() -> None:
+    text = "# T\n\n## Arc Compass\n\n<!--\n- Act status: example\n-->\n\n- Act status: active\n\n## Other\n"
+    result = owner_ops.set_fields(text, "Arc Compass", {"Act status": "closed", "Recorded at revision": "4"})
+    assert "- Act status: example" in result  # guidance inside a comment is never a field
+    assert "- Act status: closed\n- Recorded at revision: 4\n\n## Other\n" in result
+    assert owner_ops.section_body(result, "Other") == []
+    with pytest.raises(owner_ops.OwnerOpError, match="exactly one"):
+        owner_ops.set_fields(text, "Missing", {"A": "b"})
+
+
+def test_core_status_and_table_rows() -> None:
+    note = "# W\n\n## Core\n\n- Status: dead (drowned)\n- Kin: none\n"
+    assert owner_ops.core_status(note) == "dead (drowned)"
+    assert owner_ops.core_status("# W\n\n- Status: dead\n") == ""
+    assert owner_ops.table_rows(TABLE) == (
+        ["From", "Direction", "To", "Relation"],
+        [["Mira", "->", "Witness", "wary"], ["Mira", "->", "Courier", "hunting"]],
+    )
+    assert owner_ops.table_rows("# none\n") == ([], [])

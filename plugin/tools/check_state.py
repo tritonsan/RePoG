@@ -6,6 +6,7 @@ import argparse
 import contextlib
 import importlib.util
 import json
+import math
 import re
 import sys
 from functools import lru_cache
@@ -174,7 +175,7 @@ TURN_PROTOCOL_PRESETS = {
         "style_review_policy": "sampled_and_distill",
     },
     "balanced": {
-        "cold_distill_policy": "scene_checkpoint_or_3_durable",
+        "cold_distill_policy": "scene_checkpoint_or_5_durable",
         "validation_policy": "full_on_distill",
         "dashboard_refresh_policy": "every_visible_change",
         "style_review_policy": "every_2_durable_and_distill",
@@ -191,6 +192,9 @@ LEGACY_TURN_PROTOCOL_PRESETS = {
     "balanced": {**TURN_PROTOCOL_PRESETS["balanced"], "cold_distill_policy": "scene_or_3_durable"},
     "maximum_continuity": TURN_PROTOCOL_PRESETS["maximum_continuity"],
 }
+# Before 0.4.0 Balanced distilled after three durable turns; a campaign that
+# still holds that policy keeps it until the Player changes it.
+TURN_PRESET_ACCEPTED = {"balanced": {"cold_distill_policy": {"scene_checkpoint_or_3_durable"}}}
 TURN_PROTOCOLS = set(TURN_PROTOCOL_PRESETS) | {"custom"}
 COLD_DISTILL_POLICIES = {
     "every_durable",
@@ -1612,8 +1616,9 @@ def _check_play_profile(
             "dashboard_refresh_policy": refresh_policy,
             "style_review_policy": style_policy,
         }
+        accepted = TURN_PRESET_ACCEPTED.get(turn_protocol, {}) if schema_version >= 2 else {}
         for field, expected_value in expected.items():
-            if actual.get(field) and actual[field] != expected_value:
+            if actual.get(field) and actual[field] != expected_value and actual[field] not in accepted.get(field, ()):
                 _add(findings, "error", "turn_preset_mismatch", f"{turn_protocol} requires {field}: {expected_value}.", path)
     if required:
         system_fit_path = campaign_path / "system_fit.md"
@@ -2757,9 +2762,13 @@ def _check_style_state_activity(campaign_path: Path, *, revision: int, findings:
 
     An empty history after many durable revisions means the only repetition and
     speaker memory stayed inert, which is how distinct voices drift together.
+    With the presentation lint on, its history is that memory and distill no
+    longer samples replies into style_state.json, so an empty one is expected.
     """
     path = campaign_path / "style_state.json"
     if not path.is_file() or revision < STYLE_ACTIVITY_REVISION_THRESHOLD:
+        return
+    if _runtime_checks().lint_keeps_style_memory(campaign_path):
         return
     try:
         state = json.loads(path.read_text(encoding="utf-8"))
@@ -3312,22 +3321,33 @@ def _check_early_stage_power(
     tier: str,
     power_band: str,
     level_band: str,
+    capped: bool = False,
 ) -> None:
-    recommended_max = _campaign_recommended_max(level_band)
-    if recommended_max is None or recommended_max >= STAT_MAX:
+    budget_max = _campaign_recommended_max(level_band)
+    if budget_max is None:
+        return
+    # Level-band figures are written for 1-5; a declared stat range rescales them.
+    rescaled = _runtime_checks().rescaled
+    recommended_max = rescaled(budget_max, (STAT_MIN, STAT_MAX))
+    if recommended_max >= STAT_MAX:
         return
 
     band_text = power_band.lower()
-    high_power_justified = any(word in band_text for word in HIGH_POWER_WORDS)
+    upper = _content_checks().band_upper(power_band)
+    high_power_justified = any(word in band_text for word in HIGH_POWER_WORDS) or (
+        upper is not None and bool(parsed) and upper >= max(parsed.values())
+    )
     high_stats = sorted(name for name, value in parsed.items() if value > recommended_max)
     elite_stats = sorted(name for name, value in parsed.items() if value >= STAT_MAX)
 
-    if tier == "t2" and high_stats and not high_power_justified:
+    # A rules.md Tier Caps entry replaces the level-band ceiling for its tier;
+    # check_content reports a stat above that cap under this same rule id.
+    if tier == "t2" and high_stats and not high_power_justified and not capped:
         _add(
             findings,
             "warning",
             "early_stage_power_spike",
-            f"{context} has stats above the {level_band} recommended max without a high-power band: {', '.join(high_stats)}.",
+            f"{context} has stats above the {level_band} recommended max {int(recommended_max)} without a high-power band: {', '.join(high_stats)}.",
             path,
         )
 
@@ -3340,14 +3360,15 @@ def _check_early_stage_power(
             path,
         )
 
-    if level_band and _normalize_level(level_band) in {"beginner", "local_rookie", "local_rookie_beginner"}:
-        very_high_count = sum(1 for value in parsed.values() if value >= 4)
+    if not capped and level_band and _normalize_level(level_band) in {"beginner", "local_rookie", "local_rookie_beginner"}:
+        very_high = math.ceil(rescaled(4, (STAT_MIN, STAT_MAX)))
+        very_high_count = sum(1 for value in parsed.values() if value >= very_high)
         if very_high_count > 1 and not high_power_justified:
             _add(
                 findings,
                 "warning",
                 "early_stage_power_inflation",
-                f"{context} has {very_high_count} stats at 4+ in a beginner-stage campaign without a high-power band.",
+                f"{context} has {very_high_count} stats at {very_high}+ in a beginner-stage campaign without a high-power band.",
                 path,
             )
 
@@ -3360,6 +3381,7 @@ def _check_character_notes(
     resolution_grounding: str,
     ready: bool,
     contract_v3: bool,
+    caps: dict[str, int] | None = None,
 ) -> None:
     active_path = campaign_path / "active_cast.md"
     active_rows = _markdown_table(_read(active_path, findings)) if active_path.is_file() else []
@@ -3368,6 +3390,10 @@ def _check_character_notes(
         for row in active_rows
         if row.get("NPC") and _slug(row.get("NPC", "")) != "example_npc"
     }
+    # rules.md Tier Caps; a caller checking one note outside its campaign passes them.
+    rules_path = campaign_path / "rules.md"
+    if caps is None:
+        caps = _content_checks().tier_caps(_read(rules_path, findings)) if rules_path.is_file() else {}
     for path in _markdown_files(campaign_path / "characters"):
         text = _read(path, findings)
         tier = _slug(_markdown_field(text, "Tier"))
@@ -3476,6 +3502,7 @@ def _check_character_notes(
             tier=tier,
             power_band=power_band,
             level_band=level_band,
+            capped=tier in caps,
         )
 
 
@@ -3709,6 +3736,15 @@ def _check_markdown_mechanics(
     )
 
 
+# Revision lag alone is not staleness: the content rules in check_content.py
+# report what is actually out of date, and a long lag is only noted.
+STALE_INFO_LAG = 25
+
+
+def _lag(label: str, revision: int, current: int) -> str:
+    return f"{label} revision {revision} trails state revision {current} by more than {STALE_INFO_LAG}."
+
+
 def _check_v2_memory(
     campaign_path: Path,
     *,
@@ -3728,8 +3764,8 @@ def _check_v2_memory(
     active_revision = _markdown_revision(active_text, "As of revision")
     if active_revision is None:
         _add(findings, "warning", "active_cast_revision_missing", "Active cast has no revision.", active_path)
-    elif scope == "full" and active_revision < revision:
-        _add(findings, "warning", "active_cast_stale", f"Active cast revision {active_revision} trails state revision {revision}.", active_path)
+    elif scope == "full" and revision - active_revision > STALE_INFO_LAG:
+        _add(findings, "info", "active_cast_stale", _lag("Active cast", active_revision, revision), active_path)
 
     active_by_name = {_slug(row.get("NPC", "")): row for row in active_rows if row.get("NPC") and _slug(row.get("NPC", "")) != "example_npc"}
     required_active_fields = ["Current location", "Current activity", "Immediate objective", "Availability", "Reason here", "Next move if ignored"]
@@ -3761,14 +3797,15 @@ def _check_v2_memory(
             row_location = row.get("Current location", "")
             if location and row_location and _slug(location) != _slug(row_location):
                 _add(findings, "error", "active_cast_location_conflict", f"Present NPC {npc} is tracked at {row_location}, not current location {location}.", active_path)
-        elif tier == "t1" and _slug(npc) not in active_by_name:
+        elif tier == "t1" and _slug(npc) not in active_by_name and scope != "full":
+            # A full check reports every missing row as cast_present_missing.
             _add(findings, "warning", "present_t1_presence_untracked", f"Present recurring T1 NPC has no active presence row: {npc}", active_path)
 
     graph_text = _read(graph_path, findings)
     graph_rows = _markdown_table(graph_text)
     graph_revision = _markdown_revision(graph_text, "As of revision")
-    if scope == "full" and graph_revision is not None and graph_revision < revision:
-        _add(findings, "warning", "location_graph_stale", f"Location graph revision {graph_revision} trails state revision {revision}.", graph_path)
+    if scope == "full" and graph_revision is not None and revision - graph_revision > STALE_INFO_LAG:
+        _add(findings, "info", "location_graph_stale", _lag("Location graph", graph_revision, revision), graph_path)
     seen_current_location = False
     for row in graph_rows:
         source = row.get("From", "")
@@ -3793,8 +3830,8 @@ def _check_v2_memory(
     relationship_revision = _markdown_revision(relationship_text, "As of revision")
     if relationship_revision is None:
         _add(findings, "warning", "relationship_revision_missing", "Relationship map has no revision.", relationship_path)
-    elif scope == "full" and relationship_revision < revision:
-        _add(findings, "warning", "relationship_map_stale", f"Relationship map revision {relationship_revision} trails state revision {revision}.", relationship_path)
+    elif scope == "full" and revision - relationship_revision > STALE_INFO_LAG:
+        _add(findings, "info", "relationship_map_stale", _lag("Relationship map", relationship_revision, revision), relationship_path)
     state_text = _read(campaign_path / "current_state.yaml", findings)
     player_name = _clean_scalar(_nested_values(_block(state_text, "player")).get("name", ""))
     required_relationship_fields = (
@@ -3853,8 +3890,8 @@ def _check_v2_memory(
         brief_revision = _markdown_revision(brief_text, "Prepared from revision")
         if brief_revision is None:
             _add(findings, "warning", "session_brief_revision_missing", "Session brief has no source revision.", brief_path)
-        elif brief_revision < revision:
-            _add(findings, "warning", "session_brief_stale", f"Session brief revision {brief_revision} trails state revision {revision}; current state remains authoritative.", brief_path)
+        elif revision - brief_revision > STALE_INFO_LAG:
+            _add(findings, "info", "session_brief_stale", _lag("Session brief", brief_revision, revision) + " Current state remains authoritative.", brief_path)
 
         dynamics_path = campaign_path / "world_dynamics.md"
         if dynamics_path.is_file():
@@ -4216,11 +4253,23 @@ def _runtime_checks():
     return module
 
 
+@lru_cache(maxsize=1)
+def _content_checks():
+    path = Path(__file__).with_name("check_content.py")
+    spec = importlib.util.spec_from_file_location("_repog_check_content", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load content checks")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 @contextlib.contextmanager
 def _configured_stat_scale(campaign_path: Path):
-    """Use the campaign's declared stat range (mechanics.resolution) while checking.
+    """Use the campaign's declared stat range while checking.
 
-    Campaigns without a resolution block keep the 1-5 scale.
+    The range comes from mechanics.resolution and a rules.md `- Numeric scale:`
+    line; campaigns with neither keep the 1-5 scale.
     """
 
     global STAT_MIN, STAT_MAX
@@ -4228,7 +4277,9 @@ def _configured_stat_scale(campaign_path: Path):
     try:
         profile = campaign_path / "play_profile.yaml"
         text = profile.read_text(encoding="utf-8") if profile.is_file() else ""
-        STAT_MIN, STAT_MAX = _runtime_checks().stat_range(text)
+        rules = campaign_path / "rules.md"
+        rules_text = rules.read_text(encoding="utf-8") if rules.is_file() else ""
+        STAT_MIN, STAT_MAX = _runtime_checks().stat_range(text, rules_text)
     except Exception:
         STAT_MIN, STAT_MAX = saved
     try:
@@ -4618,6 +4669,8 @@ def _check_player_state(
     # axis, and a defining value from the first scene is paid for in the axes left
     # low. Flagging that choice would contradict the accepted rule on every check.
     max_total, _player_axis_ceiling_unused = budget
+    # Each stat's share of the 1-5 budget moves with a declared stat range.
+    max_total = int(_runtime_checks().rescaled(max_total, (STAT_MIN, STAT_MAX), len(parsed_stats)))
     total = sum(parsed_stats.values())
     budget_policy = _clean_scalar(player_values.get("stat_budget_policy", "standard"))
     budget_note = _clean_scalar(player_values.get("stat_budget_note", ""))
@@ -4645,7 +4698,13 @@ def check_campaign(
     preflight_ready: bool = False,
 ) -> dict:
     with _configured_stat_scale(Path(campaign_path).resolve()):
-        return _check_campaign(Path(campaign_path), scope=scope, preflight_ready=preflight_ready)
+        result = _check_campaign(Path(campaign_path), scope=scope, preflight_ready=preflight_ready)
+    if scope == "full" and result["findings"]:
+        # Directive rows (Scope `check`) turn acknowledged warnings into info.
+        root = Path(result["campaign_path"])
+        _content_checks().acknowledge(root, result["findings"])
+        result = _result(root, result["findings"], scope=scope)
+    return result
 
 
 def _check_campaign(
@@ -4912,14 +4971,25 @@ def _check_campaign(
         findings.extend(checks.check_references(campaign_path, ready=content_ready))
         _check_curation(campaign_path, findings)
 
-        def add(severity: str, rule: str, message: str, path: Path) -> None:
+        def add(severity: str, rule: str, message: str, path: Path, **extra: object) -> None:
             _add(findings, severity, rule, message, path)
+            findings[-1].update(extra)  # e.g. `paths` of an aggregated finding
 
         runtime_checks = _runtime_checks()
         profile_path = campaign_path / "play_profile.yaml"
         if profile_path.is_file():
-            runtime_checks.check_profile(_read(profile_path, findings), profile_path, add)
+            profile_text = _read(profile_path, findings)
+            runtime_checks.check_profile(profile_text, profile_path, add)
+            runtime_checks.check_rolls(campaign_path, profile_text, profile_path, add)
         runtime_checks.check_notes(campaign_path, present_npcs, add)
+        findings.extend(
+            _content_checks().check_campaign_content(
+                campaign_path,
+                location=location,
+                present_npcs=present_npcs,
+                numeric=resolution_grounding == "numeric",
+            )
+        )
 
     if memory_version >= 2 and all((campaign_path / relative).is_file() for relative in V2_FILES):
         _check_v2_memory(

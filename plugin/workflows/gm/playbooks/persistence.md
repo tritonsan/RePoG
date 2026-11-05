@@ -3,6 +3,38 @@
 Load after resolution when a durable result, checkpoint, or full-distill trigger
 requires work. Soft ordinary turns need no additional load.
 
+## Order
+
+`play_profile.yaml.runtime.persistence_order` orders the reply and the commit.
+The Player sees any text written before or between tool calls, so silent work
+and visible text never interleave.
+
+- `narrate_then_commit` (default when unset):
+  1. silent reads and rolls;
+  2. the narration, written as text;
+  3. one commit;
+  4. a hand-back line: the scene's last line, or one OOC line if something
+     could not be saved.
+
+  Decide the semantic capture before writing the narration, and never narrate
+  a result this commit will not persist. Hold back the line that returns
+  control to the Player until after the commit, so the turn ends on visible
+  text. Never run the commit in the background. If the call fails, fix the
+  typed failure and retry in the same turn; only if a narrated fact still
+  cannot be persisted is the hand-back one OOC line that corrects it. A distill
+  or full check that is due, or that the result reports as
+  `full_distill_required`, runs after the reply: after the commit and before
+  the hand-back line. The result's `hand_back` field restates this for the GM
+  and is never shown; its `narration_allowed` is informational under this
+  order. A soft turn is the reads, rolls, and narration alone.
+- `commit_then_narrate`: wait for the command result and narrate only after
+  success; on failure, do not narrate the fact as established. On success, if
+  `full_distill_required` is true or `narration_allowed` is false, current
+  truth is safe but Distill must finish before narration.
+
+Under either order, never complete a partial write manually, and keep the same
+operation id for a valid retry after the typed failure is addressed.
+
 ## Classify And Commit
 
 Persistence starts with semantic capture; boundary selection does not substitute
@@ -124,24 +156,8 @@ Do not delegate the semantic capture or authoritative commit. Selective
 structural delegation, when eligible, begins only after the primary agent has
 frozen the committed revision and pending cold-target set. Workers cannot
 increment revision, append the event, clear pending targets, patch a
-projection, or narrate the outcome.
-
-`play_profile.yaml.runtime.persistence_order` orders the reply and the commit:
-
-- `narrate_then_commit` (default when unset): resolve, decide the semantic
-  capture, and write the reply; then make the one commit call and write no text
-  after it. Never narrate a result this commit will not persist. If the call
-  fails, fix the typed failure and retry in the same turn; only if a narrated
-  fact still cannot be persisted, add one OOC line that corrects it. A full
-  distill that is due, or that the result reports as `full_distill_required`,
-  runs after the reply in the same turn.
-- `commit_then_narrate`: wait for the command result and narrate only after
-  success; on failure, do not narrate the fact as established. On success, if
-  `full_distill_required` is true or `narration_allowed` is false, current
-  truth is safe but Distill must finish before narration.
-
-Under either order, never complete a partial write manually, and keep the same
-operation id for a valid retry after the typed failure is addressed.
+projection, or narrate the outcome. The Order section above places the commit
+in the turn.
 
 ### 3D. Mutation Forms
 
@@ -165,7 +181,8 @@ Markdown owners and notes (`heading` is the heading text, `#`s optional; add
 - `replace_section` swaps a section's body; `remove_section` deletes it;
 - `insert_section` adds `heading` (with its `#`s) at the end of the file or of
   `under`, and refuses one that already exists: replace a note's current state
-  in place, never add a dated layer;
+  in place, never add a dated layer. `## Now` changes only through
+  `replace_section`, holding the current state alone;
 - `upsert_row` / `delete_row` find a table row by `key`, its first cell or
   first cells such as `["Mira", "->", "Ilse"]`; `cells` is the whole row;
 - `replace` is one exact replacement inside the list.
@@ -193,7 +210,109 @@ python tools/rpg_state.py campaign commit-durable --input-file - <<'JSON'
 JSON
 ```
 
-A result may list `warnings`: an owner near the size cap, stacked note
+Write every record's content in the records language
+(`play_profile.yaml.narration.records_language`, or the play language when it
+is `same`): descriptions, `## Now` and History lines, Depth, Agency Card
+values, summaries, facts, thread text, and names. Keep the structure exactly as
+the templates write it: file names, YAML keys, headings, `- Label:` names,
+table headers, enum values such as `alive`, `dead`, scene modes, and band
+names, ids, and op names.
+
+### 3E. Payload Helpers And Results
+
+Build a payload from the live files, never from memory. `python
+tools/rpg_state.py campaign template --kind durable` (or `checkpoint`,
+`distill`, `act`) prints a skeleton: the current revision, an `operation_id`
+placeholder, the valid `scene_mode` values, the `current_state.yaml` top-level
+keys, the `active_cast.md` and `relationship_map.md` columns, and the owner
+each change kind requires. It writes nothing.
+
+Every result carries `next_expected_revision`; pass it as the next payload's
+`expected_continuity_revision` instead of counting. `commit-distill` alone also
+accepts `"current"`: `{"operation_id": "distill-14",
+"expected_continuity_revision": "current", "trigger": "session end", ...}`.
+
+Key paths take Unicode names, and a quoted segment when a name has spaces:
+`{"op": "set", "values": {"player.stats.Algı": 4,
+"player.stats.\"Sokak Zekâsı\"": 3}}`; a number stays a number.
+`--input-file` reads UTF-8 with or without a BOM; other bytes are decoded as
+cp1254, then latin-1, with an `input_decoded_<codec>` warning: check the saved
+text when one appears.
+
+A checkpoint at boundary `scene_checkpoint` carries `open_choices`, one to five
+short strings that replace `current_state.yaml` `open_choices`; without them
+the writer refuses with `checkpoint_open_choices_missing`. Elsewhere they are
+optional. `"checkpoint": {"scene_id": "dock-12", "scene_mode": "aftermath",
+"resume_anchor": "Ilse waits for an answer.", "active_cast_handoff": "none",
+"open_choices": ["follow the courier", "report to the warden"]}`.
+
+An act transition is one `commit-act` call, not a hand-built Compass edit. The
+writer closes the current Compass (keeping a Closure Record an earlier commit
+already wrote), archives it under `## Act Archive`, writes the successor's
+Compass, and commits it all as one durable transaction at a
+`scene_checkpoint` boundary. `close.act_id` is the current Compass's act id,
+`close.outcome` says whether the closure condition was met or foreclosed, and
+`close.summary` names the decisive action. `open` needs the new act's
+`act_id` (never one used before), `title`, `dramatic_question`, `scope`
+(`places`, `people`, `in_motion`, `if_ignored`), and `closure_conditions`;
+`prepared_expectations` is optional. Optional `changes` and `mutations` carry
+the act-close review in the same transaction, in the commit-durable forms.
+
+```sh
+python tools/rpg_state.py campaign commit-act --input-file - <<'JSON'
+{"operation_id": "act-2-close", "expected_continuity_revision": 88,
+ "close": {"act_id": "act-2", "outcome": "met", "summary": "Mira took the ledger from the council at revision 86."},
+ "open": {"act_id": "act-3", "title": "The Ledger's Price",
+  "dramatic_question": "Who pays for what the ledger proves?",
+  "scope": {"places": ["the harbor district", "the river road"], "people": ["Ilse", "the council's creditors"],
+   "in_motion": "The creditors are hiring.", "if_ignored": "The ledger's debts come due at the spring fair."},
+  "closure_conditions": ["The ledger is sold, burned, or published."],
+  "prepared_expectations": ["The creditors come to collect."]},
+ "checkpoint": {"scene_id": "act-3-dawn", "scene_mode": "transition", "resume_anchor": "Dawn after the council fell.",
+  "active_cast_handoff": "none", "open_choices": ["sell the ledger", "hide the ledger"]}}
+JSON
+```
+
+Two refusals carry their own repair. A checkpoint handoff without an
+`active_cast.md` mutation returns a ready `upsert_row` op built from the
+handoff names and the table's columns: add it and retry. A `relationship` or
+`bond` change without `relationship_map.md` asks for that file among the
+owners: add it, and never rename the kind instead.
+
+Warnings ask for follow-up, not a retry. Each is `{"rule", "path", "message"}`:
+
+- `now_overflow_folded`: a note's `## Now` held more than 800 characters or
+  more than three dated entries, so the writer moved the oldest dated entries
+  into `## History`. Nothing to do.
+- `now_append`: an `append` targeted `## Now`; use `replace_section` and keep
+  the current state only.
+- `death_projection`: a note's Core Status became `dead` or `missing` while
+  rows naming it in `active_cast.md` or `relationship_map.md` stayed unchanged.
+  Fix the listed rows in the next commit. Rows still stale at the next
+  `commit-distill` come back as `cast_dead_listed` or
+  `relationship_dead_active`, and it is refused with `distill_unreconciled`
+  until its mutations fix them or `deferred_reconcile` lists `active_cast.md`
+  or `relationship_map.md`.
+- `inventory_count_duplicate`: a `current_state.yaml` inventory line carries a
+  count `mechanics_state.json` already tracks; name the item only.
+- `cost_unrecorded`: a change cites a roll whose band names a cost, a partial
+  result, a loss, or a failure (such as `success_with_cost`, `partial_or_loss`,
+  or `failure`), yet the payload changed no `player.conditions` or
+  `pending_consequences`, no mechanic, and no character note. Record the cost
+  in the next commit.
+- `glossary_suggest`: a new note's title holds a word outside the play
+  language, or the note is in another language; the suggested `glossary.md`
+  row `{Term, Preferred, Variants, Notes}` leaves `Preferred` empty. Fill it
+  with the play-language form and commit the row when the name recurs.
+- `record_language`: text in `create_text`, `replace_section`, or `append` was
+  detected in a language other than the records language; rewrite it there in
+  the next commit that touches the path.
+
+Durable receipts omit lines whose value is `none` or empty. A
+`session_log.md` over 150,000 characters rotates at the next `commit-distill`
+on its own; `rotate_log: false` keeps it in place.
+
+A result may list other `warnings`: an owner near the size cap, stacked note
 sections, or a long session log. Handle them at the next distill, not mid-scene.
 A new note's warnings are the exception: act on `name_common_word` or
 `name_near_duplicate` before the name settles in play, and fill the fields a

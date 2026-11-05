@@ -31,8 +31,20 @@ Follow `play_profile.yaml.mechanics.resolution_grounding`:
 
 Use dice only when the approved dice policy calls for them. Follow the Player
 roll/GM roll visibility policy, use a unique operation id for durable mechanic
-mutations, and never expose internal math in Player Mode. A tool may resolve
-bounded uncertainty; it may not invent motives, events, or consequences.
+mutations, and expose no internal math in Player Mode beyond the receipt's
+`display` line where the dice mode shows rolls. A tool may resolve bounded
+uncertainty; it may not invent motives, events, or consequences.
+
+## When Not To Roll
+
+Roll only when a bad result is a real possibility. When the chance of landing
+below the lowest success band is under about 15%, or nil, do not roll: narrate
+the success and hand the scene back to the world. Read that chance from the
+odds table (`python tools/odds.py campaign`) for the value, factors, and
+difficulty you would declare. A roll call that returns `certain`, with the
+warning `roll_certain`, was recorded at its floor band without a roll: narrate
+that band as an unrolled success and show no dice for it. This threshold
+decides what is uncertain; it never makes a likely failure disappear.
 
 ## Declare Before Rolling
 
@@ -40,7 +52,17 @@ When `dice_mode` is not `judgment_only`, an uncertain or contested action is
 rolled, never judged around. Before any die is read, fix the `actor`, the
 `axis` or capability and its `value`, the `difficulty` with a one-line
 `reason` read from the opposition, each factor as a labelled whole-number
-modifier, and the `stakes`: what a lower band costs. Roll it once through
+modifier, and the `stakes`: what each reachable band below success costs.
+
+Factors cut both ways. What favors the opposition (numbers, ground, a wound,
+bad light, no time) enters as a negative modifier as readily as an advantage
+enters as a positive one, and a list of bonuses alone is a call being steered.
+Size each factor 2 to 6, for a small, clear, or decisive edge, unless
+`rules.md` sizes factors for a narrower scale. The stakes describe every band
+the call can reach below success and no band it cannot reach; the receipt warns
+`stakes_unreachable_band` or `stakes_missing_band` when they do not.
+
+Roll the call once through
 `python tools/roll_dice.py --campaign campaign --input-file -` with a new
 `roll_id` and a `call` of those fields (`factors` as `label` and `modifier`).
 A Player who rolls under the dice mode reports against the same declaration.
@@ -51,6 +73,21 @@ hidden "counts as". When the odds table (`python tools/odds.py campaign`) shows
 the actor cannot miss on this scale, offer that OOC scale change once, at a
 natural pause; until the Player decides, roll as declared. Cite the roll in the
 durable change (persistence playbook).
+
+Where the dice mode shows rolls (`open_gm_rolls`, or a GM roll under
+`hybrid`), show the receipt's `display` line as it stands, in the play language,
+then narrate the band; under `hidden_gm_rolls` show nothing of it.
+
+## Crowds And Named Enemies
+
+A crowd is not one opponent. Against many, use one of these, whichever the
+fiction supports: a negative small-edge factor (-2 at the default sizes) for
+each doubling of the opponents (two, four, eight), several exchanges rolled in
+turn, or an alarm clock that fills as the fight goes on and brings what the
+noise draws. A named enemy rolls separately from the extras around them: a
+roll against the crowd never decides a named enemy's fate, and beating the
+crowd leaves the named enemy standing until their own roll or the fiction
+settles them.
 
 ## Let Competence Stand
 

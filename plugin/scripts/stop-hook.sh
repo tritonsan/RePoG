@@ -1,8 +1,10 @@
 #!/bin/sh
 # RePoG Stop hook (runs asynchronously).
 #
-# In a ready RePoG campaign, run the deterministic presentation lint over the
-# reply that just ended and store its findings for the next scene capsule.
+# In a ready RePoG campaign, record whether the turn that just ended narrated
+# before its commit and ended with visible text (order_last.json, flags only),
+# run the deterministic presentation lint over the reply, and store both for
+# the next scene capsule. It reads only this session's last turn, locally.
 # Prints nothing and never affects the conversation.
 
 project="${CLAUDE_PROJECT_DIR:-$PWD}"

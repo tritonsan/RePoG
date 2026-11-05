@@ -3,27 +3,42 @@
 After each reply in a ready RPG campaign the Stop hook runs this lint over
 everything the turn showed the Player: every assistant text block and the
 visible tool-call descriptions. It looks for presentation failures that long
-sessions showed in every language: lines in another language, backend
-vocabulary, tracker numbers in prose, overused phrases, phrases repeated across
-replies, an opening that echoes the Player's own words, narration that writes
-the player character's words or acts, protected names, negated descriptions,
-glossary variants, and calques. What a language looks like comes from its pack
-(`lang_pack`) and from campaign files, never from this code.
+sessions showed in every language: an under-18 age next to a romance or sex
+term, lines in another language (short English status lines too), backend
+vocabulary, tracker numbers in prose, overused phrases (some capped over the
+last ten replies), phrases and stock gestures repeated across replies, an
+opening that echoes or retells the Player's own words, an NPC repeating them,
+narration that writes or rewrites the player character's words or acts,
+protected names, names or secrets in tool descriptions, negated descriptions,
+glossary variants, calques, and a capital I where Turkish writes İ. What a
+language looks like comes from its pack (`lang_pack`) and from campaign files,
+never from this code. Cast, glossary and place names are left out of language
+detection and of the repeated-phrase counts.
 
 The visibility rules (another language, backend vocabulary, protected names)
 read everything the Player saw. The narration rules read only the prose:
-out-of-character blocks and Markdown structure (headings, list items, tables,
-block quotes) are left out, so an OOC time-skip plan that counts days is not a
-tracker leak and a stat list is not a repeated phrase. The rules on the
-narrator's own words (the player character's words, negated descriptions) also
-skip speech: quoted, or a dialogue line opened with a dash as Turkish, Spanish
-and French write it ("— On adam dedin, der.").
+out-of-character blocks, `(OOC: …)` parentheticals and Markdown structure
+(headings, list items, tables, block quotes) are left out, so an OOC time-skip
+plan that counts days is not a tracker leak and a stat list is not a repeated
+phrase. The rules on the narrator's own words (the player character's words,
+negated descriptions, gestures) also skip speech: quoted, or a dialogue line
+opened with a dash as Turkish, Spanish and French write it ("— On adam dedin,
+der."). A turn whose prompt starts with OOC is linted on its prose alone; a
+short out-of-character answer is not narration, and only an age-rule
+finding from it is kept.
 
 The lint never judges meaning, never blocks, and never writes campaign truth.
 Findings go to `campaign/.repog-runtime/lint_last.json`, whose short English
 summary reaches the GM in the next scene capsule; a compact per-reply record
-(rule counts and n-gram fingerprints, newest 400) goes to `lint_history.jsonl`
-for the repetition rule and the distill review.
+(rule counts, tallies for the rolling rules and n-gram fingerprints, newest
+400) goes to `lint_history.jsonl` for the repetition and rolling rules, the
+habit line (`top_habits`) and the distill review (`report_summary`).
+
+Privacy: the hook reads only the current session's last turn, locally, from
+the transcript the host names. It stores counts, hashes and language codes,
+plus short finding snippets (at most 80 characters each) in `lint_last.json`;
+it never stores the prompt or the reply. A history written by 0.3.0, which
+kept prompt samples, loses them at the next write (their languages stay).
 
 CLI:
     python tools/presentation_lint.py hook                     (Stop hook event JSON on stdin; prints nothing)
@@ -38,9 +53,11 @@ import json
 import os
 import re
 import sys
+import tempfile
 import unicodedata
+from bisect import bisect_left
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -68,6 +85,7 @@ from repog_runtime import (
     read_json,
     read_jsonl,
     read_text,
+    replace_file,
     runtime_dir,
     runtime_settings,
     state_summary,
@@ -81,32 +99,74 @@ HISTORY_KEEP = 400
 RECORD_SCHEMA = 1
 
 RULES = (
+    "minor_sexual_proximity",
     "out_of_language",
+    "foreign_short_line",
     "meta_leak",
     "tracker_leak",
     "avoid_phrase",
     "repetition",
     "restatement",
+    "npc_echo",
     "pc_authoring",
+    "pc_line_rewritten",
     "secret_leak",
+    "tool_description_leak",
     "negated_description",
+    "gesture_repeat",
     "glossary_variant",
     "calque",
+    "dotless_capital",
+    "name_case_mismatch",
 )
-# The summary leads with what harms play most; findings keep rule order.
+# The summary leads with what harms play most, the age rule always first;
+# findings keep rule order.
 SUMMARY_ORDER = (
+    "minor_sexual_proximity",
     "secret_leak",
+    "tool_description_leak",
     "out_of_language",
+    "foreign_short_line",
     "meta_leak",
     "tracker_leak",
     "avoid_phrase",
     "restatement",
+    "npc_echo",
     "pc_authoring",
+    "pc_line_rewritten",
     "calque",
+    "gesture_repeat",
     "glossary_variant",
+    "name_case_mismatch",
+    "dotless_capital",
     "negated_description",
     "repetition",
 )
+# Short English names for the habit line and the distill report.
+RULE_LABELS = {
+    "minor_sexual_proximity": "under-18 age near romance",
+    "out_of_language": "other-language lines",
+    "foreign_short_line": "short English lines",
+    "meta_leak": "backend words",
+    "tracker_leak": "tracker numbers",
+    "avoid_phrase": "stock phrases",
+    "repetition": "repeated phrases",
+    "restatement": "restating openings",
+    "npc_echo": "NPC echoes",
+    "pc_authoring": "PC authoring",
+    "pc_line_rewritten": "rewritten PC lines",
+    "secret_leak": "protected names",
+    "tool_description_leak": "names in tool descriptions",
+    "negated_description": "negated descriptions",
+    "gesture_repeat": "repeated gestures",
+    "glossary_variant": "glossary variants",
+    "calque": "calques",
+    "dotless_capital": "dotless capital I",
+    "name_case_mismatch": "name case slips",
+}
+# Evidence of these rules may quote a protected name, so the habit line and
+# the distill report give no example for them.
+PRIVATE_EVIDENCE = frozenset({"secret_leak", "tool_description_leak"})
 
 EVIDENCE_MAX = 3
 SNIPPET_CHARS = 80
@@ -131,7 +191,7 @@ DESCRIPTION_MIN_WORDS = 3
 DESCRIPTION_MIN_HITS = 1
 # Whole lines are read too: status lines and list items break into short
 # sentences ("Status: day 814, night.") or bury their function words among
-# names ("Marcus, Nella, Dunstan and nine men"). A line of LINE_MIN_WORDS words
+# names ("Marcus, Tessa, Dunstan and nine men"). A line of LINE_MIN_WORDS words
 # with no sign of the play language is in another language when LINE_MIN_HITS
 # distinct function words of it appear...
 LINE_MIN_WORDS = 5
@@ -140,12 +200,53 @@ LINE_MIN_HITS = 2
 # (Turkish ı, ş, ğ against English) and this many ordinary words show none.
 LINE_LETTER_WORDS = 8
 DETECT_PROMPTS = 5
-PROMPT_SAMPLE_CHARS = 300
+# A line of two to four words with this many distinct English function words
+# and nothing of the play language is a stray English status line ("Now the
+# distill."); longer lines are the line rule's.
+SHORT_LINE_LANGUAGE = "en"
+SHORT_LINE_MIN_WORDS = 2
+SHORT_LINE_MIN_HITS = 2
+# Tool descriptions are often English whatever the play language, so their
+# secret words are read in English too.
+DESCRIPTION_LANGUAGE = "en"
 
 # Bare digits are reported only when they equal a day or revision of three
 # digits or more: "12 men" on day 12 is a coincidence, "412" on revision 412
 # hardly ever is. Pack day patterns ("92. gün", "day 92") catch any day.
 TRACKER_MIN_VALUE = 100
+# A single spelled ordinal ("beşinci gün") is a tracker leak only this close
+# to the tracked day; elsewhere it is the fifth day of something else.
+NEAR_DAY = 2
+
+# The rolling rules read the current reply and the newest earlier ones, this
+# many replies in all.
+ROLLING_WINDOW = 10
+GESTURE_MIN_REPLIES = 3
+NEGATED_MIN_REPLIES = 3
+
+# The age rule (an under-18 age that is the closest age of a romance or sex
+# term) is `lang_pack.minor_romance`, shared with the full check's
+# `minor_romance_history`, so the two always agree on the same text.
+
+# An NPC echo: a pack echo verb ("diye tekrarlıyor", "repeats") with speech
+# (quoted, dash dialogue, or the words before a quotative "diye") within this
+# many words of it, and a content word of the prompt inside that speech.
+ECHO_WORDS = 6
+# A paraphrased restatement: the first sentence narrates a second-person verb
+# and shares this many content stems with the prompt.
+PARAPHRASE_MIN_STEMS = 2
+# A quoted line attributed to the player character must hold at least this
+# share of words the Player wrote; a speech verb may stand this many
+# characters before the line it introduces.
+PC_LINE_SHARE = 0.5
+PC_LINE_REACH = 40
+# An answer to an out-of-character prompt with fewer prose words than this is
+# not narration.
+OOC_MIN_WORDS = 20
+
+HABITS_LAST = 20
+HABITS_LIMIT = 3
+REPORT_TEXT_MAX = 600
 
 NGRAM_SIZES = (3, 4, 5)
 NGRAM_MIN_CONTENT = 2
@@ -185,7 +286,16 @@ MIN_STEM_LETTERS = 4
 # Same convention as check_player_facing: these statuses mean the PC knows it.
 SAFE_STATUSES = ("revealed", "pc-known", "player-known", "confirmed")
 PLACEHOLDER_HEADINGS = frozenset({"protected name", "name", "example"})
+# A name's lower-case words between two capitalized ones ("of the" in "Lady of
+# the Lake") are part of it when there are at most this many.
+NAME_LINKER_WORDS = 3
 EMPTY_CELLS = frozenset({"", "-", "—", "–", "none", "n/a", "na"})
+PLACEHOLDER_NAMES = frozenset(
+    {"example npc", "example place", "example neighbor", "character name", "place name", "faction name", "npc", "name"}
+)
+# Campaign names come from note titles; a title sits at the top of its note.
+NOTE_HEAD_BYTES = 4096
+NOTE_FILES_MAX = 400
 
 # Structural backend traces, matched on the raw reply.
 _PATH_RE = re.compile(r"(?<![\w/.-])(?:[\w.-]+/)*[\w-]+\.(?:md|ya?ml|jsonl?|py)(?![\w-])")
@@ -207,10 +317,20 @@ _DASH_LINE_RE = re.compile(r"^\s*(?:(?:[-*+]|\d{1,9}[.)])\s+)?[*_]{0,3}\s*(?P<da
 # "ın"/"in"/"a" do not read as another language's function words, and before
 # word matching so "Halvar'a" and "Halvar" are the same word.
 _CLITIC_RE = re.compile(r"(?<=[^\W\d_])['’][^\W\d_]{1,3}(?![^\W_])")
+# A name word with any ending after its apostrophe ("Kanadı'nın", "Ilse'ninki").
+_NAME_SUFFIX_RE = re.compile(r"(?<![^\W_])([^\W\d_][^\W_]*)['’][^\W\d_]+")
+_SUFFIX_RE = re.compile(r"['’][^\W\d_]+")
 _OOC_RE = re.compile(r"^\W*ooc\b", re.IGNORECASE)
 # A line opening an out-of-character note: "(OOC) …", "(OOC: …)", "[OOC] …",
 # "**OOC:** …", "*(OOC: …)*", "OOC — …".
 _OOC_MARK_RE = re.compile(r"^[\s>*_~]*(?P<bracket>[(\[])?\s*ooc\b", re.IGNORECASE)
+# An out-of-character parenthetical inside a line of prose: "… (OOC: zar 5) …".
+_OOC_INLINE_RE = re.compile(r"[(\[]\s*ooc\b[^()\[\]\n]*[)\]]", re.IGNORECASE)
+# The bracketed OOC note that opens a prompt; what follows it is in fiction.
+_OOC_LEAD_RE = re.compile(r"^[\s>*_~]*[(\[]\s*ooc\b[^()\[\]]*[)\]][\s*_~]*", re.IGNORECASE)
+# Between a closing quote and the speech verb that tags it: '"Tamam," diyorsun'.
+_TAG_GAP_RE = re.compile(r"[\s,.;:!?…—–-]{0,4}")
+_I_SWAP = str.maketrans({"I": "İ", "İ": "I"})
 _RULE_LINE_RE = re.compile(r"^ {0,3}(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$")
 # Markdown structure that is not narration: headings, list items, block quotes, table rows.
 _STRUCTURE_RE = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-*+][ \t]|>|\|)")
@@ -425,6 +545,124 @@ def _pattern_spans(folded: str, pack: dict[str, Any], key: str) -> list[tuple[in
     return _disjoint(spans)
 
 
+def _regex_spans(folded: str, patterns: Any) -> list[tuple[int, int]]:
+    """Spans of a list of regexes (a calque's or a gesture family's) in folded text."""
+
+    return _pattern_spans(folded, {"patterns": patterns if isinstance(patterns, list) else [patterns]}, "patterns")
+
+
+def _sentence_spans(text: str) -> list[tuple[int, int]]:
+    """Offsets of the sentences `lang_pack.sentence_split` finds in `text`, in order."""
+
+    return lang_pack.sentence_spans(text)
+
+
+def _number_value(text: str, pack: dict[str, Any]) -> int | None:
+    """The number `text` writes in digits or in the pack's number words ("on beş", "twenty-two")."""
+
+    return lang_pack.read_number(text, pack)
+
+
+def _term_regex(pack: dict[str, Any], key: str) -> re.Pattern[str] | None:
+    """The pack's `key` terms as one regex for folded text; a word ending in "*" is a stem."""
+
+    return lang_pack.terms_regex(pack, key)
+
+
+def _stopword_keys(pack: dict[str, Any]) -> frozenset[str]:
+    return frozenset(fold(word, pack) for word in _items(pack.get("stopwords")) if isinstance(word, str))
+
+
+def _tally(record: dict[str, Any], key: str) -> int:
+    """A rolling rule's count in an earlier reply record (0 for records written before tallies)."""
+
+    tallies = record.get("tallies")
+    value = tallies.get(key) if isinstance(tallies, dict) else None
+    return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else 0
+
+
+def _rolling(history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The earlier replies a rolling rule reads beside the current one."""
+
+    return history[-(ROLLING_WINDOW - 1) :]
+
+
+def _name_words(context: dict[str, Any], pack: dict[str, Any], key: str = "names") -> frozenset[str]:
+    """Folded words of the context's names that are written capitalized ("Ilse of Marrow" -> ılse, marrow)."""
+
+    found: set[str] = set()
+    for name in _items(context.get(key)):
+        if isinstance(name, str):
+            found.update(
+                fold(token, pack)
+                for token in tokens(name)
+                if len(token) >= 2 and token[:1].isupper() and not _has_digit(token)
+            )
+    return frozenset(found)
+
+
+@dataclass(frozen=True)
+class _Names:
+    words: frozenset[str]  # folded capitalized words of the context's names
+    linkers: frozenset[tuple[str, ...]]  # folded lower-case runs between them ("of the", "de la")
+
+
+def _names(context: dict[str, Any], pack: dict[str, Any]) -> _Names:
+    """The context's names, as `_blank_names` reads them."""
+
+    linkers: set[tuple[str, ...]] = set()
+    for name in _items(context.get("names")):
+        run: list[str] = []
+        for index, token in enumerate(tokens(name) if isinstance(name, str) else []):
+            if token[:1].isupper():
+                if run and index > len(run) and len(run) <= NAME_LINKER_WORDS:
+                    linkers.add(tuple(fold(word, pack) for word in run))
+                run = []
+            else:
+                run.append(token)
+    return _Names(_name_words(context, pack), frozenset(linkers))
+
+
+def _blank_names(text: str, names: _Names, pack: dict[str, Any]) -> str:
+    """`text` with the context's names blanked in place.
+
+    Blanks every capitalized name word with any ending after its apostrophe,
+    and the lower-case words a name joins its capitalized words with ("Lady
+    of the Lake", "Vela de la Mar") where they stand between two of them.
+    """
+
+    if not names.words:
+        return text
+    named = []
+    for start, end in _word_spans(text):
+        word = text[start:end]
+        if word[:1].isupper() and fold(word, pack) in names.words:
+            suffix = _SUFFIX_RE.match(text, end)
+            named.append((start, suffix.end() if suffix else end))
+    joined = [
+        (left, right)
+        for (_, left), (right, _) in zip(named, named[1:])
+        if tuple(words(text[left:right], pack)) in names.linkers
+        and not any(char in _OPENING_MARKS or char == "," for char in text[left:right])
+    ]
+    return _blank(text, _disjoint(named + joined))
+
+
+def _strip_name_suffixes(text: str) -> str:
+    """`text` without the endings after a capitalized word's apostrophe ("Kanadı'nın" -> "Kanadı")."""
+
+    return _NAME_SUFFIX_RE.sub(lambda match: match.group(1) if match.group(1)[:1].isupper() else match.group(0), text)
+
+
+def _in_fiction(prompt: str) -> str:
+    """What an OOC prompt says after its bracketed OOC note, or "" when it is all out of character."""
+
+    if not _OOC_RE.match(prompt):
+        return prompt
+    lead = _OOC_LEAD_RE.match(prompt)
+    return prompt[lead.end() :] if lead else ""
+
+
 @lru_cache(maxsize=256)
 def _phrase_regex(tokens: tuple[str, ...]) -> re.Pattern[str]:
     body = r"[\W_]+".join(re.escape(token) for token in tokens)
@@ -460,10 +698,11 @@ def _language_name(code: str) -> str:
 
 
 def _ignored_words(pack: dict[str, Any], context: dict[str, Any]) -> frozenset[str]:
-    """Folded stopwords plus the player character's name: never content words."""
+    """Folded stopwords, the player character's name and the campaign's names: never content words."""
 
-    ignored = {fold(word, pack) for word in _items(pack.get("stopwords")) if isinstance(word, str)}
+    ignored = set(_stopword_keys(pack))
     ignored.update(words(str(context.get("player_name") or ""), pack))
+    ignored.update(_name_words(context, pack))
     return frozenset(ignored)
 
 
@@ -506,7 +745,8 @@ def _prose(text: str) -> str:
     ends where that bracket closes; any other marker ("(OOC) …", "**OOC:** …")
     covers what follows up to the next horizontal rule or the end, the way a GM
     sets an OOC note apart with `---`. Headings, list items, block quotes,
-    table rows and rules are hidden wherever they stand.
+    table rows and rules are hidden wherever they stand, and so is an
+    `(OOC: …)` parenthetical inside a line of prose.
     """
 
     pieces: list[str] = []
@@ -535,7 +775,7 @@ def _prose(text: str) -> str:
                 mode = "rule"
         else:
             hidden = bool(_STRUCTURE_RE.match(body))
-        pieces.append(" " * len(body) + line[len(body) :] if hidden else line)
+        pieces.append(" " * len(body) + line[len(body) :] if hidden else _blank_matches(_OOC_INLINE_RE, line))
     return "".join(pieces)
 
 
@@ -687,25 +927,45 @@ def _language_note(items: list[tuple[str, str]], noun: str) -> str:
     return f"{_plural(len(items), f'{label} {noun}')}: {_quote(items[0][1])}"
 
 
-def _out_of_language(reply: _Reply, descriptions: list[str], language: str) -> _Hit | None:
+def _own_letters(text: str, language: str, other: str) -> bool:
+    """Whether `text` writes a letter of `language` that `other` never writes (Turkish ş against Spanish)."""
+
+    letters = _pack_letters(str(lang_pack.PACK_DIR))
+    marks = letters.get(language, frozenset()) - letters.get(other, frozenset())
+    return bool(marks) and not marks.isdisjoint(fold(text, None))
+
+
+def _out_of_language(
+    reply: _Reply, shown: str, descriptions: list[str], language: str, pack: dict[str, Any], names: _Names
+) -> _Hit | None:
+    """Lines and tool descriptions in another pack language.
+
+    `shown` is the reply text with the campaign's names blanked, so a name
+    that happens to be another language's function word decides nothing.
+    """
+
     if not language:
         return None
     lines: list[tuple[str, str]] = []
-    for line in reply.text.splitlines():
-        sentences = sentence_split(line)
+    for original, line in zip(reply.text.splitlines(), shown.splitlines()):
+        spans = _sentence_spans(line)
+        sentences = [line[start:end] for start, end in spans]
         found = [
-            (code, sentence)
-            for sentence in sentences
+            (code, original[start:end])
+            for (start, end), sentence in zip(spans, sentences)
             if (code := _foreign(sentence, language, min_words=SENTENCE_MIN_WORDS, min_hits=SENTENCE_MIN_HITS))
         ]
         if not found and (code := _foreign_line(sentences, language)):
-            found = [(code, line.strip())]
+            found = [(code, original.strip())]
         lines.extend(found)
-    tools = [
-        (code, description)
-        for description in descriptions
-        if (code := _foreign(description, language, min_words=DESCRIPTION_MIN_WORDS, min_hits=DESCRIPTION_MIN_HITS))
-    ]
+    tools = []
+    for description in descriptions:
+        code = _foreign(
+            _blank_names(description, names, pack), language, min_words=DESCRIPTION_MIN_WORDS, min_hits=DESCRIPTION_MIN_HITS
+        )
+        # A description that writes the play language's own letters is in it.
+        if code and not _own_letters(description, language, code):
+            tools.append((code, description))
     if not lines and not tools:
         return None
     tool_evidence = [_clip(f"[tool] {description}") for _, description in tools]
@@ -717,6 +977,39 @@ def _out_of_language(reply: _Reply, descriptions: list[str], language: str) -> _
     if tools:
         notes.append(_language_note(tools, "tool description"))
     return _Hit(len(lines) + len(tools), evidence, "; ".join(notes))
+
+
+def _foreign_short_line(reply: _Reply, shown: str, language: str, pack: dict[str, Any]) -> _Hit | None:
+    """A line of two to four words in English: "Now the distill." in a Turkish reply.
+
+    Every word is written in plain Latin letters, none is a function word of
+    the play language alone, and SHORT_LINE_MIN_HITS distinct words are
+    English function words the play language does not share. Names are
+    already blanked in `shown`.
+    """
+
+    if not language or language == SHORT_LINE_LANGUAGE:
+        return None
+    table = _stopword_table(str(lang_pack.PACK_DIR))
+    rows = {row[0]: row for row in table}
+    own, english = rows.get(language), rows.get(SHORT_LINE_LANGUAGE)
+    if own is None or english is None or not own[2]:
+        return None
+    found = []
+    for original, line in zip(reply.text.splitlines(), shown.splitlines()):
+        raw = [token for token in tokens(_CLITIC_RE.sub("", line)) if not _has_digit(token)]
+        if not SHORT_LINE_MIN_WORDS <= len(raw) < LINE_MIN_WORDS or not all(token.isascii() for token in raw):
+            continue
+        mine = [fold(token, {"casefold": own[1]}) for token in raw]
+        theirs = [fold(token, None) for token in raw]
+        if any(word in own[2] and other not in english[2] for word, other in zip(mine, theirs)):
+            continue  # a function word of the play language alone
+        hits = {other for word, other in zip(mine, theirs) if other in english[2] and word not in own[2]}
+        if len(hits) >= SHORT_LINE_MIN_HITS:
+            found.append(original.strip())
+    if not found:
+        return None
+    return _Hit(len(found), [_clip(line) for line in found], f"short English line: {_quote(found[0])}")
 
 
 def _meta_terms(pack: dict[str, Any]) -> list[tuple[str, dict[str, Any] | None]]:
@@ -763,6 +1056,15 @@ def _meta_leak(reply: _Reply, pack: dict[str, Any]) -> _Hit | None:
     total = len(spans)
     # Vocabulary only counts outside quoted speech: a character may say "commit".
     rest = _quotes_blanked(_blank(reply.text, spans))
+    # Inflected backend phrases ("Kaydı tamamlıyorum"); a ship's log "kayıt" passes.
+    folded = fold(rest, pack)
+    patterned = _pattern_spans(folded, pack, "meta_patterns")
+    for start, end in patterned:
+        total += 1
+        labels.append(_span_text(rest, folded, (start, end)))
+        evidence.append(_located(reply.text, folded, start, end))
+    if patterned and len(folded) == len(rest):
+        rest = _blank(rest, patterned)
     for phrase, term_pack, count in _term_counts(rest, _meta_terms(pack)):
         total += count
         labels.append(phrase)
@@ -783,12 +1085,29 @@ def _tracker_values(context: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(values))
 
 
+def _near_day_spans(folded: str, pack: dict[str, Any], day: Any) -> list[tuple[int, int]]:
+    """Pack `near_day_patterns` matches whose `day` group is within NEAR_DAY of the tracked day."""
+
+    if not isinstance(day, int) or isinstance(day, bool):
+        return []
+    spans = []
+    for pattern in compile_patterns(pack, "near_day_patterns"):
+        if "day" not in pattern.groupindex:
+            continue
+        for match in pattern.finditer(folded):
+            value = _number_value(match.group("day") or "", pack)
+            if value is not None and abs(value - day) <= NEAR_DAY:
+                spans.append(match.span())
+    return spans
+
+
 def _tracker_leak(reply: _Reply, pack: dict[str, Any], context: dict[str, Any]) -> _Hit | None:
     folded = fold(reply.prose, pack)
     spans = _pattern_spans(folded, pack, "day_patterns")
     for value in _tracker_values(context):
         # Not a piece of a longer number such as "1.412" or "412,5".
         spans.extend(match.span() for match in re.finditer(rf"(?<![\d.,]){value}(?![\d]|[.,]\d)", folded))
+    spans.extend(_near_day_spans(folded, pack, context.get("day")))
     spans = _disjoint(spans)
     if not spans:
         return None
@@ -797,22 +1116,35 @@ def _tracker_leak(reply: _Reply, pack: dict[str, Any], context: dict[str, Any]) 
     return _Hit(len(spans), evidence, f"tracker number in prose: {_quote(first)}")
 
 
-def _avoid_caps(pack: dict[str, Any], context: dict[str, Any]) -> list[tuple[str, int]]:
-    """Pack and campaign avoid phrases with their per-reply caps (lowest wins)."""
+def _whole(value: Any) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
-    caps: dict[str, tuple[str, int]] = {}
 
-    def add(phrase: Any, cap: Any) -> None:
+def _avoid_caps(pack: dict[str, Any], context: dict[str, Any]) -> list[tuple[str, int | None, int | None]]:
+    """Pack and campaign avoid phrases as `(phrase, per-reply cap, rolling cap)`.
+
+    A pack phrase with `rolling_max` is capped over the last ROLLING_WINDOW
+    replies instead of per reply. A per-reply cap replaces a rolling one, and
+    the lowest per-reply cap wins.
+    """
+
+    caps: dict[str, tuple[str, int | None, int | None]] = {}
+
+    def add(phrase: Any, cap: Any, rolling: Any = None) -> None:
         if not isinstance(phrase, str):
             return
         key = " ".join(words(phrase, pack))
-        limit = cap if isinstance(cap, int) and not isinstance(cap, bool) and cap >= 0 else 0
-        if key and (key not in caps or limit < caps[key][1]):
-            caps[key] = (phrase.strip(), limit)
+        if not key:
+            return
+        window = _whole(rolling)
+        limit = None if window is not None else (_whole(cap) or 0)
+        held = caps.get(key)
+        if held is None or (limit is not None and (held[1] is None or limit < held[1])):
+            caps[key] = (phrase.strip(), limit, window)
 
     for item in _items(pack.get("avoid_phrases")):
         if isinstance(item, dict):
-            add(item.get("phrase"), item.get("max_per_reply", 1))
+            add(item.get("phrase"), item.get("max_per_reply", 1), item.get("rolling_max"))
     for item in _items(context.get("avoid_phrases")):
         if isinstance(item, dict):
             add(item.get("phrase"), item.get("max_per_reply", 0))
@@ -838,25 +1170,42 @@ def _stem_count(text: str, stem: str, pack: dict[str, Any]) -> int:
     return sum(1 for token in words(text, pack) if token.startswith(stem))
 
 
-def _avoid_phrases(reply: _Reply, pack: dict[str, Any], context: dict[str, Any]) -> _Hit | None:
-    over = []
+def _avoid_phrases(
+    reply: _Reply, pack: dict[str, Any], context: dict[str, Any], history: list[dict[str, Any]], tallies: dict[str, int]
+) -> _Hit | None:
+    """Avoid phrases over their cap: per reply, or over the last ROLLING_WINDOW replies.
+
+    A rolling phrase is reported only in a reply that uses it, and its count
+    here goes to `tallies` for the replies that follow.
+    """
+
+    over: list[tuple[str, int, int, str]] = []  # phrase, count here, excess, limit text
     stems = _stems(context, pack)
-    for phrase, cap in _avoid_caps(pack, context):
+    earlier = _rolling(history)
+    for phrase, cap, rolling in _avoid_caps(pack, context):
         key = " ".join(words(phrase, pack))
         if key in stems:
             count = _stem_count(reply.prose, key, pack)
         else:
             count = count_phrase(reply.prose, phrase, pack)
-        if count > cap:
-            over.append((phrase, count, cap))
+        if rolling is not None:
+            if not count:
+                continue
+            tallies[f"phrase:{key}"] = count
+            seen = count + sum(_tally(record, f"phrase:{key}") for record in earlier)
+            if seen > rolling:
+                scope = "this reply" if not earlier else f"last {len(earlier) + 1}"
+                over.append((phrase, count, seen - rolling, f"{seen} in {scope}, cap {rolling} per {ROLLING_WINDOW} replies"))
+        elif cap is not None and count > cap:
+            over.append((phrase, count, count - cap, f"cap {cap}"))
     if not over:
         return None
-    over.sort(key=lambda item: -(item[1] - item[2]))
-    evidence = [_clip(f'"{phrase}" x{count} (cap {cap})') for phrase, count, cap in over]
-    parts = [f"{count}x {_quote(phrase, 30)} (cap {cap})" for phrase, count, cap in over[:2]]
+    over.sort(key=lambda item: -item[2])
+    evidence = [_clip(f'"{phrase}" x{count} ({limit})') for phrase, count, _, limit in over]
+    parts = [f"{count}x {_quote(phrase, 30)} ({limit})" for phrase, count, _, limit in over[:2]]
     if len(over) > 2:
         parts.append(f"{len(over) - 2} more stock phrases")
-    return _Hit(sum(count for _, count, _ in over), evidence, ", ".join(parts))
+    return _Hit(sum(count for _, count, _, _ in over), evidence, ", ".join(parts))
 
 
 def _gram_hash(gram: tuple[str, ...]) -> str:
@@ -864,9 +1213,13 @@ def _gram_hash(gram: tuple[str, ...]) -> str:
 
 
 def _sentence_words(sentence: str, pack: dict[str, Any]) -> tuple[list[str], list[bool]]:
-    """Folded words of a sentence without apostrophe case endings, and which were capitalized."""
+    """Folded words of a sentence without apostrophe case endings, and which were capitalized.
 
-    raw = tokens(_CLITIC_RE.sub("", sentence))
+    A capitalized word loses any ending after its apostrophe ("Kanadı'nın"),
+    so a name with a long case ending is still the name.
+    """
+
+    raw = tokens(_CLITIC_RE.sub("", _strip_name_suffixes(sentence)))
     return [fold(token, pack) for token in raw], [token[:1].isupper() for token in raw]
 
 
@@ -1057,12 +1410,14 @@ def _echoed_quote(
 
 
 def _restatement(prompt: str, reply: _Reply, pack: dict[str, Any], ignored: frozenset[str]) -> _Hit | None:
-    """The prose opening echoes the Player's own words.
+    """The prose opening echoes the Player's own words, or retells their action.
 
     Flags a run of RESTATE_RUN consecutive prompt words in the opening (a word
-    may change its ending, "soruyorum" -> "soruyorsun"), or a quoted line in
-    the opening made of the Player's quoted words. Separate content words
-    shared with the prompt are the topic, not an echo, and are fine.
+    may change its ending, "soruyorum" -> "soruyorsun"), a quoted line in the
+    opening made of the Player's quoted words, or a first sentence that
+    narrates a second-person verb with PARAPHRASE_MIN_STEMS content stems of
+    the prompt ("You open the door."). Content words shared with the prompt
+    elsewhere are the topic, not an echo, and are fine.
     """
 
     window = _opening(reply)
@@ -1073,17 +1428,181 @@ def _restatement(prompt: str, reply: _Reply, pack: dict[str, Any], ignored: froz
     opening = _matchable(reply.prose[start:end], pack, start)
     asked = _matchable(prompt, pack)
     run = _echoed_run(opening, asked, ignored)
+    note = "opening restates the Player's words"
     if run is not None:
         length, last, position = run
         echo = (opening.spans[last - length + 1][0], opening.spans[last][1])
         source = (asked.spans[position - length + 1][0], asked.spans[position][1])
-    else:
-        quoted = _echoed_quote(reply, start, end, prompt, pack)
-        if quoted is None:
-            return None
+    elif (quoted := _echoed_quote(reply, start, end, prompt, pack)) is not None:
         echo, source = quoted
+    else:
+        retold = _paraphrase(asked, reply, pack, ignored)
+        if retold is None:
+            return None
+        echo, source = retold, (0, len(prompt))
+        note = "opening retells the Player's action"
     evidence = [_window(reply.text, *echo), _clip("Player: " + _window(prompt, *source, limit=SNIPPET_CHARS - 8))]
-    return _Hit(1, evidence, f"opening restates the Player's words: {_quote(reply.text[echo[0] : echo[1]])}")
+    return _Hit(1, evidence, f"{note}: {_quote(reply.text[echo[0] : echo[1]])}")
+
+
+def _paraphrase(asked: _Words, reply: _Reply, pack: dict[str, Any], ignored: frozenset[str]) -> tuple[int, int] | None:
+    """The span of a first prose sentence that retells the Player's action in other words.
+
+    Its narration (speech left out) holds a pack second-person verb and
+    PARAPHRASE_MIN_STEMS content stems of the prompt.
+    """
+
+    patterns = compile_patterns(pack, "second_person_patterns")
+    if not patterns or not reply.prose_sentences:
+        return None
+    first = reply.prose_sentences[0]
+    start = reply.prose.find(first)
+    if start < 0:
+        return None
+    end = start + len(first)
+    narration = reply.narration[start:end]
+    if not any(pattern.search(fold(narration, pack)) for pattern in patterns):
+        return None
+    keys = {key for key, word in zip(asked.keys, asked.folded) if _is_content(word, ignored)}
+    said = _matchable(narration, pack)
+    shared = {key for key, word in zip(said.keys, said.folded) if _is_content(word, ignored) and key in keys}
+    return (start, end) if len(shared) >= PARAPHRASE_MIN_STEMS else None
+
+
+def _prompt_keys(prompt: str, pack: dict[str, Any], ignored: frozenset[str]) -> set[str]:
+    """Stem keys of the prompt's content words, names left out.
+
+    A name is a campaign name, the player character's, a word capitalized
+    inside a sentence ("I ask Marta") or a capitalized word with an
+    apostrophe ending ("Halvar'a"): the NPC an echo verb names as its subject
+    ("Marta repeats") echoes nothing.
+    """
+
+    text = prompt[:RESTATE_PROMPT_CHARS]
+    asked = _matchable(text, pack)
+    keys = set()
+    for (start, end), key, word, named in zip(asked.spans, asked.keys, asked.folded, asked.named):
+        suffixed = text[start : start + 1].isupper() and text[end : end + 1] in ("'", "’")
+        if _is_content(word, ignored) and not named and not suffixed:
+            keys.add(key)
+    return keys
+
+
+def _npc_echo(prompt: str, reply: _Reply, pack: dict[str, Any], ignored: frozenset[str]) -> _Hit | None:
+    """A pack echo verb ("diye tekrarlıyor", "repeats") anchored to speech that holds a prompt content word.
+
+    The speech is a quoted or dash-dialogue span within ECHO_WORDS words of
+    the verb or, when the pattern's quotative group `quote` matched (Turkish
+    "diye"), the words of its clause just before it. A voice echoing in a
+    cave or "repeated blows" quotes nobody and is not an echo.
+    """
+
+    patterns = compile_patterns(pack, "echo_patterns")
+    if not patterns or not prompt.strip():
+        return None
+    folded = fold(reply.prose, pack)
+    quoted: dict[tuple[int, int], bool] = {}
+    for pattern in patterns:
+        for match in pattern.finditer(folded):
+            quoted[match.span()] = quoted.get(match.span(), False) or (
+                "quote" in pattern.groupindex and match.group("quote") is not None
+            )
+    verbs = _disjoint(list(quoted))
+    if not verbs:
+        return None
+    keys = _prompt_keys(prompt, pack, ignored)
+    said = _matchable(reply.prose, pack)
+    starts = [start for start, _ in said.spans]
+    speech = _speech_spans(reply.prose)
+    found: list[tuple[int, int]] = []
+    for start, end in verbs:
+        before, after = bisect_left(starts, start), bisect_left(starts, end)
+        low = said.spans[max(0, before - ECHO_WORDS)][0] if before else start
+        high = said.spans[min(len(starts), after + ECHO_WORDS) - 1][1] if after < len(starts) else end
+        regions = [(left, right) for left, right in speech if left < high and right > low]
+        if quoted[(start, end)]:
+            clause = max(reply.prose.rfind(mark, 0, start) for mark in ".!?…;:\n") + 1
+            regions.append((max(low, clause), start))
+        for left, right in regions:
+            inside = range(bisect_left(starts, left), bisect_left(starts, right))
+            if any(said.keys[index] in keys and _is_content(said.folded[index], ignored) for index in inside):
+                found.append((min(left, start), max(right, end)))
+                break
+    if not found:
+        return None
+    evidence = [_window(reply.text, start, end) for start, end in found]
+    first = reply.text[found[0][0] : found[0][1]]
+    return _Hit(len(found), evidence, f"NPC repeats the Player's words: {_quote(first)}")
+
+
+def _speech_tag_span(folded: str, span: tuple[int, int], verbs: list[re.Pattern[str]]) -> tuple[int, int] | None:
+    """The spoken words of `span` when a player-character speech verb tags it, else None.
+
+    The verb follows the closing quote ('"Tamam," diyorsun'), ends just
+    before the opening quote ('You say, "Fine."'), or, in a dash line, follows
+    a comma inside the speech ("— Tamam, diyorsun.").
+    """
+
+    start, end = span
+    if folded[start : start + 1] in _DASHES:
+        for verb in verbs:
+            for match in verb.finditer(folded, start, end):
+                comma = folded.rfind(",", start, match.start())
+                if comma > start and not folded[comma + 1 : match.start()].strip():
+                    return start, comma
+    position = _TAG_GAP_RE.match(folded, end).end()
+    if any(verb.match(folded, position) for verb in verbs):
+        return span
+    head = folded[max(0, start - PC_LINE_REACH) : start]
+    for verb in verbs:
+        for match in verb.finditer(head):
+            if not head[match.end() :].strip(" \t,:;—–-"):
+                return span
+    return None
+
+
+def _pc_line_rewritten(prompt: str, reply: _Reply, pack: dict[str, Any]) -> _Hit | None:
+    """A quoted line the narration gives the player character in words the Player did not write.
+
+    The line is compared with the Player's quoted words, or with the whole
+    prompt when it quotes nothing; fewer than PC_LINE_SHARE of the line's
+    content words found there make it rewritten (the prompt quotes something
+    else) or fabricated (the prompt quotes nothing).
+    """
+
+    verbs = compile_patterns(pack, "pc_say_patterns")
+    folded = fold(reply.prose, pack)
+    if not verbs or not prompt.strip() or len(folded) != len(reply.prose):
+        return None
+    if not any(verb.search(folded) for verb in verbs):
+        return None
+    stopwords = _stopword_keys(pack)
+    quotes = _speech_spans(prompt)
+    heard = _matchable(" ".join(prompt[start:end] for start, end in quotes) if quotes else prompt, pack)
+    heard_keys = set(heard.keys)
+    found = []
+    for span in _speech_spans(reply.prose):
+        line = _speech_tag_span(folded, span, verbs)
+        if line is None:
+            continue
+        said = [word for word in _matchable(reply.prose[line[0] : line[1]], pack).folded if not _has_digit(word)]
+        content = [word for word in said if len(word) >= CONTENT_MIN_LENGTH and word not in stopwords] or said
+        if not content:
+            continue
+        known = sum(
+            1
+            for word in content
+            if _stem_key(word) in heard_keys or (len(word) < RESTATE_STEM and any(other.startswith(word) for other in heard.folded))
+        )
+        if known < PC_LINE_SHARE * len(content):
+            found.append(line)
+    if not found:
+        return None
+    evidence = [_window(reply.text, *found[0]), _clip("Player: " + _clip(prompt, SNIPPET_CHARS - 8))]
+    evidence.extend(_window(reply.text, *line) for line in found[1:])
+    kind = "rewritten" if quotes else "fabricated"
+    note = f"PC line {kind}: {_quote(reply.text[found[0][0] : found[0][1]])}"
+    return _Hit(len(found), evidence, note)
 
 
 def _pc_authoring(reply: _Reply, pack: dict[str, Any]) -> _Hit | None:
@@ -1132,13 +1651,26 @@ def _secret_leak(reply: _Reply, descriptions: list[str], pack: dict[str, Any], c
     return _Hit(sum(count for _, count, _ in found), [snippet for _, _, snippet in found], note)
 
 
-def _negated_description(reply: _Reply, pack: dict[str, Any]) -> _Hit | None:
+def _negated_description(
+    reply: _Reply, pack: dict[str, Any], history: list[dict[str, Any]], tallies: dict[str, int]
+) -> _Hit | None:
+    """NEGATED_MIN negated descriptions in one reply, or one when NEGATED_MIN_REPLIES of the last ten have one."""
+
     folded = fold(reply.narration, pack)
     spans = _pattern_spans(folded, pack, "negated_description")
-    if len(spans) < NEGATED_MIN:
+    if not spans:
+        return None
+    tallies["negated"] = len(spans)
+    earlier = _rolling(history)
+    seen = 1 + sum(1 for record in earlier if _tally(record, "negated"))
+    rolling = seen >= NEGATED_MIN_REPLIES
+    if len(spans) < NEGATED_MIN and not rolling:
         return None
     evidence = [_located(reply.text, folded, start, end) for start, end in spans]
-    return _Hit(len(spans), evidence, _plural(len(spans), "negated description"))
+    note = _plural(len(spans), "negated description")
+    if rolling:
+        note += f" (in {seen} of last {len(earlier) + 1} replies)"
+    return _Hit(len(spans), evidence, note)
 
 
 def _glossary_variants(reply: _Reply, pack: dict[str, Any], context: dict[str, Any]) -> _Hit | None:
@@ -1170,12 +1702,26 @@ def _glossary_variants(reply: _Reply, pack: dict[str, Any], context: dict[str, A
 
 
 def _calques(reply: _Reply, pack: dict[str, Any]) -> _Hit | None:
+    """Pack calques in the prose: the `bad` phrase, or the item's `pattern` for inflected forms.
+
+    A pattern match is reported as written ("gözlerine çıkmıyordu").
+    """
+
     found = []
+    folded = fold(reply.prose, pack)
     for item in _items(pack.get("calques")):
-        if isinstance(item, dict) and isinstance(item.get("bad"), str):
-            count = count_phrase(reply.prose, item["bad"], pack)
-            if count:
-                found.append((item["bad"], str(item.get("better") or ""), count))
+        if not isinstance(item, dict) or not isinstance(item.get("bad"), str):
+            continue
+        better = str(item.get("better") or "")
+        pattern = item.get("pattern")
+        if isinstance(pattern, str) and pattern.strip():
+            spans = _regex_spans(folded, pattern)
+            if spans:
+                found.append((_clip(_span_text(reply.prose, folded, spans[0]).strip(), 40), better, len(spans)))
+            continue
+        count = count_phrase(reply.prose, item["bad"], pack)
+        if count:
+            found.append((item["bad"], better, count))
     if not found:
         return None
     evidence = [_clip(f'"{bad}" -> "{better}"' if better else f'"{bad}"') for bad, better, _ in found]
@@ -1184,6 +1730,161 @@ def _calques(reply: _Reply, pack: dict[str, Any]) -> _Hit | None:
     if len(found) > 1:
         note += f" and {_plural(len(found) - 1, 'other calque')}"
     return _Hit(sum(count for _, _, count in found), evidence, note)
+
+
+def _tool_description_leak(descriptions: list[str], pack: dict[str, Any], context: dict[str, Any]) -> _Hit | None:
+    """Tool descriptions, which the Player sees, that name a cast member or carry a secret word.
+
+    The secret words are the play language's and English's: tool
+    descriptions are often written in English whatever the play language.
+    """
+
+    if not descriptions:
+        return None
+    cast = _name_words(context, pack, "cast_names")
+    packs = [pack] + ([load_pack(DESCRIPTION_LANGUAGE)] if normalize_code(str(pack.get("code") or "")) != DESCRIPTION_LANGUAGE else [])
+    secrets = [(regex, source) for source in packs if (regex := _term_regex(source, "secret_words")) is not None]
+    found = []
+    for description in descriptions:
+        named = any(word[:1].isupper() and fold(word, pack) in cast for word in tokens(description))
+        if named or any(regex.search(fold(description, source)) for regex, source in secrets):
+            found.append(description)
+    if not found:
+        return None
+    # The note stays generic: a description may hold a protected name.
+    note = f"{_plural(len(found), 'tool description')} with a cast name or a secret word"
+    return _Hit(len(found), [_clip(f"[tool] {description}") for description in found], note)
+
+
+def _minor_sexual_proximity(text: str, pack: dict[str, Any]) -> _Hit | None:
+    """An age under 18 that is the closest age of a romance or sex term (`lang_pack.minor_romance`).
+
+    Every shipped pack is read, the play language's first, as the full check
+    reads character notes, so this rule and `minor_romance_history` agree.
+    Durations ("fifteen years ago", "on beş yıl") have no pattern, and an
+    adult age closer to the term ("on dokuz yaşında sevgilisi oldu") wins.
+    The whole visible reply is read, speech included. One hit per age.
+    """
+
+    pairs = lang_pack.minor_romance(text, lang_pack.all_packs(pack))
+    if not pairs:
+        return None
+    evidence = [_window(text, min(age[0], term[0]), max(age[1], term[1])) for age, term in pairs]
+    age, term = pairs[0]
+    note = (
+        f"age under 18 near a romance or sex term ({_quote(text[age[0] : age[1]], 25)} … "
+        f"{_quote(text[term[0] : term[1]], 20)}): no relationship may begin before 18"
+    )
+    return _Hit(len(pairs), evidence, note)
+
+
+def _gesture_repeat(
+    reply: _Reply, pack: dict[str, Any], history: list[dict[str, Any]], tallies: dict[str, int]
+) -> tuple[_Hit | None, list[str]]:
+    """Pack gesture families in the narration of GESTURE_MIN_REPLIES of the last ten replies.
+
+    Returns the hit and the ids of the flagged families. Each family present
+    here goes to `tallies`, flagged or not.
+    """
+
+    folded = fold(reply.narration, pack)
+    earlier = _rolling(history)
+    flagged: list[tuple[dict[str, Any], int, int, tuple[int, int]]] = []
+    for family in _items(pack.get("gesture_families")):
+        if not isinstance(family, dict) or not isinstance(family.get("id"), str):
+            continue
+        spans = _regex_spans(folded, family.get("patterns"))
+        if not spans:
+            continue
+        key = f"gesture:{family['id']}"
+        tallies[key] = len(spans)
+        seen = 1 + sum(1 for record in earlier if _tally(record, key))
+        if seen >= GESTURE_MIN_REPLIES:
+            flagged.append((family, len(spans), seen, spans[0]))
+    if not flagged:
+        return None, []
+    window = len(earlier) + 1
+    evidence = [
+        _clip(f"{family.get('label') or family['id']} ({seen} of last {window}): " + _span_text(reply.text, folded, span))
+        for family, _, seen, span in flagged
+    ]
+    family, _, seen, _ = flagged[0]
+    note = f"gesture repeated: {family.get('label') or family['id']} ({seen} of last {window})"
+    if len(flagged) > 1:
+        note += f" and {_plural(len(flagged) - 1, 'other gesture')}"
+    return _Hit(sum(count for _, count, _, _ in flagged), evidence, note), [family["id"] for family, _, _, _ in flagged]
+
+
+def _dotless_slip(word: str, dotless: tuple[str, ...], named: frozenset[str]) -> bool:
+    """A Turkish word written with a capital I where it needs İ ("Ilk", "Insan", "Ilaç").
+
+    Few Turkish words start with a dotless ı, so a capital I followed by
+    lower-case letters is a slip unless the word starts with one of the pack's
+    `dotless_i_words` ("Işık", "Islak", "Irmak"). A word the reply also writes
+    capitalized inside a sentence is a name ("Ivankov"), not a slip.
+    """
+
+    if len(word) < 2 or word[0] != "I" or not word[1:].islower() or word in named:
+        return False
+    folded = "ı" + word[1:]
+    return not any(folded.startswith(stem) for stem in dotless)
+
+
+def _inner_capitals(text: str) -> frozenset[str]:
+    """Words written with a capital I inside a sentence: names, whatever opens a sentence."""
+
+    named = set()
+    for start, end in _sentence_spans(text):
+        for low, high in _word_spans(text[start:end])[1:]:
+            word = text[start + low : start + high]
+            if word[:1] == "I":
+                named.add(word)
+    return frozenset(named)
+
+
+def _dotless_capital(text: str, shown: str, pack: dict[str, Any]) -> _Hit | None:
+    """Sentence-initial words with a capital I that Turkish writes İ.
+
+    `shown` is `text` with the campaign's names blanked, so "Ilse" opening a
+    sentence is a name, not a slip.
+    """
+
+    if pack.get("casefold") != "turkish" or "I" not in shown:
+        return None
+    dotless = tuple(fold(word, pack) for word in _items(pack.get("dotless_i_words")) if isinstance(word, str) and word.strip())
+    named = _inner_capitals(shown)
+    spans = []
+    for start, end in _sentence_spans(shown):
+        first = _word_spans(shown[start:end], 1)
+        if first and _dotless_slip(shown[start + first[0][0] : start + first[0][1]], dotless, named):
+            spans.append((start + first[0][0], start + first[0][1]))
+    if not spans:
+        return None
+    word = shown[spans[0][0] : spans[0][1]]
+    evidence = [_window(text, start, end) for start, end in spans]
+    return _Hit(len(spans), evidence, f"capital I for İ: {_quote(word)} (write {_quote('İ' + word[1:])})")
+
+
+def _name_case_mismatch(text: str, context: dict[str, Any]) -> _Hit | None:
+    """A known name written with the other capital I ("İlse" for the card's "Ilse")."""
+
+    names = [str(name) for key in ("names", "cast_names") for name in _items(context.get(key)) if isinstance(name, str)]
+    names.append(str(context.get("player_name") or ""))
+    known = {unicodedata.normalize("NFC", token) for name in names for token in tokens(name)}
+    swapped: dict[str, str] = {}
+    for token in sorted(known):
+        other = token.translate(_I_SWAP)
+        if token[:1].isupper() and other != token and other not in known:
+            swapped.setdefault(other, token)
+    if not swapped:
+        return None
+    body = "|".join(re.escape(word) for word in sorted(swapped, key=len, reverse=True))
+    matches = list(re.finditer(rf"(?<![^\W_])(?:{body})(?![^\W\d_])", text))
+    if not matches:
+        return None
+    evidence = [_window(text, *match.span()) for match in matches]
+    first = matches[0].group(0)
+    return _Hit(len(matches), evidence, f"{_quote(first)} written for {_quote(swapped[first])}")
 
 
 def _summary(notes: list[str]) -> str:
@@ -1238,13 +1939,20 @@ def lint_reply(
     language's pack. `context` may carry `day`, `revision`, `player_name`,
     `protected_names` ([{name, holders, status, fact_id?}]), `avoid_phrases`
     (strings, or {phrase, max_per_reply}), `glossary_variants`
-    ([{variant, preferred}]) and `play_language`. `history` holds earlier
-    distinct reply records, oldest first, with `fingerprint` and `trigrams`.
+    ([{variant, preferred}]), `names` (cast, glossary and place names),
+    `cast_names` and `play_language`. `history` holds earlier distinct reply
+    records, oldest first, with `fingerprint`, `trigrams` and `tallies`.
+
+    A prompt that starts with OOC makes an out-of-character turn: every rule
+    then reads only the prose outside the reply's OOC blocks, and the echo
+    rules compare with what the prompt says after its OOC note.
 
     Returns `findings` ([{rule, count, evidence}] in rule order), `counts`,
-    `summary` ("" when clean), `fingerprint` (folded word 4-gram hashes of the
-    prose, at most 300), `trigrams` (the same for 3-grams), `language` and
-    `words`.
+    `summary` ("" when clean), `notes` (each flagged rule's summary clause),
+    `fingerprint` (folded word 4-gram hashes of the prose, at most 300),
+    `trigrams` (the same for 3-grams), `tallies` (this reply's counts for the
+    rolling rules), `gesture_families` (the flagged family ids), `language`
+    and `words` (of the text linted).
     """
 
     pack = pack if isinstance(pack, dict) else {}
@@ -1256,40 +1964,63 @@ def lint_reply(
         descriptions = [descriptions]
     language = normalize_code(str(context.get("play_language") or pack.get("code") or ""))
     reply = _reply(texts)
+    seen = reply.text
     prompt = unicodedata.normalize("NFC", str(prompt or ""))
+    pc_prompt = prompt
+    if _OOC_RE.match(prompt):
+        reply = replace(reply, text=reply.prose)
+        prompt = _in_fiction(prompt)
+        # A retro-edit ("(OOC: write that I said "…")") quotes the line it wants.
+        pc_prompt = prompt if prompt.strip() or not _speech_spans(pc_prompt) else pc_prompt
     visible = [item.strip() for item in descriptions or [] if isinstance(item, str) and item.strip()]
     ignored = _ignored_words(pack, context)
+    names = _names(context, pack)
+    shown = _blank_names(reply.text, names, pack)
     sentence_words = [_sentence_words(sentence, pack) for sentence in reply.prose_sentences]
     grams = {size: _grams(sentence_words, size, ignored) for size in NGRAM_SIZES}
+    tallies: dict[str, int] = {}
+    gestures, families = _gesture_repeat(reply, pack, history, tallies)
 
     hits: dict[str, _Hit | None] = {
-        "out_of_language": _out_of_language(reply, visible, language),
+        # The age rule reads everything the Player saw, out-of-character notes too.
+        "minor_sexual_proximity": _minor_sexual_proximity(seen, pack),
+        "out_of_language": _out_of_language(reply, shown, visible, language, pack, names),
+        "foreign_short_line": _foreign_short_line(reply, shown, language, pack),
         "meta_leak": _meta_leak(reply, pack),
         "tracker_leak": _tracker_leak(reply, pack, context),
-        "avoid_phrase": _avoid_phrases(reply, pack, context),
+        "avoid_phrase": _avoid_phrases(reply, pack, context, history, tallies),
         # Without the language's stopwords every frequent function-word run would count.
         "repetition": _repetition(grams, history) if pack.get("stopwords") else None,
         "restatement": _restatement(prompt, reply, pack, ignored),
+        "npc_echo": _npc_echo(prompt, reply, pack, ignored),
         "pc_authoring": _pc_authoring(reply, pack),
+        "pc_line_rewritten": _pc_line_rewritten(pc_prompt, reply, pack),
         "secret_leak": _secret_leak(reply, visible, pack, context),
-        "negated_description": _negated_description(reply, pack),
+        "tool_description_leak": _tool_description_leak(visible, pack, context),
+        "negated_description": _negated_description(reply, pack, history, tallies),
+        "gesture_repeat": gestures,
         "glossary_variant": _glossary_variants(reply, pack, context),
         "calque": _calques(reply, pack),
+        "dotless_capital": _dotless_capital(reply.text, shown, pack),
+        "name_case_mismatch": _name_case_mismatch(reply.text, context),
     }
     findings = [
         {"rule": rule, "count": hit.count, "evidence": list(dict.fromkeys(hit.evidence))[:EVIDENCE_MAX]}
         for rule in RULES
         if (hit := hits[rule]) is not None and hit.count > 0
     ]
-    notes = [hit.note for rule in SUMMARY_ORDER if (hit := hits[rule]) is not None and hit.count > 0]
+    notes = {rule: hit.note for rule in SUMMARY_ORDER if (hit := hits[rule]) is not None and hit.count > 0}
     return {
         "language": language or None,
         "words": sum(1 for token in tokens(reply.text) if not _has_digit(token)),
         "findings": findings,
         "counts": {finding["rule"]: finding["count"] for finding in findings},
-        "summary": _summary(notes),
+        "summary": _summary(list(notes.values())),
+        "notes": notes,
         "fingerprint": _fingerprint(grams[4]),
         "trigrams": _fingerprint(grams[3]),
+        "tallies": dict(sorted(tallies.items())),
+        "gesture_families": families,
     }
 
 
@@ -1456,10 +2187,80 @@ def campaign_avoid_phrases(campaign: Path) -> list[str]:
     return list(dict.fromkeys(phrase for phrase in phrases if phrase))
 
 
+def _table_cells(text: str, prefixes: tuple[str, ...]) -> list[str]:
+    """Cells of every table column whose header starts with one of `prefixes` (case-insensitive)."""
+
+    lines = _COMMENT_RE.sub("", text or "").splitlines()
+    cells: list[str] = []
+    index = 0
+    while index + 1 < len(lines):
+        header = _row_cells(lines[index])
+        if header is None or not _TABLE_SEPARATOR_RE.match(lines[index + 1].strip()):
+            index += 1
+            continue
+        columns = [at for at, name in enumerate(header) if name.casefold().startswith(prefixes)]
+        index += 2
+        while index < len(lines) and (row := _row_cells(lines[index])) is not None:
+            index += 1
+            if row and row[0].casefold().startswith("e.g."):
+                continue
+            cells.extend(row[at] for at in columns if at < len(row))
+    return cells
+
+
+def _note_title(path: Path) -> str:
+    """The `# Title` line at the top of a note (its first 4 KB are enough)."""
+
+    try:
+        with path.open("rb") as stream:
+            head = stream.read(NOTE_HEAD_BYTES).decode("utf-8", errors="ignore")
+    except OSError:
+        return ""
+    match = re.search(r"(?m)^#[ \t]+(.+?)[ \t]*$", head)
+    return _clean_cell(match.group(1)) if match else ""
+
+
+def _note_titles(folder: Path) -> list[str]:
+    try:
+        notes = sorted(path for path in folder.glob("*.md") if not path.name.startswith("_"))[:NOTE_FILES_MAX]
+    except OSError:
+        return []
+    return [name for path in notes for name in _heading_names(_note_title(path))]
+
+
+def campaign_names(campaign: Path) -> dict[str, list[str]]:
+    """`{"cast": [...], "all": [...]}`: names to keep out of language detection and phrase counts.
+
+    The cast is every character note's title and the Active Cast's NPC or
+    Name column. All names add place and faction note titles, the Location
+    Graph's endpoints and the glossary's capitalized preferred forms. Template
+    placeholders and empty cells are skipped.
+    """
+
+    cast = _note_titles(campaign / "characters")
+    cast.extend(_table_cells(read_text(campaign / "active_cast.md"), ("npc", "name")))
+    places = _note_titles(campaign / "places") + _note_titles(campaign / "factions")
+    places.extend(_table_cells(read_text(campaign / "location_graph.md"), ("from", "to")))
+    glossary = [cell for cell in _table_cells(read_text(campaign / "glossary.md"), ("preferred",)) if cell[:1].isupper()]
+
+    def kept(values: list[str]) -> list[str]:
+        return list(
+            dict.fromkeys(
+                value
+                for value in values
+                if len(value) >= 2 and value.casefold() not in EMPTY_CELLS and value.casefold() not in PLACEHOLDER_NAMES
+            )
+        )
+
+    cast = kept(cast)
+    return {"cast": cast, "all": kept(cast + places + glossary)}
+
+
 def campaign_context(campaign: Path, language: str) -> dict[str, Any]:
     """The lint context read from the campaign's owner files."""
 
     state = state_summary(campaign)
+    names = campaign_names(campaign)
     return {
         "day": state.get("day"),
         "revision": state.get("revision"),
@@ -1467,6 +2268,8 @@ def campaign_context(campaign: Path, language: str) -> dict[str, Any]:
         "protected_names": protected_names(read_text(campaign / "knowledge_boundaries.md")),
         "avoid_phrases": campaign_avoid_phrases(campaign),
         "glossary_variants": glossary_variants(read_text(campaign / "glossary.md")),
+        "names": names["all"],
+        "cast_names": names["cast"],
         "play_language": language,
     }
 
@@ -1504,19 +2307,123 @@ def resolve_language(
 ) -> tuple[str, str, float | None]:
     """`(code, source, confidence)`: the configured language, else a detection.
 
-    `auto` detects from this prompt plus up to five earlier stored prompts,
-    then from the reply itself; `("", "none", None)` when nothing decides.
+    `auto` pools this prompt's language with the languages of the last five
+    stored prompts (`prompt_language`, or for records written before 0.4.0 a
+    detection over their stored samples): the majority decides and a tie
+    goes to the stored prompts, so one prompt in another language (an
+    English OOC question in a Turkish game) cannot switch the pack.
+    Confidence is the share that agrees. With no prompt language at all the
+    reply itself decides. `("", "none", None)` when nothing decides.
     """
 
     configured = normalize_code(setting) if setting and setting != "auto" else ""
     if configured:
         return configured, "setting", None
-    earlier = [str(record.get("prompt_sample") or "") for record in history][-DETECT_PROMPTS:]
-    for source, text in (("prompts", "\n".join(earlier + [prompt[:DETECT_CHARS]])), ("reply", reply[:DETECT_CHARS])):
-        code, confidence = detect_language(_CLITIC_RE.sub("", text))
-        if code:
-            return code, source, confidence
+    codes = _prompt_codes(history[-DETECT_PROMPTS:])
+    current = prompt_language(prompt)
+    if current:
+        codes.append(current)
+    if codes:
+        code, agreeing = Counter(codes).most_common(1)[0]
+        return code, "prompts", round(agreeing / len(codes), 4)
+    code, confidence = detect_language(_CLITIC_RE.sub("", reply[:DETECT_CHARS]))
+    if code:
+        return code, "reply", confidence
     return "", "none", None
+
+
+def _record_languages(records: list[dict[str, Any]]) -> list[str]:
+    """Each record's prompt language, "" when unknown, in record order.
+
+    A record written before 0.4.0 holds a `prompt_sample` instead: its own
+    detection, or, for a sample too short to tell, one detection over all
+    such samples pooled, as 0.3.0 read them.
+    """
+
+    codes: list[str] = []
+    pooled: str | None = None
+    for record in records:
+        code = normalize_code(str(record.get("prompt_language") or ""))
+        sample = record.get("prompt_sample")
+        if not code and isinstance(sample, str) and sample.strip():
+            code = prompt_language(sample) or ""
+            if not code:
+                if pooled is None:
+                    samples = [item["prompt_sample"] for item in records if isinstance(item.get("prompt_sample"), str)]
+                    pooled = prompt_language("\n".join(samples)) or ""
+                code = pooled
+        codes.append(code)
+    return codes
+
+
+def _prompt_codes(records: list[dict[str, Any]]) -> list[str]:
+    """The known prompt languages of `records`, oldest first."""
+
+    return [code for code in _record_languages(records) if code]
+
+
+def prompt_language(prompt: str) -> str | None:
+    """The language code of a prompt on its own, or None when it is too short to tell."""
+
+    return detect_language(_CLITIC_RE.sub("", str(prompt or "")[:DETECT_CHARS]))[0]
+
+
+def _scrubbed(records: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], bool]:
+    """History records without the prompt text 0.3.0 stored (`prompt_sample`), and whether any had it.
+
+    Each such record keeps the sample's language as `prompt_language`.
+    """
+
+    if not any("prompt_sample" in record for record in records):
+        return records, False
+    cleaned = []
+    for record, code in zip(records, _record_languages(records)):
+        if "prompt_sample" in record:
+            record = {name: value for name, value in record.items() if name != "prompt_sample"}
+            record["prompt_language"] = code or None
+        cleaned.append(record)
+    return cleaned, True
+
+
+def _rewrite_history(path: Path, records: list[dict[str, Any]]) -> None:
+    """Replace the history store with `records` (newest HISTORY_KEEP), atomically, as `append_jsonl` writes."""
+
+    lines = [json.dumps(record, ensure_ascii=False, sort_keys=True) for record in records[-HISTORY_KEEP:]]
+    handle, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
+            stream.write("\n".join(lines) + "\n")
+        replace_file(temporary, path)
+    except BaseException:
+        try:
+            os.unlink(temporary)
+        except OSError:
+            pass
+        raise
+
+
+def _age_rule_only(result: dict[str, Any]) -> dict[str, Any] | None:
+    """`result` cut down to the age rule's finding, or None when it has none.
+
+    A short answer to an out-of-character prompt is not narration, but the
+    age rule reads out-of-character notes too, so its finding is kept.
+    """
+
+    rule = "minor_sexual_proximity"
+    if rule not in result["counts"]:
+        return None
+    note = result.get("notes", {}).get(rule, "")
+    return {
+        **result,
+        "findings": [finding for finding in result["findings"] if finding["rule"] == rule],
+        "counts": {rule: result["counts"][rule]},
+        "summary": _summary([note]) if note else "",
+        "notes": {rule: note} if note else {},
+        "fingerprint": [],
+        "trigrams": [],
+        "tallies": {},
+        "gesture_families": [],
+    }
 
 
 def _now() -> str:
@@ -1528,7 +2435,8 @@ def run_hook(event: dict[str, Any]) -> dict[str, Any] | None:
 
     Returns the record written to `lint_last.json`, or None when skipped: no
     ready RPG campaign, lint switched off, no transcript or prompt, or an
-    out-of-character prompt. Never raises.
+    out-of-character prompt answered in fewer than OOC_MIN_WORDS words of
+    prose with no age-rule finding. Never raises.
     """
 
     try:
@@ -1554,8 +2462,6 @@ def _run_hook(event: dict[str, Any]) -> dict[str, Any] | None:
     if not turn:
         return None
     prompt = str(turn.get("prompt") or "")
-    if _OOC_RE.match(prompt):
-        return None  # an out-of-character exchange is not narration
     texts = [text for text in turn.get("assistant_texts") or [] if isinstance(text, str)]
     final = event.get("last_assistant_message")
     # Stop can fire before the transcript holds the final message.
@@ -1566,12 +2472,18 @@ def _run_hook(event: dict[str, Any]) -> dict[str, Any] | None:
 
     directory = runtime_dir(campaign)
     history_path = directory / LINT_HISTORY
-    history = distinct_history(read_jsonl(history_path), exclude=prompt_uuid)
+    stored, scrub = _scrubbed(read_jsonl(history_path))
+    history = distinct_history(stored, exclude=prompt_uuid)
     language, source, confidence = resolve_language(
         settings.get("language", "auto"), prompt, history, "\n\n".join(texts)
     )
     context = campaign_context(campaign, language)
     result = lint_reply(prompt, texts, descriptions, pack=load_pack(language), context=context, history=history)
+    if _OOC_RE.match(prompt) and result["words"] < OOC_MIN_WORDS:
+        # A short out-of-character answer is not narration; only an age finding is kept.
+        result = _age_rule_only(result)
+        if result is None:
+            return None
 
     at = _now()
     session_id = str(event.get("session_id") or "")
@@ -1591,21 +2503,24 @@ def _run_hook(event: dict[str, Any]) -> dict[str, Any] | None:
         "summary": result["summary"],
     }
     write_json_atomic(directory / LINT_LAST, record)
-    append_jsonl(
-        history_path,
-        {
-            "at": at,
-            "session_id": session_id,
-            "prompt_uuid": prompt_uuid,
-            "language": language or None,
-            "prompt_sample": prompt[:PROMPT_SAMPLE_CHARS],
-            "words": result["words"],
-            "counts": result["counts"],
-            "fingerprint": result["fingerprint"],
-            "trigrams": result["trigrams"],
-        },
-        keep_last=HISTORY_KEEP,
-    )
+    entry = {
+        "at": at,
+        "session_id": session_id,
+        "prompt_uuid": prompt_uuid,
+        "language": language or None,
+        "prompt_language": prompt_language(prompt),
+        "words": result["words"],
+        "counts": result["counts"],
+        "tallies": result["tallies"],
+        "gesture_families": result["gesture_families"],
+        "fingerprint": result["fingerprint"],
+        "trigrams": result["trigrams"],
+    }
+    if scrub:
+        # The first rewrite after an upgrade drops the prompt text 0.3.0 stored.
+        _rewrite_history(history_path, [*stored, entry])
+    else:
+        append_jsonl(history_path, entry, keep_last=HISTORY_KEEP)
     return record
 
 
@@ -1645,6 +2560,112 @@ def report(campaign: Path, last: int | None = None) -> dict[str, Any]:
         "rules": rules,
         "latest_summary": latest.get("summary", "") if isinstance(latest, dict) else "",
     }
+
+
+def _replies(count: int) -> str:
+    return f"{count} {'reply' if count == 1 else 'replies'}"
+
+
+def _recent(campaign: Path, last: int) -> list[dict[str, Any]]:
+    """The newest `last` distinct reply records, oldest first."""
+
+    if not isinstance(last, int) or last < 1:
+        return []
+    return distinct_history(read_jsonl(Path(campaign) / RUNTIME_DIR / LINT_HISTORY))[-last:]
+
+
+def _flagged(record: dict[str, Any]) -> list[str]:
+    """The rules a reply record flagged."""
+
+    counts = record.get("counts") if isinstance(record.get("counts"), dict) else {}
+    return [rule for rule, value in counts.items() if rule in RULES and isinstance(value, int) and not isinstance(value, bool) and value > 0]
+
+
+def _family(code: str, family_id: str) -> dict[str, Any]:
+    families = load_pack(code).get("gesture_families") if code else []
+    return next((item for item in _items(families) if isinstance(item, dict) and item.get("id") == family_id), {})
+
+
+def top_habits(campaign: Path, last: int = HABITS_LAST, limit: int = HABITS_LIMIT) -> list[dict[str, Any]]:
+    """The rules flagged most often in the last `last` linted replies, most first.
+
+    Each item is `{rule, label, count, example}`: `count` replies flagged it,
+    `label` is a short English name, `example` a snippet from the latest
+    reply's evidence when it has one (never for PRIVATE_EVIDENCE rules, whose
+    evidence may hold a protected name). A gesture family counts as a rule of its
+    own (`gesture_repeat:<id>`), labelled with the family name and its pack
+    example. Ties follow the summary order.
+    """
+
+    counts: Counter[str] = Counter()
+    labels: dict[str, str] = {}
+    examples: dict[str, str] = {}
+    for record in _recent(campaign, last):
+        counts.update(rule for rule in _flagged(record) if rule != "gesture_repeat")
+        for family_id in dict.fromkeys(_items(record.get("gesture_families"))):
+            if not isinstance(family_id, str) or not family_id:
+                continue
+            key = f"gesture_repeat:{family_id}"
+            counts[key] += 1
+            if key not in labels:
+                family = _family(str(record.get("language") or ""), family_id)
+                labels[key] = str(family.get("label") or family_id.replace("_", " "))
+                examples[key] = str(family.get("example") or "")
+    latest = read_json(Path(campaign) / RUNTIME_DIR / LINT_LAST, {})
+    for finding in _items(latest.get("findings") if isinstance(latest, dict) else None):
+        evidence = _items(finding.get("evidence")) if isinstance(finding, dict) else []
+        if evidence and isinstance(evidence[0], str) and finding.get("rule") not in PRIVATE_EVIDENCE:
+            examples.setdefault(str(finding.get("rule")), evidence[0])
+
+    def order(key: str) -> tuple[int, int, str]:
+        rule = key.split(":", 1)[0]
+        return -counts[key], SUMMARY_ORDER.index(rule) if rule in SUMMARY_ORDER else len(SUMMARY_ORDER), key
+
+    ranked = sorted(counts, key=order)[: max(0, limit)]
+    return [
+        {
+            "rule": key,
+            "label": labels.get(key) or RULE_LABELS.get(key, key),
+            "count": counts[key],
+            "example": examples.get(key, ""),
+        }
+        for key in ranked
+    ]
+
+
+def report_summary(campaign: Path, last: int = HABITS_LAST) -> dict[str, Any]:
+    """A short lint report over the last `last` replies, for the commit-distill result.
+
+    Returns `{replies, rules, top, text}`: `rules` maps each flagged rule to
+    the number of replies that flagged it, `top` is `top_habits`, and `text`
+    (at most REPORT_TEXT_MAX characters) leads with the age rule when any
+    reply flagged it.
+    """
+
+    records = _recent(campaign, last)
+    rules: Counter[str] = Counter()
+    clean = 0
+    for record in records:
+        flagged = _flagged(record)
+        rules.update(flagged)
+        clean += 0 if flagged else 1
+    top = top_habits(campaign, last)
+    if not records:
+        return {"replies": 0, "rules": {}, "top": [], "text": "No linted replies yet."}
+    parts = []
+    minors = rules.get("minor_sexual_proximity", 0)
+    if minors:
+        parts.append(f"{_replies(minors)} put an age under 18 near a romance or sex term; check every age")
+    parts.append(f"last {_replies(len(records))}: {clean} clean")
+    if top:
+        parts.append("most flagged: " + ", ".join(f"{habit['label']} ({habit['count']})" for habit in top))
+    latest = read_json(Path(campaign) / RUNTIME_DIR / LINT_LAST, {})
+    summary = str(latest.get("summary") or "") if isinstance(latest, dict) else ""
+    if summary:
+        parts.append("latest: " + summary.removeprefix("Last reply: ").rstrip("."))
+    text = _clip("Presentation lint, " + "; ".join(parts) + ".", REPORT_TEXT_MAX)
+    ordered = {rule: rules[rule] for rule in SUMMARY_ORDER if rules.get(rule)}
+    return {"replies": len(records), "rules": ordered, "top": top, "text": text}
 
 
 def _campaign_arg(value: str) -> Path:

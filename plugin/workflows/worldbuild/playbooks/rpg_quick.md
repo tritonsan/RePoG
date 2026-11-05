@@ -95,12 +95,13 @@ separate slots into one answer:
    open; mere uncertainty is not permission. Growth cadence and presentation
    stay in the play/system decision.
 4. **Agency, Authorship, And Boundaries** — ask the content boundary first and
-   alone, using the same standard category set as every other route, each as
-   open, fade, or avoid, with "everything open" as a real answer and both
-   guarantees stated: a limit may be added at any time including mid-play, and
-   adding one is never a cost. It never sits inside a card. Then, within this
-   same fixed slot, settle the authorship and consequence stance as two
-   independent parts—who authors the character's inner life, past, and decisions,
+   alone, following `content_boundaries.md` like every other route: the notice,
+   the two fixed rows, each row's own options, the GM's stated limits, an
+   optional stop word, and both guarantees stated: a limit may be added at any
+   time including mid-play, and adding one is never a cost. It never sits
+   inside a card. Then, within this same fixed slot, settle the authorship
+   and consequence stance as two independent parts—who authors the
+   character's inner life, past, and decisions,
    and whether permanent loss is in play. Derive the character-side approval
    triggers from those answers instead of asking for a list, and settle world-side
    creation authority as a threshold on the creation tiers the ledger tracks—

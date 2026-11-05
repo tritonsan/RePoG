@@ -206,10 +206,10 @@ def test_directives_examples_are_inside_a_comment() -> None:
     comments = re.findall(r"<!--(.*?)-->", text, flags=re.S)
     assert len(comments) == 1
     examples = [line for line in comments[0].splitlines() if "|" in line]
-    assert len(examples) == 3
+    assert len(examples) == 4
     assert all(line.startswith("e.g. |") for line in examples)
     scopes = {_cells(line.removeprefix("e.g."))[1].split(":")[0] for line in examples}
-    assert scopes == {"global", "entity", "scene"}
+    assert scopes == {"global", "entity", "scene", "check"}
 
 
 def test_directives_template_accepts_typed_rows() -> None:
@@ -341,13 +341,19 @@ CHARACTER_SECTIONS_BEFORE_0_3 = [
     "GM Use",
     "Promotion Notes",
 ]
+# 0.4.0 adds Depth after the Offscreen Trajectory and a short Distinct
+# Appearance block before the fuller Appearance card; every earlier section
+# keeps its place.
+CHARACTER_SECTIONS = list(CHARACTER_SECTIONS_BEFORE_0_3)
+CHARACTER_SECTIONS.insert(CHARACTER_SECTIONS.index("Agent Playability Card"), "Depth")
+CHARACTER_SECTIONS.insert(CHARACTER_SECTIONS.index("Appearance"), "Distinct Appearance")
 
 
 def test_character_template_core_and_now_follow_the_tier_lines() -> None:
     text = _text("characters/_template.md")
     level_two = [title for level, title in _headings(text) if level == 2]
     assert level_two[:3] == ["Core", "Now", "At-The-Table Agency Card"]
-    assert level_two[2:] == CHARACTER_SECTIONS_BEFORE_0_3
+    assert level_two[2:] == CHARACTER_SECTIONS
     assert text.index("Power Band:") < text.index("## Core")
 
     core = _fields(_section(text, "Core"))
@@ -550,7 +556,9 @@ def test_play_profile_runtime_block_uses_allowed_defaults() -> None:
     for key, value in runtime.items():
         assert value in repog_runtime.RUNTIME_ALLOWED[key], key
     assert runtime == repog_runtime.RUNTIME_DEFAULTS
-    assert repog_runtime.block_scalars(text, "narration")["language"] == "auto"
+    narration = repog_runtime.block_scalars(text, "narration")
+    assert narration["language"] == "auto"
+    assert narration["records_language"] == "same"
 
 
 def test_play_profile_allowed_values_comment_matches_runtime() -> None:
@@ -610,10 +618,72 @@ def test_play_profile_resolution_example_loads_with_odds() -> None:
     resolution = odds.load_resolution(_uncomment_resolution(text))
     assert resolution is not None
     assert (resolution["stat_min"], resolution["stat_max"]) == (1, 5)
-    assert resolution["auto_success_margin"] == 2
+    # The margin sits where the lowest roll (one per die) already reaches the
+    # lowest success band, the one a margin of 0 lands in, so no call inside
+    # the roll range is certain and none outside it can fail.
+    dice_count = int(re.search(r"(?m)^  #   die: (\d+)d\d+$", text).group(1))
+    lowest_success = odds.success_band(resolution["bands"])["at_least"]
+    assert resolution["auto_success_margin"] == lowest_success - dice_count == -2
+    assert odds.dead_zone_findings(resolution) == []
     assert [band["band"] for band in resolution["bands"]][0] == "success"
     # Neither the scale_exhausted warning nor the first_band_unreachable info.
     assert odds.exhaustion(resolution) == []
+
+
+def test_play_profile_margin_rule_holds_with_a_critical_band_listed_first() -> None:
+    odds = pytest.importorskip("odds")
+    roll_dice = pytest.importorskip("roll_dice")
+    example = _uncomment_resolution(_text("play_profile.yaml"))
+    critical = example.replace("    bands:\n", "    bands:\n      - {at_least: 4, band: critical}\n", 1)
+    resolution = odds.load_resolution(critical)
+    assert resolution is not None and resolution["bands"][0]["band"] == "critical"
+    # The comment's rule: the at_least of the lowest success band, where a
+    # margin of 0 lands, minus the lowest roll (one per die).
+    documented = odds.success_band(resolution["bands"])["at_least"] - resolution["dice_count"]
+    assert documented == resolution["auto_success_margin"] == -2
+    assert odds.dead_zone_findings(resolution) == []
+    # The first band's at_least would roll calls that cannot fail.
+    first_band = resolution["bands"][0]["at_least"] - resolution["dice_count"]
+    assert odds.dead_zone_findings({**resolution, "auto_success_margin": first_band})
+    # A margin below the rule skips a call whose lowest roll falls short; it is
+    # recorded at the lowest success band, as the comment says.
+    lower = {**resolution, "auto_success_margin": documented - 2}
+    skipped = roll_dice.evaluate_call({"value": 3, "difficulty": 7, "factors": []}, [1, 1], lower)
+    assert skipped["auto"] and skipped["band"] == odds.success_band(resolution["bands"])["band"]
+
+
+def test_play_profile_margin_comment_matches_the_dice() -> None:
+    odds = pytest.importorskip("odds")
+    roll_dice = pytest.importorskip("roll_dice")
+    resolution = odds.load_resolution(_uncomment_resolution(_text("play_profile.yaml")))
+    documented = resolution["auto_success_margin"]
+    pairs = [
+        (value, difficulty)
+        for value in range(resolution["stat_min"], resolution["stat_max"] + 1)
+        for difficulty in range(resolution["difficulty_min"], resolution["difficulty_max"] + 1)
+    ]
+
+    def skipped(margin: int | None) -> set[tuple[int, int]]:
+        scale = {**resolution, "auto_success_margin": margin}
+        return {
+            (value, difficulty)
+            for value, difficulty in pairs
+            if roll_dice.evaluate_call({"value": value, "difficulty": difficulty, "factors": []}, [1, 1], scale)["auto"]
+        }
+
+    def certain(value: int, difficulty: int) -> bool:
+        call = {"value": value, "difficulty": difficulty, "factors": []}
+        return roll_dice.call_odds(call, resolution["dice_count"], resolution["dice_sides"], resolution["bands"])["certain"]
+
+    # "either way exactly the calls that cannot fail skip the roll"
+    assert skipped(documented) == skipped(None) == {pair for pair in pairs if certain(*pair)} != set()
+    # "a lower margin also skips calls that could fail"
+    assert skipped(documented - 2) > skipped(documented)
+    # "a higher one adds nothing, and the full check flags it as auto_success_dead_zone"
+    assert skipped(documented + 2) == skipped(documented)
+    assert [finding["rule"] for finding in odds.dead_zone_findings({**resolution, "auto_success_margin": documented + 2})] == [
+        "auto_success_dead_zone"
+    ]
 
 
 def test_play_profile_language_comment_lists_every_shipped_pack() -> None:

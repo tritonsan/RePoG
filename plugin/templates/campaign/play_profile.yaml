@@ -51,14 +51,24 @@ mechanics:
   # Optional numeric resolution scale for roll calls. Uncomment and adapt it
   # only with numeric grounding and a dice mode, and read the odds table
   # before locking it. These values illustrate the shape; they are not a
-  # default.
+  # default. A call whose lowest roll, one per die, already reaches a
+  # success band never rolls. A call whose value + factors - difficulty
+  # reaches auto_success_margin also succeeds without a roll, at the band
+  # its lowest roll reaches, or at the lowest success band when that roll
+  # falls short of it. The lowest success band is the one a margin of 0
+  # lands in, even when a better band such as a critical is listed first.
+  # Set the margin to that band's at_least minus the lowest roll, one per
+  # die (0 - 2 = -2 for 2d6 here), or leave it out: either way exactly the
+  # calls that cannot fail skip the roll. A lower margin also skips calls
+  # that could fail; a higher one adds nothing, and the full check flags
+  # it as auto_success_dead_zone.
   # resolution:
   #   die: 2d6
   #   stat_min: 1
   #   stat_max: 5
   #   difficulty_min: 4
   #   difficulty_max: 13
-  #   auto_success_margin: 2
+  #   auto_success_margin: -2
   #   bands:
   #     - {at_least: 0, band: success}
   #     - {at_least: -2, band: partial_small_cost}
@@ -67,6 +77,7 @@ mechanics:
 
 narration:
   language: auto
+  records_language: same
   point_of_view: second
   tense: present
   camera: close
@@ -128,8 +139,13 @@ visuals:
 # mechanics.resolution: optional; die as NdM, stat and difficulty ranges,
 #   optional auto_success_margin, and bands ordered by at_least (first
 #   match wins); see rules.md Dice
+# mechanics.resolution.auto_success_margin: optional integer; the at_least
+#   of the lowest success band (where a margin of 0 lands) minus the lowest
+#   roll, one per die, or unset
 # narration.language: auto | a BCP-47 primary language subtag such as
 #   en, tr, de, es, or fr
+# narration.records_language: same | a language code; every record's
+#   content is written in it, and same means narration.language
 # point_of_view: first | second | third
 # tense: past | present
 # camera: close | medium | wide
@@ -171,7 +187,8 @@ visuals:
 # visuals.dashboard_placement: gallery_only | dashboard_after_approval
 # performance.cold_distill_policy: every_durable |
 #   scene_checkpoint_or_3_durable | scene_checkpoint_or_5_durable |
-#   scene_checkpoint_only
+#   scene_checkpoint_only; Fast and Balanced use
+#   scene_checkpoint_or_5_durable, Maximum Continuity every_durable
 # performance.semantic_parallelism: off | selective_structural |
 #   aggressive_structural
 # performance.max_parallel_workers: 1 | 2 | 3

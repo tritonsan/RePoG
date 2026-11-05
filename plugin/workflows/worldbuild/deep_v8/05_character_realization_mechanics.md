@@ -13,7 +13,10 @@ silently arrive from genre.
 2. `05_social_position_access_and_belonging` — establish role, access,
    isolation or belonging, routine fit, and who could naturally know them.
 3. `05_resolution_grounding` — fictional, bands, or numeric; derive any stat
-   axes from this setting and stage.
+   axes from this setting and stage. With bands or numbers, carry the Stage 2
+   NPC power scale into `rules.md`: a `- Numeric scale: min-max` line and a
+   `## Tier Caps` block (`- T1: n`, one line per tier). Under
+   `region_anchored_open` the caps are the current region's.
 4. `05_reliable_competence_and_special_capabilities` — what succeeds cleanly,
    what special capability exists (including none), its world-specific source,
    and what affordances the world naturally provides.
@@ -21,6 +24,9 @@ silently arrive from genre.
    for adaptation rather than automatic failure.
 6. `05_simulation_fidelity` — explicitly approved modules and inventory, time,
    travel, wound, resource, clock, and dice tracking.
+
+Record each with the fields in `decisions.md`; Stage 5 values are summary
+objects with no further required fields.
 
 Offer contextual cards, one decision per message. A lens or world feature may
 suggest a module but never activates it.

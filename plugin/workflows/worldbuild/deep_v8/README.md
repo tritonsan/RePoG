@@ -9,7 +9,12 @@ Quick, Standard, Companion, legacy Deep, campaign owners, or validators.
 
 Load `manifest.json`, then only the playbook for the current stage. Load the
 shared research, audit, orchestration, or finalization workflow only when the
-active stage names that boundary. Do not keep all nine playbooks hot.
+active stage names that boundary. Do not keep all nine playbooks hot. Load
+`decisions.md` when recording a decision, completing a stage, or recording a
+gate; `stage-owners --stage-id <stage>` prints one stage's part of it.
+
+Before Stage 1, `set-depth --depth deep` (never a hand edit) initializes the
+ledger, and the play language is settled with `set-language`.
 
 The stage order is fixed:
 
@@ -91,14 +96,14 @@ change invalidates the downstream gates named in the manifest.
 
 ## Final Boundary
 
-After `preparation_approved`, run draft preflight while setup is still
-`in_progress`, the selected profile is `pending`, and `ready_for_play` is false.
-Record `draft_preflight_passed` only for a zero-error preflight; that gate
-advances the revision. Lock profiles at the resulting revision, build derived
-projections, and create a content-bound `session-zero-start` snapshot without
-marking setup ready. Append `snapshot_manifest.json` to the returned snapshot
-path and pass the campaign-relative ref to `prepare-ready-evidence` together with
-the same expected revision and an authorized readiness-report target. The helper
-runs the full candidate-ready check and returns the exact evidence object for
-`ready_and_snapshotted`. Pass it unchanged to that revision-neutral final gate,
-which performs the setup complete/ready transition.
+After `preparation_approved` and Stage 9 completion, run `finalize`. In one
+call it runs the draft preflight while setup is still `in_progress`, the
+selected profile is `pending`, and `ready_for_play` is false; records
+`draft_preflight_passed` only for a zero-error preflight with no calibration,
+records-language, or age-rule warning (that gate advances the revision); locks
+the profiles at the resulting revision; creates the content-bound
+`session-zero-start` snapshot; runs `prepare-ready-evidence`; and records the
+revision-neutral `ready_and_snapshotted`, which performs the setup
+complete/ready transition. It stops at the first failing step with a typed
+error and resumes on the next call. Use `--stop-after lock_profiles` to build
+approved derived projections before the snapshot.

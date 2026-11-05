@@ -32,6 +32,11 @@ record both as actual boundaries and appraise the earned award once. Presentatio
 `none` produces no automatic reward offer or OOC gate; do not manufacture an offer
 from an otherwise disabled advancement contract.
 
+A stat award goes only to axes the character actually rolled in the closing
+act, and never past the region cap in `progression.md` unless the Player
+explicitly accepts the overreach (scene and arc transition playbook,
+Advancement).
+
 ## Continuation And Persistence
 
 `due` or `offered` alone is never proof that all narration is blocked. Record the
@@ -44,7 +49,9 @@ none presentation keep that flag `no`.
 Advancement status, rewards, unspent amounts, realization conditions, and world
 consequences are durable facts. Capture all immediate-owner changes in one
 `rpg_state.py commit-durable` transaction with boundary `full_distill`, then finish
-required propagation/checks. No manual revision or piecemeal reward write.
+required propagation/checks after the reply. At an act close they ride in that
+act's `commit-act` call instead (scene and arc transition playbook). No manual
+revision or piecemeal reward write.
 
 Do not start dependent next-act preparation while its required choice waits.
 Once selected or explicitly deferred as non-blocking, carry current truth into

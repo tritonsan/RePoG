@@ -10,6 +10,12 @@ This file governs wording only. Who holds a title, where a place lies, and what
 a character knows stay with their owners. Leave the file unfilled when the
 campaign has no recurring rendering choices.
 
+Seed it at the first translated name: the first time a place name, title, rank,
+or recurring term is rendered into the play language, add its row in that same
+commit, so later replies keep one form. A writer warning `glossary_suggest`
+offers a row for a new note whose name is not in the play language; fill its
+`Preferred` with the play-language form before committing it.
+
 ## Rendering Policy
 
 Fill only the lines the campaign has decided, with a sentence or two kept on

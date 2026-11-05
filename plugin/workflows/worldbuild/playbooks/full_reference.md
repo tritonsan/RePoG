@@ -115,8 +115,9 @@ the Player explicitly approves migration.
 - An inherited decision is never re-asked or quietly weakened; a requested
   change is a revision of its owning module.
 - Ask the content boundary alone, never inside a card, using the same standard
-  categories in every route and setting, with open/fade/avoid per category and
-  "everything open" as a real answer. Say both guarantees: a limit may be added
+  rows in every route and setting as `content_boundaries.md` sets them: two
+  fixed rows, each row's own options, and "everything at its most open" as a
+  real answer. Say both guarantees: a limit may be added
   at any time including mid-play, and adding one is never a cost. A bare "is
   there anything?" is not enough, since silence would be recorded as consent.
 - Keep authorship breadth and consequence weight independent, and settle
@@ -494,7 +495,7 @@ progress only:
 | Profile | Cold distill | Validation | Dashboard | Style review |
 | --- | --- | --- | --- | --- |
 | `fast` | `scene_checkpoint_or_5_durable` | `full_on_distill` | `scene_and_major_visible_change` | `sampled_and_distill` |
-| `balanced` | `scene_checkpoint_or_3_durable` | `full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
+| `balanced` | `scene_checkpoint_or_5_durable` | `full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
 | `maximum_continuity` | `every_durable` | `full_each_durable` | `every_visible_change` | `every_durable` |
 
 Use `exceptional_only` latency notices by default. This gives a brief OOC time

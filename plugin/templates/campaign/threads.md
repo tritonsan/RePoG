@@ -50,8 +50,8 @@ A material change to the accepted campaign promise follows the Designer boundary
 
 RPG-only. Leave inactive in Companion mode. This is the single current-act owner,
 not just a first-act setup note. Fill the first Compass during Session 0. For later
-acts follow `workflows/gm/playbooks/scene_arc_transition.md`: archive the closed
-Compass and establish its successor here before opening the new act.
+acts follow `workflows/gm/playbooks/scene_arc_transition.md`: one `commit-act`
+call archives the closing Compass and establishes its successor here.
 
 - Act id:
 - Act status: planned
@@ -96,9 +96,10 @@ do not add locations or cast merely to make preparation look large.
 
 ### Closure Record
 
-Fill only when this act actually closes. Mark the Compass `closed` in the same
-owner transaction as the decisive result, regardless of whether an award is due.
-Do not reconstruct or credit a later turn as the decisive action.
+Filled when this act actually closes, by the `commit-act` call made after the
+scene that answered it has ended, whether or not an award is due. Name the
+decisive action and the revision it happened at; do not reconstruct or credit a
+later turn as the decisive action.
 
 - Closing action:
 - Condition met or foreclosed:
@@ -112,8 +113,8 @@ Opened at revision, question, scope, closure conditions, and Closure Record. Dem
 its nested Act Scope and Closure Record headings to `####` (or retain flat fields);
 only `### <act id>` begins an archive entry. Include compact relevant horizon/
 expectation references, not duplicate entity history.
-Archive the outgoing Compass and create the new active Compass in one `threads.md`
-candidate; do not erase the old evidence or recycle its id.
+`commit-act` archives the outgoing Compass and creates the new active Compass in
+one transaction; do not erase the old evidence or recycle its id.
 
 Legacy campaigns without a meaningful Act id keep their existing behavior. Offer
 adoption only at an explicit Designer review or accepted safe transition; never

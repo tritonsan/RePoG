@@ -1492,3 +1492,276 @@ def test_agent_prompt_states_the_limits_the_validator_enforces() -> None:
     assert "with no other keys" in body
     assert "never inside another section" in body
     assert "Agency Card field" in body
+
+
+# ---------------------------------------------------------------------------
+# 0.4.0: targets from curation_due.json and the records language
+# ---------------------------------------------------------------------------
+
+
+def _due(campaign: Path, *targets: dict[str, Any]) -> Path:
+    return _write(
+        campaign / ".repog-runtime" / "curation_due.json",
+        json.dumps({"at": "2026-11-04T10:00:00Z", "revision": 0, "targets": list(targets)}),
+    )
+
+
+def test_a_packet_without_targets_takes_the_notes_due(campaign: Path) -> None:
+    _due(
+        campaign,
+        {"path": "characters/witness.md", "rule": "now_overflow", "reason": "Now holds 5 dated entries"},
+        {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""},
+        {"path": "active_cast.md", "rule": "death_projection", "reason": "Morvik is dead"},
+        {"path": "current_state.yaml", "rule": "cast_present_missing", "reason": "x"},
+        {"path": "characters/gone.md", "rule": "note_core_missing", "reason": "x"},
+        {"path": 7},
+        "not a target",
+    )
+    packet = curation.build_packet(campaign, [])
+    assert packet["targets"] == [
+        {"path": "characters/witness.md", "reason": "now_overflow: Now holds 5 dated entries; stacked_sections"},
+        {"path": "active_cast.md", "reason": "death_projection: Morvik is dead"},
+    ]
+    assert set(packet["base_hashes"]) == {"characters/witness.md", "active_cast.md"}
+    assert packet["targets_from"] == ".repog-runtime/curation_due.json"
+    assert [item["path"] for item in packet["skipped_targets"]] == ["current_state.yaml", "characters/gone.md"]
+    assert "Markdown note" in packet["skipped_targets"][0]["reason"]
+    assert "does not exist" in packet["skipped_targets"][1]["reason"]
+    # Targets the caller names come first; the notes due are added to them.
+    named = curation.build_packet(campaign, [("threads.md", "x")])
+    assert [item["path"] for item in named["targets"]] == ["threads.md", "characters/witness.md", "active_cast.md"]
+    assert named["targets_from"] == ".repog-runtime/curation_due.json"
+
+
+def test_nothing_due_and_nothing_given_is_refused(campaign: Path) -> None:
+    for content in (None, {"targets": []}, {"targets": [{"path": "current_state.yaml", "rule": "x"}]}):
+        if content is not None:
+            _write(campaign / ".repog-runtime" / "curation_due.json", json.dumps(content))
+        with pytest.raises(curation.CurationError) as caught:
+            curation.build_packet(campaign, [])
+        assert caught.value.category == "input_invalid" and "none is due" in str(caught.value)
+
+
+def test_more_due_notes_than_one_packet_holds_wait_for_the_next(campaign: Path) -> None:
+    targets = []
+    for index in range(curation.MAX_MUTATIONS + 3):
+        _write(campaign / "characters" / f"n{index:02d}.md", f"# N{index}\n")
+        targets.append({"path": f"characters/n{index:02d}.md", "rule": "note_core_missing", "reason": ""})
+    _due(campaign, *targets)
+    packet = curation.build_packet(campaign, [])
+    assert len(packet["targets"]) == curation.MAX_MUTATIONS and packet["targets_omitted"] == 3
+
+
+def test_cli_packet_without_a_target_uses_the_due_list(campaign: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    _due(campaign, {"path": "characters/witness.md", "rule": "stacked_sections", "reason": "two dated states"})
+    assert curation.main(["packet", str(campaign.parent)]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["targets"] == [{"path": "characters/witness.md", "reason": "stacked_sections: two dated states"}]
+    (campaign / ".repog-runtime" / "curation_due.json").unlink()
+    assert curation.main(["packet", str(campaign)]) == 2
+    assert json.loads(capsys.readouterr().out)["failure_category"] == "input_invalid"
+
+
+def test_named_targets_come_first_and_keep_the_due_reason(campaign: Path) -> None:
+    _write(campaign / "characters" / "big.md", "# Big\n\nLong.\n")
+    _due(
+        campaign,
+        {"path": "characters/witness.md", "rule": "stacked_sections", "reason": "two dated states"},
+        {"path": "active_cast.md", "rule": "cast_dead_listed", "reason": ""},
+    )
+    packet = curation.build_packet(
+        campaign, [("characters/big.md", "owner_size_budget"), ("characters/witness.md", "")]
+    )
+    assert packet["targets"] == [
+        {"path": "characters/big.md", "reason": "owner_size_budget"},
+        {"path": "characters/witness.md", "reason": "stacked_sections: two dated states"},
+        {"path": "active_cast.md", "reason": "cast_dead_listed"},
+    ]
+    assert packet["targets_from"] == ".repog-runtime/curation_due.json"
+    with pytest.raises(curation.CurationError) as caught:
+        curation.build_packet(campaign, [("characters/witness.md", "a"), ("characters/witness.md", "b")])
+    assert caught.value.category == "input_invalid" and "listed twice" in str(caught.value)
+
+
+def test_cli_targets_add_to_the_notes_due_and_their_reason_leads(
+    campaign: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write(campaign / "places" / "harbor.md", "# Harbor\n\n## Now\n\nQuiet.\n")
+    _due(
+        campaign,
+        {"path": "characters/witness.md", "rule": "stacked_sections", "reason": "two dated states " + "x" * 400},
+        {"path": "active_cast.md", "rule": "cast_dead_listed", "reason": ""},
+    )
+    argv = ["packet", str(campaign), "--target", "places/harbor.md=owner_size_budget"]
+    assert curation.main([*argv, "--target", "characters/witness.md=owner_size_budget"]) == 0
+    packet = json.loads(capsys.readouterr().out)
+    # One target per file: the named ones first, then every due note they leave out.
+    assert [item["path"] for item in packet["targets"]] == ["places/harbor.md", "characters/witness.md", "active_cast.md"]
+    assert set(packet["base_hashes"]) == {"places/harbor.md", "characters/witness.md", "active_cast.md"}
+    assert packet["targets_from"] == ".repog-runtime/curation_due.json"
+    # A due note named again keeps the caller's reason first, then the due rule, so
+    # the curator also fixes what the distill gate would raise again; the cap cuts
+    # the due text, never the caller's reason.
+    reason = packet["targets"][1]["reason"]
+    assert reason.startswith("owner_size_budget; stacked_sections: two dated states")
+    assert len(reason) == curation.MAX_REASON
+    assert packet["targets"][0]["reason"] == "owner_size_budget"
+    assert packet["targets"][2]["reason"] == "cast_dead_listed"
+
+
+def test_named_targets_fill_the_packet_before_the_notes_due(campaign: Path) -> None:
+    named, due = [], []
+    for index in range(curation.MAX_MUTATIONS):
+        _write(campaign / "characters" / f"n{index:02d}.md", f"# N{index}\n")
+        named.append((f"characters/n{index:02d}.md", "core_missing"))
+    _due(campaign, {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""})
+    packet = curation.build_packet(campaign, named)
+    assert [item["path"] for item in packet["targets"]] == [path for path, _ in named]
+    assert packet["targets_omitted"] == 1 and "targets_from" not in packet
+
+
+# ---------------------------------------------------------------------------
+# Issued packets: one curator per unchanged note
+# ---------------------------------------------------------------------------
+
+
+def _issued(campaign: Path) -> dict[str, Any]:
+    return json.loads((campaign / ".repog-runtime" / "curation_issued.json").read_text(encoding="utf-8"))
+
+
+def _ago(seconds: float) -> int:
+    return time.time_ns() - int(seconds * 1_000_000_000)
+
+
+def test_issuing_a_packet_records_it_and_building_one_does_not(campaign: Path) -> None:
+    _due(campaign, {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""})
+    curation.build_packet(campaign, [])
+    assert not (campaign / ".repog-runtime" / "curation_issued.json").exists()
+    packet = curation.issue_packet(campaign, [])
+    [entry] = _issued(campaign)["packets"]
+    assert entry["curation_id"] == packet["curation_id"] and entry["base_hashes"] == packet["base_hashes"]
+    assert set(entry) == {"curation_id", "at", "issued_ns", "base_hashes"}
+    assert [item["status"] for item in curation.issued_packets(campaign)] == ["running"]
+
+
+def test_a_running_curator_s_notes_are_never_issued_twice(campaign: Path) -> None:
+    _due(
+        campaign,
+        {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""},
+        {"path": "active_cast.md", "rule": "cast_dead_listed", "reason": ""},
+    )
+    first = curation.issue_packet(campaign, [])
+    with pytest.raises(curation.CurationError) as caught:
+        curation.build_packet(campaign, [])
+    assert caught.value.category == "already_issued"
+    assert f"curator {first['curation_id']} still works on 2 notes" in str(caught.value)
+    # A note named while the curator works is left out too; the rest is curated.
+    packet = curation.build_packet(campaign, [("threads.md", "owner_size_budget"), ("active_cast.md", "x")])
+    assert packet["targets"] == [{"path": "threads.md", "reason": "owner_size_budget"}]
+    assert packet["targets_running"] == [
+        {"path": "active_cast.md", "curation_id": first["curation_id"]},
+        {"path": "characters/witness.md", "curation_id": first["curation_id"]},
+    ]
+    with pytest.raises(curation.CurationError) as caught:
+        curation.build_packet(campaign, [("threads.md", "x")], curation_id=first["curation_id"])
+    assert caught.value.category == "already_issued" and "under that id" in str(caught.value)
+    # A note changed since the packet is free again: that curator's proposal for it will be stale.
+    _write(campaign / "active_cast.md", "# Active Cast\n\nChanged.\n")
+    packet = curation.build_packet(campaign, [])
+    assert [item["path"] for item in packet["targets"]] == ["active_cast.md"]
+    assert [item["path"] for item in packet["targets_running"]] == ["characters/witness.md"]
+
+
+def test_a_curator_presumed_gone_frees_its_notes_unless_its_proposal_waits(campaign: Path) -> None:
+    _due(campaign, {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""})
+    packet = curation.build_packet(campaign, [])
+    curation.record_issue(campaign, packet, now_ns=_ago(curation.ISSUE_TTL_SECONDS + 1))
+    assert [item["status"] for item in curation.issued_packets(campaign)] == ["expired"]
+    staged = Path(packet["staging_path"])
+    _write(staged, "{}")
+    assert [item["status"] for item in curation.issued_packets(campaign)] == ["running"]
+    staged.unlink()
+    assert curation.build_packet(campaign, [])["curation_id"] == packet["curation_id"]
+    # Recording a new packet drops the expired one.
+    other = curation.issue_packet(campaign, [("threads.md", "x")])
+    assert [entry["curation_id"] for entry in _issued(campaign)["packets"]] == [other["curation_id"]]
+
+
+def test_notes_a_finished_curator_left_unchanged_wait_for_the_distill(campaign: Path) -> None:
+    _due(campaign, {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""})
+    packet = curation.build_packet(campaign, [])
+    curation.record_issue(campaign, packet, now_ns=_ago(60))
+    staged = _write(Path(packet["staging_path"]), "{}")
+    curation.move_processed(staged, "applied")
+    assert [item["status"] for item in curation.issued_packets(campaign)] == ["finished"]
+    with pytest.raises(curation.CurationError) as caught:
+        curation.build_packet(campaign, [])
+    assert caught.value.category == "already_issued" and "wait for the next distill" in str(caught.value)
+    # Naming the note asks again.
+    assert curation.build_packet(campaign, [("characters/witness.md", "")])["targets"] == [
+        {"path": "characters/witness.md", "reason": "stacked_sections"}
+    ]
+
+
+def test_an_older_proposal_of_the_same_id_does_not_finish_a_new_packet(campaign: Path) -> None:
+    _due(campaign, {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""})
+    packet = curation.build_packet(campaign, [])
+    old = _write(Path(packet["staging_path"]), "{}")
+    filed = curation.move_processed(old, "rejected")
+    past = time.time() - 120
+    os.utime(filed, (past, past))
+    curation.record_issue(campaign, packet, now_ns=_ago(60))
+    assert [item["status"] for item in curation.issued_packets(campaign)] == ["running"]
+    again = _write(Path(packet["staging_path"]), "{}")
+    assert curation.move_processed(again, "rejected").name == f"{packet['curation_id']}-2.json"
+    assert [item["status"] for item in curation.issued_packets(campaign)] == ["finished"]
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"\xff not json",
+        b"[]",
+        b'{"packets": "x"}',
+        b'{"packets": [{"curation_id": "last_result", "issued_ns": 1, "base_hashes": {}}, {"curation_id": "r0-x"}, 7]}',
+    ],
+)
+def test_a_malformed_issue_record_holds_no_note(campaign: Path, content: bytes) -> None:
+    _due(campaign, {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""})
+    (campaign / ".repog-runtime" / "curation_issued.json").write_bytes(content)
+    assert curation.issued_packets(campaign) == []
+    assert curation.build_packet(campaign, [])["targets"][0]["path"] == "characters/witness.md"
+
+
+def test_cli_packet_records_the_issue_and_refuses_a_second_launch(
+    campaign: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _due(campaign, {"path": "characters/witness.md", "rule": "stacked_sections", "reason": ""})
+    assert curation.main(["packet", str(campaign)]) == 0
+    first = json.loads(capsys.readouterr().out)
+    assert _issued(campaign)["packets"][0]["curation_id"] == first["curation_id"]
+    assert curation.main(["packet", str(campaign)]) == 2
+    refusal = json.loads(capsys.readouterr().out)
+    assert refusal["failure_category"] == "already_issued" and first["curation_id"] in refusal["failure_reason"]
+
+
+@pytest.mark.parametrize(
+    ("narration", "expected"),
+    [
+        ("", "auto"),
+        ("narration:\n  language: tr\n", "tr"),
+        ("narration:\n  language: tr\n  records_language: same\n", "tr"),
+        ("narration:\n  language: tr\n  records_language: en\n", "en"),
+    ],
+)
+def test_the_packet_names_the_records_language(campaign: Path, narration: str, expected: str) -> None:
+    profile = campaign / "play_profile.yaml"
+    profile.write_bytes(profile.read_bytes() + narration.encode("utf-8"))
+    assert curation.build_packet(campaign, [("threads.md", "x")])["records_language"] == expected
+
+
+def test_agent_writes_folded_text_in_the_records_language() -> None:
+    fields, body = _agent_parts()
+    assert "`records_language`" in body and "translating" in body
+    assert "keep the structure as is" in body
+    assert "curation_due.json" in fields["description"]

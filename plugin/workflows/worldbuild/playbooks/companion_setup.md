@@ -39,6 +39,10 @@ it fits. State that View defaults off, light View adds no ordinary-message
 tool call, and visual generation is a separate multi-minute operation. Do not
 present a clinical inventory.
 
+The content part of the relationship and boundaries decision follows
+`content_boundaries.md` at every depth: the notice, the two fixed rows, and
+each row's own options. A Starter Bundle never sets it.
+
 Use the same Starter Bundle/performance summary to show `off`, recommended
 `selective_structural`, or `aggressive_structural` semantic parallelism and
 its model-usage tradeoff. This is not an extra Quick question. On final

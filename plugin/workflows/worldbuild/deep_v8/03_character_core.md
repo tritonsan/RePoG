@@ -18,6 +18,9 @@ Keep this a playable seed, not a complete biography.
 4. `03_protected_past_and_relationship_authorship` — apply Stage 1 authorship;
    record what is protected and what may be connected later.
 
+Record each with the fields in `decisions.md`; Stage 3 values are summary
+objects with no further required fields.
+
 Ask about character truth, never how every NPC should react. The coordinator may
 derive bounded public assumptions, but records them as derived rather than
 Player-authored interior truth.
@@ -53,6 +56,9 @@ default `character_interior` before closing the stage when it is `active`.
 
 ## Do Not
 
+- write or imply a romantic or sexual relationship in anyone's past that began
+  before 18, including through ages and durations (the fixed row in
+  `boundaries.md`);
 - invent an origin tie merely to make the world feel connected;
 - decide competence or mechanics before Stage 5;
 - create the opening, future arc, or required relationship.

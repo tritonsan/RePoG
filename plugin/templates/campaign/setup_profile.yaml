@@ -15,6 +15,7 @@ experience_mode: ""
 # depth explicitly. Keep pending and this field blank during intake. Companion
 # retains its existing routing. Intake does not advance revision/counts; the
 # selected route records the saved answer. Routing gates do not count.
+# RPG depth is written by `session_zero_state.py set-depth`, never by hand.
 session_zero_mode: ""
 # Schema-v10 RPG Quick/Standard complete required decision rows; Deep uses its
 # stage ledger. Leave blank for these routes. Earlier RPG and Companion retain

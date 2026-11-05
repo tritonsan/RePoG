@@ -356,10 +356,10 @@ def test_a_reset_writes_nothing_for_sessions_it_does_not_know(campaign: Path) ->
 def test_header_names_revision_time_place_scene_and_persistence(campaign: Path) -> None:
     assert _build(campaign).splitlines()[0] == (
         "RePoG capsule — rev 0 · day 1 phase evening · old_dock · scene dock-interview · "
-        "persistence: narrate_then_commit"
+        "order: reply → one commit → hand-back line"
     )
     _profile(campaign, "runtime:\n  persistence_order: commit_then_narrate\n")
-    assert _build(campaign, session="other").splitlines()[0].endswith("persistence: commit_then_narrate")
+    assert _build(campaign, session="other").splitlines()[0].endswith(" · order: commit → reply")
 
 
 DUE_LINE = "Full distill is due after this turn's commit."
@@ -568,7 +568,7 @@ def test_cast_is_capped_at_eight_in_scope_order(campaign: Path) -> None:
         _character(campaign, f"keeper_{index}", title)
     _present(campaign, *titles[:3])
     text = _build(campaign, " ".join(reversed(titles)))
-    roster = text.splitlines()[1]
+    roster = next(line for line in text.splitlines() if line.startswith("[cast]"))
     expected = [f"{title} (present)" for title in titles[:3]] + [f"{title} (mentioned)" for title in reversed(titles[3:])][:5]
     assert roster == "[cast] in scope: " + ", ".join(expected)
 
@@ -591,18 +591,22 @@ def test_dead_kin_line_survives_every_cut_verbatim(campaign: Path) -> None:
     assert "…" in full
     assert all(f"- {title} (characters/" in full for title in titles)
 
+    def walked(text: str) -> int:
+        return sum(1 for line in text.splitlines() if line.startswith("  Now: ") and line.endswith("Walks the road."))
+
     for index in range(len(titles)):
-        _replace(campaign / "characters" / f"n{index}.md", "Watches the river.", "Walks the road.")
+        # `## Now` grows at its end, and the capsule shows its newest lines.
+        _replace(campaign / "characters" / f"n{index}.md", "Watches the river. \n", "Walks the road.\n")
     delta = _build(campaign)
     assert _is_delta(delta) and len(delta) <= scene_capsule.DELTA_MAX
     assert f"\n  Kin: {kin}" in delta  # a changed block repeats its protected lines
     assert "more lines on the next prompt" in delta  # a delta never cuts a line; it waits whole
 
-    shown = delta.count("\n  Now: Walks the road.")
+    shown = walked(delta)
     for _ in range(len(titles)):
         text = _build(campaign)
         assert len(text) <= scene_capsule.DELTA_MAX
-        shown += text.count("\n  Now: Walks the road.")
+        shown += walked(text)
         if "Delta: nothing changed" in text:
             break
     assert shown == len(titles)  # every changed line arrives, each exactly once
@@ -1307,7 +1311,7 @@ def test_missing_files_never_raise(tmp_path: Path) -> None:
     bare = tmp_path / "bare"
     bare.mkdir()
     text = scene_capsule.build_capsule(bare, "Hello Edric", session_id="s", settings={})
-    assert text.splitlines()[0] == "RePoG capsule — rev ? · day ? phase ? · ? · scene ? · persistence: narrate_then_commit"
+    assert text.splitlines()[0] == "RePoG capsule — rev ? · day ? phase ? · ? · scene ? · order: reply → one commit → hand-back line"
     ghost = tmp_path / "ghost"
     assert scene_capsule.build_capsule(ghost, "Hello", session_id="s", settings={}).startswith("RePoG capsule")
     scene_capsule.reset(ghost)

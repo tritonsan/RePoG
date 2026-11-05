@@ -255,6 +255,8 @@ Mode rather than guessing.
   Appetite, including directions to test and protected areas to leave alone.
   Explicit ongoing player corrections may revise those directions; a current
   goal, quiet turn, failure, or refused offer does not silently replace them.
+  Its `## Wishes` section holds the Player's long-term wishes as the
+  character's own aims; no NPC promise or scheduled event follows from them.
 - `player_ties.md` owns accepted RPG character integration: desired personal
   story, stable tie premises, linked issues, factions, faces, and places,
   personal pressures, and explicit backstory or do-not-use limits. It cannot
@@ -379,7 +381,9 @@ Mode rather than guessing.
   OOC ruling, preference, or correction, with id, scope, source, and
   `active`/`retired` status. A change whose kind contains `directive` must
   mutate it. Directives shape table behavior only; they create no fiction and
-  never override `AGENTS.md`, safety boundaries, or a locked profile.
+  never override `AGENTS.md`, safety boundaries, or a locked profile. A row
+  with Scope `check` whose Directive begins `acknowledge <rule_id>` turns the
+  matching full-check warnings into info; it never covers an error.
 - `glossary.md` owns how recurring terms render in the play language: titles
   and honorifics, units, place names, and address forms, with variants to
   avoid. It governs wording only; who holds a title, where a place lies, and
@@ -392,7 +396,10 @@ Mode rather than guessing.
   knowledge, relationship, domain trajectory, or event history. The primary
   Companion note additionally owns the stable fictional character and bounded
   Hot Character Kernel, not current condition, user memory, or relationship
-  context.
+  context. Every record's content is written in the records language
+  (`play_profile.yaml.narration.records_language`, or the play language when
+  it is `same`); file names, keys, headings, labels, table headers, enum
+  values, and ids keep the template's form.
 
 ### Assets, Derived Views, and Recovery
 
@@ -410,10 +417,13 @@ Mode rather than guessing.
   truth; stale output must be rebuilt from owning authorities rather than used
   to update them.
 - `.repog-runtime/` holds runtime working files and is never authority:
-  scene-capsule state, presentation-lint findings and history, roll receipts,
-  and staged curation with its applied and rejected records. The writer checks
-  receipts when a commit cites a roll and applies staged curation only to
-  unchanged files; deleting the folder loses no campaign truth.
+  scene-capsule state, presentation-lint findings and history (counts, short
+  snippets, and the prompt's language code, never full text), roll receipts
+  and their reread rows, the last turn's order (`order_last.json`), the notes
+  due for curation (`curation_due.json`), and staged curation with its applied
+  and rejected records. The writer checks receipts when a commit cites a roll
+  and applies staged curation only to unchanged files; deleting the folder
+  loses no campaign truth.
 
 Example rows, placeholder values, allowed-value menus, comments, and blank
 template sections are scaffolding, not accepted campaign truth. Remove or

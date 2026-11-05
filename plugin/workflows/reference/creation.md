@@ -24,6 +24,12 @@ should matter later, including:
 If a fact would significantly change canon, power scale, campaign premise, or
 player agency, ask the Designer in Designer Mode before making it durable.
 
+In a campaign that tells its own story in a source work's world rather than
+following that work's canon, give no new character a backstory built on a named
+canon figure, event, or place unless the Player asks for that link. Borrowed
+canon history makes a new character a copy, and it binds the campaign to events
+the Player did not choose.
+
 # Creation Capture
 
 Classify new NPCs, locations, and factions by tier:
@@ -58,6 +64,23 @@ looks for:
   (`inactive`, `active`, or `needs_review`; `active` also needs every
   Offscreen Trajectory field);
 - under numeric grounding, the `Stats (Numeric Grounding Only)` block.
+
+A T2/T3 card also fills two blocks the check does not count but play needs:
+
+- `## Distinct Appearance`: face, height, build, silhouette, and one signature
+  detail, chosen so the character is told apart at a glance and in an image
+  prompt from the two most similar cast members;
+- `## Depth`: backstory, contradiction, want and need, fear, dream, joys and
+  habits, voice signature, how they could change, and a GM-only secret. Compare
+  the character's role and strongest axis with the cast around them first, so
+  the depth does not duplicate a role someone already fills. No romantic or
+  sexual relationship in the backstory begins before 18, and its ages and
+  durations must not imply one.
+
+Write the card's content in the records language
+(`play_profile.yaml.narration.records_language`, or the play language when it
+is `same`); keep its headings, `- Label:` names, and enum values such as
+`alive` exactly as the template writes them.
 
 The writer answers a new character note with a `note_incomplete` warning for
 each gap but the Core block, which only the full check reports; fill them in

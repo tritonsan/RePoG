@@ -30,6 +30,7 @@ only the needed ownership section in `workflows/reference/authority-map.md`.
 | Deep ledger flow (schema-v8+) | `deep_v8/manifest.json`, then only `deep_v8/<active stage>.md` |
 | Companion Quick, Standard, or Deep | `playbooks/companion_setup.md` |
 | Research Gate or source work | `playbooks/research_gate.md` |
+| Content-boundary decision, every route | `playbooks/content_boundaries.md` |
 | Final readiness boundary | `playbooks/finalization.md` |
 | Eligible semantic parallelism | `workflows/orchestration/WORKFLOW.md` plus the active playbook boundary |
 
@@ -77,10 +78,13 @@ existing pre-pitch depth gate:
 > Which Session 0 depth do you want: Quick (compact), Standard (expanded core),
 > or Deep (a dependency-guided, staged design with only relevant branches)?
 
-Persist `quick`, `standard`, or `deep`; set status `in_progress`. Schema-v10+
-RPG Quick/Standard leave `question_target` blank and complete the selected
-required decision map; `questions_completed` is progress/fatigue information,
-never a readiness quota. Earlier Quick/Standard, Companion, and legacy Deep
+Persist `quick`, `standard`, or `deep`; set status `in_progress`. For
+schema-v10+ RPG and schema-v8+ RPG Deep,
+`tools/session_zero_state.py campaign set-depth --depth <depth>` does this, never
+a hand edit, and for Deep also initializes the ledger mirrors and summary.
+Schema-v10+ RPG Quick/Standard leave `question_target` blank and complete the
+selected required decision map; `questions_completed` is progress/fatigue
+information, never a readiness quota. Earlier Quick/Standard, Companion, and legacy Deep
 retain their numeric `question_target`:
 
 - schema-v9 RPG Quick: exactly 9;
@@ -107,6 +111,20 @@ derive `questions_completed` from its decision ledger, and follow its nine
 stages. Load the manifest plus only the active stage. The manifest owns
 prerequisites, controlled trigger tags, stage-local extensions, and the gate
 chain; the stage playbook owns semantic interviewing and materialization.
+
+# Play Language
+
+Right after the depth choice, and before any content is written, settle the
+play language on every RPG route: the language the Player writes in, unless
+they ask for another, confirmed in one line. Persist it with
+`tools/session_zero_state.py campaign set-language --language <code>` (or
+`set-depth --language`), which writes `play_profile.yaml` `narration.language`.
+From then on, write every record's content in that language: descriptions,
+summaries, facts, names, Notes cells, `## Now` and History lines, Depth and
+Agency Card values, and thread text. Keep the structure exactly as the
+templates write it: file names, YAML keys, headings, `- Label:` names, table
+headers, enum values, and ids. The Deep ledger refuses Stage 1 content until
+the language is set.
 
 # Shared Interview Contract
 
@@ -405,14 +423,21 @@ faces, opening shapes, and reward kinds all follow it.
 
 Ask the content-boundary decision on its own, in every route and for every
 setting, using the same structure so it does not depend on the model or the
-campaign. Never place it inside a style, bundle, or profile card, and never let
-accepting a card set it. Offer the standard categories recorded in
-`boundaries.md`—sexual content, harm to children, torture and graphic violence,
+campaign: follow `playbooks/content_boundaries.md`, which shows the Player
+notice first. Never place it inside a style, bundle, or profile card, and never
+let accepting a card set it. Two rows recorded in `boundaries.md` are fixed and
+never offered: no one under 18 in any sexual or romantic context, including
+backstory, and no graphic violence against children on the page. Sexual content
+is avoid, fade before it starts, or implied with no explicit description; harm
+to children is mentioned or offscreen, or avoid; torture and graphic violence,
 harm to animals, suicide and self-harm, severe humiliation or discrimination,
-addiction, illness and dying, captivity and slavery—each as open, fade, or avoid,
-with "everything open" available as a real answer. State both guarantees when
-asking: a limit may be added at any time including mid-play and takes effect
-immediately, and adding one is never framed as a cost or a penalty. A Player
+addiction, illness and dying, and captivity and slavery are each open, fade, or
+avoid. "Everything at its most open" is a real answer. The GM states and
+records its own limits (at least: non-consensual acts are never written as
+scenes), and the Player may set an in-fiction stop word. State both
+guarantees when asking: a limit may be added at any time including mid-play and
+takes effect immediately, and adding one is never framed as a cost or a
+penalty. A Player
 signal to stop applies at once. An open-ended "is there anything?" is not
 sufficient, because a blank answer would be recorded as consent.
 
@@ -437,6 +462,14 @@ turning into a long form.
 Settle the resolution grounding before asking how competence is expressed, since
 `fictional`, `bands`, and `numeric` produce different questions. The play and
 system module inherits that answer rather than asking twice.
+
+Ask the NPC power scale before the first named cast, on every route: how strong
+the people at the current scale are next to the character, and whether the
+scale is closed (one range for the whole campaign) or region-anchored open (each
+region has its own cap, and reaching a stronger region raises it at an act
+boundary). Record it in `boundaries.md` / Power Scale and, with bands or
+numbers, in `rules.md` as its `- Numeric scale:` line and `## Tier Caps` block.
+Calibrate every NPC card to it before readiness.
 
 State the host dependency when offering a layer that needs a capability outside
 this workspace. Image generation only works when the running tool or model can
@@ -591,6 +624,12 @@ few lines; this is a frame, not an encyclopedia. Fill the macro seats the source
 or setting implies with named figures at roster detail so later references stay
 consistent, and give the local slice at least one legible link to that frame
 without making the character matter to it.
+
+When world truths are written, add a price and bounty anchor table under
+`world_truths.md` / `## Economy And Resources` / `### Price And Bounty Anchors`
+(`| Anchor | Value | Notes |`): a few everyday prices and the current region's
+reward or bounty scale, in the setting's own currency. Later prices, rewards,
+and bounties scale from these rows instead of being invented per scene.
 
 Macro depth scales with reach. A contained reach keeps the frame thin; a long
 journey deepens it, makes the roster matter, and opens later regions through

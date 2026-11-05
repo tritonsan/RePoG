@@ -6,13 +6,20 @@ a failing hook must not cost the Player a prompt or a reply.
 
     prompt         UserPromptSubmit: apply settled staged curation, then emit
                    the scene capsule as hidden `additionalContext`.
-    stop           Stop (async): run the presentation lint over the reply.
-    session-start  SessionStart: mark the capsule for a full refresh.
+    stop           Stop (async): record the turn's reply order, run the
+                   presentation lint over the reply, and remember its names.
+    session-start  SessionStart: mark the capsule for a full refresh; after a
+                   compaction or a resume, also print the accepted style
+                   samples and the locked persistence order.
     pretool        PreToolUse: confine the repog-curator agent to its one
                    staging file.
 
-Output is ASCII JSON (`ensure_ascii`), so no console code page can corrupt a
-name in the capsule.
+JSON output is ASCII (`ensure_ascii`), so no console code page can corrupt a
+name in the capsule. The SessionStart notice is plain UTF-8 text, printed
+after the shell script's reminder line.
+
+The Stop hook reads only the current session's last turn, locally, and
+stores positions and flags (`order_last.json`), never the reply's text.
 """
 
 from __future__ import annotations
@@ -25,6 +32,9 @@ from typing import Any, Callable
 
 # Claude Code caps injected context at 10,000 characters; stay under it.
 MAX_CONTEXT = 9_500
+# SessionStart sources whose context lost the play so far: the style samples
+# and the locked order are printed again for them.
+RESUME_SOURCES = frozenset({"compact", "resume"})
 CURATOR_AGENT = "repog-curator"
 CURATOR_DENIAL = (
     "The RePoG curator may write only its one staging file under "
@@ -46,6 +56,17 @@ def _emit(value: dict[str, Any]) -> None:
     sys.stdout.flush()
 
 
+def _print_text(text: str) -> None:
+    sys.stdout.buffer.write((text + "\n").encode("utf-8"))
+    sys.stdout.flush()
+
+
+def _utc_now() -> str:
+    import datetime as dt
+
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
 def _ready_campaign(event: dict[str, Any]) -> tuple[Path | None, dict[str, str]]:
     import repog_runtime
 
@@ -64,15 +85,13 @@ def _record_curation(campaign: Path, result: dict[str, Any]) -> None:
 
     if not any(result.get(key) for key in ("applied", "rejected", "deferred")):
         return
-    import datetime as dt
-
     import curation
     import repog_runtime
 
     repog_runtime.write_json_atomic(
         curation.curation_dir(campaign) / curation.RESULT_FILE,
         {
-            "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+            "at": _utc_now(),
             "applied": result.get("applied", []),
             "rejected": result.get("rejected", []),
             "deferred": result.get("deferred", []),
@@ -109,13 +128,23 @@ def prompt(event: dict[str, Any]) -> None:
         )
 
 
-def _reply_text(event: dict[str, Any]) -> str:
-    """Everything the Player saw in the reply that just ended."""
+def _last_turn(event: dict[str, Any]) -> dict[str, Any] | None:
+    """The transcript's last turn, or None when the event names no readable transcript."""
 
     import repog_runtime
 
     transcript = event.get("transcript_path")
-    turn = repog_runtime.last_turn(transcript) if isinstance(transcript, str) and transcript else None
+    if not isinstance(transcript, str) or not transcript:
+        return None
+    try:
+        return repog_runtime.last_turn(transcript)
+    except Exception:
+        return None
+
+
+def _reply_text(event: dict[str, Any], turn: dict[str, Any] | None) -> str:
+    """Everything the Player saw in the reply that just ended."""
+
     texts = list(turn["assistant_texts"]) if turn else []
     last = event.get("last_assistant_message")
     # The transcript may not hold the final message yet when Stop fires.
@@ -124,10 +153,63 @@ def _reply_text(event: dict[str, Any]) -> str:
     return "\n".join(texts)
 
 
+def _recorded(path: Path, prompt_uuid: Any, session_id: str) -> bool:
+    """True when `order_last.json` already holds this session's record of this Player turn."""
+
+    import repog_runtime
+
+    record = repog_runtime.read_json(path, None)
+    return (
+        isinstance(prompt_uuid, str)
+        and bool(prompt_uuid)
+        and isinstance(record, dict)
+        and record.get("prompt_uuid") == prompt_uuid
+        and record.get("session_id") == session_id
+    )
+
+
+def _record_order(campaign: Path, event: dict[str, Any], settings: dict[str, str], turn: dict[str, Any] | None) -> None:
+    """Write `order_last.json`: whether the turn narrated before its commit and ended with text.
+
+    The next capsule shows a short `[order]` reminder when the turn broke the
+    locked order or ended without visible text. Stores flags only, once per
+    Player turn: a Stop also ends a turn the Player did not start (a
+    background task's notice, a slash command), whose transcript turn is the
+    Player's turn already recorded, now followed by blocks the Player's turn
+    never had.
+    """
+
+    if turn is None:
+        return
+    import repog_runtime
+
+    path = campaign / repog_runtime.RUNTIME_DIR / repog_runtime.ORDER_FILE
+    session_id = event.get("session_id") if isinstance(event.get("session_id"), str) else ""
+    if _recorded(path, turn.get("prompt_uuid"), session_id):
+        return
+    order = repog_runtime.turn_order(turn, event.get("last_assistant_message"))
+    repog_runtime.write_json_atomic(
+        path,
+        {
+            "at": _utc_now(),
+            "prompt_uuid": turn.get("prompt_uuid", ""),
+            "session_id": session_id,
+            "expected": settings.get("persistence_order") or repog_runtime.RUNTIME_DEFAULTS["persistence_order"],
+            "observed": order["observed"],
+            "final_text": order["final_text"],
+        },
+    )
+
+
 def stop(event: dict[str, Any]) -> None:
     campaign, settings = _ready_campaign(event)
     if campaign is None:
         return
+    turn = _last_turn(event)
+    try:
+        _record_order(campaign, event, settings, turn)
+    except Exception:
+        pass  # the record is advisory; the lint and the names still run
     if settings.get("presentation_lint") == "on":
         try:
             import presentation_lint
@@ -141,7 +223,7 @@ def stop(event: dict[str, Any]) -> None:
         # Player's next message does not repeat them.
         import scene_capsule
 
-        text = _reply_text(event)
+        text = _reply_text(event, turn)
         if text:
             names = scene_capsule.names_in_text(campaign, text, settings=settings)
             scene_capsule.remember_names(campaign, session_id, names)
@@ -156,7 +238,14 @@ def session_start(event: dict[str, Any]) -> None:
     import scene_capsule
 
     session_id = event.get("session_id")
-    scene_capsule.reset(campaign, session_id if isinstance(session_id, str) and session_id else None)
+    try:
+        scene_capsule.reset(campaign, session_id if isinstance(session_id, str) and session_id else None)
+    except OSError:
+        pass  # an unwritable runtime folder only means the next capsule may be a delta
+    if event.get("source") in RESUME_SOURCES and repog_runtime.is_ready_rpg(campaign):
+        # A compaction summary or a resumed session keeps no accepted style
+        # sample, and may carry an order rule of its own.
+        _print_text(scene_capsule.resume_notice(campaign, repog_runtime.runtime_settings(campaign)))
 
 
 def pretool(event: dict[str, Any]) -> None:

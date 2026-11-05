@@ -47,6 +47,7 @@ MAX_SPAN = 100  # values in one stat or difficulty range, so the table stays sma
 MAX_ABS_SCALE = 1000  # matches the call-mode limit on value and difficulty in roll_dice
 MAX_BANDS = 12
 MAX_BAND_NAME = 60
+SUMMARY_STATS = 3  # stats named in the first_band_unreachable summary
 LINE_BREAKING = frozenset({"Cc", "Zl", "Zp"})  # control, line and paragraph separators
 # A lone surrogate (only possible in a hand-built block) could not be stored in a receipt.
 BAND_NAME_REFUSED = LINE_BREAKING | {"Cs"}
@@ -555,15 +556,89 @@ def exhaustion_findings(resolution: dict[str, Any]) -> list[dict[str, str]]:
         if band_ways(resolution, stat, difficulty)[0][first] == 0:
             unreachable.setdefault(stat, []).append(difficulty)
     if unreachable:
-        listed = "; ".join(f"stat {stat} vs difficulty {_ranges(values)}" for stat, values in unreachable.items())
+        # One summary line: the count, then the first few stats (a wide scale
+        # would otherwise list every stat).
+        count = sum(len(values) for values in unreachable.values())
+        shown = list(unreachable.items())[:SUMMARY_STATS]
+        listed = "; ".join(f"stat {stat} vs difficulty {_ranges(values)}" for stat, values in shown)
+        more = len(unreachable) - len(shown)
         findings.append(
             {
                 "rule": "first_band_unreachable",
                 "severity": "info",
-                "message": f"{first} cannot occur at {listed}",
+                "message": (
+                    f"{first} cannot occur in {count} of {len(_pairs(resolution))} stat/difficulty pairs: {listed}"
+                    + (f"; and {more} more stats" if more else "")
+                ),
             }
         )
     return findings
+
+
+def success_band(bands: list[dict[str, Any]] | tuple[dict[str, Any], ...]) -> dict[str, Any]:
+    """The lowest success band: the one a margin of 0 (total meets difficulty) lands in.
+
+    The last band is the floor for every lower margin, so it is a success band
+    only on a single-band scale; when 0 lands there, the band above it counts.
+    """
+
+    index = next((index for index, band in enumerate(bands) if band["at_least"] <= 0), len(bands) - 1)
+    return bands[min(index, max(len(bands) - 2, 0))]
+
+
+def dead_zone(resolution: dict[str, Any]) -> tuple[int, int] | None:
+    """Pre-roll margins (stat + modifiers - difficulty) that roll but cannot miss success.
+
+    The margin rule rolls below `auto_success_margin`, yet the lowest roll (one
+    per die) already lifts every margin from `success at_least - dice_count`
+    into the success band. Only margins the scale reaches without modifiers
+    count. None when no such margin exists.
+    """
+
+    auto = resolution.get("auto_success_margin")
+    if auto is None:
+        return None
+    certain_from = success_band(resolution["bands"])["at_least"] - resolution["dice_count"]
+    low = max(certain_from, resolution["stat_min"] - resolution["difficulty_max"])
+    high = min(auto - 1, resolution["stat_max"] - resolution["difficulty_min"])
+    return (low, high) if low <= high else None
+
+
+def dead_zone_findings(resolution: dict[str, Any]) -> list[dict[str, str]]:
+    """`auto_success_dead_zone` (warning) when the margin rule rolls certain calls."""
+
+    zone = dead_zone(resolution)
+    if zone is None:
+        return []
+    band = success_band(resolution["bands"])
+    certain_from = band["at_least"] - resolution["dice_count"]
+    return [
+        {
+            "rule": "auto_success_dead_zone",
+            "severity": "warning",
+            "message": (
+                f"auto_success_margin {resolution['auto_success_margin']} sends calls at margins "
+                f"{span(*zone)} (stat + modifiers - difficulty) to the dice, but {resolution['die']} adds at least "
+                f"{resolution['dice_count']}, so those calls always reach {band['band']} and the dice helper "
+                f"records them as certain without rolling; set auto_success_margin to {certain_from} through an "
+                "OOC rules change so the margin rule agrees with the dice"
+            ),
+        }
+    ]
+
+
+def findings(resolution: dict[str, Any]) -> list[dict[str, str]]:
+    """Every scale finding: exhaustion, first-band reach, and the auto-success dead zone."""
+
+    return exhaustion_findings(resolution) + dead_zone_findings(resolution)
+
+
+def worst_band_unreachable(resolution: dict[str, Any]) -> tuple[int, int]:
+    """(pairs where the worst band cannot occur, all stat/difficulty pairs), no modifiers."""
+
+    worst = resolution["bands"][-1]["band"]
+    pairs = _pairs(resolution)
+    return sum(1 for stat, difficulty in pairs if band_ways(resolution, stat, difficulty)[0][worst] == 0), len(pairs)
 
 
 def exhaustion(resolution: dict[str, Any]) -> list[str]:
@@ -639,9 +714,8 @@ def format_table(resolution: dict[str, Any]) -> str:
             + " | ".join(_percent(ways[band["band"]], total) for band in bands)
             + " |"
         )
-    findings = exhaustion_findings(resolution)
     lines += ["", "## Findings", ""]
-    lines += [f"- {f['rule']} ({f['severity']}): {f['message']}" for f in findings] or ["- none"]
+    lines += [f"- {f['rule']} ({f['severity']}): {f['message']}" for f in findings(resolution)] or ["- none"]
     return "\n".join(lines) + "\n"
 
 

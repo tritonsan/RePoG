@@ -33,6 +33,9 @@ decision set; never silently require or synthesize the new Agent Seats row.
 Optional features remain off without explicit consent; do not interview their
 subordinate settings while disabled.
 
+Record each with the fields in `decisions.md`; only `07_agent_seats` has a
+required value shape.
+
 Keep the narration sample's source and why it fit in `storytelling.md` / Accepted
 Voice Evidence. If another scene function exposes a mismatch, calibrate inside
 the existing preparation review, without an added sample quota or approval.

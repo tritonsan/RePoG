@@ -28,6 +28,11 @@ script="$root/tools/$helper.py"
 
 check='import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)'
 
+# UTF-8 for files, pipes, and the console, whatever the Windows code page is.
+PYTHONUTF8=1
+PYTHONIOENCODING=utf-8
+export PYTHONUTF8 PYTHONIOENCODING
+
 # usable NAME: a real Python 3.10+ on PATH. The Windows Store alias under
 # WindowsApps only opens the Store, and probing it costs a noticeable delay.
 usable() {

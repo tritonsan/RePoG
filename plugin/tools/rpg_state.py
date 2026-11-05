@@ -50,6 +50,8 @@ MAX_FILE_TEXT = 500_000
 # Warn well before the hard cap so a growing owner is curated, not truncated.
 SIZE_WARNING_TEXT = 300_000
 LOG_ROTATION_HINT_TEXT = 400_000
+# commit-distill rotates the session log by itself past this size.
+LOG_AUTO_ROTATE_TEXT = 150_000
 ARCHIVE_DIR = "archive"
 MAX_VOID_ROLLS = 16
 # A roll the Player made with physical dice has no receipt; it is cited as
@@ -62,6 +64,44 @@ TEMPLATE_OWNERS = {"directives.md", "glossary.md"}
 TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates" / "campaign"
 # A staged curation file younger than this may still be being written.
 CURATION_SETTLE_SECONDS = 3.0
+CURATION_DUE_FILE = "curation_due.json"
+# Read by the GM, never shown to the Player.
+HAND_BACK = "end the turn with the scene's last line or one OOC line if something could not be saved"
+MAX_OPEN_CHOICES = 5
+MAX_OPEN_CHOICE_TEXT = 200
+# Content findings a distill may not leave behind: each one's file must be
+# changed by the distill or deferred to the curator in deferred_reconcile.
+DISTILL_GATE_RULES = frozenset(
+    {
+        "cast_dead_listed",
+        "cast_present_missing",
+        "relationship_dead_active",
+        "location_unmapped",
+        "stacked_sections",
+        "now_overflow",
+        "minor_romance_history",
+    }
+)
+UNDEFERRABLE_GATE_RULES = frozenset({"minor_romance_history"})
+# Full-check warnings after a distill that put their file on the curator's list.
+CURATION_DUE_RULES = frozenset(
+    {
+        "death_projection",
+        "cast_dead_listed",
+        "relationship_dead_active",
+        "now_overflow",
+        "records_language_mismatch",
+        "stacked_sections",
+        "note_core_missing",
+    }
+)
+# A cited roll whose band names one of these left a mark the records must carry.
+COST_BAND_TOKENS = ("cost", "partial", "loss", "fail")
+# --input-file is UTF-8; these are the fallbacks for a payload a Windows shell
+# wrote in the console code page.
+INPUT_FALLBACK_CODECS = (("cp1254", "cp1254"), ("latin-1", "latin1"))
+# The best language must beat the runner-up by this stopword-ratio margin.
+RECORD_LANGUAGE_CONFIDENCE = 0.2
 
 OPERATION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 CHANGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
@@ -132,10 +172,12 @@ COORDINATOR_MECHANIC_FIELDS = {
 class RPGStateError(Exception):
     """Typed failure returned by the RPG transaction surface."""
 
-    def __init__(self, category: str, reason: str, *, exit_code: int = 2) -> None:
+    def __init__(self, category: str, reason: str, *, exit_code: int = 2, extra: dict[str, Any] | None = None) -> None:
         super().__init__(reason)
         self.category = category
         self.exit_code = exit_code
+        # Structured detail merged into the failure JSON (a ready op, a finding list).
+        self.extra = extra or {}
 
 
 def _strict_int(value: Any, *, minimum: int = 0) -> bool:
@@ -586,19 +628,48 @@ def _prior_receipt(
     return receipt
 
 
-def _parse_checkpoint(value: Any, label: str = "checkpoint") -> dict[str, str]:
+def _stale_error(expected: Any, found: int) -> RPGStateError:
+    return RPGStateError(
+        "stale_revision",
+        f"expected continuity revision {expected}, found {found}",
+        extra={"next_expected_revision": found},
+    )
+
+
+def _parse_open_choices(value: Any, label: str) -> list[str]:
+    if not isinstance(value, list) or not 1 <= len(value) <= MAX_OPEN_CHOICES:
+        raise RPGStateError("input_invalid", f"{label} must list 1 to {MAX_OPEN_CHOICES} short choices")
+    return [
+        _one_line(item, f"{label}[{position}]", maximum=MAX_OPEN_CHOICE_TEXT) for position, item in enumerate(value)
+    ]
+
+
+def _parse_checkpoint(value: Any, label: str = "checkpoint", *, scene_boundary: bool = False) -> dict[str, Any]:
+    """A checkpoint's scene frame; a scene-checkpoint boundary must also name its open choices."""
+
     if not isinstance(value, dict):
         raise RPGStateError("input_invalid", f"{label} must be an object")
-    _require_keys(value, {"scene_id", "scene_mode", "resume_anchor", "active_cast_handoff"}, label)
+    _require_keys(value, {"scene_id", "scene_mode", "resume_anchor", "active_cast_handoff", "open_choices"}, label)
     scene_mode = _one_line(value.get("scene_mode"), f"{label}.scene_mode", maximum=40)
     if scene_mode not in SCENE_MODES:
-        raise RPGStateError("input_invalid", f"{label}.scene_mode is invalid")
-    return {
+        raise RPGStateError(
+            "input_invalid", f"{label}.scene_mode is invalid; use one of: {', '.join(sorted(SCENE_MODES))}"
+        )
+    parsed: dict[str, Any] = {
         "scene_id": _one_line(value.get("scene_id"), f"{label}.scene_id", maximum=160),
         "scene_mode": scene_mode,
         "resume_anchor": _one_line(value.get("resume_anchor"), f"{label}.resume_anchor"),
         "active_cast_handoff": _one_line(value.get("active_cast_handoff"), f"{label}.active_cast_handoff"),
     }
+    if value.get("open_choices") is not None:
+        parsed["open_choices"] = _parse_open_choices(value["open_choices"], f"{label}.open_choices")
+    elif scene_boundary:
+        raise RPGStateError(
+            "checkpoint_open_choices_missing",
+            f"a scene checkpoint must carry {label}.open_choices: 1 to {MAX_OPEN_CHOICES} short lines naming "
+            "what the Player can do next; they replace current_scene.open_choices",
+        )
+    return parsed
 
 
 CONTEST_TOKENS = frozenset({"contest", "contested", "conflict", "clash", "duel", "roll"})
@@ -674,8 +745,8 @@ def _parse_changes(root: Path, value: Any) -> tuple[list[dict[str, Any]], set[st
             if authority not in parsed_owners:
                 raise RPGStateError(
                     "input_invalid",
-                    f"{label}.kind '{kind}' requires {authority} in owners; a cold target does not satisfy it. "
-                    f"Add the authority as an immediate owner, or declare a kind that matches the actual change.",
+                    f"{label}.kind '{kind}' requires {authority} in owners: add {authority} to this change's "
+                    f"owners and include its mutation in the same commit; a cold target does not satisfy it.",
                 )
         raw_cold = raw.get("cold_targets", [])
         if not isinstance(raw_cold, list):
@@ -785,8 +856,15 @@ def _note_findings(root: Path, relative: str, text: str) -> list[dict[str, str]]
     profile = repog_runtime.read_text(root / "play_profile.yaml")
     level_band = repog_runtime.block_scalars(state, "player").get("level_band", "")
     grounding = repog_runtime.block_scalars(profile, "mechanics").get("resolution_grounding", "fictional")
+    # The note is checked in a scratch folder, so pass the campaign's own tier
+    # caps and stat scale; otherwise a 0-20 campaign would get 1-5 warnings the
+    # full check never reports.
+    try:
+        caps = checker._content_checks().tier_caps(repog_runtime.read_text(root / "rules.md"))
+    except Exception:
+        caps = {}
     findings: list[dict] = []
-    with _tempfile.TemporaryDirectory() as temporary:
+    with _tempfile.TemporaryDirectory() as temporary, checker._configured_stat_scale(root):
         folder = Path(temporary) / "characters"
         folder.mkdir()
         (folder / PurePosixPath(relative).name).write_bytes(text.encode("utf-8"))
@@ -797,6 +875,7 @@ def _note_findings(root: Path, relative: str, text: str) -> list[dict[str, str]]
             resolution_grounding=grounding or "fictional",
             ready=True,
             contract_v3=True,
+            caps=caps,
         )
     return [
         {
@@ -833,6 +912,178 @@ def _name_warnings(root: Path, relative: str, text: str) -> list[dict[str, str]]
     try:
         warnings.extend(_note_findings(root, relative, text))
     except Exception:  # advisory only
+        pass
+    return warnings
+
+
+LABEL_PREFIX_RE = re.compile(r"^\s*(?:[-*+]\s+)?(?:\*\*)?[^\s:|#][^:|\n]{0,48}:(?:\*\*)?[ \t]+")
+
+
+def _prose_sample(text: str, template: frozenset[str] = frozenset()) -> str:
+    """Record text without its structure, for language detection.
+
+    Drops comments, fenced blocks, headings, table headers and separators, and
+    `- Label:` prefixes, which stay in English by design. `template` holds the
+    record template's lines: guidance a note keeps verbatim is not content.
+    """
+
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
+    kept: list[str] = []
+    fenced = False
+    in_table = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if owner_ops.FENCE_RE.match(line):
+            fenced = not fenced
+            continue
+        if fenced or owner_ops.HEADING_RE.match(stripped):
+            continue
+        from_template = " ".join(stripped.split()) in template
+        if stripped.startswith("|"):
+            if in_table and not owner_ops.TABLE_SEPARATOR_RE.match(stripped) and not from_template:
+                kept.append(" ".join(stripped.strip("|").split("|")))
+            in_table = True  # the first row of a table is its header
+            continue
+        in_table = False
+        if not from_template:
+            kept.append(LABEL_PREFIX_RE.sub("", line))
+    return "\n".join(kept)
+
+
+def _template_sources(relative: str) -> tuple[str, ...]:
+    """The templates a record starts from: its folder's note templates, or its own."""
+
+    if "/" in relative:
+        folder = relative.split("/", 1)[0]
+        return f"{folder}/_template.md", f"{folder}/_companion_template.md"
+    return (relative,)
+
+
+@lru_cache(maxsize=32)
+def _template_lines(source: str) -> frozenset[str]:
+    """A shipped template's lines, whitespace-normalized; empty when there is no such template."""
+
+    text = repog_runtime.read_text(TEMPLATE_DIR / source)
+    return frozenset(" ".join(line.split()) for line in text.splitlines() if line.strip())
+
+
+def _record_template(relative: str) -> frozenset[str]:
+    return frozenset().union(*(_template_lines(source) for source in _template_sources(relative)))
+
+
+def _records_language(root: Path) -> str:
+    """The code record content is written in, or "" when it cannot be known.
+
+    `narration.records_language`, or the play language when that field is
+    `same` or missing; an `auto` play language falls back to the language the
+    presentation lint last saw in the replies.
+    """
+
+    # One resolver for the writer and the full check, so they cannot drift.
+    return lang_pack.campaign_records_language(root)
+
+
+def _other_language(text: str, expected: str, template: frozenset[str] = frozenset()) -> str:
+    """The pack language `text` is confidently written in when it is not `expected`; else ""."""
+
+    if not expected or expected not in lang_pack.available_codes():
+        return ""
+    code, confidence = lang_pack.detect_language(_prose_sample(text, template))
+    if code and code != expected and confidence >= RECORD_LANGUAGE_CONFIDENCE:
+        return code
+    return ""
+
+
+def _mutation_texts(raw: dict[str, Any]) -> list[str]:
+    """The new prose a mutation writes: its create_text, or its replace_section and append text."""
+
+    if isinstance(raw.get("create_text"), str):
+        return [raw["create_text"]]
+    ops = raw.get("ops") if isinstance(raw.get("ops"), list) else []
+    return [
+        op["text"]
+        for op in ops
+        if isinstance(op, dict) and op.get("op") in {"replace_section", "append"} and isinstance(op.get("text"), str)
+    ]
+
+
+def _foreign_title_words(title: str, play_code: str) -> dict[str, list[str]]:
+    """Title words that are function or common words of another pack language, by code."""
+
+    play_pack = lang_pack.load_pack(play_code)
+    own = set(lang_pack.words(" ".join(play_pack.get("stopwords", []) + play_pack.get("common_words", [])), play_pack))
+    found: dict[str, list[str]] = {}
+    for code in lang_pack.available_codes():
+        if code == play_code:
+            continue
+        pack = lang_pack.load_pack(code)
+        vocabulary = set(lang_pack.words(" ".join(pack.get("stopwords", []) + pack.get("common_words", [])), pack))
+        hits = [word for word in lang_pack.words(title, pack) if len(word) > 1 and word in vocabulary and word not in own]
+        if hits:
+            found[code] = hits
+    return found
+
+
+def _glossary_suggestion(root: Path, relative: str, text: str) -> list[dict[str, Any]]:
+    """Advisory: a new note named or written in another language gets a ready glossary row."""
+
+    title = _note_title(text) or PurePosixPath(relative).stem.replace("_", " ")
+    if title.casefold() in repog_runtime.read_text(root / "glossary.md").casefold():
+        return []
+    play_code = lang_pack.normalize_code(_play_language(root, text))
+    foreign = _foreign_title_words(title, play_code)
+    if foreign:
+        reason = "the title uses " + ", ".join(f"{code} word(s) {', '.join(words)}" for code, words in foreign.items())
+    else:
+        code = _other_language(text, play_code, _record_template(relative))
+        if not code:
+            return []
+        reason = f"the note is written in {code}, not {play_code}"
+    return [
+        {
+            "rule": "glossary_suggest",
+            "path": relative,
+            "message": (
+                f"'{title}': {reason}; if the name recurs, add this row to glossary.md Terms with the "
+                f"{play_code} form in Preferred"
+            ),
+            "row": {"Term": title, "Preferred": "", "Variants": "", "Notes": f"first named in {relative}"},
+        }
+    ]
+
+
+def _mutation_advice(root: Path, relative: str, raw: dict[str, Any], records_code: str) -> list[dict[str, Any]]:
+    """Advisory warnings about how a mutation writes, never about what it says."""
+
+    warnings: list[dict[str, Any]] = []
+    for op in raw.get("ops") if isinstance(raw.get("ops"), list) else []:
+        if not isinstance(op, dict) or op.get("op") != "append":
+            continue
+        if str(op.get("heading") or "").lstrip("#").strip().casefold() == "now":
+            warnings.append(
+                {
+                    "rule": "now_append",
+                    "path": relative,
+                    "message": f"{relative}: ## Now holds the current state only; use replace_section, not append",
+                }
+            )
+    texts = _mutation_texts(raw)
+    try:
+        code = _other_language("\n".join(texts), records_code, _record_template(relative)) if texts else ""
+        if code:
+            warnings.append(
+                {
+                    "rule": "record_language",
+                    "path": relative,
+                    "message": (
+                        f"{relative}: the new text reads as {code}, but records are written in {records_code}; "
+                        "write the content in the records language and keep headings, labels and enum values as they are"
+                    ),
+                }
+            )
+        if "create_text" in raw:
+            warnings.extend(_glossary_suggestion(root, relative, raw["create_text"]))
+    except Exception:  # an advisory check must never break a commit
         pass
     return warnings
 
@@ -1004,6 +1255,7 @@ def _parse_mutations(
         raise RPGStateError("input_invalid", f"mutations exceeds the limit of {MAX_MUTATIONS}")
     candidates: dict[str, bytes] = {}
     paths: set[str] = set()
+    records_code = _records_language(root) if notes is not None else ""
     for index, raw in enumerate(value):
         label = f"mutations[{index}]"
         if not isinstance(raw, dict):
@@ -1042,6 +1294,7 @@ def _parse_mutations(
             candidates[relative] = text.encode("utf-8")
             if notes is not None:
                 notes.extend(_name_warnings(root, relative, text))
+                notes.extend(_mutation_advice(root, relative, raw, records_code))
             continue
 
         if relative in TEMPLATE_OWNERS and not path.exists():
@@ -1095,7 +1348,37 @@ def _parse_mutations(
                 "current_state continuity_revision and persistence fields are helper-managed and cannot be mutated directly",
             )
         candidates[relative] = text.encode("utf-8")
+        if notes is not None:
+            notes.extend(_mutation_advice(root, relative, raw, records_code))
     return candidates, paths
+
+
+def _fold_now(relative: str, text: str) -> tuple[str, list[dict[str, str]]]:
+    """Keep an entity note's `## Now` within budget by moving old dated entries to `## History`."""
+
+    folded, moved = owner_ops.fold_now(text)
+    warnings: list[dict[str, str]] = []
+    if moved:
+        warnings.append(
+            {
+                "rule": "now_overflow_folded",
+                "path": relative,
+                "message": f"{relative}: moved {moved} older dated entr{'y' if moved == 1 else 'ies'} from ## Now to ## History",
+                "count": moved,
+            }
+        )
+    if owner_ops.now_over_budget(folded):
+        warnings.append(
+            {
+                "rule": "now_overflow",
+                "path": relative,
+                "message": (
+                    f"{relative}: ## Now is over {owner_ops.NOW_MAX_CHARS} characters with no dated entry left to "
+                    "move; replace it with the current state only"
+                ),
+            }
+        )
+    return folded, warnings
 
 
 def _finish_candidates(
@@ -1104,19 +1387,24 @@ def _finish_candidates(
     *,
     stamp_revision: int,
 ) -> list[dict[str, str]]:
-    """Stamp mutated Markdown owners and collect advisory curation warnings.
+    """Fold and stamp mutated Markdown owners and collect advisory curation warnings.
 
-    A mutated owner that carries one `As of revision: N` line now reflects this
-    revision, so the writer sets the stamp instead of the GM. Warnings never
-    block a commit; they tell the GM which owner needs curating before it
-    reaches the hard size cap or keeps contradicting itself.
+    An entity note's `## Now` that outgrew its budget gives its oldest dated
+    entries to `## History`. A mutated owner that carries one `As of revision:
+    N` line now reflects this revision, so the writer sets the stamp instead of
+    the GM. Warnings never block a commit; they tell the GM which owner needs
+    curating before it reaches the hard size cap or keeps contradicting itself.
     """
 
     warnings: list[dict[str, str]] = []
     for relative in sorted(mutation_paths):
         if not relative.endswith(".md") or relative not in candidates:
             continue
-        text = owner_ops.stamp_revision(candidates[relative].decode("utf-8"), stamp_revision)
+        text = candidates[relative].decode("utf-8")
+        if PurePosixPath(relative).parts[0] in ENTITY_OWNER_DIRS:
+            text, fold_warnings = _fold_now(relative, text)
+            warnings.extend(fold_warnings)
+        text = owner_ops.stamp_revision(text, stamp_revision)
         candidates[relative] = text.encode("utf-8")
         if len(text) > SIZE_WARNING_TEXT:
             warnings.append(
@@ -1208,6 +1496,19 @@ def _append_block(log_text: str, block: str) -> str:
     return f"{base}\n\n{block.strip()}\n"
 
 
+def _receipt_line(label: str, value: str) -> list[str]:
+    """`- Label: value`, or nothing when the value is empty or `none`.
+
+    Receipts carry only what happened. Older logs still hold `- Deferred
+    propagation: none` and similar lines; every log reader accepts both forms.
+    """
+
+    text = value.strip()
+    if not text or re.fullmatch(r"(?i)none(?:\s*[—–-].*)?", text):
+        return []
+    return [f"- {label}: {text}"]
+
+
 def _durable_event(
     *,
     revision: int,
@@ -1223,7 +1524,7 @@ def _durable_event(
         f"### Durable Revision {revision}",
         "",
         f"- Operation: {operation_id}",
-        f"- Cause: {cause}",
+        *_receipt_line("Cause", cause),
         "- Established changes:",
     ]
     for change in changes:
@@ -1245,19 +1546,13 @@ def _durable_event(
         lines.append("- Deferred propagation:")
         for change_id, path, reason in cold_rows:
             lines.append(f"  - {change_id} -> `{path}` — {reason}")
-    else:
-        lines.append("- Deferred propagation: none — no secondary surface affected")
     if voided:
         lines.append("- Voided rolls:")
         for item in voided:
             lines.append(f"  - {item['roll_id']} — {item['reason']}")
-    lines.extend(
-        [
-            f"- Boundary: {boundary}",
-            f"- Resume impact: {resume_impact}",
-            f"- Payload hash: sha256:{payload_hash}",
-        ]
-    )
+    lines.append(f"- Boundary: {boundary}")
+    lines.extend(_receipt_line("Resume impact", resume_impact))
+    lines.append(f"- Payload hash: sha256:{payload_hash}")
     return "\n".join(lines)
 
 
@@ -1279,7 +1574,7 @@ def _checkpoint_event(
             f"- Scene id: {checkpoint['scene_id']}",
             f"- Scene mode: {checkpoint['scene_mode']}",
             f"- Resume anchor: {checkpoint['resume_anchor']}",
-            f"- Active-cast handoff: {checkpoint['active_cast_handoff']}",
+            *_receipt_line("Active-cast handoff", checkpoint["active_cast_handoff"]),
             f"- {hash_label}: sha256:{payload_hash}",
         ]
     )
@@ -1517,8 +1812,12 @@ def _commit_candidates(
     operation_id: str,
     payload_hash: str,
     candidates: dict[str, bytes],
+    prevalidated: frozenset[str] = frozenset(),
 ) -> None:
-    findings = _candidate_checker().check_changed_owners(root, candidates)
+    # `prevalidated` owners were checked by the caller in a way the one-step
+    # owner check cannot express (an act closing and its successor opening).
+    checked = {relative: payload for relative, payload in candidates.items() if relative not in prevalidated}
+    findings = _candidate_checker().check_changed_owners(root, checked)
     errors = [finding for finding in findings if finding["severity"] == "error"]
     if errors:
         detail = "; ".join(f"{item['rule']}: {item['message']}" for item in errors)
@@ -1608,7 +1907,49 @@ def _checkpoint_identity(payload: dict[str, Any]) -> dict[str, Any]:
     return {"operation_id": operation_id, "expected_revision": expected}
 
 
-def _validate_durable_payload(root: Path, payload: dict[str, Any], *, revision: int) -> dict[str, Any]:
+def _names_in(name: str, text: str) -> bool:
+    return re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text, re.IGNORECASE) is not None
+
+
+def _handoff_error(root: Path, handoff: str) -> RPGStateError:
+    """The refusal for a handoff without an active_cast.md mutation, carrying a ready op.
+
+    The op has one `upsert_row` per cast-row or character name the handoff
+    mentions, prefilled with that row's current cells, so the GM edits only
+    what changed. It never guesses where anyone went.
+    """
+
+    header, rows = owner_ops.table_rows(repog_runtime.read_text(root / "active_cast.md"))
+    width = len(header)
+    known = {row[0]: row for row in rows if row and row[0]}
+    folder = root / "characters"
+    for note in sorted(folder.glob("*.md")) if folder.is_dir() else []:
+        if not note.name.startswith("_"):
+            known.setdefault(_note_title(repog_runtime.read_text(note)) or note.stem.replace("_", " "), [])
+    ops: list[dict[str, Any]] = []
+    for name, row in known.items():
+        if width and _names_in(name, handoff):
+            cells = (row + [""] * width)[:width] if row else [name] + [""] * (width - 1)
+            ops.append({"op": "upsert_row", "key": name, "cells": cells})
+    if width and not ops:
+        ops.append({"op": "upsert_row", "key": "<name>", "cells": ["<name>"] + [""] * (width - 1)})
+    mutation = {"path": "active_cast.md", "ops": ops}
+    reason = "non-empty active-cast handoff requires an active_cast.md mutation"
+    if ops:
+        reason += (
+            f"; add this mutation with the changed cells filled in (columns: {' | '.join(header)}): "
+            + json.dumps(mutation, ensure_ascii=False)
+        )
+    return RPGStateError("input_invalid", reason, extra={"suggested_mutation": mutation} if ops else None)
+
+
+def _validate_durable_payload(
+    root: Path,
+    payload: dict[str, Any],
+    *,
+    revision: int,
+    act_mutations: dict[str, bytes] | None = None,
+) -> dict[str, Any]:
     identity = _durable_identity(payload)
     operation_id = identity["operation_id"]
     expected = identity["expected_revision"]
@@ -1623,9 +1964,18 @@ def _validate_durable_payload(root: Path, payload: dict[str, Any], *, revision: 
         placeholders=owner_ops.PlaceholderContext(revision),
         notes=notes,
     )
+    for relative, candidate in (act_mutations or {}).items():
+        if relative in mutation_paths:
+            raise RPGStateError("input_invalid", f"commit-act writes {relative} itself; remove that mutation")
+        mutations[relative] = candidate
+        mutation_paths.add(relative)
     void_rolls = _parse_void_rolls(payload.get("void_rolls"))
     checkpoint_raw = payload.get("checkpoint")
-    checkpoint = _parse_checkpoint(checkpoint_raw) if checkpoint_raw is not None else None
+    checkpoint = (
+        _parse_checkpoint(checkpoint_raw, scene_boundary=boundary == "scene_checkpoint")
+        if checkpoint_raw is not None
+        else None
+    )
     if boundary == "scene_checkpoint" and checkpoint is None:
         raise RPGStateError("input_invalid", "scene_checkpoint boundary requires checkpoint data")
     if boundary == "ordinary" and checkpoint is not None:
@@ -1634,7 +1984,7 @@ def _validate_durable_payload(root: Path, payload: dict[str, Any], *, revision: 
         # The writer copies scene_id, mode, and resume anchor into the scene
         # frame itself, so a checkpoint no longer needs its own state mutation.
         if checkpoint["active_cast_handoff"].lower() != "none" and "active_cast.md" not in mutation_paths:
-            raise RPGStateError("input_invalid", "non-empty active-cast handoff requires an active_cast.md mutation")
+            raise _handoff_error(root, checkpoint["active_cast_handoff"])
     mechanic_operations = payload.get("mechanic_operations", [])
     if mechanic_operations is None:
         mechanic_operations = []
@@ -1674,10 +2024,12 @@ def _validate_checkpoint_payload(root: Path, payload: dict[str, Any], *, revisio
     operation_id = identity["operation_id"]
     expected = identity["expected_revision"]
     checkpoint = _parse_checkpoint(payload.get("checkpoint"))
+    notes: list[dict[str, str]] = []
     mutations, mutation_paths = _parse_mutations(
         root,
         payload.get("mutations", []),
         placeholders=owner_ops.PlaceholderContext(revision),
+        notes=notes,
     )
     # Directives and glossary rows are table preferences, not fiction, so an
     # OOC-only change can ride a checkpoint instead of a durable revision.
@@ -1685,12 +2037,13 @@ def _validate_checkpoint_payload(root: Path, payload: dict[str, Any], *, revisio
     if invalid_paths:
         raise RPGStateError("input_invalid", f"soft checkpoint cannot mutate durable owner files: {', '.join(invalid_paths)}")
     if checkpoint["active_cast_handoff"].lower() != "none" and "active_cast.md" not in mutation_paths:
-        raise RPGStateError("input_invalid", "non-empty active-cast handoff requires an active_cast.md mutation")
+        raise _handoff_error(root, checkpoint["active_cast_handoff"])
     return {
         "operation_id": operation_id,
         "expected_revision": expected,
         "checkpoint": checkpoint,
         "mutations": mutations,
+        "notes": notes,
     }
 
 
@@ -1715,12 +2068,14 @@ def _idempotent_result(
         "idempotent": True,
         "operation_id": operation_id,
         "continuity_revision": meta["revision"],
+        "next_expected_revision": meta["revision"],
         "durable_turns_since_distill": meta["durable_turns_since_distill"],
         "pending_cold_targets": meta["pending_cold_targets"],
         "checkpoint_committed": checkpoint,
         "full_distill_required": required,
         "narration_allowed": not required,
         "distill_reason": reason,
+        "hand_back": HAND_BACK,
         "changed_files": [],
         "mechanic_results": [],
         "recovered_transactions": recovered,
@@ -1728,8 +2083,8 @@ def _idempotent_result(
     }
 
 
-def _sync_scene_frame(candidates: dict[str, bytes], state_text: str, checkpoint: dict[str, str]) -> None:
-    """Write the checkpoint's scene id, mode, and anchor into the scene frame."""
+def _sync_scene_frame(candidates: dict[str, bytes], state_text: str, checkpoint: dict[str, Any]) -> None:
+    """Write the checkpoint's scene id, mode, anchor, and open choices into current_state.yaml."""
 
     base = candidates["current_state.yaml"].decode("utf-8") if "current_state.yaml" in candidates else state_text
     try:
@@ -1739,17 +2094,164 @@ def _sync_scene_frame(candidates: dict[str, bytes], state_text: str, checkpoint:
             scene_mode=checkpoint["scene_mode"],
             resume_anchor=checkpoint["resume_anchor"],
         )
+        if "open_choices" in checkpoint:
+            synced = owner_ops.set_open_choices(synced, checkpoint["open_choices"])
     except owner_ops.OwnerOpError as exc:
         raise RPGStateError(exc.category, f"current_state.yaml: {exc}") from exc
     candidates["current_state.yaml"] = synced.encode("utf-8")
 
 
-def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
-    """Commit one model-authored durable result and its optional checkpoint."""
+def _status_word(text: str) -> str:
+    """The first word of a note's Core status: "dead" from "dead (drowned)"."""
+
+    words = owner_ops.core_status(text).split()
+    return words[0].strip(".,;:()") if words else ""
+
+
+def _death_projection(root: Path, candidates: dict[str, bytes], mutation_paths: set[str]) -> list[dict[str, Any]]:
+    """Advisory: a note newly marked dead or missing whose name still fills unchanged rows.
+
+    Looks only at `active_cast.md` and `relationship_map.md` rows this payload
+    left untouched; what those rows should now say is the GM's call.
+    """
+
+    warnings: list[dict[str, Any]] = []
+    for relative in sorted(mutation_paths):
+        if PurePosixPath(relative).parts[0] not in ENTITY_OWNER_DIRS or relative not in candidates:
+            continue
+        text = candidates[relative].decode("utf-8")
+        status = _status_word(text)
+        if status not in {"dead", "missing"} or _status_word(repog_runtime.read_text(root / relative)) == status:
+            continue
+        title = _note_title(text) or PurePosixPath(relative).stem.replace("_", " ")
+        rows: list[dict[str, str]] = []
+        for owner in ("active_cast.md", "relationship_map.md"):
+            original = repog_runtime.read_text(root / owner)
+            current = candidates[owner].decode("utf-8") if owner in candidates else original
+            unchanged = set(original.splitlines())
+            rows.extend(
+                {"path": owner, "row": line.strip()}
+                for line in current.splitlines()
+                if line.lstrip().startswith("|") and line in unchanged and _names_in(title, line)
+            )
+        if rows:
+            listed = "; ".join(f"{item['path']}: {item['row']}" for item in rows)
+            warnings.append(
+                {
+                    "rule": "death_projection",
+                    "path": relative,
+                    "message": f"{title} is now {status}, but these rows still name them unchanged: {listed}",
+                    "rows": rows,
+                }
+            )
+    return warnings
+
+
+def _tracked_items(root: Path, mechanics_candidate: bytes | None) -> list[str]:
+    """Inventory item and resource ids `mechanics_state.json` counts for any actor."""
+
+    raw = mechanics_candidate.decode("utf-8") if mechanics_candidate else repog_runtime.read_text(root / "mechanics_state.json")
+    try:
+        state = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        return []
+    actors = state.get("actors") if isinstance(state, dict) else None
+    names: set[str] = set()
+    for actor in actors.values() if isinstance(actors, dict) else []:
+        for container in ("inventory", "resources"):
+            held = actor.get(container) if isinstance(actor, dict) else None
+            if isinstance(held, dict):
+                names.update(str(key) for key in held)
+    return sorted(names)
+
+
+def _inventory_warnings(
+    root: Path, state_before: str, state_after: str, mechanics_candidate: bytes | None
+) -> list[dict[str, str]]:
+    """Advisory: a new inventory line counting an item the mechanics already count."""
+
+    before = owner_ops.key_block(state_before, "inventory") or ""
+    after = owner_ops.key_block(state_after, "inventory") or ""
+    if before == after:
+        return []
+    items = _tracked_items(root, mechanics_candidate)
+    old_lines = set(before.splitlines())
+    warnings: list[dict[str, str]] = []
+    for line in after.splitlines():
+        if line in old_lines or not re.search(r"\d", line):
+            continue
+        for item in items:
+            name = re.sub(r"[_-]+", " ", item).casefold()
+            if re.search(rf"(?<!\w){re.escape(name)}", line.casefold()):
+                warnings.append(
+                    {
+                        "rule": "inventory_count_duplicate",
+                        "path": "current_state.yaml",
+                        "message": (
+                            f"inventory line {line.strip()} carries a number for '{item}', which mechanics_state.json "
+                            "counts; name the item only and let the mechanics hold the count"
+                        ),
+                    }
+                )
+                break
+    return warnings
+
+
+COST_STATE_KEYS = ("player.condition", "player.conditions", "conditions", "scene_frame.pending_consequences")
+
+
+def _cost_warnings(
+    changes: list[dict[str, Any]],
+    *,
+    state_before: str,
+    state_after: str,
+    mechanic_operations: list[Any],
+    mutation_paths: set[str],
+) -> list[dict[str, str]]:
+    """Advisory: a roll that cost something, cited by a commit that records no cost anywhere."""
+
+    costly = [
+        change
+        for change in changes
+        if change.get("roll_reference") and any(token in change.get("outcome", "").casefold() for token in COST_BAND_TOKENS)
+    ]
+    if not costly or mechanic_operations or any(PurePosixPath(path).parts[0] == "characters" for path in mutation_paths):
+        return []
+    if any(owner_ops.key_block(state_before, key) != owner_ops.key_block(state_after, key) for key in COST_STATE_KEYS):
+        return []
+    return [
+        {
+            "rule": "cost_unrecorded",
+            "path": "",
+            "message": (
+                f"change {change['id']} cites roll {change['roll_reference']} with band {change['outcome']}, but this "
+                "commit records no cost: change player.condition, conditions or scene_frame.pending_consequences, "
+                "a mechanic, or a character note"
+            ),
+        }
+        for change in costly
+    ]
+
+
+def commit_durable(
+    campaign: Path,
+    payload: dict[str, Any],
+    *,
+    act: dict[str, Any] | None = None,
+    payload_hash: str | None = None,
+) -> dict[str, Any]:
+    """Commit one model-authored durable result and its optional checkpoint.
+
+    `act` and `payload_hash` are set only by `commit_act`. Its threads.md
+    transition is built here, under the same lock and revision as the rest of
+    the commit, and its retries are matched on the hash of the commit-act
+    payload, which holds fields this envelope leaves out.
+    """
 
     root = _campaign_root(campaign)
     parsed = _durable_identity(payload)
-    payload_hash = _canonical_hash(payload)
+    payload_hash = payload_hash or _canonical_hash(payload)
+    operation = "commit-act" if act is not None else "commit-durable"
     with _transaction_lock(root):
         recovered = _recover_transactions(root)
         state_text, log_text, meta = _runtime(root)
@@ -1763,7 +2265,7 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
         )
         if prior is not None:
             return _idempotent_result(
-                operation="commit-durable",
+                operation=operation,
                 operation_id=parsed["operation_id"],
                 meta=meta,
                 boundary=parsed["boundary"],
@@ -1771,14 +2273,17 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
                 recovered=recovered,
             )
         if parsed["expected_revision"] != meta["revision"]:
-            raise RPGStateError(
-                "stale_revision",
-                f"expected continuity revision {parsed['expected_revision']}, found {meta['revision']}",
-            )
+            raise _stale_error(parsed["expected_revision"], meta["revision"])
         # Retry and stale-revision decisions happen before exact replacements
         # are materialized; committed files no longer contain their old text.
         new_revision = meta["revision"] + 1
-        parsed = _validate_durable_payload(root, payload, revision=new_revision)
+        act_texts = _act_threads(root, act, revision=new_revision) if act is not None else None
+        parsed = _validate_durable_payload(
+            root,
+            payload,
+            revision=new_revision,
+            act_mutations={"threads.md": act_texts[1].encode("utf-8")} if act_texts else None,
+        )
         already_due, due_reason = _distill_requirement(
             meta["cold_distill_policy"],
             meta["durable_turns_since_distill"],
@@ -1803,6 +2308,7 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
         warnings = _finish_candidates(candidates, parsed["mutation_paths"], stamp_revision=new_revision)
         warnings.extend(roll_warnings)
         warnings.extend(parsed["notes"])
+        warnings.extend(_death_projection(root, candidates, parsed["mutation_paths"]))
         if parsed["checkpoint"] is not None:
             _sync_scene_frame(candidates, state_text, parsed["checkpoint"])
         if mechanics_candidate is not None:
@@ -1816,6 +2322,16 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
         )
         if _state_meta(semantic_state_text) != original_meta:
             raise RPGStateError("candidate_invalid", "current_state semantic mutation changed helper-managed persistence fields")
+        warnings.extend(_inventory_warnings(root, state_text, semantic_state_text, mechanics_candidate))
+        warnings.extend(
+            _cost_warnings(
+                parsed["changes"],
+                state_before=state_text,
+                state_after=semantic_state_text,
+                mechanic_operations=parsed["mechanic_operations"],
+                mutation_paths=parsed["mutation_paths"],
+            )
+        )
         pending = _merge_pending(meta["pending_cold_targets"], parsed["cold_targets"])
         updated_state = _update_state_system(
             semantic_state_text,
@@ -1848,11 +2364,14 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
                 ),
             )
         candidates["session_log.md"] = updated_log.encode("utf-8")
+        if act_texts is not None:
+            _check_act_transition(root, act_texts[0], candidates["threads.md"].decode("utf-8"), revision=new_revision)
         _commit_candidates(
             root,
             operation_id=parsed["operation_id"],
             payload_hash=payload_hash,
             candidates=candidates,
+            prevalidated=frozenset({"threads.md"}) if act_texts is not None else frozenset(),
         )
 
         if consumed_rolls:
@@ -1875,21 +2394,23 @@ def commit_durable(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
                 {
                     "rule": "session_log_size",
                     "path": "session_log.md",
-                    "message": f"session_log.md holds {len(updated_log)} characters; pass rotate_log at the next commit-distill",
+                    "message": f"session_log.md holds {len(updated_log)} characters; the next commit-distill rotates it",
                 }
             )
         return {
             "ok": True,
-            "operation": "commit-durable",
+            "operation": operation,
             "idempotent": False,
             "operation_id": parsed["operation_id"],
             "continuity_revision": new_revision,
+            "next_expected_revision": new_revision,
             "durable_turns_since_distill": new_meta["durable_turns_since_distill"],
             "pending_cold_targets": pending,
             "checkpoint_committed": parsed["checkpoint"] is not None,
             "full_distill_required": required,
             "narration_allowed": not required,
             "distill_reason": reason,
+            "hand_back": HAND_BACK,
             "changed_files": sorted(candidates),
             "mechanic_results": mechanic_results,
             "recovered_transactions": recovered,
@@ -1924,10 +2445,7 @@ def commit_checkpoint(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]
                 recovered=recovered,
             )
         if parsed["expected_revision"] != meta["revision"]:
-            raise RPGStateError(
-                "stale_revision",
-                f"expected continuity revision {parsed['expected_revision']}, found {meta['revision']}",
-            )
+            raise _stale_error(parsed["expected_revision"], meta["revision"])
         parsed = _validate_checkpoint_payload(root, payload, revision=meta["revision"])
         already_due, due_reason = _distill_requirement(
             meta["cold_distill_policy"],
@@ -1940,6 +2458,7 @@ def commit_checkpoint(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]
 
         candidates = dict(parsed["mutations"])
         warnings = _finish_candidates(candidates, set(parsed["mutations"]), stamp_revision=meta["revision"])
+        warnings.extend(parsed["notes"])
         _sync_scene_frame(candidates, state_text, parsed["checkpoint"])
         candidate_state = candidates["current_state.yaml"].decode("utf-8")
         if _state_meta(candidate_state) != _state_meta(state_text):
@@ -1973,12 +2492,14 @@ def commit_checkpoint(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]
             "idempotent": False,
             "operation_id": parsed["operation_id"],
             "continuity_revision": meta["revision"],
+            "next_expected_revision": meta["revision"],
             "durable_turns_since_distill": meta["durable_turns_since_distill"],
             "pending_cold_targets": meta["pending_cold_targets"],
             "checkpoint_committed": True,
             "full_distill_required": required,
             "narration_allowed": not required,
             "distill_reason": reason,
+            "hand_back": HAND_BACK,
             "changed_files": sorted(candidates),
             "mechanic_results": [],
             "recovered_transactions": recovered,
@@ -1993,6 +2514,7 @@ DISTILL_PAYLOAD_FIELDS = {
     "summary",
     "mutations",
     "rotate_log",
+    "deferred_reconcile",
 }
 
 
@@ -2068,28 +2590,239 @@ def _finding_path(root: Path, value: Any) -> str:
         return str(value)
 
 
+def _archive_path(root: Path, through: int) -> str:
+    """The archive name for log history through `through`; a taken name gets -2, -3, …"""
+
+    stem = f"{ARCHIVE_DIR}/session_log_through_r{through}"
+    candidate, suffix = f"{stem}.md", 2
+    while (root / candidate).exists():
+        candidate, suffix = f"{stem}-{suffix}.md", suffix + 1
+    return candidate
+
+
+def _parse_deferred(root: Path, value: Any) -> dict[str, str]:
+    """deferred_reconcile: files the curator reconciles later, by path, with the GM's reason."""
+
+    if value is None:
+        return {}
+    if not isinstance(value, list) or len(value) > MAX_MUTATIONS:
+        raise RPGStateError("input_invalid", f"deferred_reconcile must be an array of at most {MAX_MUTATIONS} objects")
+    deferred: dict[str, str] = {}
+    for index, raw in enumerate(value):
+        label = f"deferred_reconcile[{index}]"
+        if not isinstance(raw, dict):
+            raise RPGStateError("input_invalid", f"{label} must be an object with path and reason")
+        _require_keys(raw, {"path", "reason"}, label)
+        relative, path = _relative_path(root, raw.get("path"), f"{label}.path")
+        problem = curation.path_error(root, relative)
+        if problem or not path.is_file():
+            raise RPGStateError(
+                "input_invalid",
+                f"{label}.path {relative} cannot go to the curator: it {problem or 'does not exist'}",
+            )
+        if relative in deferred:
+            raise RPGStateError("input_invalid", f"{label}.path repeats {relative}")
+        deferred[relative] = _one_line(raw.get("reason"), f"{label}.reason", maximum=300)
+    return deferred
+
+
+def _distill_editable(root: Path, relative: str) -> bool:
+    """True when a distill could change this file, so a gated finding on it can be reconciled here."""
+
+    if not relative.endswith(".md"):
+        return False
+    try:
+        _, path = _distill_path(root, relative, "finding path")
+    except RPGStateError:
+        return False
+    return path.is_file()
+
+
+def _distill_gate(
+    root: Path, mutation_paths: set[str], deferred: dict[str, str]
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    """Gated full-check findings this distill leaves unreconciled, and gate warnings.
+
+    A finding is reconciled when the distill changes its file or defers that
+    file to the curator. A finding on a file no distill can edit is left to
+    the full check, so the gate can never block every way forward.
+    """
+
+    try:
+        check = _candidate_checker().check_campaign(root, scope="full")
+    except Exception as exc:  # a broken check must not make the distill impossible
+        return [], [{"rule": "distill_gate_unavailable", "path": "", "message": f"{type(exc).__name__}: {exc}"}]
+    unreconciled: list[dict[str, str]] = []
+    for item in check.get("findings", []):
+        if item.get("rule") not in DISTILL_GATE_RULES or item.get("severity") not in {"error", "warning"}:
+            continue
+        relative = _finding_path(root, item.get("path"))
+        if not _distill_editable(root, relative) or relative in mutation_paths:
+            continue
+        if relative in deferred and item["rule"] not in UNDEFERRABLE_GATE_RULES:
+            continue
+        unreconciled.append({"path": relative, "rule": str(item["rule"]), "message": str(item.get("message", ""))})
+    return unreconciled, []
+
+
+def _gate_error(unreconciled: list[dict[str, str]]) -> RPGStateError:
+    listed = "; ".join(f"{item['path']} ({item['rule']})" for item in unreconciled[:12])
+    reason = (
+        f"the distill leaves {len(unreconciled)} finding(s) unreconciled: {listed}. Change each file in this "
+        "distill's mutations, or list it in deferred_reconcile with a reason for the curator"
+    )
+    undeferrable = sorted({item["rule"] for item in unreconciled} & UNDEFERRABLE_GATE_RULES)
+    if undeferrable:
+        reason += f"; {', '.join(undeferrable)} cannot be deferred"
+    return RPGStateError("distill_unreconciled", reason, extra={"unreconciled": unreconciled})
+
+
+def _curation_due_path(root: Path) -> Path:
+    return root / repog_runtime.RUNTIME_DIR / CURATION_DUE_FILE
+
+
+def _read_curation_due(root: Path) -> list[dict[str, str]]:
+    data = repog_runtime.read_json(_curation_due_path(root), {})
+    targets = data.get("targets") if isinstance(data, dict) else None
+    return [item for item in targets if isinstance(item, dict) and isinstance(item.get("path"), str)] if isinstance(
+        targets, list
+    ) else []
+
+
+def _write_curation_due(root: Path, targets: list[dict[str, str]], revision: int) -> list[dict[str, str]]:
+    """Store the curator's list; the file exists only while a target remains."""
+
+    path = _curation_due_path(root)
+    if targets:
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        repog_runtime.write_json_atomic(path, {"at": stamp, "revision": revision, "targets": targets})
+    else:
+        path.unlink(missing_ok=True)
+    return targets
+
+
+def _curatable(root: Path, relative: str) -> bool:
+    return bool(relative) and curation.path_error(root, relative) is None and (root / relative).is_file()
+
+
+def _finding_targets(root: Path, item: dict[str, Any]) -> list[str]:
+    """The curatable notes a full-check finding is about.
+
+    Its own path when that is a note; else the files an aggregated finding
+    lists in `paths`, which its message may clip; else the notes its message
+    names, by path or, for a finding on an entity folder, by note title.
+    """
+
+    relative = _finding_path(root, item.get("path"))
+    if _curatable(root, relative):
+        return [relative]
+    if isinstance(item.get("paths"), list):
+        listed = (_finding_path(root, value) for value in item["paths"])
+        return list(dict.fromkeys(path for path in listed if _curatable(root, path)))
+    message = str(item.get("message", ""))
+    found = [match for match in re.findall(r"[\w][\w./-]*\.md\b", message) if _curatable(root, match)]
+    if relative in ENTITY_OWNER_DIRS and (root / relative).is_dir():
+        found.extend(_titled_notes(root, relative, message))
+    return list(dict.fromkeys(found))
+
+
+def _titled_notes(root: Path, folder: str, message: str) -> list[str]:
+    """The curatable notes of an entity folder that a message names by title.
+
+    Longer titles are matched first and blanked out, so "Ali" is not found
+    inside "Ali Reis".
+    """
+
+    notes = [
+        (_note_title(repog_runtime.read_text(note)) or note.stem.replace("_", " "), note.relative_to(root).as_posix())
+        for note in sorted((root / folder).glob("*.md"))
+        if not note.name.startswith("_")
+    ]
+    named: set[str] = set()
+    for title, note_path in sorted(notes, key=lambda item: -len(item[0])):
+        pattern = rf"(?<!\w){re.escape(title)}(?!\w)"
+        if title and re.search(pattern, message, re.IGNORECASE):
+            named.add(note_path)
+            message = re.sub(pattern, " ", message, flags=re.IGNORECASE)
+    return [note_path for _, note_path in notes if note_path in named and _curatable(root, note_path)]
+
+
+def _merge_targets(*groups: list[dict[str, str]]) -> list[dict[str, str]]:
+    """One target per file, as a curation packet requires; later reasons for a file are appended."""
+
+    merged: dict[str, dict[str, str]] = {}
+    for group in groups:
+        for item in group:
+            known = merged.get(item["path"])
+            reason = item.get("reason", "")
+            if known is None:
+                merged[item["path"]] = {"path": item["path"], "rule": item.get("rule", ""), "reason": reason}
+            elif reason and reason not in known["reason"]:
+                known["reason"] = f"{known['reason']}; {reason}"[:600]
+    return list(merged.values())
+
+
+def _update_curation_due(
+    root: Path,
+    *,
+    changed: set[str],
+    deferred: dict[str, str],
+    findings: list[dict[str, Any]],
+    revision: int,
+) -> list[dict[str, str]]:
+    """Drop targets the distill changed; add its deferrals and the curation rules the full check found."""
+
+    kept = [item for item in _read_curation_due(root) if item["path"] not in changed]
+    found: list[dict[str, str]] = []
+    for item in findings:
+        if item.get("rule") in CURATION_DUE_RULES and item.get("severity") in {"error", "warning"}:
+            reason = " ".join(str(item.get("message", "")).split())[:300]
+            found.extend({"path": path, "rule": str(item["rule"]), "reason": reason} for path in _finding_targets(root, item))
+    deferrals = [{"path": path, "rule": "deferred_reconcile", "reason": reason} for path, reason in deferred.items()]
+    targets = [item for item in _merge_targets(kept, found, deferrals) if _curatable(root, item["path"])]
+    return _write_curation_due(root, targets, revision)
+
+
+def _lint_report(root: Path) -> dict[str, Any] | None:
+    """presentation_lint.report_summary for the last 20 replies; None when unavailable."""
+
+    try:
+        import presentation_lint
+
+        summary = getattr(presentation_lint, "report_summary", None)
+        return summary(root, last=20) if callable(summary) else None
+    except Exception:  # the report is advisory; a lint failure must not fail the distill
+        return None
+
+
 def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
     """Close a full distill in one transaction, without a continuity revision.
 
     The GM still decides what to reconcile and writes the new text. This step
-    applies those edits to secondary records, appends the summary and the
-    distilled-through marker, resets the persistence counters, optionally moves
-    old log history to an archive, and runs the full structural check.
+    refuses to close while a gated content finding is neither fixed nor
+    deferred, applies the edits to secondary records, appends the summary and
+    the distilled-through marker, resets the persistence counters, moves old
+    log history to an archive when asked or when the log is large, runs the
+    full structural check, and hands deferred and flagged notes to the curator
+    through `curation_due.json`.
     """
 
     root = _campaign_root(campaign)
     _require_keys(payload, DISTILL_PAYLOAD_FIELDS, "commit-distill payload")
     operation_id = _operation_id(payload.get("operation_id"))
     expected = payload.get("expected_continuity_revision")
-    if not _strict_int(expected):
-        raise RPGStateError("input_invalid", "expected_continuity_revision must be a non-negative integer")
+    if expected != "current" and not _strict_int(expected):
+        raise RPGStateError(
+            "input_invalid", 'expected_continuity_revision must be a non-negative integer or "current"'
+        )
     trigger = _one_line(payload.get("trigger"), "trigger", maximum=300)
     summary = payload.get("summary")
     if summary is not None and (not isinstance(summary, str) or not summary.strip()):
         raise RPGStateError("input_invalid", "summary must be non-empty text when present")
-    rotate = payload.get("rotate_log", False)
-    if not isinstance(rotate, bool):
+    rotate_requested = payload.get("rotate_log")
+    if rotate_requested is not None and not isinstance(rotate_requested, bool):
         raise RPGStateError("input_invalid", "rotate_log must be true or false")
+    deferred = _parse_deferred(root, payload.get("deferred_reconcile"))
     payload_hash = _canonical_hash(payload)
     with _transaction_lock(root):
         recovered = _recover_transactions(root)
@@ -2104,21 +2837,29 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
                 "idempotent": True,
                 "operation_id": operation_id,
                 "continuity_revision": meta["revision"],
+                "next_expected_revision": meta["revision"],
                 "distilled_through": prior,
+                "hand_back": HAND_BACK,
                 "changed_files": [],
                 "recovered_transactions": recovered,
                 "warnings": [],
             }
-        if expected != meta["revision"]:
-            raise RPGStateError("stale_revision", f"expected continuity revision {expected}, found {meta['revision']}")
+        if expected != "current" and expected != meta["revision"]:
+            raise _stale_error(expected, meta["revision"])
         revision = meta["revision"]
+        notes: list[dict[str, str]] = []
         candidates, mutation_paths = _parse_mutations(
             root,
             payload.get("mutations", []),
             placeholders=owner_ops.PlaceholderContext(revision),
             distill=True,
+            notes=notes,
         )
-        warnings = _finish_candidates(candidates, mutation_paths, stamp_revision=revision)
+        unreconciled_findings, warnings = _distill_gate(root, mutation_paths, deferred)
+        if unreconciled_findings:
+            raise _gate_error(unreconciled_findings)
+        warnings.extend(_finish_candidates(candidates, mutation_paths, stamp_revision=revision))
+        warnings.extend(notes)
 
         state = _replace_nested_scalar(state_text, "persistence", "last_distilled_revision", revision)
         state = _replace_nested_scalar(state, "persistence", "durable_turns_since_distill", 0)
@@ -2127,13 +2868,12 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
 
         updated_log = log_text
         archived_path = None
+        # rotate_log: false still keeps the log whole; absent, a large log rotates.
+        rotate = rotate_requested if rotate_requested is not None else len(log_text) > LOG_AUTO_ROTATE_TEXT
         if rotate and meta["last_distilled_revision"] > 0:
             updated_log, archived = _rotate_log(log_text, meta["last_distilled_revision"])
             if archived:
-                archived_path = f"{ARCHIVE_DIR}/session_log_through_r{meta['last_distilled_revision']}.md"
-                target = root / ARCHIVE_DIR / f"session_log_through_r{meta['last_distilled_revision']}.md"
-                if target.exists():
-                    raise RPGStateError("candidate_invalid", f"archive already exists: {archived_path}")
+                archived_path = _archive_path(root, meta["last_distilled_revision"])
                 heading = f"# Session Log Archive Through Revision {meta['last_distilled_revision']}\n\n"
                 candidates[archived_path] = (heading + archived).encode("utf-8")
         if summary is not None:
@@ -2154,7 +2894,9 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
         candidates["session_log.md"] = updated_log.encode("utf-8")
         _commit_candidates(root, operation_id=operation_id, payload_hash=payload_hash, candidates=candidates)
 
-    unreconciled = [target for target in meta["pending_cold_targets"] if target not in mutation_paths]
+    unreconciled = [
+        target for target in meta["pending_cold_targets"] if target not in mutation_paths and target not in deferred
+    ]
     check = _candidate_checker().check_campaign(root, scope="full")
     findings = [
         {
@@ -2166,23 +2908,35 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
         for item in check["findings"]
         if item["severity"] in {"error", "warning"}
     ]
+    try:
+        with _transaction_lock(root):
+            curation_due = _update_curation_due(
+                root, changed=mutation_paths, deferred=deferred, findings=check["findings"], revision=revision
+            )
+    except (OSError, RPGStateError) as exc:  # the distill stands; the list is rebuilt at the next one
+        curation_due = []
+        warnings.append({"rule": "curation_due_unwritten", "path": "", "message": str(exc)})
     return {
         "ok": True,
         "operation": "commit-distill",
         "idempotent": False,
         "operation_id": operation_id,
         "continuity_revision": revision,
+        "next_expected_revision": revision,
         "distilled_through": revision,
         "changed_files": sorted(candidates),
         "archived_log": archived_path,
         "unreconciled_targets": unreconciled,
+        "curation_due": curation_due,
         "full_check": {
             "ok": check["ok"],
             "error_count": check["error_count"],
             "warning_count": check["warning_count"],
             "findings": findings[:20],
         },
+        "lint_report": _lint_report(root),
         "narration_allowed": check["ok"],
+        "hand_back": HAND_BACK,
         "recovered_transactions": recovered,
         "warnings": warnings,
     }
@@ -2394,10 +3148,18 @@ def commit_curation(
                     continue
             _file_staged(root, path, "rejected", warnings)
             rejected.append({"curation_id": curation_id, "reasons": errors[:6]})
+        curated = {file for item in applied for file in item["files"]}
+        due = _read_curation_due(root)
+        if curated and any(item["path"] in curated for item in due):
+            try:
+                _write_curation_due(root, [item for item in due if item["path"] not in curated], meta["revision"])
+            except OSError as exc:  # the curation stands; the next distill rebuilds the list
+                warnings.append({"rule": "curation_due_unwritten", "path": "", "message": str(exc)})
     return {
         "ok": True,
         "operation": "commit-curation",
         "continuity_revision": meta["revision"],
+        "next_expected_revision": meta["revision"],
         "applied": applied,
         "rejected": rejected,
         "deferred": deferred,
@@ -2407,11 +3169,346 @@ def commit_curation(
     }
 
 
+# ---------------------------------------------------------------------------
+# commit-act: one typed act transition
+# ---------------------------------------------------------------------------
+
+
+ACT_PAYLOAD_FIELDS = {"operation_id", "expected_continuity_revision", "close", "open", "checkpoint", "changes", "mutations"}
+ACT_ID_RE = re.compile(r"^[\w][\w.-]{0,127}$")
+ACT_SCOPE_FIELDS = (
+    ("places", "Places this act can reach"),
+    ("people", "People who belong to it"),
+    ("in_motion", "What is already in motion as it opens"),
+    ("if_ignored", "What stays true if the character does nothing"),
+)
+# Further Compass fields of the threads.md template; a new act starts with them
+# empty unless the payload fills them, and the GM completes them later.
+ACT_OPEN_FIELDS = (
+    "Active pressures",
+    "Setups awaiting payoff",
+    "Climax availability conditions",
+    "Closure conditions",
+    "Player interest signals",
+    "Horizon reference",
+    "Link to current player choices",
+    "Independent space",
+)
+FIELD_LINE_RE = re.compile(r"^\s*[-*]\s+[\w][\w /()–-]*:")
+
+
+@lru_cache(maxsize=1)
+def _act_checks() -> Any:
+    """narrative_memory.py, which holds the act rules the full check applies to threads.md."""
+
+    module_path = Path(__file__).with_name("narrative_memory.py")
+    spec = importlib.util.spec_from_file_location("_repog_rpg_state_narrative_memory", module_path)
+    if spec is None or spec.loader is None:
+        raise RPGStateError("campaign_invalid", "cannot load the act rules in narrative_memory.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _act_id(value: Any, label: str) -> str:
+    text = _one_line(value, label, maximum=128)
+    if ACT_ID_RE.fullmatch(text) is None or text.casefold() == "none":
+        raise RPGStateError("input_invalid", f"{label} must be an identifier without spaces, such as act-2")
+    return text
+
+
+def _act_text(value: Any, label: str) -> str:
+    """One line from text, or from a list of texts joined with '; '."""
+
+    if isinstance(value, list):
+        if not value:
+            raise RPGStateError("input_invalid", f"{label} must not be empty")
+        return "; ".join(_one_line(item, f"{label}[{index}]", maximum=600) for index, item in enumerate(value))
+    return _one_line(value, label, maximum=MAX_LINE_TEXT)
+
+
+def _parse_act(payload: dict[str, Any]) -> dict[str, Any]:
+    _require_keys(payload, ACT_PAYLOAD_FIELDS, "commit-act payload")
+    close, opening = payload.get("close"), payload.get("open")
+    if not isinstance(close, dict):
+        raise RPGStateError("input_invalid", "close must be an object with act_id, outcome, and summary")
+    if not isinstance(opening, dict):
+        raise RPGStateError(
+            "input_invalid",
+            "open must be an object with act_id, title, dramatic_question, scope, and closure_conditions",
+        )
+    _require_keys(close, {"act_id", "outcome", "summary"}, "close")
+    _require_keys(
+        opening, {"act_id", "title", "dramatic_question", "scope", "closure_conditions", "prepared_expectations"}, "open"
+    )
+    scope = opening.get("scope")
+    if not isinstance(scope, dict):
+        raise RPGStateError("input_invalid", "open.scope must be an object with places, people, in_motion, and if_ignored")
+    _require_keys(scope, {key for key, _ in ACT_SCOPE_FIELDS}, "open.scope")
+    for field in ("changes", "mutations"):
+        if payload.get(field) is not None and not isinstance(payload[field], list):
+            raise RPGStateError("input_invalid", f"{field} must be an array")
+    act = {
+        "close_id": _act_id(close.get("act_id"), "close.act_id"),
+        "outcome": _one_line(close.get("outcome"), "close.outcome", maximum=300),
+        "summary": _one_line(close.get("summary"), "close.summary", maximum=600),
+        "open_id": _act_id(opening.get("act_id"), "open.act_id"),
+        "title": _one_line(opening.get("title"), "open.title", maximum=200),
+        "question": _one_line(opening.get("dramatic_question"), "open.dramatic_question", maximum=600),
+        "scope": {label: _act_text(scope.get(key), f"open.scope.{key}") for key, label in ACT_SCOPE_FIELDS},
+        "closure_conditions": _act_text(opening.get("closure_conditions"), "open.closure_conditions"),
+        "prepared": (
+            _act_text(opening["prepared_expectations"], "open.prepared_expectations")
+            if opening.get("prepared_expectations")
+            else ""
+        ),
+    }
+    if act["open_id"] == act["close_id"]:
+        raise RPGStateError("input_invalid", "open.act_id must differ from close.act_id; act ids are never reused")
+    return act
+
+
+def _act_durable_payload(payload: dict[str, Any], act: dict[str, Any]) -> dict[str, Any]:
+    """The commit-durable envelope an act transition commits as, at a scene-checkpoint boundary."""
+
+    change = {
+        "id": "act-transition",
+        "kind": "act_transition",
+        "established_delta": f"Act {act['close_id']} closed ({act['outcome']}); act {act['open_id']} opened: {act['title']}.",
+        "owners": ["threads.md"],
+    }
+    return {
+        "operation_id": payload.get("operation_id"),
+        "expected_continuity_revision": payload.get("expected_continuity_revision"),
+        "boundary": "scene_checkpoint",
+        "cause": act["summary"],
+        "resume_impact": f"Play continues in act {act['open_id']}: {act['question']}",
+        "changes": [change, *(payload.get("changes") or [])],
+        "mutations": list(payload.get("mutations") or []),
+        "checkpoint": payload.get("checkpoint"),
+    }
+
+
+def _leading_prose(section: list[str]) -> list[str]:
+    """The guidance lines a Compass section opens with, before its first field or subsection."""
+
+    prose: list[str] = []
+    for line in section:
+        if FIELD_LINE_RE.match(line) or line.startswith("#"):
+            break
+        prose.append(line.rstrip("\r\n"))
+    while prose and not prose[0].strip():
+        prose.pop(0)
+    while prose and not prose[-1].strip():
+        prose.pop()
+    return prose
+
+
+def _compass_body(act: dict[str, Any], prose: list[str], *, revision: int) -> str:
+    """The successor's Arc Compass: identity, question, scope, and an empty Closure Record."""
+
+    fields = {
+        "Act id": act["open_id"],
+        "Act status": "active",
+        "Previous act id": act["close_id"],
+        "Opened at revision": str(revision),
+        "Act name": act["title"],
+        "Dramatic question": act["question"],
+        **{field: "" for field in ACT_OPEN_FIELDS},
+    }
+    fields["Setups awaiting payoff"] = act["prepared"]
+    fields["Closure conditions"] = act["closure_conditions"]
+    lines = prose + [""] if prose else []
+    lines.extend(f"- {field}: {value}".rstrip() for field, value in fields.items())
+    lines += ["", "### Act Scope", ""]
+    lines.extend(f"- {label}: {act['scope'][label]}" for _, label in ACT_SCOPE_FIELDS)
+    lines += ["", "### Closure Record", "", "- Closing action:", "- Condition met or foreclosed:", "- Recorded at revision:"]
+    return "\n".join(lines)
+
+
+def _act_threads(root: Path, act: dict[str, Any], *, revision: int) -> tuple[str, str]:
+    """threads.md with the current act closed, and then with it archived and its successor open.
+
+    The first text is the intermediate step the act rules check separately: a
+    Compass already closed by the decisive turn keeps its Closure Record.
+    """
+
+    text = _read_text(root / "threads.md", "threads.md")
+    checks = _act_checks()
+    current, archive, _ = checks._act_data(text)
+    current_id = current.get("Act id", "")
+    if not current_id or current_id.casefold() == "none":
+        raise RPGStateError(
+            "candidate_invalid",
+            "the Arc Compass has no Act id; record the current act's Act id and Opened at revision in a durable "
+            "commit before using commit-act",
+        )
+    if current_id != act["close_id"]:
+        raise RPGStateError("input_invalid", f"close.act_id is {act['close_id']}, but the Arc Compass holds act {current_id}")
+    if act["open_id"] in {fields.get("Act id") for _, fields in archive}:
+        raise RPGStateError("input_invalid", f"open.act_id {act['open_id']} is already archived; act ids are never reused")
+    try:
+        closed = text
+        if current.get("Act status") != "closed":
+            closure = {
+                "Act status": "closed",
+                "Closing action": act["summary"],
+                "Condition met or foreclosed": act["outcome"],
+                "Recorded at revision": str(revision),
+            }
+            closed = owner_ops.set_fields(text, "Arc Compass", closure)
+        closed_fields = checks._act_data(closed)[0]
+        duplicated = sorted(field for field, value in closed_fields.items() if "\n" in value)
+        if duplicated:
+            raise RPGStateError("candidate_invalid", f"the Arc Compass repeats field(s): {', '.join(duplicated)}")
+        # The archive entry keeps every Compass field as a flat line, which is
+        # how the act rules compare it with the Compass it came from.
+        entry = "\n".join(f"- {field}: {value}".rstrip() for field, value in closed_fields.items())
+        prose = _leading_prose(owner_ops.section_body(closed, "Arc Compass") or [])
+        ops: list[dict[str, Any]] = []
+        if owner_ops.section_body(closed, "Act Archive") is None:
+            ops.append({"op": "insert_section", "heading": "## Act Archive", "text": "Closed acts, oldest first."})
+        ops += [
+            {"op": "insert_section", "heading": f"### {act['close_id']}", "under": "## Act Archive", "text": entry},
+            {"op": "replace_section", "heading": "## Arc Compass", "text": _compass_body(act, prose, revision=revision)},
+        ]
+        final = owner_ops.apply_markdown_ops(closed, ops, label="commit-act threads.md")
+    except owner_ops.OwnerOpError as exc:
+        raise RPGStateError(exc.category, f"threads.md: {exc}") from exc
+    return closed, final
+
+
+def _check_act_transition(root: Path, closed: str, final: str, *, revision: int) -> None:
+    """Apply the full check's act rules to both steps of the transition."""
+
+    checks = _act_checks()
+    path = root / "threads.md"
+    before = _read_text(path, "threads.md")
+    findings: list[dict[str, Any]] = []
+    if closed != before:
+        findings += checks.check_thread_transition(before, closed, path, revision=revision)
+    findings += checks.check_thread_transition(closed, final, path, revision=revision)
+    findings += checks.check_threads(final, path, ready=True)
+    errors = [item for item in findings if item.get("severity") == "error"]
+    if errors:
+        raise RPGStateError("candidate_invalid", "; ".join(f"{item['rule']}: {item['message']}" for item in errors))
+
+
+def commit_act(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
+    """Close the current act and open its successor in one durable scene-checkpoint commit.
+
+    The writer builds the threads.md change itself: the closed Compass moves to
+    Act Archive and the new act takes the Compass, exactly as the full check's
+    act rules require. Every other durable rule applies unchanged.
+    """
+
+    act = _parse_act(payload)
+    return commit_durable(campaign, _act_durable_payload(payload, act), act=act, payload_hash=_canonical_hash(payload))
+
+
+# ---------------------------------------------------------------------------
+# template: a read-only payload skeleton
+# ---------------------------------------------------------------------------
+
+
+TEMPLATE_KINDS = ("durable", "checkpoint", "distill", "act")
+
+
+def _safe_id(value: str, fallback: str) -> str:
+    text = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-._")[:60]
+    return text or fallback
+
+
+def template(campaign: Path, kind: str) -> dict[str, Any]:
+    """A payload skeleton for one commit kind, with the facts needed to fill it. Writes nothing."""
+
+    if kind not in TEMPLATE_KINDS:
+        raise RPGStateError("input_invalid", f"kind must be one of: {', '.join(TEMPLATE_KINDS)}")
+    root = _campaign_root(campaign)
+    state_text = _read_text(root / "current_state.yaml", "current state")
+    revision = _state_meta(state_text)["revision"]
+    frame = repog_runtime.block_scalars(state_text, "scene_frame")
+    scene_id = frame.get("scene_id", "")
+    checkpoint = {
+        "scene_id": scene_id,
+        "scene_mode": frame.get("mode", ""),
+        "resume_anchor": "",
+        "active_cast_handoff": "none",
+        "open_choices": [""],
+    }
+    if kind == "durable":
+        payload: dict[str, Any] = {
+            "operation_id": f"turn-{revision + 1}",
+            "expected_continuity_revision": revision,
+            "boundary": "ordinary",
+            "cause": "",
+            "resume_impact": "",
+            "changes": [{"id": "c1", "kind": "", "established_delta": "", "owners": []}],
+            "mutations": [{"path": "", "ops": []}],
+        }
+    elif kind == "checkpoint":
+        payload = {
+            "operation_id": f"checkpoint-{revision}-{_safe_id(scene_id, 'scene')}",
+            "expected_continuity_revision": revision,
+            "checkpoint": checkpoint,
+            "mutations": [],
+        }
+    elif kind == "distill":
+        payload = {
+            "operation_id": f"distill-{revision}",
+            "expected_continuity_revision": "current",
+            "trigger": "",
+            "summary": "",
+            "mutations": [],
+            "deferred_reconcile": [],
+        }
+    else:
+        compass = _act_checks()._act_data(repog_runtime.read_text(root / "threads.md"))[0]
+        payload = {
+            "operation_id": f"act-{revision + 1}",
+            "expected_continuity_revision": revision,
+            "close": {"act_id": compass.get("Act id", ""), "outcome": "", "summary": ""},
+            "open": {
+                "act_id": "",
+                "title": "",
+                "dramatic_question": "",
+                "scope": {key: "" for key, _ in ACT_SCOPE_FIELDS},
+                "closure_conditions": [""],
+                "prepared_expectations": [],
+            },
+            "checkpoint": checkpoint,
+        }
+    reference: dict[str, Any] = {
+        "boundaries": sorted(BOUNDARIES),
+        "scene_modes": sorted(SCENE_MODES),
+        "current_state_keys": re.findall(r"(?m)^([A-Za-z_][\w-]*):", state_text),
+        "active_cast_columns": owner_ops.table_rows(repog_runtime.read_text(root / "active_cast.md"))[0],
+        "relationship_map_columns": owner_ops.table_rows(repog_runtime.read_text(root / "relationship_map.md"))[0],
+        "kind_owners": {token: owner for tokens, owner in KIND_AUTHORITY_TOKENS for token in sorted(tokens)},
+    }
+    if kind == "durable":
+        reference["checkpoint_at_scene_end"] = {"boundary": "scene_checkpoint", "checkpoint": checkpoint}
+    return {
+        "ok": True,
+        "operation": "template",
+        "kind": kind,
+        "continuity_revision": revision,
+        "next_expected_revision": revision,
+        "payload": payload,
+        "reference": reference,
+    }
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("campaign", help="Path to the active campaign folder")
     subparsers = parser.add_subparsers(dest="command", required=True)
-    for command in ("commit-durable", "commit-checkpoint", "commit-distill"):
+    for command in ("commit-durable", "commit-checkpoint", "commit-distill", "commit-act"):
         subparser = subparsers.add_parser(command)
         source = subparser.add_mutually_exclusive_group(required=True)
         source.add_argument("--input-json", help="One JSON transaction envelope")
@@ -2423,15 +3520,39 @@ def _parser() -> argparse.ArgumentParser:
     target = curation_parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--apply-staged", action="store_true", help="Apply every settled staged curation file")
     target.add_argument("--staged", action="append", help="Apply this staged file (repeatable)")
+    template_parser = subparsers.add_parser("template", help="Print a read-only payload skeleton")
+    template_parser.add_argument("--kind", required=True, choices=TEMPLATE_KINDS)
     return parser
 
 
-def _read_input(args: argparse.Namespace) -> str:
+def _decode_input(data: bytes) -> tuple[str, list[dict[str, str]]]:
+    """UTF-8 with or without a BOM; else the Turkish console code page, then latin-1, with a warning."""
+
+    try:
+        return data.decode("utf-8-sig"), []
+    except UnicodeDecodeError:
+        pass
+    for codec, name in INPUT_FALLBACK_CODECS:
+        try:
+            text = data.decode(codec)
+        except UnicodeDecodeError:
+            continue
+        return text, [
+            {
+                "rule": f"input_decoded_{name}",
+                "path": "",
+                "message": f"the input was not UTF-8 and was read as {codec}; check non-English letters in the result",
+            }
+        ]
+    raise UnicodeError("input cannot be decoded")  # latin-1 decodes every byte, so this is unreachable
+
+
+def _read_input(args: argparse.Namespace) -> tuple[str, list[dict[str, str]]]:
     if args.input_json is not None:
-        return args.input_json
+        return args.input_json, []
     if args.input_file == "-":
-        return sys.stdin.buffer.read().decode("utf-8-sig")
-    return Path(args.input_file).read_text(encoding="utf-8-sig")
+        return _decode_input(sys.stdin.buffer.read())
+    return _decode_input(Path(args.input_file).read_bytes())
 
 
 def _emit(result: dict[str, Any]) -> None:
@@ -2441,13 +3562,17 @@ def _emit(result: dict[str, Any]) -> None:
     sys.stdout.flush()
 
 
+def _failure(exc: RPGStateError) -> dict[str, Any]:
+    return {"ok": False, "failure_category": exc.category, "failure_reason": str(exc), **exc.extra}
+
+
 def _curation_main(args: argparse.Namespace) -> int:
     try:
         staged = None if args.apply_staged else [Path(item) for item in args.staged]
         result = commit_curation(Path(args.campaign), staged=staged)
         exit_code = 0
     except RPGStateError as exc:
-        result = {"ok": False, "failure_category": exc.category, "failure_reason": str(exc)}
+        result = _failure(exc)
         exit_code = exc.exit_code
     except (OSError, UnicodeError) as exc:
         result = {"ok": False, "failure_category": "io_error", "failure_reason": str(exc)}
@@ -2456,31 +3581,41 @@ def _curation_main(args: argparse.Namespace) -> int:
     return exit_code
 
 
+COMMANDS = {
+    "commit-durable": commit_durable,
+    "commit-checkpoint": commit_checkpoint,
+    "commit-distill": commit_distill,
+    "commit-act": commit_act,
+}
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if args.command == "commit-curation":
         return _curation_main(args)
+    input_warnings: list[dict[str, str]] = []
     try:
-        payload = json.loads(_read_input(args))
-        if not isinstance(payload, dict):
-            raise RPGStateError("input_invalid", "input JSON must be an object")
-        if args.command == "commit-durable":
-            result = commit_durable(Path(args.campaign), payload)
-        elif args.command == "commit-checkpoint":
-            result = commit_checkpoint(Path(args.campaign), payload)
+        if args.command == "template":
+            result = template(Path(args.campaign), args.kind)
         else:
-            result = commit_distill(Path(args.campaign), payload)
+            text, input_warnings = _read_input(args)
+            payload = json.loads(text)
+            if not isinstance(payload, dict):
+                raise RPGStateError("input_invalid", "input JSON must be an object")
+            result = COMMANDS[args.command](Path(args.campaign), payload)
     except json.JSONDecodeError as exc:
         result = {"ok": False, "failure_category": "input_invalid", "failure_reason": f"invalid JSON: {exc}"}
         exit_code = 2
     except RPGStateError as exc:
-        result = {"ok": False, "failure_category": exc.category, "failure_reason": str(exc)}
+        result = _failure(exc)
         exit_code = exc.exit_code
     except (OSError, UnicodeError) as exc:
         result = {"ok": False, "failure_category": "io_error", "failure_reason": str(exc)}
         exit_code = 2
     else:
         exit_code = 0
+    if input_warnings:
+        result["warnings"] = input_warnings + list(result.get("warnings", []))
     _emit(result)
     return exit_code
 

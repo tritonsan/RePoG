@@ -104,6 +104,17 @@ arbitrary earlier or later moment.
 - What the character is already doing about it:
 - What happens emotionally or practically if they wait:
 
+## Wishes
+
+The Player's long-term wishes for the character, recorded as the character's
+own aims: a ship of their own, a name the world knows, a debt finally repaid.
+Record each in the Player's words when they say it, in or out of character,
+with the revision it arrived at. A wish is never an NPC promise, a scheduled
+event, or a guarantee. It tells the GM which openings the world may offer, and
+every NPC's will stays their own.
+
+- Wish:
+
 ## Social Position And World Centrality
 
 Describe how the character currently belongs—or does not belong—without making

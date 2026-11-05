@@ -64,7 +64,7 @@ named by those events or required by the trigger. Relevant inputs may include:
 - relevant `places/*.md`;
 - relevant `factions/*.md`;
 - `opening_brief.md` when preparing a next-scene or post-arc opening;
-- `style_state.json` when a style review is due;
+- `style_state.json` when the lint is off and a style review is due;
 - `visual_state.json` when a visual transaction was completed or interrupted;
 - `dashboard/dashboard_state.json` when the campaign uses a local dashboard;
 - `rules.md` if rulings changed.
@@ -125,7 +125,8 @@ Update only the smallest listed deferred targets or boundary records:
 - update `opening_brief.md` as `post_arc_opening` with Opening status `pending`
   while drafting and `active` only after the next opening is complete; the
   historical `first_session.md` remains `consumed`;
-- update warning-only `style_state.json` when its policy selects the sample;
+- with `runtime.presentation_lint: off`, update warning-only
+  `style_state.json` when its policy selects the sample;
 - patch Dashboard V3 through `tools/update_dashboard.py` only when an approved
   tile has changed player-known information and its refresh policy is due.
 
@@ -147,7 +148,10 @@ A good Lite distill captures:
 - what should be remembered next time.
 
 Avoid summaries that read like command logs. Prefer dramatic consequence over
-mechanical bookkeeping.
+mechanical bookkeeping. Write the summary, and every edit Distill makes, in the
+records language (`play_profile.yaml.narration.records_language`, or the play
+language when it is `same`), keeping file names, keys, headings, labels, table
+headers, enum values, and ids as the templates write them.
 
 # Persistence Boundaries
 
@@ -177,7 +181,9 @@ The checkpoint contains:
 - `current_state.yaml.scene_frame`, including the last causal beat, no more
   than three pending consequences, and the concrete resume anchor;
 - relevant current whereabouts/activity in `active_cast.md`;
-- the active-cast handoff needed to resume safely.
+- the active-cast handoff needed to resume safely;
+- at a `scene_checkpoint` boundary, `open_choices`: one to five short strings
+  that replace `current_state.yaml` `open_choices`.
 
 Do not make a second checkpoint write after a durable commit. Do not reconcile
 queued cold targets, reset the durable counter, append a distilled-through
@@ -188,13 +194,18 @@ persistence creates no continuity revision.
 
 Full distill is mandatory at the first applicable trigger:
 
-- five durable turns for Fast (`scene_checkpoint_or_5_durable`);
-- three durable turns for Balanced (`scene_checkpoint_or_3_durable`);
-- every durable turn for Maximum Continuity;
+- five durable turns under `scene_checkpoint_or_5_durable` (Fast and
+  Balanced);
+- three durable turns under `scene_checkpoint_or_3_durable`;
+- every durable turn for Maximum Continuity (`every_durable`);
 - a session pause/end or scenario/arc/campaign closure;
 - an advancement/reward reconciliation, canon/research lock, continuity
   conflict, explicit full-save request, or a change away from a batching
   profile.
+
+A full distill runs after the reply, in the same turn and in the foreground:
+under `narrate_then_commit`, after the turn's commit and before the hand-back
+line that ends the turn.
 
 For each pending event:
 
@@ -206,18 +217,26 @@ For each pending event:
    information and an expected-revision Dashboard V3 tile patch.
 4. Close the boundary with one
    `python tools/rpg_state.py campaign commit-distill --input-file -` call. Its
-   payload carries `operation_id`, `expected_continuity_revision`, `trigger`,
-   an optional `summary`, and `mutations` (the secondary edits as typed `ops`,
-   persistence playbook 3D). It appends the summary and the distilled-through
-   marker, sets `last_distilled_revision`, resets `durable_turns_since_distill`,
-   clears `pending_cold_targets`, stamps the edited files, and runs the full
-   check.
-   Pass `rotate_log: true` at a session end or when a writer result warns about
-   the log: history before the previous marker moves unchanged to `archive/`.
-5. Under `commit_then_narrate`, narrate only when the returned `full_check` is
-   clean; under `narrate_then_commit` the reply came first, so repair any error
-   before the turn ends. `unreconciled_targets` names pending targets the
-   payload did not touch; reconcile or justify them.
+   payload carries `operation_id`, `expected_continuity_revision` (the number,
+   or `"current"`), `trigger`, an optional `summary`, `mutations` (the
+   secondary edits as typed `ops`, persistence playbook 3D), and optional
+   `deferred_reconcile` (Distill Gate below). It appends the summary and the
+   distilled-through marker, sets `last_distilled_revision`, resets
+   `durable_turns_since_distill`, clears `pending_cold_targets`, stamps the
+   edited files, and runs the full check. A `session_log.md` over 150,000
+   characters rotates on its own, as if `rotate_log` were true; pass
+   `rotate_log: true` at a session end too, or `rotate_log: false` to keep the
+   log in place. History before the previous marker moves unchanged to
+   `archive/`, with a `-2`, `-3` suffix when the name is taken.
+5. Read the whole result: never filter helper output through `grep`, `head`,
+   or `tail`, which hides the refusal or warning that matters.
+   `unreconciled_targets` names pending targets the payload did not touch;
+   reconcile or justify them. `curation_due` lists the notes waiting for the
+   curator (Boundary Curator below), `lint_report` the presentation habits of
+   the last replies (Narration Variety Review), and `next_expected_revision`
+   the revision the next payload expects. Under `commit_then_narrate`, narrate
+   only when the returned `full_check` is clean; under `narrate_then_commit`
+   the reply came first, so repair any error before the hand-back line.
 6. Run the dashboard checker only if dashboard state changed.
 7. Apply the Boundary Curator policy below; under `inline` its folds belong in
    the step 4 payload.
@@ -238,29 +257,58 @@ under `narrate_then_commit` before the turn ends. The full check validates
 structure and consistency; it does not judge whether the model selected the
 right semantic changes, and no second semantic model call is added.
 
+### Distill Gate
+
+Before applying anything, `commit-distill` runs the full check on the current
+files and gates on these rules: `cast_dead_listed`, `cast_present_missing`,
+`relationship_dead_active`, `location_unmapped`, `stacked_sections`,
+`now_overflow`, and `minor_romance_history`. A gated finding whose path the
+payload neither mutates nor lists in `deferred_reconcile` refuses the whole
+distill with `failure_category: "distill_unreconciled"` and a list of
+`{path, rule, message}`. Saying the records are already current does not
+answer it.
+
+Each gated finding means a row or note lags a truth an owner already holds: a
+dead character still listed as present, a present NPC with no cast row, a dead
+character's relationship still active, a scene location missing from the
+graph, a note with stacked or overflowing current sections. Carry that truth
+over in this payload's `mutations`. A fix that needs a new fact is a durable
+commit first. When a fix needs more care than this distill can give, defer it
+with a reason:
+`"deferred_reconcile": [{"path": "characters/morvik.md", "reason": "fold the dated Now entries"}]`.
+A deferred target goes to the curation list and no longer counts as
+unreconciled. `minor_romance_history` can never be deferred: correct the
+note's dated history in this payload so that no romantic or sexual relationship
+begins before 18, and recheck the ages and durations it implies.
+
 ## Boundary Curator
 
 `play_profile.yaml.runtime.boundary_curator` (default `background`) decides who
-folds the notes a distill flags. Collect the Markdown files that the
-commit-distill `warnings` or `full_check`, or a writer warning since the last
-distill, flag as `stacked_sections`, `owner_size_budget`, `active_cast_stale`,
-`location_graph_stale`, `relationship_map_stale`, `session_brief_stale`, or
-`note_core_missing`. Each finding names its file in `path` (campaign-relative);
-`note_core_missing` names the `characters` folder and lists the notes in its
-message. A `session_log_size` warning is answered by `rotate_log` instead; no
-curator edits the log.
+folds the notes a distill lists as due. `commit-distill` writes them to
+`campaign/.repog-runtime/curation_due.json` and returns them as
+`curation_due`: the targets in `deferred_reconcile`, and the files its
+post-commit check flags as `cast_dead_listed`, `relationship_dead_active`,
+`now_overflow`, `records_language_mismatch`, `stacked_sections`, or
+`note_core_missing`. While that file exists, every capsule shows a
+`[curation] due` line. The writer drops a target once a later
+`commit-distill` or `commit-curation` changes that path,
+and deletes the file when none remain. A `session_log_size` warning is answered
+by log rotation instead; no curator edits the log.
 
-- `background`: build the packet with
-  `python tools/curation.py packet campaign --target PATH=REASON ...` and
-  launch the `repog:repog-curator` agent in the background with the packet
-  JSON as its prompt. Never wait for it. The prompt hook applies its staged
+- `background`: right after the distill call, build the packet with
+  `python tools/curation.py packet campaign`, which takes its targets from the
+  due list. For a flagged file the list lacks, such as an `owner_size_budget`
+  warning, add `--target PATH=REASON`; the packet holds it beside every due
+  note, never in their place. Launch the
+  `repog:repog-curator` agent in the background with the packet JSON as its
+  prompt. Never wait for it. The prompt hook applies its staged
   file through `rpg_state.py campaign commit-curation --apply-staged` only
   while every target is unchanged; a file with a stale target is rejected
   whole. The hook records each run in
   `campaign/.repog-runtime/curation/last_result.json`, and the next capsule
   shows a rejected or deferred proposal once.
-- `inline`: make the same folds yourself in the commit-distill payload; a
-  finding that only its full check reports waits for the next distill.
+- `inline`: make the same folds yourself in the next commit-distill payload;
+  a target the writer lists only after this distill waits for the next one.
 - `off`: skip this step.
 
 When a capsule reports `[curation] rejected <id>`, those notes are still
@@ -270,8 +318,9 @@ proposal stays staged, and the next prompt retries it.
 
 A fold keeps one current `## Now`, a short `## Details` list for still-true
 facts that do not fit it, and a short `## History` line list; a `## Core` holds
-only stated facts. Curation creates no truth, revision, or marker; a fact it
-would need is a durable commit.
+only stated facts. Folded text is written in the records language. Curation
+creates no truth, revision, or marker; a fact it would need is a durable
+commit.
 
 ## Selective Structural Delegation
 
@@ -462,12 +511,12 @@ do not change the already historical `first_session.md` lifecycle.
 
 Before activating that opening, follow the act-identity handoff in
 `workflows/gm/playbooks/scene_arc_transition.md`. In an adopted identity contract,
-the outgoing Compass is already closed by its decisive event. Archive its id,
-question, scope, and closure evidence and activate a fresh Compass in one
-`threads.md` owner transaction. A new question must not inherit the old closure
+one `commit-act` call closes the outgoing Compass with its decisive action,
+archives its id, question, scope, and closure evidence, and activates a fresh
+Compass in one transaction. A new question must not inherit the old closure
 record. Give prep/opening the matching predecessor/successor references only
-after the owner commit; keep them pending until the full boundary check passes.
-An independent aftermath may remain under the closed Compass. Legacy campaigns
+after that commit; keep them pending until the full boundary check passes.
+An answered act's aftermath may be played before `commit-act`. Legacy campaigns
 adopt identity only at an accepted safe transition, never by invented history.
 
 Revisit only the Campaign Horizon and Planted Expectations affected by actual
@@ -496,7 +545,10 @@ clarifications instead. Log rotation through `commit-distill` moves history to
 A note that grew dated layers ("Current State (day N)" again and again)
 contradicts itself. At a distill, fold them into one current section with
 `replace_section` and `remove_section`; keep earlier turning points as a short
-history line, not as competing states.
+history line, not as competing states. The writer already keeps `## Now` in
+budget: when it passes 800 characters or three dated entries, the commit that
+touches the note moves the oldest dated entries into `## History`
+(`now_overflow_folded`).
 
 Every new durable fictional result must pass the semantic restart-loss test and
 one `commit-durable` transaction. The writer increments
@@ -686,10 +738,24 @@ do not mutate the domain merely because it was reviewed.
 
 # Narration Variety Review
 
-Run this review only when `style_review_policy` selects the distill output or a
-representative sample. Keep fingerprints short and categorical: dramatic beat,
-GM move, ending form, sensory channel, complication type, NPC social tactic,
-and metaphor family. Check the selected sample once:
+With `runtime.presentation_lint: on`, the review is the `lint_report` in the
+commit-distill result: the presentation rules flagged most often over the last
+20 replies, with their counts and a short text. Read it and keep its top habits
+out of the replies that follow; `check_style` and `presentation_lint report`
+are not separate distill steps, and `style_state.json` stays as it is: the
+lint history is the repetition memory. A habit the report keeps finding is
+the Player's call: raise it at a session pause in a line or two out of
+character, and record a directive (OOC adjustment playbook) only if the
+Player wants one. Directives are the Player's rules: never add one on your
+own, and never edit `style_state.json` by hand.
+
+With the lint off, and only then, `tools/check_style.py` keeps that memory in
+`style_state.json`, and only then can the full check warn `style_state_inert`
+(a played campaign with no sample recorded; the first recorded sample clears
+it). Run this review when `style_review_policy` selects the distill output or
+a representative sample. Keep fingerprints short and categorical: dramatic
+beat, GM move, ending form, sensory channel, complication type, NPC social
+tactic, and metaphor family. Check the selected sample once:
 
 ```sh
 python tools/check_style.py campaign/style_state.json --scene-id SCENE_ID --beat-id BEAT_ID --dramatic-beat LABEL --gm-move LABEL --ending-form LABEL --record --text "$(cat <<'TEXT'
@@ -724,16 +790,6 @@ warnings are surface evidence: a shared profession or deliberate motif may
 explain them. Use the separate literary dimensions and fresh-context protocol
 in `evaluation/README.md` at an explicit quality review. Structural validation
 and repetition counts alone do not establish story quality.
-
-Whatever the sampling policy, at a full distill with
-`runtime.presentation_lint: on`, run
-`python tools/presentation_lint.py report campaign --last 20` to see which
-presentation habits persist across replies, and keep them out of the replies
-that follow. A habit the report keeps finding is the Player's call: raise it at
-a session pause in a line or two out of character, and record a directive
-(OOC adjustment playbook) only if the Player wants one. Directives are the
-Player's rules: never add one on your own, and never edit `style_state.json`
-by hand.
 
 # World Voices Distill
 

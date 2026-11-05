@@ -188,7 +188,7 @@ def test_turkish_case_endings_after_names_do_not_read_as_english() -> None:
         # A short quoted foreign phrase.
         'Kapıdaki yazıda "for the king" vardı.',
         # A title that is a Spanish function word, beside a Turkish one.
-        "Ser Corwyn ve Nella kapıda bekliyor.",
+        "Ser Corwyn ve Tessa kapıda bekliyor.",
         # One German-looking word ("bin", a thousand) in a short line without a Turkish letter.
         "Bin adam sabah erken yola koyuldu.",
     ],
@@ -210,12 +210,12 @@ def test_out_of_language_reads_short_tool_descriptions_and_needs_a_pack() -> Non
 def test_out_of_language_reads_whole_status_lines_and_list_items() -> None:
     # No sentence of it reads as English (one function word among names and
     # numbers), but the line has no Turkish word or letter at all.
-    status = "Status: day 814, night. Raid party set: Marcus, Nella, Dunstan and nine men;"
+    status = "Status: day 814, night. Raid party set: Marcus, Tessa, Dunstan and nine men;"
     result = _lint("Halvar kapıyı kapattı ve avluya çıktı.\n\n" + status, code="tr")
     assert _rules(result)["out_of_language"]["evidence"] == [status]
     assert result["summary"].startswith('Last reply: 1 English line: "Status: day 814')
     # List items whose function words are too few for a sentence ("on" is Turkish too).
-    items = "- Watch: Marcus and Nella on the wall\n- Ford: Dunstan, Corwyn, Ilse, Edric, Varro and the scouts"
+    items = "- Watch: Marcus and Tessa on the wall\n- Ford: Dunstan, Corwyn, Ilse, Edric, Varro and the scouts"
     listed = _lint("Avluda kimse yoktu.\n\n" + items + "\n- Nöbet: Corwyn ve Ilse kapıda", code="tr")
     assert _rules(listed)["out_of_language"]["evidence"] == items.split("\n")
     # A German line in an English reply, its function words diluted by names.
@@ -306,11 +306,20 @@ def test_tracker_numbers_in_an_ooc_plan_are_not_prose() -> None:
 
 
 def test_avoid_phrase_over_its_cap_counts_whole_words_only() -> None:
-    reply = "Bir an durdu. Halvar bir an sana baktı, sonra BİR AN daha bekledi. Bir anahtar çıkardı."
+    # "bir an" has a rolling cap of three in the last ten replies; this reply alone holds four.
+    reply = "Bir an durdu. Halvar bir an sana baktı, sonra BİR AN daha bekledi, bir an da. Bir anahtar çıkardı."
     result = _lint(reply, code="tr")
-    assert _rules(result)["avoid_phrase"] == {"rule": "avoid_phrase", "count": 3, "evidence": ['"bir an" x3 (cap 1)']}
-    assert '3x "bir an" (cap 1)' in result["summary"]
+    assert _rules(result)["avoid_phrase"] == {
+        "rule": "avoid_phrase",
+        "count": 4,
+        "evidence": ['"bir an" x4 (4 in this reply, cap 3 per 10 replies)'],
+    }
+    assert '4x "bir an" (4 in this reply, cap 3 per 10 replies)' in result["summary"]
+    assert result["tallies"] == {"phrase:bir an": 4}
     assert "avoid_phrase" not in _rules(_lint("Bir an durdu. Bir anahtar çıkardı.", code="tr"))
+    # A per-reply cap still counts whole words only.
+    capped = _lint("Sessizlik uzadı. Sessizlik uzadı. Sessizlik uzadıkça uzadı.", code="tr")
+    assert _rules(capped)["avoid_phrase"]["evidence"] == ['"sessizlik uzadı" x2 (cap 1)']
 
 
 def test_malformed_context_lists_are_ignored() -> None:
@@ -456,8 +465,8 @@ def test_restatement_flags_an_opening_that_echoes_the_players_words(code: str, p
             "Der Markt ist schon halb leer. Anna zeigt auf einen Stand, an dem noch Brot liegt, "
             "und der Bäcker winkt euch heran.",
         ),
-        # Three words in a row are too few to call an echo.
-        ("en", "I open the door.", "You open the door. It creaks."),
+        # Three words in a row are too few to call an echo, and the door is the topic.
+        ("en", "I open the door.", "The door creaks open. Cold air spills out of the dark."),
         # An NPC echoing a short part of the question is fine.
         (
             "tr",
@@ -812,7 +821,7 @@ def test_run_hook_lints_the_turn_and_stores_the_record(campaign: Path, tmp_path:
                 _user("Önceki istem.", "u-0"),
                 _assistant(_text("Önceki cevap.")),
                 _user(PROMPT_TR, "u-1"),
-                _assistant(_text("Halvar bir an durdu."), _tool("Commit the durable turn to the campaign")),
+                _assistant(_text("Halvar başka bir şey demedi."), _tool("Commit the durable turn to the campaign")),
                 _tool_result(),
                 _assistant(_text("Avlu sessizdi ve fenerin ışığı titriyordu; bir an kimse konuşmadı.")),
             ]
@@ -825,17 +834,20 @@ def test_run_hook_lints_the_turn_and_stores_the_record(campaign: Path, tmp_path:
     assert json.loads((_runtime(campaign) / LINT_LAST).read_text(encoding="utf-8")) == record
     assert record["language"] == "tr" and record["language_source"] == "prompts" and record["language_confidence"] > 0
     assert record["prompt_uuid"] == "u-1" and record["session_id"] == "s-1"
-    assert record["counts"] == {"out_of_language": 2, "avoid_phrase": 2}
+    assert record["counts"] == {"out_of_language": 2, "avoid_phrase": 1}
     assert record["summary"].startswith('Last reply: 1 English line: "Saving the scene')
     history = read_jsonl(_runtime(campaign) / LINT_HISTORY)
     assert len(history) == 1
-    assert history[0]["prompt_uuid"] == "u-1" and history[0]["prompt_sample"] == PROMPT_TR
+    # The record keeps counts, tallies, hashes and the prompt's language, never its text.
+    assert history[0]["prompt_uuid"] == "u-1" and history[0]["prompt_language"] == "tr"
+    assert "prompt_sample" not in history[0] and PROMPT_TR not in json.dumps(history[0], ensure_ascii=False)
+    assert history[0]["tallies"] == {"gesture:says_nothing": 1, "phrase:bir an": 1}
     assert history[0]["fingerprint"] and history[0]["counts"] == record["counts"]
     assert b"\r" not in (_runtime(campaign) / LINT_HISTORY).read_bytes()
 
 
 def test_run_hook_does_not_count_the_final_message_twice(campaign: Path, tmp_path: Path) -> None:
-    reply = "Bir an durdu. Halvar bir an sana baktı."
+    reply = "Halvar başka bir şey demedi. Ayla cevabını bekliyor."
     transcript = tmp_path / "session.jsonl"
     transcript.write_bytes(_transcript_bytes([_user(PROMPT_TR, "u-1"), _assistant(_text(reply))]))
     record = run_hook(_event(tmp_path, transcript, last_assistant_message="  " + reply + "\n"))
@@ -952,7 +964,8 @@ def _cli(*args: str, stdin: bytes = b"", cwd: Path) -> subprocess.CompletedProce
 
 def test_cli_hook_reads_stdin_with_a_bom_and_prints_nothing(campaign: Path, tmp_path: Path) -> None:
     transcript = tmp_path / "session.jsonl"
-    transcript.write_bytes(_transcript_bytes([_user(PROMPT_TR, "u-1"), _assistant(_text("Bir an durdu. Bir an baktı."))]))
+    reply = "Halvar başka bir şey demedi. Ayla cevabını bekliyor."
+    transcript.write_bytes(_transcript_bytes([_user(PROMPT_TR, "u-1"), _assistant(_text(reply))]))
     event = json.dumps(_event(tmp_path, transcript), ensure_ascii=False).encode("utf-8")
     completed = _cli("hook", stdin=b"\xef\xbb\xbf" + event, cwd=tmp_path / "work")
     assert (completed.returncode, completed.stdout, completed.stderr) == (0, b"", b"")

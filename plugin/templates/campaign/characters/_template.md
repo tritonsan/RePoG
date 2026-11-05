@@ -5,6 +5,11 @@ Use this template for their social circle; read “player” as the user-facing
 counterpart only where relevant, and keep every contact's life independent of
 the user.
 
+Write every value in the campaign's records language
+(`play_profile.yaml.narration.records_language`, or the play language when it
+is `same`). Keep the structure exactly as this template writes it: headings,
+`- Label:` names, and enum values such as `alive`, `T2`, or `inactive`.
+
 Tier: T1/T2/T3
 
 First appeared:
@@ -118,6 +123,34 @@ their names: different occupations or goals alone do not establish different
 speech. Shared faction language may be intentional; preserve individual choices
 and social tactics around it.
 
+## Depth
+
+Fill for T2/T3 characters before their first long scene, from established fact
+and the accepted setting; leave a line blank rather than invent it. Depth
+explains the Agency Card and never competes with it: the card stays the hot
+contract. In a campaign that tells its own story in a source work's world,
+build the backstory from this campaign, not from a named canon figure, unless
+the Player asks for that link.
+
+- Backstory:
+- Contradiction:
+- Want and need:
+- Fear:
+- Dream:
+- Joys and habits:
+- Voice signature:
+- How they could change:
+- GM-only secret:
+
+<!-- Age rule: no romantic or sexual relationship in this character's past or present begins before 18, and no age or duration written here may imply one; when the character's age changes, recheck every dated line. -->
+
+`Backstory` is their history before play, with ages and dates where they
+matter. `Voice signature` is one line naming what makes their speech theirs:
+rhythm, register, a habit of address, a word they reach for. `How they could
+change` names a direction play could earn, not a planned arc. `GM-only secret`
+stays out of narration until play reveals it; once it matters, its fact belongs
+in `knowledge_boundaries.md`.
+
 ## Agent Playability Card
 
 Fill this only for an RPG T3 character considered for an Agent Seat. T3 is an
@@ -198,6 +231,19 @@ campaign.
 
 One visible detail and one playable mannerism the GM can use immediately at
 the table.
+
+## Distinct Appearance
+
+Five short lines that tell this character apart at a glance, in narration and
+in an image prompt. Compare them with the two most similar cast members before
+filling, and change at least two lines when they match. Keep them consistent
+with the fuller Appearance card below.
+
+- Face:
+- Height:
+- Build:
+- Silhouette:
+- Signature detail:
 
 ## Appearance
 

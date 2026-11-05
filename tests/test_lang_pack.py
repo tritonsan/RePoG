@@ -41,8 +41,44 @@ KNOWN_KEYS = {
     "calques",
     "common_words",
     "card",
+    "near_day_patterns",
+    "pc_say_patterns",
+    "meta_patterns",
+    "age_patterns",
+    "romance_terms",
+    "affection_terms",
+    "affection_guards",
+    "number_words",
+    "gesture_families",
+    "echo_patterns",
+    "second_person_patterns",
+    "secret_words",
+    "dotless_i_words",
+    "gone_terms",
+    "ended_terms",
 }
-REGEX_KEYS = ("negated_description", "day_patterns", "pc_speech_patterns")
+TERM_KEYS = (
+    "meta_words",
+    "common_words",
+    "romance_terms",
+    "affection_terms",
+    "affection_guards",
+    "secret_words",
+    "dotless_i_words",
+    "gone_terms",
+    "ended_terms",
+)
+REGEX_KEYS = (
+    "negated_description",
+    "day_patterns",
+    "near_day_patterns",
+    "pc_speech_patterns",
+    "pc_say_patterns",
+    "meta_patterns",
+    "age_patterns",
+    "echo_patterns",
+    "second_person_patterns",
+)
 
 
 def _raw(code: str) -> dict:
@@ -77,6 +113,13 @@ def test_pack_file_shape(code: str) -> None:
     for key in REGEX_KEYS:
         for pattern in raw.get(key, []):
             re.compile(pattern)
+    for pattern in [item["pattern"] for item in raw.get("calques", []) if "pattern" in item] + [
+        pattern for family in raw.get("gesture_families", []) for pattern in family["patterns"]
+    ]:
+        re.compile(pattern)
+    # Number patterns name the group the lint reads as a number.
+    assert all("(?P<age>" in pattern for pattern in raw.get("age_patterns", []))
+    assert all("(?P<day>" in pattern for pattern in raw.get("near_day_patterns", []))
     assert raw["pc_speech_patterns"] and raw["day_patterns"]
     assert 0 < len(raw["card"]) <= 600
 
@@ -85,14 +128,23 @@ def test_pack_file_shape(code: str) -> None:
 def test_optional_lists_are_well_formed(code: str) -> None:
     raw = _raw(code)
     for item in raw.get("avoid_phrases", []):
-        assert set(item) <= {"phrase", "max_per_reply", "note"}
-        assert item["phrase"].strip() and isinstance(item["max_per_reply"], int) and item["max_per_reply"] >= 0
+        assert set(item) <= {"phrase", "max_per_reply", "rolling_max", "note"} and item["phrase"].strip()
+        # A phrase is capped per reply or over the last ten replies, never both.
+        assert ("max_per_reply" in item) != ("rolling_max" in item)
+        cap = item.get("max_per_reply", item.get("rolling_max"))
+        assert isinstance(cap, int) and cap >= 0
     for item in raw.get("calques", []):
-        assert set(item) == {"bad", "better"} and item["bad"].strip() and item["better"].strip()
-    for key in ("meta_words", "common_words"):
+        assert {"bad", "better"} <= set(item) <= {"bad", "better", "pattern"} and item["bad"].strip() and item["better"].strip()
+    for key in TERM_KEYS:
         values = raw.get(key, [])
         assert all(isinstance(value, str) and value.strip() for value in values)
         assert len(set(values)) == len(values)
+    numbers = raw.get("number_words", {})
+    assert all(isinstance(value, int) and value >= 0 for value in numbers.values())
+    for family in raw.get("gesture_families", []):
+        assert set(family) <= {"id", "label", "patterns", "example"}
+        assert re.fullmatch(r"[a-z0-9_]{1,40}", family["id"]) and family["label"] and family["patterns"]
+    assert len({family["id"] for family in raw.get("gesture_families", [])}) == len(raw.get("gesture_families", []))
 
 
 def test_turkish_pack_carries_the_live_session_evidence() -> None:
@@ -113,9 +165,11 @@ def test_turkish_pack_carries_the_live_session_evidence() -> None:
         "sesi düzdü",
         "gözleri üstünde kaldı",
         "bir şeyi tartıyordu",
-        "ne eksik ne fazla",
         "surlarda çok yakışıyorsun",
     } <= bad
+    # A live false positive: "ne eksik ne fazla" is idiomatic Turkish.
+    assert "ne eksik ne fazla" not in bad
+    assert next(item for item in pack["avoid_phrases"] if item["phrase"] == "bir an")["rolling_max"] == 3
     assert {"tam", "kara", "ak", "er", "bay", "han", "bey", "ay", "can", "nur"} <= set(pack["common_words"])
     assert "sen" in pack["card"] and "siz" in pack["card"]
     assert "çeyrek saat" not in json.dumps(_raw("tr"), ensure_ascii=False)
@@ -182,6 +236,40 @@ def test_broken_packs_never_raise(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert detect_language("zz " * 10) == ("bb", 1.0)
     monkeypatch.undo()
     assert set(SHIPPED) <= set(available_codes())  # caches are per directory, nothing stale
+
+
+def test_structured_keys_keep_only_well_typed_values(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    (tmp_path / "cc.json").write_text(
+        json.dumps(
+            {
+                "code": "cc",
+                "name": "Cee",
+                "stopwords": ["zz"],
+                "avoid_phrases": [{"phrase": "a pause", "rolling_max": 3}, {"phrase": "a beat", "rolling_max": -1}],
+                "calques": [{"bad": "x y", "better": "y", "pattern": "\\bx\\s+y\\w*"}, {"bad": "q", "pattern": 5}],
+                "number_words": {"one": 1, "two": "2", "": 3, "half": -1, "many": True},
+                "romance_terms": ["kiss*", 4, ""],
+                "gesture_families": [
+                    {"id": "brow", "label": "Brow", "patterns": ["\\bbrow\\b"], "extra": 1},
+                    {"id": "Bad Id", "patterns": ["x"]},
+                    {"id": "empty", "patterns": []},
+                    "loose",
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(lang_pack, "PACK_DIR", tmp_path)
+    pack = load_pack("cc")
+    assert pack["avoid_phrases"] == [
+        {"phrase": "a pause", "max_per_reply": 1, "note": "", "rolling_max": 3},
+        {"phrase": "a beat", "max_per_reply": 1, "note": ""},
+    ]
+    assert pack["calques"] == [{"bad": "x y", "better": "y", "pattern": "\\bx\\s+y\\w*"}, {"bad": "q", "better": ""}]
+    assert pack["number_words"] == {"one": 1}
+    assert pack["romance_terms"] == ["kiss*"]
+    assert pack["gesture_families"] == [{"id": "brow", "label": "Brow", "patterns": ["\\bbrow\\b"], "example": ""}]
+    assert pack["age_patterns"] == [] and pack["secret_words"] == []
 
 
 def test_guidance_packs() -> None:
@@ -452,6 +540,77 @@ def test_calques_are_found_with_count_phrase() -> None:
     reply = "Yüzünde hiçbir şey yoktu. Sesi düzdü. Gözleri senin üstünde kaldı."
     found = [item["bad"] for item in tr["calques"] if count_phrase(reply, item["bad"], tr)]
     assert found == ["yüzünde hiçbir şey yoktu", "sesi düzdü", "gözleri senin üstünde kaldı"]
+
+
+# ---------------------------------------------------------------------------
+# Terms, numbers and the age rule
+# ---------------------------------------------------------------------------
+
+
+def test_terms_regex_reads_stems_phrases_and_whole_words() -> None:
+    tr = load_pack("tr")
+    regex = lang_pack.terms_regex({"casefold": "turkish", "romance_terms": ["sevgilisi*", "sevgili oldu*", "aşık*"]}, "romance_terms")
+    folded = fold("Sevgilisiyle tanıştı; SEVGİLİ OLDULAR; Âşık oldu; sevgili annesi", tr)
+    assert [match.group(0) for match in regex.finditer(folded)] == ["sevgilisiyle", "sevgili oldular", "aşık"]
+    assert lang_pack.terms_regex({"romance_terms": []}, "romance_terms") is None
+    assert lang_pack.read_number("on beş", tr) == 15 and lang_pack.read_number("15", tr) == 15
+    assert lang_pack.read_number("twenty-two", load_pack("en")) == 22 and lang_pack.read_number("bir hayli", tr) is None
+
+
+def test_sentence_spans_index_the_text() -> None:
+    text = "  First one. Second one!\n\nThird"
+    assert [text[start:end] for start, end in lang_pack.sentence_spans(text)] == ["First one.", "Second one!", "Third"]
+
+
+def test_minor_romance_returns_the_age_and_its_closest_term() -> None:
+    text = "At twenty she married. At fifteen she took a lover."
+    ((age, term),) = lang_pack.minor_romance(text, lang_pack.all_packs())
+    assert (text[age[0] : age[1]], text[term[0] : term[1]]) == ("At fifteen", "lover")
+    # Each pack is read on its own, so a Turkish age never pairs with an English word.
+    assert lang_pack.minor_romance("On beş yaşında bir romancıyla tanıştı.", lang_pack.all_packs()) == []
+    assert lang_pack.minor_romance("At fifteen she could swim a hundred metres.", lang_pack.all_packs()) == []
+    # `all_packs` puts a given pack first and skips the shipped one with its code.
+    custom = {"code": "en", "stopwords": [], "age_patterns": [r"\bteenaged\b"], "romance_terms": ["sweetheart"]}
+    packs = lang_pack.all_packs(custom)
+    assert packs[0] is custom and [pack["code"] for pack in packs].count("en") == 1
+    assert lang_pack.minor_romance("The teenaged boy became her sweetheart.", packs)
+
+
+@pytest.mark.parametrize(
+    ("text", "gone", "ended"),
+    [
+        ("öldürüldü", True, True),
+        ("ölmüş", True, True),
+        ("kayboldu", True, False),
+        ("vefat etti", True, True),
+        ("artık yok", True, True),
+        ("died in the raid", True, True),
+        ("disappeared", True, False),
+        ("former lovers", False, True),
+        ("boşandılar", False, True),
+        ("ölçü alıyor", False, False),
+        ("öldürdü bir adamı", False, False),
+        ("waiting at the quay", False, False),
+    ],
+)
+def test_gone_and_ended_terms_take_inflected_forms(text: str, gone: bool, ended: bool) -> None:
+    assert lang_pack.says_any(text, "gone_terms") is gone
+    assert lang_pack.says_any(text, "ended_terms") is ended
+
+
+def test_campaign_records_language_falls_back_to_the_lint(tmp_path: Path) -> None:
+    profile = tmp_path / "play_profile.yaml"
+    assert lang_pack.records_language_setting("narration:\n  language: tr-TR\n  records_language: same\n") == "tr"
+    assert lang_pack.records_language_setting("narration:\n  language: tr\n  records_language: en\n") == "en"
+    assert lang_pack.records_language_setting("narration:\n  language: auto\n") == "auto"
+    assert lang_pack.records_language_setting("") == ""
+    profile.write_text("narration:\n  language: auto\n  records_language: same\n", encoding="utf-8")
+    assert lang_pack.campaign_records_language(tmp_path) == ""
+    (tmp_path / ".repog-runtime").mkdir()
+    (tmp_path / ".repog-runtime" / "lint_last.json").write_text(json.dumps({"language": "tr"}), encoding="utf-8")
+    assert lang_pack.campaign_records_language(tmp_path) == "tr"
+    profile.write_text("narration:\n  language: auto\n  records_language: de\n", encoding="utf-8")
+    assert lang_pack.campaign_records_language(tmp_path) == "de"
 
 
 # ---------------------------------------------------------------------------

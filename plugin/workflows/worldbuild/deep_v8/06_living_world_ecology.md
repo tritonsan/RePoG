@@ -16,6 +16,13 @@ do not build every domain to equal depth.
    positions; the coordinator authors independent work, obligation, routine,
    availability, and knowledge limits.
 
+Record each with the fields in `decisions.md`. `06_topology_activation` restates
+the Stage 1 `primary_topology` (and `primary_branch` for `mixed`) with that
+topology's manifest `build_order`, depends on `01_primary_topology_intent`, and
+carries the topology's activation trigger in `trigger_tags`.
+`06_salient_ecology` and `06_relationship_pattern` recorded as `derived` or
+`defaulted` depend on `01_creation_authority`.
+
 ## Topology Variants
 
 - `exploration_survival`: places/routes → pressures → institutions → NPCs.
@@ -63,6 +70,8 @@ Write critical ecology choices immediately. At stage end, materialize stable ids
 creation tiers, only needed notes, compact agency/routine cards, current
 relationships, knowledge classification, plausible routes/presence, and links to
 independent pressures. Named T2/T3 actors must be playable before they speak.
+Give every T2/T3 card a `Power Band:` inside the accepted NPC power scale and
+its tier cap, with no stat above its band.
 
 ## Do Not
 

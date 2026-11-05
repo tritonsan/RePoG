@@ -55,37 +55,52 @@ can reveal material the Game Master keeps hidden.
   your computer. The first three do nothing outside a folder that holds a
   plugin campaign.
   - `SessionStart`: adds a one-line reminder to load `repog:play` and marks
-    the scene capsule for a full refresh in `campaign/.repog-runtime/`.
+    the scene capsule for a full refresh in `campaign/.repog-runtime/`. After
+    a compaction or a resume it also prints up to 1,500 characters of the
+    accepted style samples in `campaign/storytelling.md` and one line naming
+    the campaign's locked persistence order.
   - `UserPromptSubmit`: in a ready RPG campaign, first applies waiting curator
     edits whose target notes are unchanged (editing those notes, adding an
     entry to `campaign/session_log.md`, moving each processed proposal into
     the `applied/` or `rejected/` folder next to it, and recording the run's
     outcome in `campaign/.repog-runtime/curation/last_result.json`), then
     adds a hidden scene capsule to Claude's context, matching names in your
-    prompt against campaign notes: the scene, the cast in it, secret holders by
-    id, your standing directives, language guidance, open dice rolls, the last
-    reply's presentation findings, and, once, a curator proposal the last run
-    rejected or deferred. It keeps its capsule state in
+    prompt against campaign notes: the scene, the cast in it and what each
+    present character does not know, secret holders by id, your standing
+    directives, language guidance, open dice rolls, the campaign's revision and
+    state keys, the last reply's presentation findings and the habits that
+    keep returning, notes due for tidying, a note when the last turn saved
+    before replying or ended without text, and, once, a curator proposal the
+    last run rejected or deferred. It keeps its capsule state in
     `campaign/.repog-runtime/`.
-  - `Stop` (runs in the background): reads your last message and the reply
-    from Claude Code's local transcript, runs the presentation lint over the
-    reply, and writes its findings and a short history (rule counts, phrase
-    fingerprints, and the first 300 characters of your message) to
-    `campaign/.repog-runtime/`; messages starting with `OOC` are skipped. With
-    the capsule on, it also records which campaign notes the reply named.
+  - `Stop` (runs in the background): reads the current session's last turn,
+    your message and the reply, locally from Claude Code's transcript, and
+    runs the presentation lint over the reply; for a message that starts with
+    `OOC` it checks only the reply's prose outside the out-of-character part.
+    It stores counts and short snippets, never full text: its findings, a
+    short history (rule counts, phrase fingerprints, and your message's
+    language code), and the last turn's order (whether the reply came before
+    the save, and whether the turn ended with text, in `order_last.json`) in
+    `campaign/.repog-runtime/`. With the capsule on, it also records which
+    campaign notes the reply named.
   - `PreToolUse`: runs on each Write tool call in any folder, but only reads
     the call and lets it through unless it comes from the curator agent, which
     may write nothing except its one staging file.
 - **Supporting agents:** two read-only proposal lanes for large structural
   steps, and the boundary curator, which reads campaign notes after a full
   distill and writes one proposal file under `campaign/.repog-runtime/curation/`
-  that the helpers apply only while those notes are unchanged. Only the
-  research lane can search the web, and only for a research task you approved.
+  that the helpers apply only while those notes are unchanged. A full distill
+  lists the notes due for it in `campaign/.repog-runtime/curation_due.json`
+  until they are tidied. Only the research lane can search the web, and only
+  for a research task you approved.
 - **Optional local view:** the Dashboard server binds to `127.0.0.1` and starts
   only when you ask for it.
 - **Left out:** Claude cannot generate images, so image generation is not part
-  of this plugin. The Companion View, browser-agent seats, and the release and
-  packaging tools are left out too.
+  of this plugin. If you make pictures with your own image tool, the Game
+  Master can write prompts for it: adults only, clothed and non-explicit, and
+  checked against the campaign's records. Those images follow that tool's rules
+  and your account there. The Companion View, browser-agent seats, and the
+  release and packaging tools are left out too.
 
 ## Speed
 
@@ -110,14 +125,21 @@ Since 0.3.0 the reply comes first by default and its save follows in the same
 turn. A save that fails is fixed and retried in that turn; a narrated fact that
 still cannot be saved is corrected in one out-of-character line.
 
+Since 0.4.0 a saved turn ends with a short hand-back line after the save, so
+Claude Code never waits on a silent tool call, and a full distill with its
+check runs after the reply instead of before it. A save can start from a
+skeleton the helper prints from the live files, and records are written in the
+play language unless the campaign sets another records language.
+
 ## Runtime Switches
 
 `campaign/play_profile.yaml` has a `runtime:` block with four switches; a
 missing switch takes its default. Ask the Game Master out of character to
 change one.
 
-- `persistence_order`: `narrate_then_commit` (default) replies, then saves in
-  the same turn; `commit_then_narrate` saves before replying.
+- `persistence_order`: `narrate_then_commit` (default) replies, saves once,
+  and ends the turn with a short hand-back line; `commit_then_narrate` saves
+  before replying.
 - `presentation_lint`: `on` (default) or `off`, the Stop hook's check of each
   reply.
 - `scene_capsule`: `on` (default) or `off`, the hidden capsule added to each
@@ -129,11 +151,47 @@ change one.
 ## Adults Only, Content, And Safety
 
 RePoG is for adults aged 18 or older. Session 0 asks which content boundaries
-apply, such as sexual content or graphic violence, as open, fade, or avoid. Those
-choices are your preferences, not guarantees: Claude applies its own safety
-policies to everything it writes, whatever a setting says, and may decline or
-soften content that falls outside them. A setting never overrides those
-policies, and you can tighten a boundary at any time.
+apply. Sexual content can be avoided, faded before it starts, or implied with
+no explicit description; harm to children is at most mentioned or kept
+offscreen, or avoided. Two rows are fixed and cannot be changed: no one under
+18 appears in any sexual or romantic context, backstory included, and no
+graphic violence against children appears on the page. Those choices are your
+preferences, not guarantees: Claude applies its own safety policies to
+everything it writes, whatever a setting says, and may decline or soften
+content that falls outside them. A setting never overrides those policies, and
+you can tighten a boundary at any time. When a request goes past a limit, the
+Game Master says so once, plainly, and does not go further with each repeat.
+
+The notice the Game Master gives before play, in English and Turkish:
+
+> **Before you play.** RePoG is for adults 18+ only and runs on your own Claude
+> account. Anthropic's Usage Policy applies to everything in the session,
+> including your own requests and OOC notes, not only the GM's replies. The
+> content settings in Session 0 are preferences. Choosing "open" does not
+> unlock explicit sexual writing: intimate scenes are written by implication
+> and cut away at the act itself. Sexual content involving anyone under 18 is
+> never written, not even in a backstory. Dark themes (violence, death, crime)
+> can be written, with restraint. If a reply is blocked, that alone is not a
+> violation; rewind with `/rewind` or start a new session instead of pushing
+> the same request. Repeatedly pushing for explicit sexual content can lead to
+> warnings, temporarily stricter filters and, eventually, suspension of your
+> account. No exact thresholds are published. Images you make with other tools
+> such as Codex follow that provider's rules and your account there.
+
+> **Oynamadan önce.** RePoG yalnızca 18 yaş üstü içindir ve senin kendi Claude
+> hesabınla çalışır. Anthropic'in Kullanım Politikası oturumdaki her şeye
+> uygulanır: yalnızca GM'in yazdıklarına değil, senin isteklerine ve OOC
+> notlarına da. Session 0'daki içerik ayarları birer tercihtir. "Açık" seçmek,
+> açık cinsel anlatımın serbest olduğu anlamına gelmez. Yakınlık sahneleri ima
+> yoluyla yazılır ve eylemin kendisinde sahne kesilir. 18 yaşından küçük
+> biriyle ilgili cinsel içerik, geçmiş hikâyede bile olsa, hiçbir koşulda
+> yazılmaz. Karanlık temalar (şiddet, ölüm, suç) yazılabilir ama ölçülü
+> anlatılır. Bir yanıt engellenirse bu tek başına ihlal sayılmaz. Aynı isteği
+> zorlamak yerine `/rewind` ile geri al ya da yeni bir oturum aç. Açık cinsel
+> içerik için tekrar tekrar ısrar etmek uyarıya, geçici olarak sıkılaştırılmış
+> filtrelere ve sonunda hesabın askıya alınmasına yol açabilir. Kesin eşikler
+> yayımlanmış değildir. Codex gibi başka araçlarla ürettiğin görseller o
+> sağlayıcının kurallarına ve oradaki hesabına tabidir.
 
 ## Privacy
 

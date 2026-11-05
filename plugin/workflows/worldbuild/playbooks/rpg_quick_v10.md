@@ -31,8 +31,9 @@ Keep every inactive version's block untouched.
 
 ## Interview And Owners
 
-The short premise collected before depth belongs to row 1; inherit it without
-asking again. Show progress through the router's player-facing sections, not
+Settle the play language first (router, Play Language). The short premise
+collected before depth belongs to row 1; inherit it without asking again.
+Show progress through the router's player-facing sections, not
 internal row labels. Ask at most one unresolved consequential decision per
 response. Accept volunteered answers across rows; keep pending suggestions,
 uncertainty, rejection, and corrections distinct in the existing decision log.
@@ -42,10 +43,13 @@ For semantic guidance and owners, read only the corresponding part of
 Its fixed ten-slot accounting, early-character inference, and split preparation
 approval do not apply. This playbook owns the new order and completion contract.
 
-Set content limits, Player authorship, consequence ceiling, and world creation
-authority before proposing protected character truth. They are independent
-choices even inside one completion row. Safety remains a separate question;
-a bundle never grants safety, source, or protected-character permission.
+Set content limits (`content_boundaries.md`), Player authorship, consequence
+ceiling, and world creation authority before proposing protected character
+truth. They are independent choices even inside one completion row. Safety
+remains a separate question; a bundle never grants safety, source, or
+protected-character permission. Row 4 also settles the NPC power scale before
+any face is named, and the thin world's truths include the price and bounty
+anchor table (router).
 
 Ask for the character's useful seed and volunteered surface, not a mandatory
 height/weight inventory. Unspecified bodily facts remain unspecified and create

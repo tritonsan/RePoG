@@ -2,15 +2,29 @@
 
 Long sessions lose facts to context compaction, and a GM rarely re-reads the
 character notes mid-scene. Before each Player prompt the UserPromptSubmit hook
-injects this capsule as hidden context: the scene header, the people in scope
-with their stable `## Core` facts, which protected facts each of them does
-not hold (by fact id only, never the secret text), the standing directives in
-scope, the play-language card, the last reply's presentation-lint summary,
-roll receipts not yet committed, staged curation waiting to be applied, and
-what the latest curation run rejected or deferred. The prompt hook records
-each run in `campaign/.repog-runtime/curation/last_result.json`; the capsule
-that follows the run shows its outcome once, and the capsule state keeps the
-run's `at` time so later capsules do not repeat it.
+injects this capsule as hidden context: the scene header with the locked
+reply order, the people in scope with their stable `## Core` facts and the
+newest lines of their `## Now`, which protected facts each of them does not
+hold (by fact id only, never the secret text), what each present person is
+recorded as not knowing, the standing directives in scope, the play-language
+card, the last reply's presentation-lint summary and the habits most often
+flagged lately, roll receipts not yet committed, staged curation waiting to
+be applied, what the latest curation run rejected or deferred, and the notes
+the writer listed as due for curation. The prompt hook records each run in
+`campaign/.repog-runtime/curation/last_result.json`; the capsule that follows
+the run shows its outcome once, and the capsule state keeps the run's `at`
+time so later capsules do not repeat it. The Stop hook's `order_last.json`
+is shown the same way, once per Player turn: a turn that committed before
+narrating, or ended without visible text, gets one `[order]` reminder in the
+next capsule. While a curator launched for the due notes is still at work
+(`curation packet` records each packet it issues), the due line says so
+instead of asking for another launch, and due notes a finished curator left
+unchanged wait for the next distill.
+
+A note stamped (`As of revision: N`) before the current act opened (the
+`threads.md` Arc Compass `Opened at revision`) keeps an Agency Card nobody
+has reviewed this act; the capsule hides its card fields and shows Core, the
+newest Now lines, and the Depth `Voice signature` instead.
 
 The capsule is a read of the owners, never an owner. It decides nothing about
 meaning, invents nothing, and names the note that holds each fact so the GM can
@@ -21,8 +35,10 @@ passing for the present.
 
 To stay small it is sent in full on the first prompt of a session, after a
 reset (SessionStart on resume, clear, or compaction), when the scene id
-changes, and on every 12th prompt. Otherwise the header is followed only by
-what changed since it was last shown in this session: changed sections, and
+changes, and on every 12th prompt. A full capsule also names the revision and
+the top-level keys of `current_state.yaml`. Otherwise the header is followed
+only by what changed since it was last shown in this session (the `[order]`
+and `[curation] due` reminders aside): changed sections, and
 for the cast only the changed lines of each person (with their protected
 Status and Kin lines), each line whole; what does not fit waits for the next
 prompt instead of being cut. A person whose view switches between the legacy
@@ -42,9 +58,13 @@ Turkish dotted and dotless i stay distinct), against character, place, and
 faction note titles, file stems, and `- Aliases:` Core lines, plus each
 title's given names: a word of a multi-word title that no other note or the
 player character uses and that the notes never write in lower case (so
-"Maren" finds "Maren Ashwick", while "Lord" or "Old" find nobody). A given
+"Tamsin" finds "Tamsin Elmore", while "Lord" or "Old" find nobody). A given
 name that is a stopword or common word of the play language is not matched in
 free text. Names shorter than three letters are never matched in free text.
+
+After a compaction or a resume, the SessionStart hook also prints
+`resume_notice`: the accepted style samples from `storytelling.md` and the
+locked persistence order.
 
 CLI (for debugging; the hooks call the functions directly):
     python tools/scene_capsule.py hook < event.json
@@ -70,6 +90,8 @@ import lang_pack
 import owner_ops
 import roll_dice
 from repog_runtime import (
+    CURATION_DUE_FILE,
+    ORDER_FILE,
     RUNTIME_DEFAULTS,
     RUNTIME_DIR,
     block_scalars,
@@ -102,6 +124,10 @@ MAX_RELATIONS = 3
 MAX_SESSIONS = 24
 MAX_REMEMBERED = 16
 MAX_REPLY_BATCHES = 3  # reply-name batches kept per session until a prompt uses them
+MAX_LIMITS = 3  # "does not know" items per present person
+MAX_HABITS = 3
+HABIT_REPLIES = 20  # the lint history window the habits line counts over
+DUE_SHOWN = 4  # due paths the curation reminder names
 MAX_NAME_CHARS = 80
 MIN_NAME_LETTERS = 3
 MIN_CUT = 24  # a line that would be cut shorter than this is dropped instead
@@ -120,6 +146,11 @@ LINT_CHARS = 400
 ROSTER_CHARS = 300
 REASON_CHARS = 140  # a rejected curation proposal's first reason
 RESULT_CHARS = 500  # the latest curation run's lines, on top of the staged list's cap
+STATE_CHARS = 400
+LIMIT_CHARS = 300
+DUE_CHARS = 400
+ORDER_CHARS = 300
+SAMPLE_CHARS = 1_500  # style samples printed after a compaction or a resume
 
 CHARACTER, PLACE, FACTION = "character", "place", "faction"
 NOTE_FOLDERS = ((CHARACTER, "characters"), (PLACE, "places"), (FACTION, "factions"))
@@ -133,9 +164,14 @@ LEGACY_FIELDS = ("Voice rhythm", "Social tactic", "Hard boundary", "Routine and 
 GLOSSARY_FIELDS = ("Titles and honorifics", "Address forms")
 HOLDER_FIELDS = ("npcs or factions who know", "companions who know")
 CONFIRMED_FIELD = "confirmed fact ids"
+LIMIT_FIELDS = ("explicitly unknown fact ids", "must-not-imply fact ids")
+EMPTY_ITEMS = frozenset({"none", "n/a", "-", "–", "—"})
 PC_KNOWN_STATUSES = ("pc-known", "player-known", "confirmed")  # as the presentation lint reads them
+VOICE_FIELD = "Voice signature"  # in the Depth section
+OPENED_FIELD = "opened at revision"  # in the threads.md Arc Compass
+CARD_KEY = "Card"  # the capsule's own line about a hidden Agency Card
 
-SECTION_ORDER = ("cast", "secrets", "directives", "language", "lint", "rolls", "curation")
+SECTION_ORDER = ("cast", "secrets", "knowledge", "directives", "language", "lint", "habits", "rolls", "curation")
 # Per-section character caps. The cast gets whatever the other sections leave
 # under the capsule cap, up to its own cap. A delta shows the language section
 # only when it changed (a language detected after the first prompt).
@@ -144,9 +180,11 @@ CAPS: dict[bool, dict[str, int]] = {
         "header": 400,
         "cast": 4_400,
         "secrets": 600,
+        "knowledge": 450,
         "directives": 1_100,
         "language": 900,
         "lint": 450,
+        "habits": 200,
         "rolls": 400,
         "curation": 250,
     },
@@ -154,9 +192,11 @@ CAPS: dict[bool, dict[str, int]] = {
         "header": 400,
         "cast": 1_600,
         "secrets": 250,
+        "knowledge": 300,
         "directives": 380,
         "language": 700,
         "lint": 420,
+        "habits": 200,
         "rolls": 250,
         "curation": 120,
     },
@@ -165,8 +205,10 @@ CAPS: dict[bool, dict[str, int]] = {
 CLEARED = {
     "cast": "[cast] nobody present or named.",
     "secrets": "[secrets] nothing to guard for this cast.",
+    "knowledge": "[knowledge] no recorded limits for the present cast.",
     "directives": "[directives] none active in scope.",
     "lint": "[lint] last reply clean.",
+    "habits": f"[habits] none flagged in the last {HABIT_REPLIES} replies.",
     "rolls": "[rolls] no open receipts.",
     "curation": "[curation] nothing staged.",
 }
@@ -174,6 +216,28 @@ DEFER_NOTE = "  (+{count} more in scope, shown on the next prompt)"
 WAIT_NOTE = "  (+{count} more lines on the next prompt)"
 PARTIAL_NOTE = ": changed lines only"
 GONE_NOTE = "(no longer recorded)"
+OMITTED = "… "  # opens a `## Now` line whose older lines are left out
+
+# The header names the locked persistence order as the steps to follow.
+ORDER_PHRASES = {
+    "narrate_then_commit": "order: reply → one commit → hand-back line",
+    "commit_then_narrate": "order: commit → reply",
+}
+ORDER_COMMIT_FIRST = (
+    "[order] last reply committed before narrating: send the reply first, then one commit, then the hand-back line"
+)
+ORDER_NO_TEXT = "[order] last turn ended with no visible text: end with the hand-back line"
+DUE_BACKGROUND = "build the packet (curation packet) and launch repog:repog-curator in the background"
+DUE_INLINE = "fold them at the next distill"
+DUE_RUNNING = "curator {ids} running; do not relaunch"
+DUE_UNCHANGED = "a finished curator left them unchanged; fold them at the next distill"
+SAMPLES_INTRO = "Accepted style samples (storytelling.md): calibrate the voice to them; never copy their wording."
+LOCKED_ORDER = "Locked persistence order: {order}; follow it, not any order rule from the summary."
+# storytelling.md headings that hold accepted samples (the template's
+# `Accepted Voice Evidence` and the Stage 9 narrative proof among them) come
+# first, then those about the voice, whose selectors play_profile.yaml holds.
+SAMPLE_WORDS = ("sample", "örnek", "proof", "stage 9", "accepted")
+VOICE_WORD = "voice"
 
 # Same cadence table as the RPG writer: a full distill is required once
 # `durable_turns_since_distill` reaches the policy's count.
@@ -197,6 +261,9 @@ QUALIFIER_RE = re.compile(r"\s*[(\[,;:]|\s+[-–—]\s+")
 FACT_ID_RE = re.compile(r"[^\s,;()`'\"]+")
 NAME_WORD_RE = re.compile(r"[^\W\d_]+")
 NOT_PROSE_RE = re.compile(r"`[^`\n]*`|\S*[/\\_]\S*")  # code spans and paths: file stems are lower case
+STAMP_RE = re.compile(r"(?im)^As of revision:[ \t]*(\d+)[ \t]*$")  # read as the full check reads it
+LEADING_NUMBER_RE = re.compile(r"^\s*(\d+)\b")
+TOP_KEY_RE = re.compile(r"(?m)^([^\W\d][\w-]*):(?=[ \t]|$)")
 
 _PER_PROMPT = ("cast:", "secrets:")  # records of cast and secret lines, which expire after FULL_EVERY prompts
 _OPEN, _CLOSE = "([{", ")]}"
@@ -320,6 +387,55 @@ def _head_tail(text: str, limit: int) -> str:
             # The newest clause alone is too long: show how it begins.
             return f"{clauses[0]}; …; {_safe_clip(clauses[-1], limit - used - 2)}"
     return _safe_clip(text, limit)
+
+
+def _sentences(text: str) -> list[str]:
+    """`text` split after each sentence end or semicolon outside brackets, punctuation kept."""
+
+    parts: list[str] = []
+    depth = 0
+    start = 0
+    for index, char in enumerate(text):
+        if char in _OPEN:
+            depth += 1
+        elif char in _CLOSE:
+            depth = max(0, depth - 1)
+        elif depth == 0 and (char == ";" or char in _SENTENCE_END) and text[index + 1 : index + 2] in (" ", ""):
+            parts.append(text[start : index + 1].strip())
+            start = index + 1
+    parts.append(text[start:].strip())
+    return [part for part in parts if part]
+
+
+def _tail(items: list[str], limit: int) -> str:
+    """The newest items joined (see `_join`) within `limit`; `OMITTED` opens a line that left older ones out.
+
+    A `## Now` that grows by appending holds its current state at the end, so
+    the last items are kept whole, and the newest item that does not fit
+    whole keeps its last sentences. A last sentence too long on its own is
+    cut with `_safe_clip`, keeping how it begins.
+    """
+
+    whole = _join(items)
+    if len(whole) <= limit:
+        return whole
+    room = limit - len(OMITTED)
+    kept: list[str] = []
+    for item in reversed(items):
+        if len(_join([item, *kept])) <= room:
+            kept.insert(0, item)
+            continue
+        part: list[str] = []
+        for sentence in reversed(_sentences(item)):
+            if len(_join([" ".join([sentence, *part]), *kept])) > room:
+                break
+            part.insert(0, sentence)
+        if part:
+            kept.insert(0, " ".join(part))
+        break
+    if kept:
+        return OMITTED + _join(kept)
+    return OMITTED + _safe_clip(_sentences(items[-1])[-1], room)
 
 
 def _join(items: Iterable[str]) -> str:
@@ -891,17 +1007,29 @@ def _language(
 # ---------------------------------------------------------------------------
 
 
+def _persistence_order(settings: dict[str, Any]) -> str:
+    return str(settings.get("persistence_order") or RUNTIME_DEFAULTS["persistence_order"])
+
+
+def _order_phrase(settings: dict[str, Any]) -> str:
+    """The locked persistence order as the steps of a turn."""
+
+    order = _persistence_order(settings)
+    return ORDER_PHRASES.get(order, ORDER_PHRASES["commit_then_narrate"])
+
+
 def _header_lines(campaign: Path, summary: dict[str, Any], settings: dict[str, Any]) -> list[str]:
     def shown(value: Any) -> str:
         return "?" if value is None or value == "" else _flat(value)
 
-    order = settings.get("persistence_order") or RUNTIME_DEFAULTS["persistence_order"]
-    line = (
+    order = _order_phrase(settings)
+    head = (
         f"RePoG capsule — rev {shown(summary.get('revision'))} · day {shown(summary.get('day'))} "
         f"phase {shown(summary.get('phase'))} · {shown(summary.get('location'))} · "
-        f"scene {shown(summary.get('scene_id'))} · persistence: {order}"
+        f"scene {shown(summary.get('scene_id'))}"
     )
-    lines = [_clip(line, HEADER_CHARS)]
+    # A long place or scene name is cut, never the order the reply must follow.
+    lines = [f"{_clip(head, HEADER_CHARS - len(order) - 3)} · {order}"]
     policy = block_scalars(read_text(campaign / "play_profile.yaml"), "performance").get("cold_distill_policy", "")
     threshold = DISTILL_THRESHOLDS.get(policy)
     turns = summary.get("durable_turns_since_distill")
@@ -924,6 +1052,7 @@ class _Line:
     prefix: str = ""  # with `items`: the text before them
     items: tuple[str, ...] = ()  # fields shared out again when the line is cut, so each keeps its head
     basis: str = ""  # what the change hash covers when more than the text (a block's layout)
+    tail: bool = False  # with `items`: a cut keeps the newest items (`## Now`), not each item's head
 
     @property
     def fingerprint(self) -> str:
@@ -933,7 +1062,8 @@ class _Line:
         if len(self.text) <= limit:
             return self.text
         if self.items and limit - len(self.prefix) >= MIN_CUT:
-            return self.prefix + _share(list(self.items), limit - len(self.prefix))
+            fit = _tail if self.tail else _share
+            return self.prefix + fit(list(self.items), limit - len(self.prefix))
         return _safe_clip(self.text, limit)
 
 
@@ -987,6 +1117,44 @@ def _legacy_lines(note: _Note, card: dict[str, str]) -> list[_Line]:
     if tier:
         lines.append(_Line("Tier", f"  Tier: {_safe_clip(tier, FIELD_CHARS)}"))
     return lines + _card_lines(LEGACY_FIELDS, card)
+
+
+def _note_stamp(text: str) -> int | None:
+    """The note's newest `As of revision: N` stamp, or None when it has none."""
+
+    return max((int(match.group(1)) for match in STAMP_RE.finditer(text)), default=None)
+
+
+def _act_opened(campaign: Path) -> int | None:
+    """The current act's `Opened at revision` from the `threads.md` Arc Compass, or None."""
+
+    for section in _sections(_read_md(campaign / "threads.md")):
+        title = section.title.casefold()
+        if section.level == 2 and "compass" in title and "archive" not in title:
+            match = LEADING_NUMBER_RE.match(_fields(section.body).get(OPENED_FIELD, ""))
+            return int(match.group(1)) if match else None
+    return None
+
+
+def _voice_signature(note: _Note, sections: list[_Section]) -> str:
+    """The `Voice signature` field of the note's Depth section, else of anywhere in the note."""
+
+    for section in sections:
+        if section.title.casefold().startswith("depth"):
+            value = _filled(_fields(section.body).get(VOICE_FIELD.casefold(), ""))
+            if value:
+                return value
+    return _filled(_fields(note.text).get(VOICE_FIELD.casefold(), ""))
+
+
+def _stale_card_lines(note: _Note, sections: list[_Section], stamp: int, opened: int) -> list[_Line]:
+    """What stands in for an Agency Card nobody has reviewed since the current act opened."""
+
+    lines = [_Line(CARD_KEY, f"  Agency Card: hidden (note as of rev {stamp}, before this act opened at rev {opened})")]
+    voice = _voice_signature(note, sections)
+    if voice:
+        lines.append(_Line(VOICE_FIELD, f"  {VOICE_FIELD}: {_safe_clip(voice, FIELD_CHARS)}"))
+    return lines
 
 
 def _state_label(title: str) -> str:
@@ -1069,7 +1237,7 @@ def _knowledge_entries(kb_sections: list[_Section]) -> list[_Section]:
 def _knowledge_entry(member: _Member, entries: list[_Section], matcher: _Matcher) -> _Section | None:
     """The member's knowledge block: a heading equal to one of their names, or to one before a qualifier.
 
-    A heading that merely starts with the name ("Tom Ashwick" for a note
+    A heading that merely starts with the name ("Tom Elmore" for a note
     titled "Tom") belongs to someone else.
     """
 
@@ -1091,6 +1259,7 @@ def _member_block(
     pcs: list[tuple[str, ...]],
     knowledge: list[_Section],
     matcher: _Matcher,
+    act_opened: int | None = None,
 ) -> _Block:
     lines: list[_Line] = []
     held: frozenset[str] = frozenset()
@@ -1102,15 +1271,21 @@ def _member_block(
         core = _core(sections)
         card = _agency_card(note, sections)
         shown = [label for label in CORE_FIELDS if core.get(label.casefold())]
+        stamp = _note_stamp(note.text)
+        stale = stamp is not None and act_opened is not None and stamp < act_opened
         # The first line's hash covers the layout, so a note that gains or
-        # loses its Core block is shown whole once, not as a diff of two views.
+        # loses its Core block, or whose card goes stale, is shown whole once,
+        # not as a diff of two views.
         title = f"- {note.title} ({note.path})"
-        lines.append(_Line("", title, True, basis=f"{title}\n{'core' if shown else 'legacy'}"))
+        layout = ("core" if shown else "legacy") + (" stale card" if stale else "")
+        lines.append(_Line("", title, True, basis=f"{title}\n{layout}"))
         for label in shown:
             value = core[label.casefold()]
             limit = KIN_CHARS if label == "Kin" else FIELD_CHARS
             lines.append(_Line(label, f"  {label}: {_safe_clip(value, limit)}", label in PROTECTED_FIELDS))
-        if shown:
+        if stale:
+            lines.extend(_stale_card_lines(note, sections, stamp, act_opened))
+        elif shown:
             # The card still governs how the person talks: the hard boundary
             # always, the voice rhythm when Core `Speaks` says nothing.
             talk = ("Hard boundary",) if core.get("speaks") else ("Voice rhythm", "Hard boundary")
@@ -1118,11 +1293,17 @@ def _member_block(
         else:
             lines.extend(_legacy_lines(note, card))
         labels = _note_labels(note.text)
-        held = frozenset(label for label in ("Tier", *CORE_FIELDS, *LEGACY_FIELDS) if label.casefold() in labels)
+        recorded = ("Tier", *CORE_FIELDS, *LEGACY_FIELDS, VOICE_FIELD)
+        held = frozenset({CARD_KEY, *(label for label in recorded if label.casefold() in labels)})
         label, now = _state_text(sections)
-        if now:
-            # Each bullet of a state keeps its head, so a fact in a later
-            # bullet ("Her mother: died ...") is not lost behind the first.
+        if now and label == "Now":
+            # `## Now` grows at its end: its newest lines are the current state.
+            prefix = "  Now: "
+            text = prefix + _tail(now, NOW_CHARS)
+            lines.append(_Line("Now", text, prefix=prefix, items=tuple(now), tail=True))
+        elif now:
+            # Each bullet of a legacy state keeps its head, so a fact in a
+            # later bullet ("Her mother: died ...") is not lost behind the first.
             prefix = f"  {label}: "
             lines.append(_Line("Now", prefix + _share(now, NOW_CHARS), prefix=prefix, items=tuple(now)))
     used = {line.key for line in lines}
@@ -1241,6 +1422,52 @@ def _secrets_piece(items: list[tuple[str, str, list[str]]], cap: int) -> tuple[l
         used += len(line) + 1
         shown.append(key)
     return (lines if shown else []), shown
+
+
+def _list_items(text: str) -> list[str]:
+    """A field's list split at commas and semicolons outside brackets, without `none` placeholders."""
+
+    parts: list[str] = []
+    depth = 0
+    start = 0
+    for index, char in enumerate(text):
+        if char in _OPEN:
+            depth += 1
+        elif char in _CLOSE:
+            depth = max(0, depth - 1)
+        elif char in ",;" and depth == 0:
+            parts.append(text[start:index].strip())
+            start = index + 1
+    parts.append(text[start:].strip())
+    return [part for part in parts if part and part.casefold() not in EMPTY_ITEMS]
+
+
+def _limits(member: _Member, knowledge: list[_Section], matcher: _Matcher) -> list[str]:
+    """The items the member's knowledge block marks explicitly unknown or must-not-imply, each fact once."""
+
+    entry = _knowledge_entry(member, knowledge, matcher)
+    if entry is None:
+        return []
+    fields = _fields(entry.body)
+    found: dict[str, str] = {}
+    for key in LIMIT_FIELDS:
+        for item in _list_items(_filled(fields.get(key, ""))):
+            fact = FACT_ID_RE.search(item)
+            found.setdefault((fact.group(0) if fact else item).casefold(), item)
+    return list(found.values())
+
+
+def _limit_lines(cast: list[_Member], knowledge: list[_Section], matcher: _Matcher) -> list[str]:
+    """`- Name does not know: …` for each present person whose knowledge block records limits."""
+
+    lines: list[str] = []
+    for member in cast:
+        items = _limits(member, knowledge, matcher) if member.via == "present" else []
+        if not items:
+            continue
+        more = f" (+{len(items) - MAX_LIMITS} more)" if len(items) > MAX_LIMITS else ""
+        lines.append(_safe_clip(f"- {member.name} does not know: {'; '.join(items[:MAX_LIMITS])}{more}", LIMIT_CHARS))
+    return ["[knowledge]", *lines] if lines else []
 
 
 def _directive_applies(scope_text: str, scene: str, scope: _Scope, matcher: _Matcher) -> bool:
@@ -1365,6 +1592,120 @@ def _curation_result(campaign: Path) -> tuple[list[str], str]:
     deferred = [curation_id for curation_id, _ in _run_entries(data.get("deferred"))]
     if deferred:
         lines.append(f"[curation] deferred, still waiting to be applied: {_id_list(deferred)}")
+    return lines, stamp
+
+
+def _due_line(paths: list[str], action: str) -> str:
+    named = ", ".join(_clip(path, MAX_NAME_CHARS) for path in paths[:DUE_SHOWN])
+    if len(paths) > DUE_SHOWN:
+        named += ", …"
+    files = "1 file" if len(paths) == 1 else f"{len(paths)} files"
+    return _clip(f"[curation] due: {files} ({named}): {action}", DUE_CHARS)
+
+
+def _issued_for(campaign: Path, paths: list[str]) -> dict[str, tuple[str, str]]:
+    """The due paths an issued curator holds unchanged; none when the record cannot be read."""
+
+    try:
+        return curation.issued_for(campaign, paths)
+    except Exception:  # the record is advisory: without it every due note asks for a launch
+        return {}
+
+
+def _due_lines(campaign: Path, settings: dict[str, Any]) -> list[str]:
+    """`[curation] due: …` while the writer's `curation_due.json` lists notes owed a curation pass.
+
+    Under the background curator the notes are grouped: those no curator holds
+    ask for a launch, those a launched curator still works on say it is
+    running, and those a finished curator left unchanged wait for the distill.
+    """
+
+    data = read_json(campaign / RUNTIME_DIR / CURATION_DUE_FILE, None)
+    targets = data.get("targets") if isinstance(data, dict) else None
+    paths = list(
+        dict.fromkeys(
+            _flat(item["path"])
+            for item in (targets if isinstance(targets, list) else [])
+            if isinstance(item, dict) and isinstance(item.get("path"), str) and item["path"].strip()
+        )
+    )
+    if not paths:
+        return []
+    curator = settings.get("boundary_curator") or RUNTIME_DEFAULTS["boundary_curator"]
+    if curator != "background":
+        return [_due_line(paths, DUE_INLINE)]
+    issued = _issued_for(campaign, paths)
+    running = [path for path in paths if issued.get(path, ("", ""))[1] == "running"]
+    unchanged = [path for path in paths if issued.get(path, ("", ""))[1] == "finished"]
+    waiting = [path for path in paths if path not in issued]
+    ids = ", ".join(dict.fromkeys(_clip(issued[path][0], MAX_NAME_CHARS) for path in running))
+    groups = ((waiting, DUE_BACKGROUND), (running, DUE_RUNNING.format(ids=ids)), (unchanged, DUE_UNCHANGED))
+    return [_due_line(group, action) for group, action in groups if group]
+
+
+def _state_lines(campaign: Path, summary: dict[str, Any]) -> list[str]:
+    """`[state] rev N · keys: …`: the revision the next commit expects and the keys an op can address."""
+
+    revision = summary.get("revision")
+    keys = list(dict.fromkeys(TOP_KEY_RE.findall(_read_md(campaign / "current_state.yaml"))))
+    line = f"[state] rev {'?' if revision is None else revision}"
+    return [_clip(f"{line} · keys: {', '.join(keys)}" if keys else line, STATE_CHARS)]
+
+
+def _habit_lines(campaign: Path, settings: dict[str, Any]) -> tuple[list[str], str]:
+    """`[habits] last 20 replies: label (n), …` and its change basis: the habits, not their counts.
+
+    The presentation lint counts the habits over its own history; without its
+    `top_habits` (or with the lint off) there is no line.
+    """
+
+    if settings.get("presentation_lint") == "off":
+        return [], ""
+    import presentation_lint  # imported here: only this line needs the lint's history reader
+
+    top_habits = getattr(presentation_lint, "top_habits", None)
+    items = top_habits(campaign, last=HABIT_REPLIES, limit=MAX_HABITS) if callable(top_habits) else []
+    habits: list[tuple[str, str, int]] = []
+    for item in items if isinstance(items, list) else []:
+        label = _flat(item.get("label") or item.get("rule") or "") if isinstance(item, dict) else ""
+        if label:
+            habits.append((_flat(item.get("rule") or label), label, _int(item.get("count"))))
+    habits = habits[:MAX_HABITS]
+    if not habits:
+        return [], ""
+    shown = ", ".join(f"{label} ({count})" for _, label, count in habits)
+    basis = json.dumps([[rule, label] for rule, label, _ in habits], ensure_ascii=False)
+    return [_clip(f"[habits] last {HABIT_REPLIES} replies: {shown}", CAPS[True]["habits"])], basis
+
+
+def _order_notice(campaign: Path, session_id: str) -> tuple[list[str], str]:
+    """The `[order]` reminders the last turn's record calls for, and the record's stamp.
+
+    The Stop hook records each Player turn once, so each reminder is about
+    the reply just before this prompt. The stamp is the Player prompt's id
+    (the record's `at` time when it has none), so a turn is reminded of once
+    however often its record is written. A record another session wrote is
+    not this session's last turn: ([], "").
+    """
+
+    data = read_json(campaign / RUNTIME_DIR / ORDER_FILE, None)
+    if not isinstance(data, dict):
+        return [], ""
+    owner = data.get("session_id")
+    if isinstance(owner, str) and owner and owner != session_id:
+        return [], ""
+    turn, at = data.get("prompt_uuid"), data.get("at")
+    if isinstance(turn, str) and turn.strip():
+        stamp = f"turn:{_flat(turn)}"
+    elif isinstance(at, str) and at.strip():
+        stamp = _flat(at)
+    else:
+        stamp = _digest(json.dumps(data, sort_keys=True))
+    lines: list[str] = []
+    if data.get("observed") == "commit_first" and data.get("expected") == "narrate_then_commit":
+        lines.append(ORDER_COMMIT_FIRST)
+    if data.get("final_text") is False:
+        lines.append(ORDER_NO_TEXT)
     return lines, stamp
 
 
@@ -1645,8 +1986,11 @@ def compose(
     relation_rows = _tables(_read_md(campaign / "relationship_map.md"), {"from", "to", "relation"})
     pcs = [tokens for tokens in (matcher.tokens(name) for name in (summary.get("player_name") or "", "PC")) if tokens]
     knowledge = _knowledge_entries(kb_sections)
+    act_opened = _act_opened(campaign)
     blocks = [
-        _guarded_block(member, relation_rows=relation_rows, pcs=pcs, knowledge=knowledge, matcher=matcher)
+        _guarded_block(
+            member, relation_rows=relation_rows, pcs=pcs, knowledge=knowledge, matcher=matcher, act_opened=act_opened
+        )
         for member in scope.cast
     ]
     roster = _roster(scope.cast)
@@ -1656,15 +2000,22 @@ def compose(
         for member in scope.cast
     ]
     lint_lines, lint_basis = _lint_lines(lint, settings)
+    try:
+        habit_lines, habit_basis = _habit_lines(campaign, settings)
+    except Exception:  # the habits line is advisory: a failing reader costs only that line
+        habit_lines, habit_basis = [], ""
     rendered: dict[str, list[str]] = {
+        "knowledge": _guarded("knowledge", lambda: _limit_lines(scope.cast, knowledge, matcher)),
         "directives": _guarded("directives", lambda: _directive_lines(campaign, summary, scope, matcher)),
         "language": _language_lines(campaign, code, source, pack),
         "lint": lint_lines,
+        "habits": habit_lines,
         "rolls": _guarded("rolls", lambda: _roll_lines(campaign, summary.get("revision"))),
         "curation": _guarded("curation", lambda: _curation_lines(campaign)),
     }
     section_hashes = {key: _digest("\n".join(lines)) for key, lines in rendered.items()}
     section_hashes["lint"] = _digest(lint_basis)
+    section_hashes["habits"] = _digest(habit_basis)
     section_hashes["cast"] = _digest("\n".join(roster))
     secret_hashes = {key: _digest(", ".join(missing)) for key, _, missing in secrets}
     line_hashes = {block.line_key(line): line.fingerprint for block in blocks for line in block.lines}
@@ -1682,6 +2033,14 @@ def compose(
         and result_at != result_seen
         and (bool(_int(entry.get("prompts"))) or result_at not in elsewhere)
     )
+    # The last turn's order record is shown once, like a curation run.
+    try:
+        order_lines, order_at = _order_notice(campaign, session_id)
+    except Exception:
+        order_lines, order_at = [], ""
+    new_order = bool(order_at) and order_at != entry.get("order_at")
+    order_piece = _fit_lines(order_lines, ORDER_CHARS) if new_order else []
+    due_lines = _guarded("curation", lambda: _due_lines(campaign, settings))
 
     scene_id = _flat(summary.get("scene_id") or "")
     number = _int(entry.get("prompts")) + 1
@@ -1736,7 +2095,7 @@ def compose(
         if secret_lines:
             pieces["secrets"] = secret_lines
         shown(shown_secrets, secret_hashes)
-    for key in ("directives", "language", "lint", "rolls", "curation"):
+    for key in [name for name in SECTION_ORDER if name in rendered]:
         lines = rendered[key]
         before = previous.get(key)
         if before == section_hashes[key]:
@@ -1766,7 +2125,13 @@ def compose(
             else "Delta: nothing changed since the last capsule."
         )
     header = _fit_lines(header, caps["header"])
-    used = sum(len(line) + 1 for line in header) + sum(len(line) + 1 for lines in pieces.values() for line in lines)
+    # Reminders that are not deltas: the last turn's order once, the state
+    # keys in full capsules, and the curation due on every capsule.
+    state_lines = _guarded("state", lambda: _state_lines(campaign, summary)) if is_full else []
+    lead = [*header, *order_piece, *state_lines]
+    used = sum(len(line) + 1 for line in (*lead, *due_lines)) + sum(
+        len(line) + 1 for lines in pieces.values() for line in lines
+    )
     cast: list[str] = []
     if show_cast:
         cast, shown_lines, gone_lines = _cast_lines(
@@ -1778,14 +2143,18 @@ def compose(
         for key in gone_lines:
             recorded.pop(key, None)
             seen.pop(key, None)
-    body = [*header, *cast]
+    body = [*lead, *cast]
     for key in SECTION_ORDER:
         body.extend(pieces.get(key, []))
+    body.extend(due_lines)
     text = _clip("\n".join(line for line in body if line), limit)
     # A notice cut off at the capsule's end by its size cap waits for the next capsule.
     delivered = set(text.split("\n"))
     if result_at and (not new_result or all(line in delivered for line in result_piece)):
         result_seen = result_at
+    order_seen = entry.get("order_at")
+    if order_at and all(line in delivered for line in order_piece):
+        order_seen = order_at
 
     new_state = json.loads(json.dumps(state))
     new_entry = _touch(new_state, session_id)
@@ -1805,6 +2174,8 @@ def compose(
         new_entry["language"] = code
     if isinstance(result_seen, str) and result_seen:
         new_entry["curation_at"] = result_seen
+    if isinstance(order_seen, str) and order_seen:
+        new_entry["order_at"] = order_seen
     return text, new_state
 
 
@@ -1911,6 +2282,95 @@ def names_in_text(campaign: Path, text: str, *, settings: dict[str, Any] | None 
     player = state_summary(campaign).get("player_name") or ""
     matcher = _Matcher(_load_notes(campaign), lang_pack.load_pack(code), [player])
     return list(dict.fromkeys(note.title for note in matcher.scan(text)))
+
+
+def _template_lines(name: str) -> frozenset[str]:
+    """The stripped lines of the plugin's own campaign template: guidance a campaign copy still holds."""
+
+    path = Path(__file__).resolve().parents[1] / "templates" / "campaign" / name
+    return frozenset(line.strip() for line in _read_md(path).splitlines() if line.strip())
+
+
+def _sample_sections(text: str) -> list[_Section]:
+    """`storytelling.md` sections that hold accepted samples first, then those about the voice.
+
+    A heading naming a sample (`Sample`, `Örnek`), a proof (the Stage 9
+    narrative proof), or accepted evidence (`Accepted Voice Evidence`) ranks
+    first, one naming the voice (`Narrative Voice`) second, each group in file
+    order, so the budget goes to accepted prose before profile selectors. A
+    section inside a chosen one comes with it, not again.
+    """
+
+    chosen: list[tuple[int, int, _Section]] = []
+    inside: int | None = None
+    for position, section in enumerate(_sections(text)):
+        if inside is not None and section.level > inside:
+            continue
+        inside = None
+        title = section.title.casefold()
+        if section.level < 2:
+            continue
+        if any(word in title for word in SAMPLE_WORDS):
+            rank = 0
+        elif VOICE_WORD in title:
+            rank = 1
+        else:
+            continue
+        chosen.append((rank, position, section))
+        inside = section.level
+    return [section for _, _, section in sorted(chosen, key=lambda item: (item[0], item[1]))]
+
+
+def _sample_lines(section: _Section, guidance: frozenset[str]) -> list[str]:
+    """A section's heading and its own lines, without template guidance or unfilled fields; [] when none is left."""
+
+    lines = [f"{'#' * section.level} {section.title}"]
+    for line in section.body.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            if len(lines) > 1 and lines[-1]:
+                lines.append("")
+            continue
+        field = FIELD_RE.match(line)
+        if stripped in guidance or (field is not None and not _filled(field.group(2))):
+            continue
+        lines.append(line.rstrip())
+    while lines and not lines[-1]:
+        lines.pop()
+    return lines if len(lines) > 1 else []
+
+
+def style_samples(campaign: Path, limit: int = SAMPLE_CHARS) -> str:
+    """Accepted style samples from `storytelling.md`, within `limit` characters; "" when there are none.
+
+    Only what the campaign added counts: lines the plugin's template already
+    holds are guidance, and unfilled fields are skipped. Whole lines are kept
+    while they fit; the line that does not is cut, marked "…".
+    """
+
+    text = _read_md(Path(campaign) / "storytelling.md")
+    guidance = _template_lines("storytelling.md")
+    lines: list[str] = []
+    for section in _sample_sections(text):
+        part = _sample_lines(section, guidance)
+        if part:
+            lines.extend(["", *part] if lines else part)
+    kept = _fit_lines(lines, limit)
+    while kept and not kept[-1]:
+        kept.pop()
+    return "\n".join(kept)
+
+
+def resume_notice(campaign: Path, settings: dict[str, Any]) -> str:
+    """What SessionStart prints after a compaction or a resume: the style samples, then the locked order.
+
+    A compaction summary keeps no accepted sample and may carry an order rule
+    of its own; the locked profile's order wins.
+    """
+
+    order = LOCKED_ORDER.format(order=_persistence_order(settings if isinstance(settings, dict) else {}))
+    samples = style_samples(campaign)
+    return "\n".join([SAMPLES_INTRO, samples, order] if samples else [order])
 
 
 # ---------------------------------------------------------------------------

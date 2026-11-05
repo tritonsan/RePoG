@@ -136,7 +136,23 @@ voice message.
 
 # Readiness Order
 
-Use this order exactly:
+Use this order exactly. On the Deep ledger, steps 2, 3, and 5–7 are one call
+after Stage 9 completes:
+`tools/session_zero_state.py campaign finalize --operation-id <id>
+--expected-revision <current>`. It stops at the first failing step with a typed
+error, `failed_step`, and `completed_steps`; fix that step and call it again
+with the current revision. It never repeats a passed preflight gate. With
+approved projections (step 4), call it with `--stop-after lock_profiles`, build
+them, and call it again. Do not run the steps one by one or edit profile fields
+by hand.
+
+Before step 1 on every route, calibrate every NPC card to the accepted NPC
+power scale: each T2/T3 `Power Band:` inside the scale and its tier cap, and no
+stat above its band. A full check must show no calibration warning
+(`power_band_mismatch` and the early-stage power rules) and no
+`minor_romance_history`; on the Deep ledger `finalize` refuses readiness until
+they are resolved. A `records_language_mismatch` does not block: `finalize`
+reports it under `advisories`, and the records are translated when convenient.
 
 1. **Approval gate.**
    - Current reciprocity RPG: design approval exists; actual preparation review
@@ -207,6 +223,11 @@ Use this order exactly:
    the aggregate state check does not cover leakage, and this narration is drafted
    after every other gate has already passed, so nothing else stands between the
    prohibited-terms list in `boundaries.md` and the Player.
+   Then send the OOC line and the opening narration as text, in the reply
+   itself. Text written before a tool call is visible to the Player. Only after
+   that make the opening's one commit (opening and first-session sources
+   `consumed`, the OOC line recorded as stated), never in the background, and
+   end the turn with the hand-back line. Never commit first and narrate after.
 
 # Failure And Invalidation
 

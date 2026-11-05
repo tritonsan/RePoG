@@ -319,15 +319,15 @@ newer setup revision.
 
 ### Deep v8 Extensions
 
-- `character_interior`: not_applicable
-- `world_fabric`: not_applicable
-- `mechanics_detail`: not_applicable
-- `location_network`: not_applicable
-- `faction_information`: not_applicable
-- `group`: not_applicable
-- `character_embedding`: not_applicable
-- `advancement_detail`: not_applicable
-- `campaign_architecture`: not_applicable
+- `character_interior`: not_applicable / not_applicable
+- `world_fabric`: not_applicable / not_applicable
+- `mechanics_detail`: not_applicable / not_applicable
+- `location_network`: not_applicable / not_applicable
+- `faction_information`: not_applicable / not_applicable
+- `group`: not_applicable / not_applicable
+- `character_embedding`: not_applicable / not_applicable
+- `advancement_detail`: not_applicable / not_applicable
+- `campaign_architecture`: not_applicable / not_applicable
 
 ### Defaults And Deferrals
 

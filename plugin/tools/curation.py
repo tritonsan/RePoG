@@ -11,10 +11,15 @@ proposal was written is never overwritten with stale text.
 This module is semantic-free. It checks the staging file's shape and paths,
 compares hashes, lists and files away processed proposals, and builds the
 packet. It never decides what a note should say, and it writes no campaign
-owner itself.
+owner itself. Every packet takes, besides the targets the caller names, the
+notes in the writer's `campaign/.repog-runtime/curation_due.json`, the notes a
+distill found owing a curation pass. The `packet` command records each packet
+it issues in `campaign/.repog-runtime/curation_issued.json`, so a note a
+launched curator still works on is not handed to a second one, and a due note
+a finished curator left unchanged waits for the next distill.
 
 CLI:
-    python tools/curation.py packet <campaign> --target PATH[=REASON] ... [--id ID]
+    python tools/curation.py packet <campaign> [--target PATH[=REASON] ...] [--id ID]
     python tools/curation.py validate <campaign> [STAGED_FILE ...]
 """
 
@@ -26,13 +31,23 @@ import json
 import os
 import re
 import sys
+import time
 import unicodedata
 from collections import Counter
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Iterable
 
 import owner_ops
-from repog_runtime import RUNTIME_DIR, runtime_settings, state_summary
+from repog_runtime import (
+    CURATION_DUE_FILE,
+    CURATION_ISSUED_FILE,
+    RUNTIME_DIR,
+    read_json,
+    records_language,
+    runtime_settings,
+    state_summary,
+    write_json_atomic,
+)
 
 
 CURATION_DIR = "curation"
@@ -56,6 +71,10 @@ HASH_CHUNK = 1 << 20
 # all up to this generous cap and reports any it had to leave out.
 MAX_DIRECTIVES = 100
 DIRECTIVE_COLUMNS = ("id", "scope", "directive", "status")
+# A launched curator that has staged nothing after this long is presumed gone,
+# and its notes may be handed to a new one. The record keeps the newest packets.
+ISSUE_TTL_SECONDS = 15 * 60
+MAX_ISSUED = 8
 
 # Curation follows the distill path rules: Markdown only, never the writer's
 # session log, archived history, recovery snapshots, or any hidden working
@@ -810,10 +829,244 @@ def _packet_target(campaign: Path, item: Any) -> tuple[str, str, str]:
         raw.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise CurationError("campaign_invalid", f"target is not UTF-8 text, so the writer cannot edit it: {path}") from exc
+    return path, _reason_line(reason), hashlib.sha256(raw).hexdigest()
+
+
+def _reason_line(*reasons: Any) -> str:
+    """The non-empty reasons joined by `; ` as one line, at most MAX_REASON characters."""
+
+    joined = "; ".join(text for text in reasons if isinstance(text, str) and text.strip())
     # One line: whitespace of any kind (line breaks included) becomes a space.
-    text = " ".join((reason or "").split())
-    text = "".join(char for char in text if not _has_control(char))
-    return path, text[:MAX_REASON] or "curation", hashlib.sha256(raw).hexdigest()
+    text = " ".join(joined.split())
+    return "".join(char for char in text if not _has_control(char))[:MAX_REASON]
+
+
+def _refuse_repeats(targets: list[tuple[str, str, str]]) -> None:
+    seen: dict[str, str] = {}
+    for path, _, _ in targets:
+        key = _same_file_key(path)
+        if key in seen:
+            raise CurationError("input_invalid", f"target listed twice: {path} (as {seen[key]})")
+        seen[key] = path
+
+
+def due_targets(campaign: Path) -> list[tuple[str, str]]:
+    """(path, reason) for each note in the writer's `curation_due.json`, one pair per path.
+
+    The writer lists a path once per rule that flagged it; the rules for one
+    path are merged into one reason (`rule: reason; rule: reason`), so the
+    packet holds one mutation per file. A missing or malformed file has no
+    targets.
+    """
+
+    data = read_json(campaign / RUNTIME_DIR / CURATION_DUE_FILE, None)
+    raw = data.get("targets") if isinstance(data, dict) else None
+    merged: dict[str, tuple[str, list[str]]] = {}
+    for item in raw if isinstance(raw, list) else []:
+        if not isinstance(item, dict) or not isinstance(item.get("path"), str) or not item["path"].strip():
+            continue
+        texts = [item.get(key) for key in ("rule", "reason")]
+        reason = ": ".join(text.strip() for text in texts if isinstance(text, str) and text.strip())
+        path = item["path"].strip()
+        _, reasons = merged.setdefault(_same_file_key(path), (path, []))
+        if reason and reason not in reasons:
+            reasons.append(reason)
+    return [(path, "; ".join(reasons)) for path, reasons in merged.values()]
+
+
+# ---------------------------------------------------------------------------
+# Issued packets
+# ---------------------------------------------------------------------------
+
+
+def _issued_file(campaign: Path) -> Path:
+    return campaign / RUNTIME_DIR / CURATION_ISSUED_FILE
+
+
+def _filed_since(campaign: Path, curation_id: str, since_ns: int) -> bool:
+    """True when a staged file of this id was filed under `applied/` or `rejected/` after `since_ns`.
+
+    `move_processed` keeps the file's own time and adds `-2`, `-3`, ... to a
+    taken name, so an older proposal of the same id never counts.
+    """
+
+    name = re.compile(re.escape(curation_id) + r"(?:-\d+)?\.json")
+    for outcome in OUTCOMES:
+        try:
+            entries = list((curation_dir(campaign) / outcome).glob(f"{curation_id}*.json"))
+        except OSError:
+            continue
+        for entry in entries:
+            try:
+                if name.fullmatch(entry.name) and entry.stat().st_mtime_ns >= since_ns:
+                    return True
+            except OSError:
+                continue
+    return False
+
+
+def issued_packets(campaign: Path, *, now_ns: int | None = None) -> list[dict[str, Any]]:
+    """The packets `packet` issued, oldest first, each with a `status`.
+
+    `running`: its curator has filed nothing since (its staged file is waiting,
+    or it was issued under ISSUE_TTL_SECONDS ago); `finished`: its proposal was
+    applied or rejected after it was issued; `expired`: neither, so its
+    curator is presumed gone. A missing or malformed record lists none.
+    """
+
+    data = read_json(_issued_file(campaign), None)
+    raw = data.get("packets") if isinstance(data, dict) else None
+    now_ns = time.time_ns() if now_ns is None else now_ns
+    found: list[dict[str, Any]] = []
+    for item in raw if isinstance(raw, list) else []:
+        if not isinstance(item, dict):
+            continue
+        curation_id, issued, hashes = item.get("curation_id"), item.get("issued_ns"), item.get("base_hashes")
+        if (
+            not isinstance(curation_id, str)
+            or CURATION_ID_RE.fullmatch(curation_id) is None
+            or curation_id in RESERVED_IDS
+            or not isinstance(issued, int)
+            or not isinstance(hashes, dict)
+        ):
+            continue
+        if _filed_since(campaign, curation_id, issued):
+            status = "finished"
+        elif staging_path(campaign, curation_id).exists() or now_ns - issued < ISSUE_TTL_SECONDS * 1_000_000_000:
+            status = "running"
+        else:
+            status = "expired"
+        found.append({**item, "status": status})
+    return found
+
+
+def _covered(campaign: Path, packets: list[dict[str, Any]]) -> dict[str, tuple[str, str]]:
+    """File key -> (curation id, status) for each target of a running or finished packet, unchanged since it was issued.
+
+    A target that changed since is free again: its curator's proposal will be
+    stale, or it was applied. A newer packet wins over an older one.
+    """
+
+    covered: dict[str, tuple[str, str]] = {}
+    current: dict[str, str | None] = {}
+    for packet in packets:
+        if packet["status"] == "expired":
+            continue
+        for path, digest in packet["base_hashes"].items():
+            if not isinstance(path, str) or path_error(campaign, path):
+                continue
+            if path not in current:
+                current[path] = _current_hash(_target(campaign, path))
+            if current[path] == digest:
+                covered[_same_file_key(path)] = (packet["curation_id"], packet["status"])
+    return covered
+
+
+def issued_for(campaign: Path, paths: Iterable[str]) -> dict[str, tuple[str, str]]:
+    """For each of `paths` an issued curator holds unchanged: path -> (curation id, "running" or "finished")."""
+
+    covered = _covered(campaign, issued_packets(campaign))
+    return {path: covered[_same_file_key(path)] for path in paths if _same_file_key(path) in covered}
+
+
+def record_issue(campaign: Path, packet: dict[str, Any], *, now_ns: int | None = None) -> None:
+    """Record `packet` as issued, keeping the newest MAX_ISSUED packets that are not expired."""
+
+    now_ns = time.time_ns() if now_ns is None else now_ns
+    kept = [
+        {key: value for key, value in item.items() if key != "status"}
+        for item in issued_packets(campaign, now_ns=now_ns)
+        if item["status"] != "expired" and item["curation_id"] != packet["curation_id"]
+    ]
+    kept.append(
+        {
+            "curation_id": packet["curation_id"],
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now_ns // 1_000_000_000)),
+            "issued_ns": now_ns,
+            "base_hashes": dict(packet["base_hashes"]),
+        }
+    )
+    write_json_atomic(_issued_file(campaign), {"packets": kept[-MAX_ISSUED:]})
+
+
+# ---------------------------------------------------------------------------
+# Packets
+# ---------------------------------------------------------------------------
+
+
+def _nothing_left(left: dict[str, list[dict[str, str]]]) -> CurationError:
+    """The refusal for a packet left with no target: issued curators hold them all, or none was given or due."""
+
+    parts: list[str] = []
+    for key, text in (
+        ("targets_running", "curator {ids} still works on {count}; do not launch another"),
+        ("targets_unchanged", "{count} left unchanged by a finished curator ({ids}) wait for the next distill"),
+    ):
+        if left[key]:
+            ids = ", ".join(dict.fromkeys(item["curation_id"] for item in left[key]))
+            count = "1 note" if len(left[key]) == 1 else f"{len(left[key])} notes"
+            parts.append(text.format(ids=ids, count=count))
+    if parts:
+        return CurationError("already_issued", f"no note is left to curate: {'; '.join(parts)}")
+    return CurationError(
+        "input_invalid",
+        f"a curation packet needs at least one target; none was given and none is due in {CURATION_DUE_FILE}",
+    )
+
+
+def _packet_targets(
+    campaign: Path, named: list[tuple[str, str, str]], packets: list[dict[str, Any]]
+) -> tuple[list[tuple[str, str, str]], dict[str, Any]]:
+    """The named targets, then each due note they do not name, and what the packet reports about the rest.
+
+    A named note that is also due carries both reasons. A note an issued
+    curator still works on is left out (`targets_running`), and so is a due
+    note a finished curator left unchanged (`targets_unchanged`; naming it asks
+    again). A due path that can no longer be curated (deleted, renamed, or not
+    a Markdown note) is skipped with its reason instead of refusing the whole
+    packet; past `MAX_MUTATIONS` targets the rest wait for the next packet.
+    """
+
+    covered = _covered(campaign, packets)
+    due = due_targets(campaign)
+    due_reasons = {_same_file_key(path): reason for path, reason in due}
+    named_keys = {_same_file_key(path) for path, _, _ in named}
+    left: dict[str, list[dict[str, str]]] = {"targets_running": [], "targets_unchanged": []}
+    checked: list[tuple[str, str, str]] = []
+    for path, reason, digest in named:
+        key = _same_file_key(path)
+        holder = covered.get(key)
+        if holder and holder[1] == "running":
+            left["targets_running"].append({"path": path, "curation_id": holder[0]})
+        else:
+            checked.append((path, _reason_line(reason, due_reasons.get(key)), digest))
+    skipped: list[dict[str, str]] = []
+    for path, reason in due:
+        key = _same_file_key(path)
+        if key in named_keys:
+            continue  # its reason went with the named target
+        holder = covered.get(key)
+        if holder:
+            left["targets_running" if holder[1] == "running" else "targets_unchanged"].append(
+                {"path": path, "curation_id": holder[0]}
+            )
+            continue
+        try:
+            checked.append(_packet_target(campaign, (path, reason)))
+        except CurationError as exc:
+            skipped.append({"path": path, "reason": str(exc)})
+    if not checked:
+        raise _nothing_left(left)
+    kept = checked[:MAX_MUTATIONS]
+    notes: dict[str, Any] = {}
+    if any(_same_file_key(path) in due_reasons for path, _, _ in kept):
+        notes["targets_from"] = f"{RUNTIME_DIR}/{CURATION_DUE_FILE}"
+    if skipped:
+        notes["skipped_targets"] = skipped
+    notes.update({key: items for key, items in left.items() if items})
+    if len(checked) > len(kept):
+        notes["targets_omitted"] = len(checked) - len(kept)
+    return kept, notes
 
 
 def build_packet(
@@ -825,40 +1078,41 @@ def build_packet(
     """The frozen packet the coordinator hands the curator agent.
 
     The agent has no shell, so the packet carries the base hash of every
-    target; the agent copies them into its staging file unchanged. Without an
-    explicit id, the id is derived from the revision and the target hashes, so
-    asking again for the same unchanged targets names the same staging file.
-    A packet is refused while a staged file with its id is still waiting, so a
-    second curator never overwrites a proposal nobody has processed. It holds
-    at most `MAX_MUTATIONS` targets, one staged mutation each, and every
-    active directive; a directives file it cannot read whole is an error, not
-    an empty list, because the curator must obey every directive.
+    target; the agent copies them into its staging file unchanged. Besides
+    the named targets, the packet takes the notes the writer listed as due
+    (see `due_targets` and `_packet_targets`), leaving out those an issued
+    curator holds (see `issued_packets`). Without an explicit id, the id is
+    derived from the revision and the target hashes, so asking again for the
+    same unchanged targets names the same staging file. A packet is refused
+    while a staged file with its id is still waiting, or while a curator
+    issued under its id is still at work, so a second curator never
+    overwrites a proposal nobody has processed. Building a packet writes
+    nothing; `issue_packet` also records it. It holds at most
+    `MAX_MUTATIONS` targets, one staged mutation each, and every active
+    directive; a directives file it cannot read whole is an error, not an
+    empty list, because the curator must obey every directive.
+    `records_language` names the language the curator writes folded text in.
     """
 
     items = list(targets) if isinstance(targets, (list, tuple)) else []
-    if not items:
-        raise CurationError("input_invalid", "a curation packet needs at least one target")
     if len(items) > MAX_MUTATIONS:
         raise CurationError(
             "input_invalid",
             f"a curation packet takes at most {MAX_MUTATIONS} targets (one staged mutation each); split the request",
         )
     if not (campaign / "current_state.yaml").is_file():
+        if not items:
+            raise CurationError("input_invalid", "a curation packet needs at least one target")
         raise CurationError("campaign_invalid", f"no current_state.yaml in {campaign}; pass the campaign folder")
     revision = state_summary(campaign).get("revision")
     if revision is None:
         raise CurationError("campaign_invalid", "current_state.yaml has no continuity_revision")
-    hashes: dict[str, str] = {}
-    listed: list[dict[str, str]] = []
-    seen: dict[str, str] = {}
-    for item in items:
-        path, reason, digest = _packet_target(campaign, item)
-        key = _same_file_key(path)
-        if key in seen:
-            raise CurationError("input_invalid", f"target listed twice: {path} (as {seen[key]})")
-        seen[key] = path
-        hashes[path] = digest
-        listed.append({"path": path, "reason": reason})
+    named = [_packet_target(campaign, item) for item in items]
+    _refuse_repeats(named)
+    packets = issued_packets(campaign)
+    checked, notes = _packet_targets(campaign, named, packets)
+    hashes = {path: digest for path, _, digest in checked}
+    listed = [{"path": path, "reason": reason or "curation"} for path, reason, _ in checked]
     if curation_id is None:
         seed = json.dumps(hashes, sort_keys=True).encode("utf-8")
         curation_id = f"r{revision}-{hashlib.sha256(seed).hexdigest()[:10]}"
@@ -868,6 +1122,11 @@ def build_packet(
             "already_staged",
             f"staged file {staged.name} is still waiting; apply or reject it before asking for the same curation again",
         )
+    if any(packet["curation_id"] == curation_id and packet["status"] == "running" for packet in packets):
+        raise CurationError(
+            "already_issued",
+            f"curator {curation_id} is still at work and will write {staged.name}; do not launch another under that id",
+        )
     directives = active_directives(campaign, strict=True)
     packet: dict[str, Any] = {
         "curation_id": curation_id,
@@ -875,12 +1134,31 @@ def build_packet(
         "staging_path": str(staged.resolve()),
         "base_revision": revision,
         "language": runtime_settings(campaign).get("language", "auto"),
+        "records_language": records_language(campaign),
         "targets": listed,
         "base_hashes": hashes,
         "directives": directives[-MAX_DIRECTIVES:],
+        **notes,
     }
     if len(directives) > MAX_DIRECTIVES:
         packet["directives_omitted"] = len(directives) - MAX_DIRECTIVES
+    return packet
+
+
+def issue_packet(
+    campaign: Path,
+    targets: list[tuple[str, str]],
+    *,
+    curation_id: str | None = None,
+) -> dict[str, Any]:
+    """Build the packet and record it as issued, for the coordinator about to launch its curator.
+
+    While that curator works, later packets leave its notes out, and the
+    capsule says it is running instead of asking for another launch.
+    """
+
+    packet = build_packet(campaign, targets, curation_id=curation_id)
+    record_issue(campaign, packet)
     return packet
 
 
@@ -935,7 +1213,9 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     packet = commands.add_parser("packet", help="Build the frozen packet for the curator agent")
     packet.add_argument("campaign", help="Campaign folder (or the project folder that holds campaign/)")
-    packet.add_argument("--target", action="append", required=True, help="PATH[=REASON], campaign-relative")
+    packet.add_argument(
+        "--target", action="append", default=[], help="PATH[=REASON], campaign-relative, added to the notes due"
+    )
     packet.add_argument("--id", dest="curation_id", default=None, help="Explicit curation id")
     validate = commands.add_parser("validate", help="Check staged files: shape, freshness, and a dry run")
     validate.add_argument("campaign", help="Campaign folder (or the project folder that holds campaign/)")
@@ -946,7 +1226,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "packet":
             result: dict[str, Any] = {
                 "ok": True,
-                **build_packet(campaign, [_parse_target(value) for value in args.target], curation_id=args.curation_id),
+                **issue_packet(campaign, [_parse_target(value) for value in args.target], curation_id=args.curation_id),
             }
             code = 0
         else:

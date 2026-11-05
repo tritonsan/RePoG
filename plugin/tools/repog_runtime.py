@@ -2,7 +2,8 @@
 
 The runtime layer is everything that runs around a turn rather than inside the
 campaign's authority files: the scene capsule injected before a prompt, the
-presentation lint run after a reply, roll receipts, and staged curation. It
+presentation lint and the reply-order record written after a reply, roll
+receipts, and staged curation with the writer's list of notes due for it. It
 keeps its working files in `campaign/.repog-runtime/`, which is never an owner
 of fictional truth and can be deleted at any time without losing the campaign.
 
@@ -22,9 +23,19 @@ from typing import Any, Iterable
 
 
 RUNTIME_DIR = ".repog-runtime"
+# Runtime records shared between components (spec 0.4.0 §2.1): the writer
+# lists notes owed a curation pass, and the Stop hook records the last turn's
+# reply order; the scene capsule reads both. `curation packet` records each
+# packet it issues, so the capsule can tell a curator still at work from one
+# never launched.
+CURATION_DUE_FILE = "curation_due.json"
+CURATION_ISSUED_FILE = "curation_issued.json"
+ORDER_FILE = "order_last.json"
 # Windows refuses to replace a file while another process has it open, as a
 # hook reading lint_last.json does for a moment; a short retry rides that out.
 REPLACE_ATTEMPTS = 4
+# The first assistant text at least this long counts as the turn's narration.
+NARRATION_MIN_CHARS = 200
 
 # Defaults apply when play_profile.yaml has no `runtime:` block, so an existing
 # campaign gets the runtime layer without a migration. Each switch is a locked
@@ -227,6 +238,21 @@ def runtime_settings(campaign: Path) -> dict[str, str]:
     return settings
 
 
+def records_language(campaign: Path) -> str:
+    """The language campaign records are written in, as configured.
+
+    `narration.records_language` when it names a language; the play language
+    (`narration.language`) when it is `same` or missing; "auto" when neither
+    is set.
+    """
+
+    narration = block_scalars(read_text(campaign / "play_profile.yaml"), "narration")
+    value = narration.get("records_language", "").strip()
+    if value and value.casefold() != "same":
+        return value
+    return narration.get("language", "").strip() or "auto"
+
+
 def is_ready_rpg(campaign: Path) -> bool:
     setup = read_text(campaign / "setup_profile.yaml")
     if top_scalar(setup, "ready_for_play").lower() not in {"true", "yes"}:
@@ -369,7 +395,8 @@ def last_turn(transcript: str | Path) -> dict[str, Any] | None:
 
     Returns the prompt, every assistant text block in order (text written
     between tool calls is visible to the Player too), the visible descriptions
-    of tool calls, and the raw tool uses.
+    of tool calls, the raw tool uses, and `blocks`: the text and tool-use
+    blocks interleaved in the order they were written.
     """
 
     # Hook events may name the transcript as `~/.claude/projects/...`.
@@ -395,6 +422,7 @@ def last_turn(transcript: str | Path) -> dict[str, Any] | None:
     texts: list[str] = []
     descriptions: list[str] = []
     tool_uses: list[dict[str, Any]] = []
+    blocks: list[dict[str, Any]] = []
     for row in rows[start + 1 :]:
         if row.get("type") != "assistant":
             continue
@@ -403,8 +431,11 @@ def last_turn(transcript: str | Path) -> dict[str, Any] | None:
                 continue
             if block.get("type") == "text" and block.get("text", "").strip():
                 texts.append(block["text"])
+                blocks.append({"type": "text", "text": block["text"]})
             elif block.get("type") == "tool_use":
-                tool_uses.append({"name": block.get("name", ""), "input": block.get("input", {}) or {}})
+                tool_use = {"name": block.get("name", ""), "input": block.get("input", {}) or {}}
+                tool_uses.append(tool_use)
+                blocks.append({"type": "tool_use", **tool_use})
                 description = (block.get("input") or {}).get("description")
                 if isinstance(description, str) and description.strip():
                     descriptions.append(description.strip())
@@ -415,4 +446,48 @@ def last_turn(transcript: str | Path) -> dict[str, Any] | None:
         "assistant_texts": texts,
         "tool_descriptions": descriptions,
         "tool_uses": tool_uses,
+        "blocks": blocks,
     }
+
+
+def _is_commit(block: dict[str, Any]) -> bool:
+    """True for a tool call whose shell command runs an `rpg_state ... commit-*` transaction."""
+
+    arguments = block.get("input") if block.get("type") == "tool_use" else None
+    command = arguments.get("command") if isinstance(arguments, dict) else None
+    return isinstance(command, str) and "rpg_state" in command and "commit-" in command
+
+
+def turn_order(turn: dict[str, Any] | None, last_message: Any = None) -> dict[str, Any]:
+    """How a turn ordered its narration and its commit, and whether it ended with visible text.
+
+    `observed` compares the first assistant text of NARRATION_MIN_CHARS or
+    more against the first tool call whose command runs an `rpg_state`
+    `commit-*` transaction: "narrate_first", "commit_first" (the commit came
+    first, or no such text came at all), or "no_commit". `final_text` is True
+    when the turn's last block is visible text. The Stop event's
+    `last_assistant_message` stands in for a final text the transcript does
+    not hold yet. Counts positions only; reads no meaning.
+    """
+
+    blocks = list(turn.get("blocks") or []) if isinstance(turn, dict) else []
+    texts = [block.get("text", "") for block in blocks if block.get("type") == "text"]
+    if isinstance(last_message, str) and last_message.strip() and (not texts or texts[-1].strip() != last_message.strip()):
+        blocks.append({"type": "text", "text": last_message})
+    commit = next((index for index, block in enumerate(blocks) if _is_commit(block)), None)
+    narration = next(
+        (
+            index
+            for index, block in enumerate(blocks)
+            if block.get("type") == "text" and len(block.get("text", "").strip()) >= NARRATION_MIN_CHARS
+        ),
+        None,
+    )
+    if commit is None:
+        observed = "no_commit"
+    elif narration is not None and narration < commit:
+        observed = "narrate_first"
+    else:
+        observed = "commit_first"
+    final_text = bool(blocks) and blocks[-1].get("type") == "text" and bool(blocks[-1].get("text", "").strip())
+    return {"observed": observed, "final_text": final_text}

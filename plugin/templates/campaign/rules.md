@@ -37,6 +37,23 @@ When `play_profile.yaml.mechanics.resolution` declares `stat_min` and
 meanings above and rescale the starting budgets below for the declared range.
 See Dice below.
 
+- Numeric scale:
+
+Record the campaign's range on that line as `min-max`, matching
+`mechanics.resolution`, whenever it is not 1 to 5. The full check's power
+checks read it; left blank, they keep the 1 to 5 defaults.
+
+A long journey through regions of rising power may use a region-anchored open
+scale instead of a fixed top. 1 is an ordinary person, the best of the
+starting region sits a few steps up (4, say), and each wider region reaches
+higher values, with no ceiling set in advance. Record the anchors below, set
+`stat_max` and the line above to the widest region the campaign has reached,
+and raise both as a stage revision when the campaign crosses into a wider
+region; recorded values keep their numbers. The region cap in `progression.md`
+bounds awards inside each region.
+
+- Region anchors:
+
 ### Declared Stat Axes
 
 Derive these axes from the researched world and the declared starting stage
@@ -204,6 +221,18 @@ Companions can have future potential, but their current stats should fit the
 present stage. Growth should be recorded through advancement, not assumed at
 creation.
 
+## Tier Caps
+
+Optional. The highest stat a character of each creation tier carries at the
+current stage, so ordinary figures do not drift up to the player character's
+level. The full check reads these lines in place of its defaults; leave them
+blank to keep the defaults. A figure above its tier's cap needs a Power Band
+that covers it, or a `check` directive that acknowledges it.
+
+- T1:
+- T2:
+- T3:
+
 ## Obstacle Difficulty
 
 Important obstacles should have a difficulty note:
@@ -281,10 +310,20 @@ Under numeric grounding, a campaign that rolls declares its scale in
 difficulty ranges, an optional automatic-success margin, and ordered outcome
 bands. A roll totals the stat value, every declared modifier, and the die. The
 margin is that total minus the difficulty, and the first band whose `at_least`
-the margin reaches names the outcome. When the value plus modifiers already
-beats the difficulty by the automatic-success margin, the first band applies
-without a roll. Without the block, a margin of zero or more succeeds and
-anything lower fails.
+the margin reaches names the outcome. Without the block, a margin of zero or
+more succeeds and anything lower fails.
+
+A call whose lowest roll, one per die, already lands in a success band is
+`certain`: it never rolls, whatever the margin. When the value plus modifiers
+minus the difficulty reaches the automatic-success margin, the call also
+succeeds without a roll, recorded at the band its lowest roll would reach, or
+at the lowest success band when that roll would fall short of it. The lowest
+success band is the one a margin of zero lands in, even when a better band
+such as a critical is listed above it. Set the margin to that band's
+`at_least` minus the lowest roll, one per die, or leave it out: either way
+exactly the calls that cannot fail skip the roll. A lower margin also skips
+calls that could fail; a higher one adds nothing, and the full check flags it
+as `auto_success_dead_zone`.
 
 Band names are the campaign's own, such as success, a partial success with a
 small or heavy cost, and failure. Record here what each band means in this
@@ -302,7 +341,8 @@ the declaration afterward:
 - the difficulty, read from the opposition or obstacle on the same scale;
 - factors such as preparation, leverage, tools, help, injury, or position, each
   a labelled whole-number modifier;
-- the stakes: in one line, what a result below the first band costs.
+- the stakes: what each band below success that the call can reach costs, and
+  nothing for a band it cannot reach.
 
 Social pressure, persuasion, deception, and investigation roll the same way as
 violence whenever the outcome is genuinely uncertain and opposed. Routine
@@ -311,6 +351,27 @@ without a roll. A success delivers what the action sought; a complication or
 cost belongs only to a lower band and comes from the declared stakes. A failed
 roll is not quietly reversed by an easier route, and an NPC does not hand over
 the solution in its place.
+
+### Factors And Crowds
+
+Factors cut both ways. What favors the opposition, such as numbers, ground, a
+wound, or no time, enters as a negative modifier as readily as an advantage
+enters as a positive one. Size each factor 2 to 6 for a small, clear, or
+decisive edge where one stat step is worth 2 on the total, and 1 to 3 where it
+is worth 1. Record the campaign's sizes here:
+
+- Small edge:
+- Clear edge:
+- Decisive edge:
+
+Against a crowd, use one of these, whichever the fiction supports: a negative
+small-edge factor (-2 at the default sizes) for each doubling of the opponents,
+several exchanges rolled in turn, or an alarm clock that fills as the fight
+goes on. A named enemy rolls separately from the extras around them, and a
+roll against the crowd never decides their fate.
+
+When the chance of a result below success is under about 15%, or nil, do not
+roll: the action succeeds. The odds table below gives that chance.
 
 ### Roll Calls
 

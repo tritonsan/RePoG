@@ -173,18 +173,21 @@ def test_json_past_the_parser_limits_is_a_typed_failure(scaled: Path, capsys: py
 
 
 def test_call_writes_one_receipt_and_repeats_idempotently(scaled: Path) -> None:
-    first = roll_dice.roll_call(scaled, {"roll_id": "bait-feint", "call": _call()}, now=NOW)
+    # Difficulty 5 leaves both faces of the d2 in play (difficulty 4 is certain).
+    first = roll_dice.roll_call(scaled, {"roll_id": "bait-feint", "call": _call(difficulty=5)}, now=NOW)
     assert first["ok"] and first["repeat"] is False
     assert first["revision"] == 0 and first["die"] == "1d2" and first["at"] == NOW
     assert len(first["dice"]) == 1 and first["dice"][0] in (1, 2)
     assert first["total"] == 2 + 1 + first["dice"][0]
-    assert first["margin"] == first["total"] - 4
+    assert first["margin"] == first["total"] - 5
     assert first["band"] == odds.band_for(first["margin"], odds.load_resolution(RESOLUTION)["bands"])
-    assert first["auto"] is False
+    assert first["auto"] is False and first["certain"] is False
     assert len(_store_lines(scaled)) == 1
 
     for _ in range(3):
-        again = roll_dice.roll_call(scaled, {"roll_id": "bait-feint", "call": _call()}, now="2030-01-01T00:00:00Z")
+        again = roll_dice.roll_call(
+            scaled, {"roll_id": "bait-feint", "call": _call(difficulty=5)}, now="2030-01-01T00:00:00Z"
+        )
         assert again["repeat"] is True
         assert {**again, "repeat": False} == first
     # Whitespace and an omitted empty factor list do not make a different call.
@@ -255,15 +258,17 @@ def test_auto_success_rolls_no_die(scaled: Path) -> None:
         {"roll_id": "boosted", "call": _call(value=3, difficulty=3, factors=[{"label": "high ground", "modifier": 2}])},
     )
     assert boosted["auto"] is True and boosted["dice"] == []
-    # One short of the margin rolls.
-    rolled = roll_dice.roll_call(scaled, {"roll_id": "close", "call": _call(value=4, difficulty=3, factors=[])})
+    # One short of the margin, but even a 1 on the d2 succeeds: certain, so no die either.
+    certain = roll_dice.roll_call(scaled, {"roll_id": "close", "call": _call(value=4, difficulty=3, factors=[])})
+    assert certain["auto"] is True and certain["certain"] is True and certain["dice"] == []
+    # A call that can still miss rolls.
+    rolled = roll_dice.roll_call(scaled, {"roll_id": "risky", "call": _call(value=1, difficulty=3, factors=[])})
     assert rolled["auto"] is False and len(rolled["dice"]) == 1
 
 
 @pytest.mark.parametrize(
     "value, difficulty, face, band",
     [
-        (3, 3, 1, "success"),
         (1, 3, 2, "success"),
         (1, 3, 1, "partial_small_cost"),
         (1, 4, 1, "partial_medium_cost"),
@@ -276,6 +281,15 @@ def test_band_mapping(value: int, difficulty: int, face: int, band: str) -> None
     outcome = roll_dice.evaluate_call(call, [face], resolution)
     assert outcome["band"] == band
     assert outcome["total"] == value + face and outcome["margin"] == value + face - difficulty
+    assert outcome["auto"] is False
+
+
+def test_a_certain_call_ignores_its_faces() -> None:
+    # 3 vs 3 on a d2: the lowest roll already reaches success.
+    resolution = odds.load_resolution(RESOLUTION)
+    call = roll_dice.normalize_call(_call(value=3, difficulty=3, factors=[]))
+    outcome = roll_dice.evaluate_call(call, [1], resolution)
+    assert outcome == {"dice": [], "total": 3, "margin": 0, "band": "success", "auto": True}
 
 
 def test_without_a_scale_the_call_names_its_die_and_bands_are_success_or_failure(campaign: Path) -> None:
@@ -286,8 +300,19 @@ def test_without_a_scale_the_call_names_its_die_and_bands_are_success_or_failure
     assert result["die"] == "1d6" and result["auto"] is False
     assert result["band"] == ("success" if result["margin"] >= 0 else "failure")
     assert result["band"] == "failure"  # 9 + 1 + d6 never reaches 20
-    call = roll_dice.normalize_call(_call(value=1, difficulty=2, factors=[]))
-    assert roll_dice.evaluate_call(call, [1], None)["band"] == "success"
+    # Without a scale the die count is the number of faces: one die always adds
+    # at least 1, so 1 vs 2 is certain and 1 vs 3 is rolled.
+    certain = roll_dice.normalize_call(_call(value=1, difficulty=2, factors=[]))
+    assert roll_dice.evaluate_call(certain, [1], None) == {
+        "dice": [],
+        "total": 1,
+        "margin": -1,
+        "band": "success",
+        "auto": True,
+    }
+    call = roll_dice.normalize_call(_call(value=1, difficulty=3, factors=[]))
+    assert roll_dice.evaluate_call(call, [2], None)["band"] == "success"
+    assert roll_dice.evaluate_call(call, [1], None)["band"] == "failure"
     assert roll_dice.evaluate_call(call, [1], None)["auto"] is False
 
 
@@ -638,7 +663,7 @@ def test_call_cli_prints_receipt_and_typed_failures(scaled: Path, capsys: pytest
     second = capsys.readouterr().out
     assert first.replace('"repeat": false', '"repeat": true') == second
     receipt = json.loads(first)
-    assert list(receipt)[:4] == ["ok", "repeat", "roll_id", "revision"]
+    assert list(receipt)[:5] == ["summary", "ok", "repeat", "roll_id", "revision"]
     assert first.isascii()
 
     clash = json.dumps({"roll_id": "cli", "call": _call(value=1)})
@@ -714,7 +739,13 @@ def test_a_call_without_a_reason_rolls_as_before(tmp_path: Path) -> None:
     (root / "current_state.yaml").write_text("campaign_id: test_campaign\ncontinuity_revision: 0\n", encoding="utf-8")
 
     def dice(call: dict) -> dict[str, list[int]]:
-        rolled = {r: roll_dice.roll_call(root, {"roll_id": r, "die": "2d20", "call": call})["dice"] for r in PINNED_2D20}
+        # 2 + 1 vs 4 is certain on 2d20 since 0.4.0, so the receipt records no
+        # dice; the faces its seed derives are what must not change.
+        rolled = {}
+        for roll_id in PINNED_2D20:
+            receipt = roll_dice.roll_call(root, {"roll_id": roll_id, "die": "2d20", "call": call})
+            seed = roll_dice._seed("test_campaign", 0, roll_id, "2d20", receipt["call"])
+            rolled[roll_id] = roll_dice._faces(seed, 2, 20)
         roll_dice.receipts_path(root).unlink()
         return rolled
 

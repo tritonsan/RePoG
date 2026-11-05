@@ -125,6 +125,7 @@ def test_checkpoint_fields_are_copied_into_the_scene_frame(campaign: Path) -> No
             "scene_mode": "aftermath",
             "resume_anchor": "Ilse waits for Mira's question.",
             "active_cast_handoff": "Ilse stays at the dock",
+            "open_choices": ["Ask Ilse about the cargo", "Leave the dock"],
         },
     )
     payload["changes"] = [item for item in payload["changes"] if item["id"] != "scene"]
@@ -137,6 +138,7 @@ def test_checkpoint_fields_are_copied_into_the_scene_frame(campaign: Path) -> No
     assert '  scene_id: "dock-after"\n' in state
     assert "  mode: aftermath\n" in state
     assert '  resume_anchor: "Ilse waits for Mira\'s question."\n' in state
+    assert '  open_choices:\n    - "Ask Ilse about the cargo"\n    - "Leave the dock"\n' in state
 
 
 def test_pure_checkpoint_needs_no_state_mutation(campaign: Path) -> None:

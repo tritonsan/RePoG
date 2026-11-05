@@ -71,15 +71,53 @@ Evaluate it only on a relevant time passage, return, news, relationship change,
 or linked-domain trigger. Reuse the same evaluation for the same trigger; do
 not reroll history.
 
+## Timed Threats
+
+A threat with a deadline is a fact the world keeps, not one the GM remembers.
+When it starts, give it an `active_clocks` entry in `current_state.yaml` (a
+`list_add` op) naming what fills it and what happens when it does, and, with
+the `clocks` module on, its clock through `add_clock`. Time passing then moves
+it: a skip ticks it and a filled clock fires on its own record. At an act
+close, run `python tools/world_pulse.py --input-file -` once for the domains
+whose trigger the act made due (scene and arc transition playbook).
+
 ## Time Skip
 
 Use this procedure when skipped time is long enough for relationships,
 threats, or recurring costs to move; a short compressed passage needs only the
 change it produced.
 
-1. Draft the skip OOC, in the Player's language and without file, tool, or id
-   names. Show only what the character knows by its end; hidden moves are
-   decided and recorded, not shown. Cover:
+### Time-Skip Brief
+
+The Player owns what the character does with the time, so start from their
+brief. When they ask to skip ahead without one, offer this short template in
+their language:
+
+- Span: from when to when, or "until something happens".
+- Stops: each place or stretch of time in order, and what the character does
+  there.
+- Accounts: what the character spends, earns, buys, pays, or owes on the way.
+- In or out: anything they want to happen, or to stay off the page.
+
+The GM answers with a sectioned montage: one short section per stop, in the
+order given, each ending on what changed there. Keep the whole reply to about
+800 words unless the Player asks for more. Write the reply first; the commit
+follows it, and the hand-back line comes last.
+
+### Skip Until Something Happens
+
+When the Player asks to let time run until something happens, compress the
+days until the first established trigger fires: a clock fills, a domain's
+trigger comes due, an NPC's next move arrives, or a condition the Player named
+is met. Give the quiet stretch a few lines, stop at that moment, and return
+control there. Nothing is invented to end the skip early; if no trigger is
+due within the span the Player allowed, the skip ends at that span quietly.
+
+### Resolving The Skip
+
+1. Resolve the skip silently before writing. The montage shows only what the
+   character knows by its end, in the Player's language and without file,
+   tool, or id names; hidden moves are decided and recorded, not shown. Cover:
    - the span, with its start and end;
    - each significant relationship's change, weighted by what `player.md` says
      the Player values;
@@ -103,16 +141,19 @@ change it produced.
      as one; `add_obligation` records a new recurring cost first;
    - projects, pending rewards, and whether the skip answers or forecloses the
      act's question.
-2. Wait for the Player's approval or edits, and redraft until approved. An
-   edit may change what the character did; world moves change only where that
-   causes them to.
-3. Commit the approved skip in one `commit-durable` call: its owner mutations
-   (the new `fictional_time.day` among them), mechanic operations (at most 16
-   per commit), every roll cited or voided, and
-   a checkpoint with scene mode `downtime` (boundary `scene_checkpoint` unless a
-   full distill is due). Narrate the arrival scene with the scene-entry
-   playbook; `runtime.persistence_order` sets whether the reply or the commit
-   comes first.
+2. With a brief, write the montage as the reply. Without one, when the GM
+   must propose what the character did, draft that part OOC first and wait for
+   the Player's approval or edits; an edit may change what the character did,
+   and world moves change only where that causes them to. A change the Player
+   asks for after the montage is an amend of the last beat (OOC adjustment
+   playbook).
+3. Commit the skip in one `commit-durable` call after the reply: its owner
+   mutations (the new `fictional_time.day` among them), mechanic operations
+   (at most 16 per commit), every roll cited or voided, and a checkpoint with
+   scene mode `downtime` and its `open_choices` (boundary `scene_checkpoint`
+   unless a full distill is due). The montage ends at the arrival scene's
+   first reaction point (scene-entry playbook), and the hand-back line follows
+   the commit. Under `commit_then_narrate` the commit comes first.
 
 ## Handoff
 

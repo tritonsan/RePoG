@@ -88,11 +88,12 @@ question list.
    dependent truth when needed. Each unresolved source or risk permission stays
    a budget-exempt separate turn.
 3. **Agency, Authorship, And Content Boundaries:** split this module by kind.
-   Ask the content boundary first and alone, using the standard category set in
-   `boundaries.md` with open, fade, or avoid for each, "everything open" as a
-   real answer, and both guarantees said out loud: a limit may be added at any
-   time including mid-play, and adding one is never a cost. Never place it in a
-   card, and never let a card acceptance set it.
+   Ask the content boundary first and alone, following `content_boundaries.md`:
+   the notice, the standard rows in `boundaries.md` with the two fixed rows and
+   each row's own options, the GM's stated limits, an optional stop word, and
+   both guarantees said out loud: a limit may be added at any time including
+   mid-play, and adding one is never a cost. Never place it in a card, and never
+   let a card acceptance set it.
 
    The separately counted decision is the authorship and consequence stance, with
    its two axes kept independent: who authors the character's inner life, past,

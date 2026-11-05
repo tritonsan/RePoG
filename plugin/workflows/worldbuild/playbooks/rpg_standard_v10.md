@@ -49,6 +49,11 @@ physical questionnaire, and separate module-20/21 acceptance do not apply.
 Independent questions remain independent; there is no reason to bundle play
 mix and pace to meet a count. Rows express coverage, not rigid question order.
 
+Settle the play language first (router, Play Language). Row 3's content
+boundary follows `content_boundaries.md`. Ask the NPC power scale before row 14
+names any face, and write the price and bounty anchor table with row 10's world
+truths (router).
+
 Inherit the pre-depth premise and all early answers. Resolve source permission
 before source-dependent options and authorship before protected character
 proposals. Establish a world-independent character seed, then enough accepted

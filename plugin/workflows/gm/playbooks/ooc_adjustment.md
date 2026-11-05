@@ -92,6 +92,50 @@ a scratch folder whose `play_profile.yaml` holds only the proposed `mechanics:`
 block. Apply the accepted change through the paths above, mapping every
 existing value by one stated rule as the `rules.md` Scale Migration describes.
 
+Any change to the die, the bands, the automatic-success margin, the factor
+sizes, or the difficulty formula takes the same path, and the Player sees what
+it does before deciding. Show the odds before and after on the campaign's real
+matchups, not on the whole table: the value and difficulty pairs of the recent
+receipts in `campaign/.repog-runtime/rolls.jsonl`, and the player character's
+strongest axes against the `rules.md` Tier Caps. Give, for each pair, the chance
+of each band before and after, and say plainly when a band becomes unreachable.
+
+Offer "from the next roll" first: earlier receipts and their bands stay as
+rolled. Only when the Player asks for the change to reach back, record each
+affected earlier roll with one reread row, never by editing its receipt:
+
+```sh
+python tools/roll_dice.py --campaign campaign reread --input-file - <<'JSON'
+{"roll_id": "dock-feint", "reason": "difficulty formula corrected by OOC request", "new_band": "partial_small_cost"}
+JSON
+```
+
+A reread is never an open receipt and is never cited. A fictional result that
+the new band changes is a retcon (below), committed once through the durable
+writer.
+
+## Answer A Language Complaint
+
+When the Player says the prose reads wrong in the play language (a calque, a
+foreign word, a stiff construction), acknowledge it in one line, then rewrite
+the last reply in the same turn with the phrase gone. Keep the rewrite to the
+same events; it changes wording, not fiction. Then record the phrase so it does
+not return: as an entry in `narration.narrative_signature.avoid_habits` when the
+Player wants it there, or as an example under the language directive in
+`directives.md`, a replacement row that names the id it supersedes, or a new
+`global` row when there is no language directive yet.
+
+## Amend The Last Beat
+
+"Write it as if I said it there" asks for a retro-edit of the last narrated
+beat: the Player adds or changes what their character said or did in it. When
+the change is the Player's own action and nothing after it depends on the old
+version, amend that beat through one commit: a `commit-durable` when the
+amended beat establishes a fact, otherwise a `commit-checkpoint` whose resume
+anchor records it. Then show the Player the amended line as it now stands.
+Narrate no reaction to the amended line unless the Player asks to continue
+from it; a change that alters later results is a retcon (below).
+
 ## Keep A Retcon Causally Complete
 
 An explicit retcon is not a style correction or a secondary summary edit. Read

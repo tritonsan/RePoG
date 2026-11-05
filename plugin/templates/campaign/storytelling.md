@@ -264,7 +264,9 @@ style. `style_state.json` retains the recent global ring plus up to eight named
 character voices with up to four fingerprints each; it stores no full dialogue.
 Named-voice samples survive intervening narrator turns, while least recently
 recorded voices eventually expire. Reload the character note after a long absence.
-Use this at the selected sampled/distill cadence, never as a gate on every turn.
+Use this at the selected sampled/distill cadence, and only with
+`runtime.presentation_lint: off` (with the lint on, its history is the
+repetition memory), never as a gate on every turn.
 Surface repetition warnings are prompts for judgment, not measures of literary
 quality. Deliberate motifs and shared faction phrases may be worth retaining.
 Do not add length, metaphors, threats, or gestures just to remove a warning.

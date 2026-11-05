@@ -9,7 +9,8 @@ appending one.
 The module is deliberately semantic-free: it never decides what a fact means,
 which owner holds it, or whether a change is plausible. It only refuses
 ambiguous or impossible addresses, so a mistyped heading fails loudly instead
-of writing in the wrong place.
+of writing in the wrong place. The same holds for the `## Now` budget: dated
+lines move to `## History` by their day number alone, never by what they say.
 """
 
 from __future__ import annotations
@@ -36,6 +37,33 @@ FENCE_RE = re.compile(r"^[ \t]*(```|~~~)")
 TABLE_SEPARATOR_RE = re.compile(r"^\|?[ \t]*:?-{3,}:?[ \t]*(\|[ \t]*:?-{3,}:?[ \t]*)*\|?[ \t]*$")
 PLACEHOLDER_RE = re.compile(r"\{\{\s*(revision|next_id:([A-Za-z][A-Za-z0-9_]{0,31}))\s*\}\}")
 REVISION_STAMP_RE = re.compile(r"(?m)^(As of revision:[ \t]*)(\d+)([ \t]*)$")
+# A key-path segment: a Unicode identifier (`Algı`), or a quoted key that may
+# hold spaces (`"Sokak Zekâsı"`), as YAML allows.
+KEY_SEGMENT_RE = re.compile(r"\"([^\"\r\n]+)\"|'([^'\r\n]+)'|([\w-]+)")
+# The key a YAML mapping line declares, quoted or bare, up to its colon.
+LINE_KEY_RE = re.compile(
+    r"^ *(?P<raw>\"(?P<dq>[^\"\r\n]*)\"|'(?P<sq>[^'\r\n]*)'|(?P<bare>[^\s\"'#:][^:#\r\n]*?))[ \t]*:(?:[ \t]|$)"
+)
+
+# `## Now` budget: a note's present situation, not its diary. Dated entries
+# start with a day marker in any pack language or carry "(day N)".
+NOW_MAX_CHARS = 800
+NOW_MAX_DATED = 3
+DAY_WORDS = ("day", "gün", "tag", "día", "dia", "jour")  # en, tr, de, es, fr
+_DAY_WORD = "(?:" + "|".join(DAY_WORDS) + ")"
+# A day marker is "Day 12", or an ordinal before the day word: "12. gün" (tr),
+# "12. Tag" (de), "12'nci gün", "12th day", "12e jour", "12º día". Turkish may
+# add a case ending ("12. günde").
+_ORDINAL = r"(?:\s*\.|\s*['’]?\s*[ıiuü]?nc[ıiuü]|st|nd|rd|th|e|er|ème|eme|\.?[ºª])"
+# A range ("Days 18-23", "18-23. günler") dates its entry by the first day.
+_RANGE_END = r"(?:\s*[-–]\s*\d+)?"
+_DAY_MARKER = (
+    rf"(?:{_DAY_WORD}(?:s|e)?\s+(\d+){_RANGE_END}\b"
+    rf"|(\d+){_RANGE_END}{_ORDINAL}\s*{_DAY_WORD}(?:ü|ün|ünde|de|den|ler|leri|lerde|lerinde)?(?!\w))"
+)
+DATED_START_RE = re.compile(rf"^\s*(?:[-*+]\s+)?(?:\*\*|__)?{_DAY_MARKER}", re.IGNORECASE)
+DATED_INLINE_RE = re.compile(rf"\(\s*{_DAY_MARKER}\s*\)", re.IGNORECASE)
+BULLET_RE = re.compile(r"^\s*[-*+]\s")
 
 
 class OwnerOpError(Exception):
@@ -120,8 +148,46 @@ def _is_content(line: str) -> bool:
     return bool(stripped) and not stripped.startswith("#")
 
 
+def _line_key(line: str) -> re.Match[str] | None:
+    return LINE_KEY_RE.match(line.rstrip("\r\n"))
+
+
 def _key_match(line: str, key: str, indent: int) -> bool:
-    return _indent(line) == indent and re.match(rf"^ *{re.escape(key)}:(?:[ \t]|$)", line.rstrip("\r\n")) is not None
+    if _indent(line) != indent:
+        return False
+    match = _line_key(line)
+    if match is None:
+        return False
+    return next(group for group in (match.group("dq"), match.group("sq"), match.group("bare")) if group is not None) == key
+
+
+def _key_token(line: str) -> str:
+    """The key exactly as the line writes it, quotes included."""
+
+    match = _line_key(line)
+    return match.group("raw") if match else line.split(":", 1)[0].strip()
+
+
+def _key_parts(key_path: str) -> list[str]:
+    """Split `player.stats."Sokak Zekâsı"` into its keys."""
+
+    parts: list[str] = []
+    position = 0
+    while True:
+        match = KEY_SEGMENT_RE.match(key_path, position)
+        if match is None:
+            break
+        parts.append(next(group for group in match.groups() if group is not None))
+        position = match.end()
+        if position == len(key_path):
+            return parts
+        if key_path[position] != ".":
+            break
+        position += 1
+    raise OwnerOpError(
+        "input_invalid",
+        f"key path '{key_path}' must be dot-separated keys; quote a key with spaces, as in player.stats.\"Sokak Zekâsı\"",
+    )
 
 
 def _block_end(lines: list[str], index: int) -> int:
@@ -150,9 +216,7 @@ def _block_end(lines: list[str], index: int) -> int:
 
 
 def _locate_key(lines: list[str], key_path: str) -> int:
-    parts = key_path.split(".")
-    if not key_path or any(not part or not re.fullmatch(r"[A-Za-z0-9_-]+", part) for part in parts):
-        raise OwnerOpError("input_invalid", f"key path '{key_path}' must be dot-separated simple keys")
+    parts = _key_parts(key_path)
     if parts[0] in PROTECTED_YAML_KEYS:
         raise OwnerOpError("input_invalid", f"'{parts[0]}' is managed by the writer and cannot be edited")
     start, end, indent = 0, len(lines), 0
@@ -261,14 +325,14 @@ def _set_key(lines: list[str], key_path: str, value: Any, label: str) -> None:
         raise OwnerOpError("candidate_invalid", f"'{key_path}' is a list; use list_add, list_remove, or list_set")
     if isinstance(value, (list, dict)):
         raise OwnerOpError("input_invalid", f"{label} must be a scalar; use list_set for lists")
-    key = key_path.rsplit(".", 1)[-1]
+    key = _key_token(lines[index])
     prefix = " " * _indent(lines[index])
     _write_value(lines, index, [f"{prefix}{key}: {_render_scalar(value, label)}"])
 
 
 def _set_list(lines: list[str], key_path: str, items: list[str]) -> None:
     index = _locate_key(lines, key_path)
-    key = key_path.rsplit(".", 1)[-1]
+    key = _key_token(lines[index])
     prefix = " " * _indent(lines[index])
     if not items:
         _write_value(lines, index, [f"{prefix}{key}: []"])
@@ -644,6 +708,258 @@ def set_scene_frame(text: str, *, scene_id: str, scene_mode: str, resume_anchor:
     ):
         _set_key(lines, key, value, f"checkpoint -> {key}")
     return "".join(lines)
+
+
+def set_open_choices(text: str, choices: list[str]) -> str:
+    """Replace current_state.yaml's `current_scene.open_choices` list."""
+
+    lines = text.splitlines(keepends=True)
+    _set_list(lines, "current_scene.open_choices", choices)
+    return "".join(lines)
+
+
+def key_block(text: str, key_path: str) -> str | None:
+    """One YAML key and its value as written, or None when it is absent or ambiguous."""
+
+    lines = text.splitlines(keepends=True)
+    try:
+        index = _locate_key(lines, key_path)
+    except OwnerOpError:
+        return None
+    return "".join(lines[index : _block_end(lines, index)])
+
+
+def table_rows(text: str, table: int = 0) -> tuple[list[str], list[list[str]]]:
+    """Header cells and data rows of one Markdown table; ([], []) when there is none."""
+
+    lines = text.splitlines(keepends=True)
+    try:
+        first, last = _table_bounds(lines, 0, len(lines), table, "table")
+    except OwnerOpError:
+        return [], []
+    return _split_row(lines[first]), [_split_row(line) for line in lines[first + 2 : last]]
+
+
+def _section_bounds(lines: list[str], title: str, level: int = 2) -> tuple[int, int] | None:
+    """(heading line, end) of the one heading with this title and level, else None."""
+
+    headings = _headings(lines)
+    matches = [item for item in headings if item[1] == level and item[2].casefold() == title.casefold()]
+    if len(matches) != 1:
+        return None
+    index = matches[0][0]
+    return index, _section_end(lines, headings, index, level)
+
+
+def section_body(text: str, title: str, level: int = 2) -> list[str] | None:
+    """The lines under one uniquely titled heading, subsections included; None without it."""
+
+    lines = text.splitlines(keepends=True)
+    bounds = _section_bounds(lines, title, level)
+    return None if bounds is None else lines[bounds[0] + 1 : bounds[1]]
+
+
+def set_fields(text: str, title: str, values: dict[str, str]) -> str:
+    """Set `- Field: value` lines in one level-2 section; append the fields it lacks.
+
+    Lines inside HTML comments are guidance, never fields.
+    """
+
+    lines = text.splitlines(keepends=True)
+    bounds = _section_bounds(lines, title)
+    if bounds is None:
+        raise OwnerOpError("candidate_invalid", f"expected exactly one '## {title}' section")
+    newline = _newline(text)
+    hidden = _comment_mask(lines)
+    missing = dict(values)
+    for index in range(bounds[0] + 1, bounds[1]):
+        for field in list(missing):
+            match = re.match(rf"^(\s*[-*]\s+){re.escape(field)}:", lines[index])
+            if match and not hidden[index]:
+                lines[index] = f"{match.group(1)}{field}: {missing.pop(field)}".rstrip() + newline
+                break
+    insert_at = _last_content(lines, bounds[0] + 1, bounds[1])
+    _ensure_line_break(lines, insert_at, newline)
+    lines[insert_at:insert_at] = [f"- {field}: {value}".rstrip() + newline for field, value in missing.items()]
+    return "".join(lines)
+
+
+def core_status(text: str) -> str:
+    """The `- Status:` value in a note's `## Core` section, lower-cased; "" when absent."""
+
+    lines = text.splitlines(keepends=True)
+    bounds = _section_bounds(lines, "Core")
+    if bounds is None:
+        return ""
+    for line in lines[bounds[0] + 1 : bounds[1]]:
+        match = re.match(r"^\s*[-*]\s+Status:[ \t]*(.*?)\s*$", line)
+        if match:
+            return match.group(1).strip().casefold()
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# `## Now` budget
+# ---------------------------------------------------------------------------
+
+
+def _comment_mask(lines: list[str]) -> list[bool]:
+    """True for each line that sits in, opens, or closes an HTML comment."""
+
+    mask: list[bool] = []
+    inside = False
+    for line in lines:
+        opens = "<!--" in line
+        mask.append(inside or opens)
+        if opens and "-->" not in line.split("<!--", 1)[1]:
+            inside = True
+        elif inside and "-->" in line:
+            inside = False
+    return mask
+
+
+def _indent(line: str) -> int:
+    expanded = line.expandtabs(4)
+    return len(expanded) - len(expanded.lstrip())
+
+
+def _entry_end(body: list[str], hidden: list[bool], start: int) -> int:
+    """The line after a dated entry: every following line indented deeper than
+    its first line belongs to it, wrapped text and nested bullets alike, also
+    across a blank line. A line at the same or a smaller indent ends it."""
+
+    base = _indent(body[start])
+    end = scan = start + 1
+    while scan < len(body) and not hidden[scan]:
+        if body[scan].strip():
+            if _indent(body[scan]) <= base:
+                break
+            end = scan + 1
+        scan += 1
+    return end
+
+
+def _now_entries(body: list[str], hidden: list[bool]) -> list[tuple[int, int, int]]:
+    """(start, end, day) for every dated entry in a `## Now` body.
+
+    An entry is a dated line plus the deeper-indented lines under it; a dated
+    line nested under another entry moves with that entry.
+    """
+
+    entries: list[tuple[int, int, int]] = []
+    index = 0
+    while index < len(body):
+        line = body[index]
+        match = None if hidden[index] else (DATED_START_RE.match(line) or DATED_INLINE_RE.search(line))
+        if match is None:
+            index += 1
+            continue
+        end = _entry_end(body, hidden, index)
+        entries.append((index, end, int(next(day for day in match.groups() if day))))
+        index = end
+    return entries
+
+
+def _now_size(body: list[str], hidden: list[bool]) -> int:
+    text = "".join(line for line, comment in zip(body, hidden) if not comment)
+    return len(text.replace("\r\n", "\n").strip())
+
+
+def now_status(text: str) -> tuple[int, int] | None:
+    """(characters, dated entries) of a note's `## Now` section; None without one.
+
+    Characters exclude the HTML guidance comment and surrounding blank lines.
+    """
+
+    lines = text.splitlines(keepends=True)
+    bounds = _section_bounds(lines, "Now")
+    if bounds is None:
+        return None
+    body = lines[bounds[0] + 1 : bounds[1]]
+    hidden = _comment_mask(body)
+    return _now_size(body, hidden), len(_now_entries(body, hidden))
+
+
+def now_over_budget(text: str) -> bool:
+    status = now_status(text)
+    return status is not None and (status[0] > NOW_MAX_CHARS or status[1] > NOW_MAX_DATED)
+
+
+def _history_line(line: str, first: bool) -> str:
+    """A moved line, made a list item when it was a plain paragraph line."""
+
+    if first and not BULLET_RE.match(line):
+        return "- " + line.lstrip()
+    return line
+
+
+def fold_now(text: str) -> tuple[str, int]:
+    """Move the oldest dated `## Now` entries into `## History` until Now fits.
+
+    Oldest means the lowest day number, then the earliest line. Undated lines
+    stay where they are. `## History` is created right after `## Now` when the
+    note has none. Returns the new text and the number of entries moved.
+    """
+
+    lines = text.splitlines(keepends=True)
+    bounds = _section_bounds(lines, "Now")
+    if bounds is None:
+        return text, 0
+    newline = _newline(text)
+    start, end = bounds[0] + 1, bounds[1]
+    body = lines[start:end]
+    hidden = _comment_mask(body)
+    entries = _now_entries(body, hidden)
+    removed: set[int] = set()
+    moved: list[tuple[int, int, int]] = []
+
+    def remaining(rows: list[str]) -> list[str]:
+        return [line for position, line in enumerate(rows) if position not in removed]
+
+    def over() -> bool:
+        kept_hidden = [flag for position, flag in enumerate(hidden) if position not in removed]
+        return _now_size(remaining(body), kept_hidden) > NOW_MAX_CHARS or len(entries) - len(moved) > NOW_MAX_DATED
+
+    candidates = sorted(entries, key=lambda item: (item[2], item[0]))
+    while candidates and over():
+        entry = candidates.pop(0)
+        moved.append(entry)
+        removed.update(range(entry[0], entry[1]))
+    if not moved:
+        return text, 0
+
+    kept: list[str] = []
+    for line in remaining(body):
+        if not line.strip() and kept and not kept[-1].strip():
+            continue  # a removed paragraph leaves no double blank line behind
+        kept.append(line)
+    moved_lines: list[str] = []
+    for entry_start, entry_end, _ in sorted(moved, key=lambda item: (item[2], item[0])):
+        for offset, line in enumerate(body[entry_start:entry_end]):
+            line = _history_line(line, offset == 0)
+            moved_lines.append(line if line.endswith(("\n", "\r")) else line + newline)
+    lines[start:end] = kept
+
+    history = _section_bounds(lines, "History")
+    if history is not None:
+        insert_at = _last_content(lines, history[0] + 1, history[1])
+        block = moved_lines
+        if insert_at == history[0] + 1:
+            block = [newline] + block
+            if history[1] == history[0] + 1 and history[1] < len(lines):
+                block.append(newline)
+        _ensure_line_break(lines, insert_at, newline)
+        lines[insert_at:insert_at] = block
+    else:
+        now_end = _section_bounds(lines, "Now")[1]  # type: ignore[index]
+        insert_at = _last_content(lines, 0, now_end)
+        _ensure_line_break(lines, insert_at, newline)
+        block = [newline, f"## History{newline}", newline] + moved_lines
+        # Blank lines after the insertion point already separate the next heading.
+        if insert_at == now_end and now_end < len(lines):
+            block.append(newline)
+        lines[insert_at:insert_at] = block
+    return "".join(lines), len(moved)
 
 
 def stacked_headings(text: str, *, minimum: int = 3) -> list[tuple[str, int]]:

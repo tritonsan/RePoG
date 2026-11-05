@@ -124,7 +124,7 @@ def test_session_start_marks_a_full_capsule(campaign: Path, tmp_path: Path, caps
     event = {"cwd": str(tmp_path), "session_id": "s-3", "prompt": "Hello."}
     _run("prompt", event, capsysbinary, monkeypatch)
     _run("prompt", event, capsysbinary, monkeypatch)
-    assert _run("session-start", {"cwd": str(tmp_path), "session_id": "s-3", "source": "compact"}, capsysbinary, monkeypatch) == b""
+    assert _run("session-start", {"cwd": str(tmp_path), "session_id": "s-3", "source": "clear"}, capsysbinary, monkeypatch) == b""
     context = json.loads(_run("prompt", event, capsysbinary, monkeypatch))["hookSpecificOutput"]["additionalContext"]
     assert "[cast]" in context or "[language]" in context
 
@@ -198,6 +198,21 @@ def test_shell_wrappers_end_to_end(campaign: Path, tmp_path: Path) -> None:
 
     start = _script("session-start.sh", {"cwd": str(tmp_path), "session_id": "s-9", "source": "startup"}, tmp_path)
     assert start.returncode == 0 and b"repog:play" in start.stdout
+    assert b"Locked persistence order" not in start.stdout
+
+
+@pytest.mark.skipif(SH is None, reason="needs a POSIX sh")
+def test_session_start_after_a_compaction_prints_the_reminder_then_the_notice(campaign: Path, tmp_path: Path) -> None:
+    (campaign / "storytelling.md").write_bytes("# Storytelling\n\n## Örnek Anlatım\n\nSis limanı yutuyor.\n".encode("utf-8"))
+    result = _script("session-start.sh", {"cwd": str(tmp_path), "session_id": "s-9", "source": "compact"}, tmp_path)
+    lines = result.stdout.decode("utf-8").splitlines()
+    assert result.returncode == 0 and "repog:play" in lines[0]
+    assert lines[1:] == [
+        "Accepted style samples (storytelling.md): calibrate the voice to them; never copy their wording.",
+        "## Örnek Anlatım",
+        "Sis limanı yutuyor.",
+        "Locked persistence order: narrate_then_commit; follow it, not any order rule from the summary.",
+    ]
 
 
 @pytest.mark.skipif(SH is None, reason="needs a POSIX sh")

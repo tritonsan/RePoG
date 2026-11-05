@@ -161,6 +161,10 @@
         "not_needed",
         "approved",
         "declined"
+      ],
+      "npc_power_scales": [
+        "closed",
+        "region_anchored_open"
       ]
     },
     "topology": {

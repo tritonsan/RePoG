@@ -41,6 +41,22 @@ behavior only from accepted choices and permitted visible defaults. Do not
 assume a franchise system, genre mechanic, power model, or relationship
 trajectory.
 
+Settle the play language right after the depth choice and before any content
+is written (RPG: `session_zero_state.py set-language`). From then on every
+record's content is written in that language, while file names, YAML keys,
+headings, `- Label:` names, table headers, enum values, and ids stay exactly as
+the templates write them. For schema-v10+ RPG and schema-v8+ RPG Deep, set
+depth and language with the helper, never by a hand edit of the profile files;
+other routes follow their playbook.
+
+The content boundary follows `workflows/worldbuild/playbooks/content_boundaries.md`
+on every route, notice included. Its two fixed rows are never offered and never
+change: no one under 18 in any sexual or romantic context, including backstory,
+and no graphic violence against children on the page. No character's romantic
+or sexual relationship, past or present, begins before 18, and no age or
+duration arithmetic may imply it. The GM records the limits it states for its
+own writing.
+
 A coherent Starter Bundle or other setup bundle may count as one content
 decision only when its elements belong together. Show how it changes the
 experience, what tracking or automation it adds, its performance or usage
@@ -117,7 +133,9 @@ summary and the finalization workflow completes its documented preflight,
 current-revision profile lock, required materialization, enabled projections,
 starting snapshot, and aggregate validation with zero errors. If finalization
 fails, restore the documented draft state and continue setup or repair; do not
-narrate from a partially ready workspace.
+narrate from a partially ready workspace. Before readiness, every NPC card is
+calibrated to the NPC power scale accepted before the first named cast. The
+Deep ledger runs the whole readiness sequence with one `finalize` call.
 
 Every RPG Session 0 depth must explicitly choose a turn protocol during System
 Fit and store it under `play_profile.yaml.performance`. Companion mode instead
@@ -128,9 +146,9 @@ For RPG, offer:
   `validation_policy: full_on_distill`; current truth is immediate, scene ends
   receive a continuation checkpoint, and secondary propagation plus the full
   check waits for five durable turns or another full-distill trigger;
-- `balanced`: use `scene_checkpoint_or_3_durable` with
+- `balanced`: use `scene_checkpoint_or_5_durable` with
   `validation_policy: full_on_distill`; checkpoint scene ends and reconcile
-  secondary propagation plus the full check after at most three durable turns;
+  secondary propagation plus the full check after at most five durable turns;
 - `maximum_continuity`: use `every_durable` with
   `validation_policy: full_each_durable`; reconcile every affected secondary
   note and complete the full check on each durable turn;

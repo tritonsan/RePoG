@@ -291,6 +291,55 @@ a reward the campaign can apply.
 - A new capability attaches to a declared axis. A genuinely new axis belongs to a
   stage boundary and is asked there as a revision, never granted as an arc reward.
 
+## Awards Follow Rolled Axes
+
+Stat points earned in an act go to the axes the character actually rolled in
+that act, never to any axis the Player would like to raise. List them before
+the closure offer with `python tools/roll_dice.py --campaign campaign axes
+--since-revision N`, where N is the act's `Opened at revision`. An axis the act
+never tested earns nothing from it; growth there needs its own training,
+downtime, or scene. A recognized ability may still come from what the
+character did without a roll, as the third track describes.
+
+## Region Cap
+
+A long journey grows region by region. The cap is the highest value any axis,
+and any Mastery level, may reach while the campaign stays in the current
+region. It rises when the campaign crosses into a wider region, as a stage
+revision recorded here, never as an act award.
+
+- Current region:
+- Axis cap here:
+- Mastery cap here:
+- What raises it:
+
+An award that would pass the cap waits for the next region unless the Player
+explicitly accepts the overreach; record that acceptance beside the award in
+`arc_closure.md`.
+
+## Signature Power Mastery
+
+Optional. Use this track when the character has one defining power, such as an
+inherited gift, a bound spirit, or a discipline, that grows on its own levels
+instead of through stat points. Write one row per level the campaign expects to
+reach, in the setting's own terms, before the first level rises, so growth has
+a visible ceiling and room to improvise inside it.
+
+- Power:
+- Current level:
+- Cost inside the level:
+- Cost past the level:
+
+| Level | Reach | What it can affect | How many at once | Largest factor it adds |
+| --- | --- | --- | --- | --- |
+
+Use inside the current level costs nothing beyond its fiction: do not tax the
+character's defining power on every use. Pushing past the level is possible
+once in a scene and leaves a condition such as fatigue, recorded like any other
+condition. The power adds a roll factor no larger than its level allows,
+whatever else stacks with it. A level rises only as an award at a closure,
+within the region cap.
+
 ## Setting-Instantiated Reward Pool
 
 The pool below is a list of categories, and categories are not rewards. Record this

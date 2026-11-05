@@ -38,7 +38,13 @@ With `runtime.scene_capsule: on`, each prompt carries a hidden scene capsule:
 the first pointer to the present cast's Core lines, secret holders by fact id,
 directives in scope, open rolls, and the last reply's lint findings. It is a
 deterministic read of owners, and the owners stay authoritative: read the owner
-before asserting or changing a fact the capsule points to. `directives.md`
+before asserting or changing a fact the capsule points to. Act on its status
+lines when they appear: `[order]` names a turn-order slip to correct this turn;
+`[habits]` names the presentation habits of recent replies to keep out of this
+one; `[curation] due` names notes waiting for the curator (launch it, or fold
+them at the next distill under `boundary_curator: inline`); `[state]` gives the
+revision and the `current_state.yaml` keys a payload may use; and a `does not
+know` line under a present NPC is knowledge that NPC must not show. `directives.md`
 holds the Player's standing table rules; follow every active row in scope, and
 read the file with the hot owners when the capsule is off. Once per fresh
 context, also read `packs/languages/<code>.md` for the play language when it
@@ -112,6 +118,7 @@ number cannot tell you whether an action is routine, contested, or out of reach.
 - Scene checkpoint, closure, advancement, or next act: `playbooks/scene_arc_transition.md`.
 - Causally justified communication, delivery/discovery, public reaction, or a
   Player-authored message: `playbooks/world_voices.md`.
+- An image prompt for an external tool the Player runs: `playbooks/visuals.md`.
 
 Load more than one only when the turn genuinely crosses those functions.
 
@@ -145,7 +152,7 @@ Never mention worker allocation, parallelism, consolidation, or fallback in
 Player Mode. A short natural wait expectation may be given when the selected
 latency policy calls for one, but technical orchestration remains invisible.
 
-# Route -> Resolve -> Persist -> Narrate
+# Route -> Resolve -> Narrate And Persist
 
 ## 1. Route
 
@@ -215,7 +222,29 @@ or guided interiority is allowed only to the degree selected in
 `play_profile.yaml.narration.narrative_signature.interiority_policy` or
 explicitly invited by the Player.
 
-## 3. Persist
+## 3. Narrate And Persist
+
+The Player sees any text written before or between tool calls, so the turn's
+silent and visible work go in a fixed order. Under the default
+`runtime.persistence_order: narrate_then_commit`:
+
+1. silent reads and rolls: every owner read and roll call the turn needs, with
+   no text before or between them;
+2. the narration, written as text;
+3. one commit, when anything persists;
+4. a hand-back line: the scene's last line, where control returns to the
+   Player, or one OOC line if something could not be saved.
+
+A soft turn is step 1 and step 2 alone. Hold back the line that hands control
+to the Player until after the commit, so the turn ends on visible text and not
+on a tool call. Never run the commit in the background: its result decides
+whether the hand-back is the scene's last line or a correction. A distill and
+the full check run after the reply; when one is due it follows the commit, and
+the hand-back line still comes last. Under `commit_then_narrate`, reads, rolls,
+and the commit stay silent and the narration comes last.
+`playbooks/persistence.md` holds the exact contract.
+
+### Decide What Persists
 
 Apply the restart-loss test: a changed fact needed after restart is durable;
 otherwise it is soft. Select the structural boundary independently. A soft
@@ -228,13 +257,18 @@ choice. New promises, permissions, or relationship changes remain durable.
 
 For any durable result, checkpoint, or full-distill trigger, load
 `playbooks/persistence.md` and commit exactly once through the owning helper.
-No changed fact's sole owner may be deferred. `runtime.persistence_order` orders
-the reply and the commit (by default the step 4 reply comes first and the one
-commit follows it); a required full distill finishes in the same turn.
+No changed fact's sole owner may be deferred. The order above places the
+commit; a required full distill finishes in the same turn, after the reply.
+Write every record's content in the records language
+(`play_profile.yaml.narration.records_language`, or the play language when it
+is `same`): descriptions, `## Now` and History lines, Depth, Agency Card
+values, summaries, facts, thread text, and names. Keep the structure exactly as
+the templates write it: file names, YAML keys, headings, `- Label:` names,
+table headers, enum values, ids, and op names.
 Optional surfaces use their triggered playbooks; load only the relevant entry
 of `../reference/authority-map.md` when ownership is unclear.
 
-## 4. Narrate
+### Narrate
 
 Use the profile's POV, tense, camera, density, length, dialogue mix, Narrative
 Signature, and avoid-list. State only perceivable/known facts. Narration may not
@@ -307,11 +341,13 @@ identity. Use contextual speech examples as references, never repeated lines.
 Personal and shared-domain trajectories have one owner per process; load the
 continuity reference when handing a process between them.
 
-`style_state.json` is the only repetition and last-speaker memory in the system.
-When the selected style policy samples a turn, update its fingerprints; an
-untouched style state across a long campaign means narrator habits and NPC
-cadences are drifting without any record. It stays warning-only and never
-rewrites narration.
+With `runtime.presentation_lint: on`, the lint history is the repetition
+memory: the capsule's `[habits]` line and the distill result's `lint_report`
+name the narrator gestures and NPC cadences that keep returning, so vary them.
+With the lint off, and only then, `style_state.json` holds that memory,
+recorded through `tools/check_style.py` when the selected style policy samples
+a turn, and only then does the full check warn `style_state_inert`. Both stay
+warning-only and never rewrite narration.
 
 # Pacing And Advancement
 
