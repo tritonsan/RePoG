@@ -1,0 +1,59 @@
+{
+  "code": "fr",
+  "name": "Français",
+  "casefold": "default",
+  "stopwords": [
+    "a", "à", "au", "aux", "avec", "ce", "ces", "cet", "cette", "dans",
+    "de", "des", "du", "elle", "elles", "en", "et", "il", "ils", "je",
+    "j", "la", "le", "les", "leur", "leurs", "lui", "ma", "mais", "me",
+    "même", "mes", "moi", "mon", "ne", "nos", "notre", "nous", "on", "ou",
+    "où", "par", "pas", "pour", "qu", "que", "qui", "sa", "se", "ses",
+    "sur", "ta", "te", "tes", "toi", "ton", "tu", "un", "une", "vos",
+    "votre", "vous", "c", "d", "l", "n", "y", "est", "sont", "était",
+    "étaient", "été", "être", "ai", "as", "avait", "avaient", "avons", "avez", "ont",
+    "eu", "fait", "comme", "si", "plus", "tout", "tous", "toute", "toutes", "rien",
+    "bien", "très", "aussi", "encore", "déjà", "puis", "alors", "donc", "quand", "lorsque",
+    "parce", "sans", "sous", "vers", "chez", "entre", "depuis", "pendant", "avant", "après",
+    "contre", "jamais", "toujours", "peu", "trop", "ici", "là", "cela", "ça", "ceci",
+    "celui", "celle", "ceux", "dont", "quoi", "quel", "quelle", "chaque", "autre", "autres",
+    "aucun", "aucune", "non", "oui", "peut", "va", "vais", "suis", "es", "sommes",
+    "êtes", "fut", "soit", "ni", "eux", "tant", "dit"
+  ],
+  "avoid_phrases": [
+    {"phrase": "un instant", "max_per_reply": 1, "note": "overused pause beat"},
+    {"phrase": "un long moment", "max_per_reply": 0, "note": "stock beat"}
+  ],
+  "negated_description": [
+    "\\bce\\s+n['’]était\\s+pas\\s+\\w+(?:\\s+\\w+)?\\s*[,;:.—–-]+\\s*c['’]était\\b",
+    "\\bni\\s+\\w+(?:\\s*,)?\\s+ni\\b",
+    "\\bne\\s+(?:tremblait|trembla|vacillait|vacilla|faiblissait|faiblit|cillait|cilla)\\s+pas\\b"
+  ],
+  "day_patterns": [
+    "\\bjour\\s*(?:[:#]\\s*)?\\d+\\b",
+    "\\b\\d+\\s*(?:e|è|ème|eme|er|ᵉ)\\s+jour\\b",
+    "\\b(?:\\w+-){1,4}\\w*i[èe]me\\s+jour\\b",
+    "\\b(?:dixi|onzi|douzi|treizi|quatorzi|quinzi|seizi|vingti|trenti|quaranti|cinquanti|soixanti|centi)[èe]me\\s+jour\\b"
+  ],
+  "pc_speech_patterns": [
+    "\\btu\\s+(?:dis|as\\s+dit|demandes|as\\s+demandé|réponds|as\\s+répondu|murmures|as\\s+murmuré|chuchotes|ajoutes|souris|as\\s+souri|soupires|hoches|acquiesces|décides|as\\s+décidé|promets|acceptes)\\b",
+    "\\b(?:dis|demandes|réponds|murmures|chuchotes|ajoutes|lances)-tu\\b",
+    "\\bvous\\s+(?:dites|avez\\s+dit|demandez|avez\\s+demandé|répondez|avez\\s+répondu|murmurez|chuchotez|ajoutez|souriez|soupirez|hochez|acquiescez|décidez|avez\\s+décidé|promettez|acceptez)\\b",
+    "\\b(?:dites|demandez|répondez|murmurez|chuchotez|ajoutez|lancez)-vous\\b"
+  ],
+  "number_words": {
+    "un": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6, "sept": 7, "huit": 8, "neuf": 9, "dix": 10,
+    "onze": 11, "douze": 12, "treize": 13, "quatorze": 14, "quinze": 15, "seize": 16, "vingt": 20, "trente": 30
+  },
+  "age_patterns": [
+    "(?<!jusqu['’])(?<!condamné\\s)(?<!condamnée\\s)\\bà\\s+(?P<age>\\d{1,3}|un|deux|trois|quatre|cinq|six|sept|huit|neuf|dix(?:-(?:sept|huit|neuf))?|onze|douze|treize|quatorze|quinze|seize|vingt|trente)\\s+ans\\b",
+    "\\bâgée?s?\\s+de\\s+(?P<age>\\d{1,3}|un|deux|trois|quatre|cinq|six|sept|huit|neuf|dix(?:-(?:sept|huit|neuf))?|onze|douze|treize|quatorze|quinze|seize|vingt|trente)\\s+ans\\b",
+    "(?<!\\by\\s)\\b(?:avait|avais|as|a)\\s+(?P<age>\\d{1,3}|un|deux|trois|quatre|cinq|six|sept|huit|neuf|dix(?:-(?:sept|huit|neuf))?|onze|douze|treize|quatorze|quinze|seize|vingt|trente)\\s+ans\\b(?!\\s+(?:de\\s+plus|plus\\s+tard))"
+  ],
+  "romance_terms": ["amant*", "amante*", "romance*", "romantique*", "sexe*", "sexuel*", "sédui*", "séduct*", "amoureu*", "petit ami", "petite amie", "vierge*", "couch* avec", "marié*", "épous*"],
+  "affection_terms": ["baiser*", "embrass*"],
+  "affection_guards": ["mère*", "père*", "parents", "maman*", "papa*", "fils", "sa fille", "ma fille", "leur fille", "frère*", "sœur*", "soeur*", "enfant*", "grand-mère*", "grand-père*", "petit-fils", "petite-fille", "oncle*", "tante*", "neveu*", "nièce*", "sur le front", "sur la joue", "les joues"],
+  "secret_words": ["secret*", "caché*"],
+  "gone_terms": ["mort", "morte", "morts", "mortes", "décédé*", "tué", "tuée", "assassiné*", "parti", "partie", "partis", "disparu*"],
+  "ended_terms": ["mort", "morte", "décédé*", "terminé*", "passé", "passée", "ancien", "ancienne", "ex", "fini", "finie", "divorcé*", "séparé*", "rompu*"],
+  "card": "Write natural French, not translated English. Keep narrative tense consistent (passé simple or passé composé for events, imparfait for background). Address the player character with 'tu' or 'vous' as the profile sets and keep it stable; NPCs choose tu or vous by rank, age and closeness. Use French dialogue punctuation (guillemets with spaces, or a tiret for each turn). Avoid stock beats (un instant) and 'ce n'était pas X, c'était Y' descriptions. Write days and small numbers in words and never show tracker values."
+}

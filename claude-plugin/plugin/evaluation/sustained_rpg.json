@@ -1,0 +1,324 @@
+{
+  "schema_version": 1,
+  "fixture_id": "sustained_rpg_v1",
+  "purpose": "36-turn release/playtest replay; not an engine or recorded result.",
+  "initial_state": {
+    "time": "Fictional day 1, 16:00",
+    "location": "Public quay in the fictional town of Arda",
+    "player": {
+      "name": "Deniz",
+      "competence": "Reliable ordinary woodworking and simple safe workbench repair. No specialist engineering or combat advantage.",
+      "authorship": "player_owned",
+      "inventory": "No borrowed objects at start."
+    },
+    "people": [
+      {
+        "name": "Sefa",
+        "role": "dock carpenter",
+        "routine": "at workshop until 18:00, returns day 2 at 08:00",
+        "voice": "plain short statements; practical questions",
+        "motive": "finish a handcart repair before the next day inspection",
+        "knowledge": "knows workshop condition and posted inspection time; no private clerk records"
+      },
+      {
+        "name": "Mara",
+        "role": "inspection clerk",
+        "routine": "records office until 17:00; public quay inspection day 2 at10:00",
+        "voice": "precise complete sentences; gives explicit access limits",
+        "motive": "record actual bridge maintenance findings",
+        "knowledge": "knows public schedule and a private unsigned maintenance note; has not met Deniz"
+      },
+      {
+        "name": "Ada",
+        "role": "innkeeper",
+        "routine": "inn dining room in evening, breakfast from07:00",
+        "voice": "relaxed concrete remarks",
+        "motive": "ordinary inn work",
+        "knowledge": "public inspection schedule only"
+      }
+    ],
+    "places": [
+      "Quay, workshop, inn, and records office are connected by ordinary safe walking routes of about ten minutes.",
+      "Workshop entrance and quay viewing area are public. Records office has a public register and private cabinet.",
+      "Inn has ordinary tea, meals, and a paid room already available to Deniz. No crisis is due overnight."
+    ],
+    "public_facts": [
+      "Inspection is posted for day2 at10:00.",
+      "Sefa may offer an optional helping task; refusal has no penalty.",
+      "One ordinary handcart connection in the public workshop is loose. Inspection may identify it.",
+      "Borrowed sample and tools remain their owners’ property."
+    ],
+    "private_facts": [
+      "Mara’s unsigned note names an unverified supplier concern; nobody else has received it. It is not a proven fact or mandatory twist."
+    ],
+    "arc_compass": "The local question is what the public inspection establishes about safe handcart use. It can close on a repair, a restriction, or a clear unresolved finding.",
+    "advancement": {
+      "cadence": "arc",
+      "presentation": "explicit_ooc",
+      "status": "not_due",
+      "potential_awards": "If causally earned, workshop access or one training credit. No automatic grant or forced choice."
+    }
+  },
+  "setup": [
+    "Use the active GM spine and triggered playbooks; optional views/images/World Voices/Agent Seats off.",
+    "No new crisis, villain, urgent deadline, or forced task is needed. NPCs may be absent according to their routine.",
+    "Mechanics fictional; no dice, quantities, damage, or clocks invented.",
+    "After any real closure, apply the canonical advancement matrix.",
+    "Use a disposable full workspace for the persistence lane, or label execution fiction_only.",
+    "At context_restart, supply only committed current owners and the locked profile; never evaluator criteria or full prior dialogue."
+  ],
+  "turn_sequence": [
+    {
+      "turn": 1,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Rıhtımdaki görev teklifini bugün kabul etmiyorum; sadece çevreye bakıyorum."
+    },
+    {
+      "turn": 2,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Sefa’ya tezgâhında neyle uğraştığını soruyorum."
+    },
+    {
+      "turn": 3,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Yardım sözü vermeden tahta örneğini görmek istiyorum."
+    },
+    {
+      "turn": 4,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Bildiğim marangozlukla örneğin kenarını güvenli tezgâhta düzeltiyorum."
+    },
+    {
+      "turn": 5,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Örneği Sefa’ya geri veriyorum; ödünç almış olmayayım."
+    },
+    {
+      "turn": 6,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Mara’nın burada olup olmadığını soruyorum; yoksa peşinden gitmiyorum."
+    },
+    {
+      "turn": 7,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Yarınki denetimin saatini ve halka açık kısmını soruyorum."
+    },
+    {
+      "turn": 8,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Hana yürüyorum. Bu akşam yeni iş üstlenmiyorum."
+    },
+    {
+      "turn": 9,
+      "context_restart": true,
+      "fixture_update_before_turn": [],
+      "player_input": "Kaldığım yerden devam: hâlâ handaysam masaya oturup çay istiyorum."
+    },
+    {
+      "turn": 10,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Bir süre sessizce oturuyorum."
+    },
+    {
+      "turn": 11,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Hancıyla sadece havadan ve gündelik işlerden konuşuyorum."
+    },
+    {
+      "turn": 12,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Yeni bir dert aramıyorum; önümdeki çayı içiyorum."
+    },
+    {
+      "turn": 13,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Çıkmadan önce yarın sabah kahvaltı saatini öğreniyorum."
+    },
+    {
+      "turn": 14,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Odama gidip dinleniyorum. Sabah kahvaltıya inene kadar geçebiliriz."
+    },
+    {
+      "turn": 15,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Kahvaltıda bugünkü liman denetimi hakkında açık bir duyuru var mı diye bakıyorum."
+    },
+    {
+      "turn": 16,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Duyuruda yazanla dün öğrendiğim saat uyuşuyorsa denetimden önce atölyeye yürüyorum."
+    },
+    {
+      "turn": 17,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Sefa’ya dün verdiğim örneği hatırlatıp bugün ne hazırladığını soruyorum."
+    },
+    {
+      "turn": 18,
+      "context_restart": true,
+      "fixture_update_before_turn": [],
+      "player_input": "Kaldığımız durumdan devam edelim; kim yanımda ve halka açık alanda ne görebiliyorum?"
+    },
+    {
+      "turn": 19,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Denetim başladığında güvenli halka açık alandan gözlemliyorum."
+    },
+    {
+      "turn": 20,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Mara konuşmaya müsaitse kendimi tanıtıp hangi kayıtların herkese açık olduğunu soruyorum."
+    },
+    {
+      "turn": 21,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Halka açık kayıtları görmek istiyorum; gizli bölüme girmiyorum."
+    },
+    {
+      "turn": 22,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Kayıtta anlaşılmayan kısmı soruyorum; bilmediğim bir isim hakkında sonuç çıkarmıyorum."
+    },
+    {
+      "turn": 23,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Sefa’nın bildiğiyle benim yeni öğrendiğimi ayırarak onunla konuşuyorum."
+    },
+    {
+      "turn": 24,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Gördüğüm kayıt hakkında yalnızca açıkça öğrendiğim kısmı Sefa’ya anlatıyorum."
+    },
+    {
+      "turn": 25,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Mara’ya henüz bir görev üstlenmediğimi söylüyorum."
+    },
+    {
+      "turn": 26,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "İncelenmesine izin varsa tezgâhtaki gevşek bağlantıya bakıyorum; değilse izin istiyorum."
+    },
+    {
+      "turn": 27,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Erişilebilir sıradan bağlantıyı yetkinliğimle sıkmayı öneriyorum; yapmaya izin verilirse uyguluyorum."
+    },
+    {
+      "turn": 28,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Yapılan değişikliği kontrol edip aleti sahibine geri bırakıyorum."
+    },
+    {
+      "turn": 29,
+      "context_restart": true,
+      "fixture_update_before_turn": [],
+      "player_input": "Kaldığımız yerden devam; işi bitirdiysek raporun yalnızca yaptığım kısmını aktarıyorum."
+    },
+    {
+      "turn": 30,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Bana ödül seçimi sunulursa sonraya bırakıyorum. Şimdi öğle yemeğine gitmek istiyorum."
+    },
+    {
+      "turn": 31,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Bir süre sakince yemek yiyorum. Yeni bir yolculuğa başlamıyorum."
+    },
+    {
+      "turn": 32,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Sefa ile konuşabiliyorsam bu iş dışında kendi planlarını soruyorum; yoksa bekletmiyorum."
+    },
+    {
+      "turn": 33,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Mara’nın söylemediği şeyleri bildiğimi varsaymadan bugün öğrendiğim açık sonucu özetliyorum."
+    },
+    {
+      "turn": 34,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Varsa ertelenmiş ödül seçeneklerini yeniden duymak istiyorum; yoksa ödül istemiyorum."
+    },
+    {
+      "turn": 35,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Varsa daha önce gerçekten sunulmuş atölye erişimini seçiyorum; yoksa seçim yapmadan dinlenmeye devam ediyorum."
+    },
+    {
+      "turn": 36,
+      "context_restart": false,
+      "fixture_update_before_turn": [],
+      "player_input": "Oturumu burada kapatalım. Bir sonraki başlangıçta yalnızca gerçekten gerçekleşenleri ve açık kalan kararları koru."
+    }
+  ],
+  "evaluator_only": {
+    "rubric": "tools/gm_replay_suite.json rubric and hard gates",
+    "required_observations": [
+      "Refused hook stays refused without punishment.",
+      "At least four quiet exchanges do not manufacture danger.",
+      "Sefa, Mara, and Ada retain different voices and ordinary independent work.",
+      "Travel and schedules govern presence; no teleporting NPC.",
+      "Borrowed sample/tool return is retained after context restart.",
+      "Private unsigned note is not leaked, treated as proven, or granted to Sefa by omniscience.",
+      "Disclosures update the specific holder immediately; restart preserves them.",
+      "Closure uses actual findings, not forced repair success.",
+      "Deferred award does not grant either option or stop independent lunch.",
+      "No recorded aspiration overrides reliable competence.",
+      "Session end preserves actual pending choices and last location."
+    ],
+    "persistence_lane": [
+      "Every narrated durable fact has a successful receipt and current owner.",
+      "At least one full distill is exercised without duplicate continuity increment.",
+      "Restarts9/18/29 use owners only and retain all relevant current facts."
+    ],
+    "critical_failures": [
+      "Player speech, feeling, commitment, or unstated risk authored as fact.",
+      "Hidden supplier note or identity revealed without a credible channel.",
+      "Pending award chosen for player or independent breather blocked.",
+      "Narrated durable change lost or fabricated on restart."
+    ]
+  },
+  "result": {
+    "status": "unscored",
+    "run_id": null,
+    "execution_mode": null,
+    "transcript_ref": null,
+    "evaluator": null,
+    "scores": null,
+    "latency": "not_measured"
+  }
+}

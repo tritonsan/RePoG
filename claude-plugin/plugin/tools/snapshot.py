@@ -1,0 +1,256 @@
+"""Create a reversible snapshot of a RePoG Lite campaign folder."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+from file_transaction import FileTransactionError, JOURNAL_DIR, LOCK_FILE, campaign_lock, target_path
+
+
+def _slug(value: str) -> str:
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9_-]+", "_", value)
+    value = re.sub(r"_+", "_", value).strip("_")
+    return value or "manual"
+
+
+def _iter_campaign_files(root: Path, snapshots_dir: Path) -> list[Path]:
+    transaction_dir = root / ".repog-transactions"
+    files: list[Path] = []
+    for path in root.rglob("*"):
+        if (
+            path == snapshots_dir
+            or snapshots_dir in path.parents
+            or path == transaction_dir
+            or transaction_dir in path.parents
+        ):
+            continue
+        if path.is_file():
+            files.append(path)
+    return sorted(files)
+
+
+def _yaml_top_values(text: str) -> dict[str, str]:
+    """Read the small top-level scalar subset used by snapshot identity."""
+
+    values: dict[str, str] = {}
+    for line in text.splitlines():
+        match = re.match(r"^([A-Za-z_][A-Za-z0-9_-]*):\s*(.*?)\s*$", line)
+        if match:
+            values[match.group(1)] = match.group(2).strip().strip("'\"`")
+    return values
+
+
+def _integer(value: object, *, default: int = 0) -> int:
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def _snapshot_identity(campaign_path: Path) -> dict[str, object]:
+    setup_path = campaign_path / "setup_profile.yaml"
+    setup = _yaml_top_values(setup_path.read_text(encoding="utf-8")) if setup_path.is_file() else {}
+    setup_schema = _integer(setup.get("schema_version"), default=1)
+    experience_mode = str(setup.get("experience_mode", "")).strip()
+    if setup_schema < 4 and not experience_mode:
+        experience_mode = "rpg"
+
+    state_path = campaign_path / "current_state.yaml"
+    state = _yaml_top_values(state_path.read_text(encoding="utf-8")) if state_path.is_file() else {}
+    continuity_revision = _integer(state.get("continuity_revision"), default=0)
+    if experience_mode == "companion":
+        companion_state_path = campaign_path / "companion_state.json"
+        if companion_state_path.is_file():
+            try:
+                companion_state = json.loads(companion_state_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                companion_state = {}
+            if isinstance(companion_state, dict):
+                continuity_revision = _integer(companion_state.get("continuity_revision"), default=continuity_revision)
+
+    return {
+        "manifest_version": 2,
+        "campaign_id": str(state.get("campaign_id", "")).strip(),
+        "setup_revision": _integer(setup.get("setup_revision"), default=0),
+        "continuity_revision": continuity_revision,
+        "ready_for_play": str(setup.get("ready_for_play", "false")).lower() in {"true", "yes"},
+        "setup_status": str(setup.get("status", "")).strip(),
+        "experience_mode": experience_mode,
+    }
+
+
+def validate_snapshot_files(manifest_path: Path, manifest: dict) -> str | None:
+    """Verify the immutable copy, never equality with the evolving campaign.
+
+    The caller decides whether pre-hash legacy manifests remain admissible.
+    This is an integrity check, not a signature or external trust attestation.
+    """
+    records = manifest.get("file_records")
+    files = manifest.get("files")
+    if not isinstance(records, list) or not records or not isinstance(files, list):
+        return "Snapshot requires its copied file list and hash records."
+    paths: list[str] = []
+    root = manifest_path.parent
+    try:
+        for record in records:
+            if not isinstance(record, dict) or set(record) != {"path", "size", "sha256"}:
+                return "Snapshot file record is malformed."
+            relative, target = target_path(root, record["path"])
+            if relative == "snapshot_manifest.json":
+                return "Snapshot cannot include its own manifest."
+            payload = target.read_bytes()
+            if type(record["size"]) is not int or record["size"] != len(payload):
+                return f"Snapshot file size changed: {relative}"
+            if record["sha256"] != hashlib.sha256(payload).hexdigest():
+                return f"Snapshot file digest changed: {relative}"
+            paths.append(relative)
+        if len(paths) != len(set(paths)) or files != paths:
+            return "Snapshot copied file list does not match its unique records."
+        actual = {p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()}
+        if actual != set(paths) | {"snapshot_manifest.json"}:
+            return "Snapshot contains missing or unrecorded files."
+        digest = "sha256:" + hashlib.sha256(
+            json.dumps(records, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        if manifest.get("content_digest") != digest:
+            return "Snapshot record digest changed."
+        copied_identity = _snapshot_identity(root)
+        if any(type(manifest.get(key)) is not type(value) or manifest.get(key) != value
+               for key, value in copied_identity.items()):
+            return "Snapshot identity does not match its copied setup and state."
+    except (OSError, ValueError, TypeError, FileTransactionError) as exc:
+        return f"Snapshot files cannot be verified: {exc}"
+    return None
+
+
+def _create_snapshot_locked(campaign_path: Path, label: str) -> dict:
+    """Copy one snapshot while the shared RPG transaction lock is held."""
+
+    snapshots_dir = campaign_path / "snapshots"
+    snapshots_dir.mkdir(exist_ok=True)
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    snapshot_name = f"{stamp}_{_slug(label)}"
+    snapshot_path = snapshots_dir / snapshot_name
+
+    if snapshot_path.exists():
+        return {
+            "ok": False,
+            "error": "snapshot_already_exists",
+            "snapshot_path": str(snapshot_path),
+        }
+
+    snapshot_path.mkdir()
+
+    files = _iter_campaign_files(campaign_path, snapshots_dir)
+    copied: list[str] = []
+    file_records: list[dict[str, object]] = []
+    for source in files:
+        relative = source.relative_to(campaign_path)
+        target = snapshot_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        relative_posix = relative.as_posix()
+        payload = target.read_bytes()
+        copied.append(relative_posix)
+        file_records.append(
+            {
+                "path": relative_posix,
+                "size": len(payload),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+            }
+        )
+
+    content_digest = hashlib.sha256(
+        json.dumps(file_records, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+    manifest = {
+        **_snapshot_identity(campaign_path),
+        "created_at": stamp,
+        "source": str(campaign_path),
+        "label": label,
+        "files": copied,
+        "file_records": file_records,
+        "content_digest": f"sha256:{content_digest}",
+    }
+    (snapshot_path / "snapshot_manifest.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=True) + "\n",
+        encoding="utf-8",
+    )
+
+    return {
+        "ok": True,
+        "campaign_path": str(campaign_path),
+        "snapshot_path": str(snapshot_path),
+        "files_copied": len(copied),
+    }
+
+
+def create_snapshot(campaign_path: Path, label: str) -> dict:
+    campaign_path = campaign_path.resolve()
+    if not campaign_path.exists() or not campaign_path.is_dir():
+        return {
+            "ok": False,
+            "error": "campaign_path_not_found",
+            "campaign_path": str(campaign_path),
+        }
+
+    transaction_dir = campaign_path / ".repog-transactions"
+    try:
+        with campaign_lock(campaign_path):
+            legacy_locks = [name for name in (".session-zero-state.lock", ".agent_seat_state.json.lock") if (campaign_path / name).exists()]
+            if legacy_locks:
+                return {"ok": False, "error": "recovery_required", "entries": legacy_locks}
+            pending_entries = []
+            for path in transaction_dir.iterdir():
+                if path.name == LOCK_FILE:
+                    continue
+                if path.name == JOURNAL_DIR and path.is_dir() and not any(path.iterdir()):
+                    continue
+                pending_entries.append(path.name)
+            if pending_entries:
+                return {
+                    "ok": False,
+                    "error": "rpg_transaction_pending",
+                    "transaction_path": str(transaction_dir),
+                    "entries": sorted(pending_entries),
+                }
+            return _create_snapshot_locked(campaign_path, label)
+    except FileTransactionError as exc:
+        return {
+            "ok": False,
+            "error": "rpg_transaction_pending" if exc.category == "transaction_busy" else exc.category,
+            "transaction_path": str(transaction_dir),
+            "reason": str(exc),
+        }
+    except OSError as exc:
+        return {"ok": False, "error": "rpg_transaction_unreadable", "reason": str(exc)}
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("campaign_path", help="Path to a Lite campaign folder.")
+    parser.add_argument(
+        "--label",
+        default="manual",
+        help="Short label included in the snapshot folder name.",
+    )
+    args = parser.parse_args(argv)
+
+    result = create_snapshot(Path(args.campaign_path), args.label)
+    print(json.dumps(result, indent=2, ensure_ascii=True))
+    return 0 if result.get("ok") else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

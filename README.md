@@ -28,6 +28,22 @@ archive itself, and do not copy templates or run a campaign-creation command.
 For the compact offline setup card, see [`START_HERE.md`](START_HERE.md). The
 installation walkthrough is included below.
 
+## Claude Code Plugin
+
+The `claude-plugin/` folder holds RePoG as a Claude Code plugin (version
+0.4.1). It runs the same kind of campaign with extra runtime help: a scene
+note before each turn, a check of each reply, logged dice rolls and smaller
+saves. Install it in Claude Code with:
+
+```
+claude plugin marketplace add tritonsan/RePoG
+claude plugin install repog@repog
+```
+
+Then open an empty folder and ask Claude to start a new RePoG campaign. See
+`claude-plugin/README.md` for details. The rest of this README describes the
+workspace version, which works with other agent tools too.
+
 ## What RePoG Includes
 
 RePoG combines seven connected systems while keeping the workspace local,
