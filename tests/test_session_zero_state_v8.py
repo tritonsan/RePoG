@@ -45,6 +45,15 @@ def campaign(tmp_path: Path) -> Path:
     root = tmp_path / "campaign"
     root.mkdir()
     (root / "setup_profile.yaml").write_text(SETUP_TEMPLATE, encoding="utf-8")
+    # Session 0 refuses Stage 1 content until the play language is settled.
+    (root / "play_profile.yaml").write_text("narration:\n  language: en\n", encoding="utf-8")
+    # Stage 1 also checks the content table: the shipped one, every row settled.
+    boundaries = (Path(state_tool.__file__).resolve().parents[1] / "campaign" / "boundaries.md").read_text(encoding="utf-8")
+    boundaries = boundaries.replace(
+        "| Sexual content | avoid / fade before it starts / implied, no explicit description |",
+        "| Sexual content | fade before it starts |",
+    ).replace("| Harm to children | mentioned or offscreen / avoid |", "| Harm to children | avoid |")
+    (root / "boundaries.md").write_text(boundaries, encoding="utf-8")
     manifest = state_tool.load_manifest(root)
     initial = state_tool.initial_state(manifest)
     (root / "session_zero_state.json").write_text(
@@ -98,6 +107,8 @@ def _stage_output_refs(campaign: Path, stage_id: str) -> list[str]:
 def _structured_value(decision_id: str) -> tuple[object, list[str]]:
     if decision_id == "01_creation_authority":
         return {"mode": "bounded_inference"}, []
+    if decision_id == "07_agent_seats":
+        return {"mode": "off"}, []
     if decision_id == "01_primary_topology_intent":
         return {"primary_topology": "exploration_survival"}, []
     if decision_id == "02_research_need_and_permission":
@@ -106,6 +117,7 @@ def _structured_value(decision_id: str) -> tuple[object, list[str]]:
         return {
             "risk_accepted": False,
             "current_scale_lock_permitted": True,
+            "npc_power_scale": "region_anchored_open",
         }, ["02_research_need_and_permission"]
     if decision_id == "06_topology_activation":
         return {
@@ -197,10 +209,26 @@ def _record_stage_decisions(
             ),
         )
 
+ANCHOR_ROWS = (
+    "\n### Price And Bounty Anchors\n\n| Anchor | Value | Notes |\n| --- | --- | --- |\n"
+    "| A meal | 3 coins | harbor stall |\n| A local strongman's bounty | 900 coins | posted |\n"
+)
+
+
+def _fill_anchor_table(campaign: Path) -> None:
+    """Stage 4 needs at least one price and bounty anchor row in world_truths.md."""
+
+    path = campaign / "world_truths.md"
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    if "### Price And Bounty Anchors" not in text:
+        path.write_text(text + ANCHOR_ROWS, encoding="utf-8")
+
 
 def _complete_stage(campaign: Path, stage_id: str, *, extensions: dict | None = None) -> dict:
     state = _read_state(campaign)
     refs = _stage_output_refs(campaign, stage_id)
+    if stage_id == "04_thin_world_kernel":
+        _fill_anchor_table(campaign)
     return state_tool.complete_stage(
         campaign,
         {
@@ -225,6 +253,47 @@ def test_initial_state_validates_and_summary_is_read_only(campaign: Path) -> Non
     assert "North Star And Authority" in rendered["markdown"]
     assert (campaign / "session_zero_state.json").read_bytes() == before
     assert "Keep me." in (campaign / "session_zero.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("schema", [8, 9, 10])
+def test_agent_seats_decision_is_required_only_by_new_setup_schema(campaign: Path, schema):
+    path = campaign / "setup_profile.yaml"
+    path.write_text(path.read_text(encoding="utf-8").replace("schema_version: 8", f"schema_version: {schema}"), encoding="utf-8")
+    manifest = state_tool.load_manifest(campaign)
+    stage = next(stage for stage in manifest["stages"] if stage["id"] == "07_runtime_experience_contract")
+    ids = {decision["id"] for decision in stage["decisions"]}
+    assert ("07_agent_seats" in ids) == (schema >= 10)
+    assert ("agent_seats" in manifest["structured_contracts"]) == (schema >= 10)
+    state = state_tool.initial_state(manifest)
+    state["decisions"] = [
+        {"decision_id": decision_id, "stage_id": stage["id"]}
+        for decision_id in ids if decision_id != "07_agent_seats"
+    ]
+    if schema >= 10:
+        with pytest.raises(state_tool.StateError, match="07_agent_seats") as missing:
+            state_tool._required_stage_decisions(state, manifest, stage["id"])
+        assert missing.value.category == "stage_incomplete"
+    else:
+        state_tool._required_stage_decisions(state, manifest, stage["id"])
+
+
+@pytest.mark.parametrize("mode,source,status,valid", [
+    ("off", "player", "locked", True),
+    ("on_demand", "player", "locked", True),
+    ("auto", "player", "locked", False),
+    ("off", "defaulted", "defaulted", False),
+    ("on_demand", "derived", "locked", False),
+])
+def test_new_agent_seats_requires_an_explicit_structured_choice(campaign, mode, source, status, valid):
+    path = campaign / "setup_profile.yaml"
+    path.write_text(path.read_text(encoding="utf-8").replace("schema_version: 8", "schema_version: 10"), encoding="utf-8")
+    manifest = state_tool.load_manifest(campaign)
+    decision = {"decision_id": "07_agent_seats", "value": {"mode": mode}, "source": source, "status": status}
+    if valid:
+        state_tool._validate_structured_decisions({"07_agent_seats": decision}, manifest, state_validation=False)
+    else:
+        with pytest.raises(state_tool.StateError, match="07_agent_seats"):
+            state_tool._validate_structured_decisions({"07_agent_seats": decision}, manifest, state_validation=False)
 
 
 def test_record_decision_syncs_mirrors_and_is_idempotent(campaign: Path) -> None:

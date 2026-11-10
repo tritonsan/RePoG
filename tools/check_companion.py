@@ -1204,6 +1204,8 @@ def _validate_companion_view(
 ) -> None:
     state_path = campaign / "companion_view" / "companion_view_state.json"
     checker_path = Path(__file__).with_name("check_companion_view.py")
+    if policy == "off" and not checker_path.is_file() and not state_path.parent.exists():
+        return  # an install that leaves the optional Companion View out, with the profile keeping it off
     if not checker_path.is_file():
         findings.append(_finding("error", "companion_view_checker_missing", "Companion View checker is missing.", checker_path))
         return

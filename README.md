@@ -11,7 +11,9 @@ extracted folder, and start a new conversation.
    [Verify and package run](https://github.com/tritonsan/RePoG/actions/workflows/verify.yml)
    and extract it into a new folder; the download section below explains the artifact wrapper.
 2. Open the extracted folder in Codex, Claude Code, or another compatible
-   agentic coding tool.
+   agentic coding tool. In Claude Code, accept the folder-trust prompt so the
+   bundled settings apply; [`docs/claude-code.md`](docs/claude-code.md)
+   covers the details.
 3. Start a new conversation in that workspace.
 4. Send exactly:
 
@@ -118,6 +120,12 @@ folder can also be opened in Claude Code or another agentic coding tool.
 
 ![Open the extracted RePoG folder in Codex](assets/getting-started/03-open-in-codex.gif)
 
+In Claude Code, start a new Code session on the extracted folder in the desktop
+app, or run `claude` inside it from a terminal. Accept the folder-trust prompt,
+and leave the desktop worktree option off so the campaign keeps one live state.
+See [`docs/claude-code.md`](docs/claude-code.md) for the bundled configuration,
+privacy notes, image support, and the Claude Code plugin edition.
+
 ### 4. Start Session 0
 
 Start a new conversation in the opened workspace and send:
@@ -158,20 +166,29 @@ facts.
 
 ## Session 0 Depth
 
-- **Quick:** new RPG setup uses 9 decision slots; Companion uses 7.
-- **Standard:** new RPG setup uses 20–29 decisions; Companion uses 15.
+- **Quick:** choose the essential direction, then review the GM's bounded
+  preparation. New RPG setup tracks nine required areas, not an answer quota.
+- **Standard:** explore consequential character, world, and play alternatives
+  together. Its twenty required areas can take as many distinct decisions as
+  needed; appearance details and unrelated options do not become a questionnaire.
 - **Deep:** new RPG campaigns use nine dependency-gated stages and stage-local
   extensions; the decision count is a fatigue signal rather than a completion
   quota. Companion and legacy RPG Deep retain their 30–45 planning range.
 
-All modes use the same continuity model. Quick records visible defaults;
+After choosing RPG, give a short campaign idea (or reuse the one you already
+gave), then explicitly choose the depth that fits how much you want to design
+together. Companion keeps its existing routing and decision budgets: Quick 7,
+Standard 15. All modes use the same continuity model. Quick records visible defaults;
 Standard gives a balanced setup; Deep opens only the stage extensions relevant
 to the chosen campaign. Existing completed RPG Deep campaigns remain on their
 compatible legacy contract unless explicitly migrated.
 
-These counts describe decisions, not a promise of one chat exchange per slot.
-New RPG Quick and Standard setups use one approval of the actual prepared
-campaign to lock and start; existing setups preserve their accepted version.
+New RPG readiness depends on completed required decisions, accepted preparation,
+and working campaign state. After design approval, the actual prepared campaign
+receives one combined review/start acceptance. Existing setups preserve their
+accepted version. A pause, uncertainty, or request to stop expanding does not
+silently accept a missing permission. Rejected themes remain distinct from
+unselected or deferred possibilities, and accepted experience limits carry into play.
 
 ## AI Companion Continuity
 
@@ -305,7 +322,8 @@ with:
 python tools/serve_companion_view.py campaign/companion_view
 ```
 
-Then visit `http://localhost:8790/`. This is not the RPG Dashboard: its initial
+Then visit `http://localhost:8790/`, or in the Claude Code desktop app ask to
+open it in the preview pane. This is not the RPG Dashboard: its initial
 HTML, CSS, and JavaScript total about 13 KB, it uses no map or RPG polling
 surface, and ordinary replies do not refresh it. It contains only accepted art
 and facts already shared in conversation. Precise private presence,
@@ -337,9 +355,11 @@ After Session 0, open the local player dashboard with:
 python tools/serve_dashboard.py campaign/dashboard
 ```
 
-Then visit `http://localhost:8787/`. Campaign tiles are read-only and contain
-only player-known information. Dashboard V3 uses campaign-specific tiles, so a
-mechanics-light game does not show invented stats or resources. Revision-aware
+Then visit `http://localhost:8787/`. In the Claude Code desktop app you can
+instead ask to open the dashboard in the preview pane. Campaign tiles are
+read-only and contain only player-known information. Dashboard V3 uses
+campaign-specific tiles, so a mechanics-light game does not show invented
+stats or resources. Revision-aware
 updates reject stale data instead of silently replacing newer state. Its
 optional Atlas V1 map supports regions, cities, interiors, and abstract
 networks with local, setting-neutral skins; it does not require a map service,
@@ -391,8 +411,11 @@ second game engine.
 
 ## Workspace Contents
 
-- `AGENTS.md`: durable GM and continuity rules.
-- `CLAUDE.md`: compatibility bridge for Claude Code.
+- `AGENTS.md`: durable GM and continuity rules shared by every host tool.
+- `CLAUDE.md`: Claude Code entry point; imports `AGENTS.md` and adds Claude
+  Code presentation, memory, and delegation rules.
+- `.claude/`: Claude Code settings, the RePoG output style, read-only
+  supporting-agent lanes, and desktop preview entries.
 - `START_HERE.md`: the primary offline installation and first-run card.
 - `OPEN_CAMPAIGN.md`: a compact quick-launch card that points to `START_HERE.md`.
 - `workflows/`: worldbuilding, RPG GM, Companion conversation, distill, and

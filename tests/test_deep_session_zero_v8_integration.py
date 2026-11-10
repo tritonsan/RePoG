@@ -130,10 +130,47 @@ def _set_profile(campaign: Path, filename: str, **changes: str | int) -> None:
         text = re.sub(pattern, f"{key}: {value}", text, count=1)
     path.write_text(text, encoding="utf-8")
 
+ANCHOR_ROWS = (
+    "\n### Price And Bounty Anchors\n\n| Anchor | Value | Notes |\n| --- | --- | --- |\n"
+    "| A meal | 3 coins | harbor stall |\n| A local strongman's bounty | 900 coins | posted |\n"
+)
 
-def _new_deep_campaign(tmp_path: Path, manifest: dict[str, Any]) -> Path:
+
+def _fill_anchor_table(campaign: Path) -> None:
+    """Stage 4 needs at least one price and bounty anchor row in world_truths.md."""
+
+    path = campaign / "world_truths.md"
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    if "### Price And Bounty Anchors" not in text:
+        path.write_text(text + ANCHOR_ROWS, encoding="utf-8")
+
+
+def _settle_play_language(campaign: Path, code: str = "en") -> None:
+    """Settle what Session 0 refuses Stage 1 content without: the play language and the content table."""
+
+    path = campaign / "play_profile.yaml"
+    text = path.read_text(encoding="utf-8")
+    assert "\n  language: auto\n" in text
+    path.write_text(text.replace("\n  language: auto\n", f"\n  language: {code}\n", 1), encoding="utf-8")
+    # Stage 1 also needs one setting per row of the content table.
+    path = campaign / "boundaries.md"
+    text = path.read_text(encoding="utf-8")
+    for old, new in (
+        ("| Sexual content | avoid / fade before it starts / implied, no explicit description |",
+         "| Sexual content | fade before it starts |"),
+        ("| Harm to children | mentioned or offscreen / avoid |", "| Harm to children | avoid |"),
+    ):
+        assert text.count(old) == 1, old
+        text = text.replace(old, new)
+    path.write_text(text, encoding="utf-8")
+
+
+def _new_deep_campaign(tmp_path: Path, manifest: dict[str, Any], *, setup_schema: int | None = None) -> Path:
     campaign = tmp_path / "campaign"
     shutil.copytree(PUBLIC / "campaign", campaign)
+    _settle_play_language(campaign)
+    if setup_schema is not None:
+        _set_setup(campaign, schema_version=setup_schema)
     _set_setup(
         campaign,
         status="in_progress",
@@ -214,8 +251,13 @@ def _record_stage_decisions(
     decision_ids: set[str] | None = None,
 ) -> None:
     manifest = session_zero_state.load_manifest(campaign)
+    active_ids = {
+        decision["id"] for definition in manifest["stages"] for decision in definition["decisions"]
+    }
     for definition in stage["decisions"]:
         decision_id = definition["id"]
+        if decision_id not in active_ids:
+            continue
         if decision_ids is not None and decision_id not in decision_ids:
             continue
         state = session_zero_state.validate_campaign_state(campaign)["state"]
@@ -225,12 +267,18 @@ def _record_stage_decisions(
         trigger_tags: list[str] = []
         if decision_id == "01_creation_authority":
             value = {"mode": "bounded_inference"}
+        elif decision_id == "07_agent_seats":
+            value = {"mode": "off"}
         elif decision_id == "01_primary_topology_intent":
             value = {"primary_topology": topology}
         elif decision_id == "02_research_need_and_permission":
             value = {"status": "not_needed", "permission": "not_needed"}
         elif decision_id == "02_current_scale_lock":
-            value = {"risk_accepted": False, "current_scale_lock_permitted": True}
+            value = {
+                "risk_accepted": False,
+                "current_scale_lock_permitted": True,
+                "npc_power_scale": "region_anchored_open",
+            }
             depends_on = ["02_research_need_and_permission"]
         elif decision_id == "06_topology_activation":
             value = {
@@ -276,7 +324,7 @@ def _complete_stage(
     extension_evidence: dict[str, Any] = {}
     for extension_id in stage["extensions"]:
         portion = state["extensions"][extension_id]["stages"][stage["id"]]
-        if portion["status"] != "active":
+        if portion["status"] == "not_applicable":
             continue
         stage_owner_refs = manifest["extensions"][extension_id].get("stage_owner_refs", {})
         extension_owner_ids = stage_owner_refs.get(
@@ -296,6 +344,8 @@ def _complete_stage(
             "acceptance_decision_id": "",
         }
     _materialize_outputs(campaign, output_refs)
+    if stage["id"] == "04_thin_world_kernel":
+        _fill_anchor_table(campaign)
     result = session_zero_state.complete_stage(
         campaign,
         {
@@ -703,7 +753,7 @@ def test_manifest_and_stage_corpus_are_referentially_closed(manifest: dict[str, 
             if decision["critical"]:
                 assert decision["owner_refs"], decision["id"]
     assert len(decision_ids) == len(set(decision_ids))
-    assert len(decision_ids) == 43
+    assert len(decision_ids) == 44
 
     decisions_by_stage = {
         stage["id"]: [decision["id"] for decision in stage["decisions"]]
@@ -796,24 +846,29 @@ def test_manifest_and_stage_corpus_are_referentially_closed(manifest: dict[str, 
     assert "no content changed" in preparation.casefold()
 
     stage_nine_text = (DEEP_V8 / "09_first_act_preparation.md").read_text(encoding="utf-8")
-    assert stage_nine_text.index("record `draft_preflight_passed`") < stage_nine_text.index(
+    # Stage 9 runs the readiness sequence through one `finalize` call; the
+    # sequence it names keeps the preflight, snapshot, ready order.
+    stage_nine_text = " ".join(stage_nine_text.split())
+    assert "session_zero_state.py campaign finalize" in stage_nine_text
+    assert stage_nine_text.index("`draft_preflight_passed`") < stage_nine_text.index(
         "`session-zero-start` snapshot"
     )
     assert stage_nine_text.index("`session-zero-start` snapshot") < stage_nine_text.index(
-        "final aggregate check"
+        "the ready evidence"
     )
-    assert stage_nine_text.index("final aggregate check") < stage_nine_text.index(
+    assert stage_nine_text.index("the ready evidence") < stage_nine_text.index(
         "`ready_and_snapshotted`"
     )
 
 
-@pytest.mark.parametrize("topology", list(TOPOLOGIES))
-def test_topology_replay_reaches_ready_through_the_full_lifecycle(
+def _build_ready_campaign(
     tmp_path: Path,
     manifest: dict[str, Any],
     topology: str,
-) -> None:
-    campaign = _new_deep_campaign(tmp_path, manifest)
+    *,
+    setup_schema: int | None = None,
+) -> Path:
+    campaign = _new_deep_campaign(tmp_path, manifest, setup_schema=setup_schema)
     stages = {stage["id"]: stage for stage in manifest["stages"]}
     topology_contract = TOPOLOGIES[topology]
 
@@ -1050,6 +1105,247 @@ def test_topology_replay_reaches_ready_through_the_full_lifecycle(
     assert cli_result["ok"] is True
     assert cli_result["current_stage"] == "09_first_act_preparation"
     assert set(cli_result["gates"].values()) == {"complete"}
+    return campaign
+
+
+@pytest.mark.parametrize("topology,setup_schema", zip(TOPOLOGIES, (8, 9, 10)))
+def test_topology_replay_reaches_ready_through_the_full_lifecycle(
+    tmp_path: Path, manifest: dict[str, Any], topology: str, setup_schema: int
+) -> None:
+    campaign = _build_ready_campaign(tmp_path, manifest, topology, setup_schema=setup_schema)
+    report = check_state.check_campaign(campaign, scope="full")
+    assert report["error_count"] == 0, report["findings"]
+
+
+@pytest.fixture(scope="module")
+def ready_deep_seed(tmp_path_factory, manifest):
+    return _build_ready_campaign(
+        tmp_path_factory.mktemp("deep-lifecycle"), manifest, "personal_drama", setup_schema=10
+    )
+
+
+@pytest.fixture()
+def ready_deep_campaign(tmp_path, ready_deep_seed):
+    campaign = tmp_path / "campaign"
+    shutil.copytree(ready_deep_seed, campaign)
+    return campaign
+
+
+def test_ready_deep_accepts_normal_durable_progress_and_consumed_preparation(ready_deep_campaign):
+    import rpg_state
+
+    campaign = ready_deep_campaign
+    baseline = check_state.check_campaign(campaign, scope="full")
+    assert baseline["error_count"] == 0, baseline["findings"]
+    threads = (campaign / "threads.md").read_text(encoding="utf-8")
+    commit = rpg_state.commit_durable(campaign, {
+        "operation_id": "first-played-delivery",
+        "expected_continuity_revision": 0,
+        "boundary": "ordinary",
+        "cause": "Mira accepted a delivery task.",
+        "resume_impact": "The promised delivery remains open.",
+        "changes": [{
+            "id": "delivery", "kind": "thread",
+            "established_delta": "Mira agreed to deliver a letter.",
+            "owners": ["threads.md"], "cold_targets": [],
+        }],
+        "mutations": [{"path": "threads.md", "exact_replacements": [{
+            "old": threads, "new": threads + "\n- Agreed delivery: A letter for the harbor office.\n",
+        }]}],
+    })
+    assert commit["ok"] and commit["continuity_revision"] == 1
+    # These setup-owned lifecycle markers change after the opening is used.
+    for filename, old, new in (
+        ("opening_brief.md", "Opening status: `active`", "Opening status: `consumed`"),
+        ("first_session.md", "Prep status: `materialized`", "Prep status: `consumed`"),
+    ):
+        path = campaign / filename
+        text = path.read_text(encoding="utf-8")
+        assert old in text
+        path.write_text(text.replace(old, new), encoding="utf-8")
+    (campaign / "new-runtime-note.md").write_text("A new historical memory.\n", encoding="utf-8")
+    state_report = session_zero_state.validate_campaign_state(campaign, require_ready=True)
+    assert state_report["ok"], state_report["findings"]
+    report = check_state.check_campaign(campaign, scope="full")
+    assert report["error_count"] == 0, report["findings"]
+
+
+@pytest.mark.parametrize("target", ["snapshot_manifest", "copied_owner", "missing_profile", "aggregate_report"])
+def test_historical_readiness_still_rejects_tampered_evidence(ready_deep_campaign, target):
+    campaign = ready_deep_campaign
+    state = session_zero_state.validate_campaign_state(campaign)["state"]
+    evidence = state["gates"]["ready_and_snapshotted"]["evidence"]
+    snapshot = (campaign / evidence["snapshot_ref"]).parent
+    if target == "missing_profile":
+        (snapshot / "play_profile.yaml").unlink()
+    else:
+        path = {
+            "snapshot_manifest": campaign / evidence["snapshot_ref"],
+            "copied_owner": snapshot / "threads.md",
+            "aggregate_report": campaign / evidence["aggregate_check_ref"],
+        }[target]
+        path.write_text(path.read_text(encoding="utf-8") + "\nchanged\n", encoding="utf-8")
+    report = session_zero_state.validate_campaign_state(campaign, require_ready=True)
+    assert not report["ok"]
+    assert report["findings"][0]["code"] in {"readiness_evidence_stale", "readiness_evidence_invalid", "output_missing"}
+
+
+def test_candidate_readiness_still_rejects_changed_live_owner(ready_deep_campaign, manifest):
+    campaign = ready_deep_campaign
+    state = session_zero_state.validate_campaign_state(campaign)["state"]
+    evidence = state["gates"]["ready_and_snapshotted"]["evidence"]
+    snapshot = (campaign / evidence["snapshot_ref"]).parent
+    # Restore the exact pre-transition candidate, then alter one reviewed owner.
+    for name in ("setup_profile.yaml", "session_zero_state.json", "session_zero.md"):
+        shutil.copy2(snapshot / name, campaign / name)
+    state = session_zero_state.validate_campaign_state(campaign)["state"]
+    path = campaign / "player.md"
+    path.write_text(path.read_text(encoding="utf-8") + "\nUnreviewed character change.\n", encoding="utf-8")
+    with pytest.raises(session_zero_state.StateError) as raised:
+        session_zero_state._validate_ready_evidence_files(
+            campaign, state, manifest, evidence, before_transition=True
+        )
+    assert raised.value.category == "readiness_evidence_stale"
+
+
+@pytest.mark.parametrize("before_ready", [True, False])
+def test_agent_seats_materialization_is_bound_to_setup_not_future_live_preferences(
+    ready_deep_campaign, before_ready
+):
+    campaign = ready_deep_campaign
+    state = session_zero_state.validate_campaign_state(campaign)["state"]
+    if before_ready:
+        evidence = state["gates"]["ready_and_snapshotted"]["evidence"]
+        snapshot = (campaign / evidence["snapshot_ref"]).parent
+        for name in ("setup_profile.yaml", "session_zero_state.json", "session_zero.md"):
+            shutil.copy2(snapshot / name, campaign / name)
+    path = campaign / "play_profile.yaml"
+    profile = path.read_text(encoding="utf-8")
+    assert "agent_seats:\n  mode: off" in profile
+    path.write_text(profile.replace("agent_seats:\n  mode: off", "agent_seats:\n  mode: on_demand"), encoding="utf-8")
+    report = session_zero_state.validate_campaign_state(campaign)
+    assert report["ok"] is (not before_ready)
+    if before_ready:
+        assert report["findings"][0]["code"] == "decision_materialization_mismatch"
+
+
+@pytest.mark.parametrize("before_ready", [True, False])
+def test_accepted_setup_can_be_revised_and_reapproved_without_losing_history(
+    ready_deep_campaign, manifest, before_ready
+):
+    campaign = ready_deep_campaign
+    state_tool = session_zero_state
+
+    def current():
+        report = state_tool.validate_campaign_state(campaign)
+        assert report["ok"], report["findings"]
+        return report["state"]
+
+    if before_ready:
+        evidence = current()["gates"]["ready_and_snapshotted"]["evidence"]
+        snapshot = (campaign / evidence["snapshot_ref"]).parent
+        for name in ("setup_profile.yaml", "session_zero_state.json", "session_zero.md"):
+            shutil.copy2(snapshot / name, campaign / name)
+    original = current()
+    decisions = {item["decision_id"]: item for item in original["decisions"]}
+
+    def decide(decision_id, value):
+        state = current()
+        existing = next(item for item in state["decisions"] if item["decision_id"] == decision_id)
+        payload = {key: existing[key] for key in (
+            "decision_id", "stage_id", "status", "source", "depends_on", "trigger_tags"
+        )}
+        return state_tool.record_decision(campaign, {
+            **payload, "value": value,
+            "operation_id": f"revise-{decision_id}-{state['setup_revision']}",
+            "expected_revision": state["setup_revision"],
+        })
+
+    def gate(gate_id, *, output_digest=None):
+        state = current()
+        predecessor = (
+            "cross_read_passed" if gate_id == "preparation_approved"
+            else state_tool.GATE_IDS[state_tool.GATE_IDS.index(gate_id) - 1]
+        )
+        input_digest = (
+            state["stages"]["02_research_canon_grounding"]["output_digest"]
+            if gate_id == "research_scope_locked"
+            else state["gates"][predecessor]["output_digest"]
+        )
+        return state_tool.record_gate(campaign, {
+            "operation_id": f"renew-{gate_id}-{state['setup_revision']}",
+            "expected_revision": state["setup_revision"],
+            "gate_id": gate_id, "input_digest": input_digest,
+            "output_digest": output_digest or input_digest,
+            "decided_by": "player" if gate_id in {"design_direction_approved", "preparation_approved"} else "coordinator",
+        })
+
+    decide("01_player_fantasy_tone_and_non_goals", {"accepted": "A quieter campaign with practical work"})
+    changed = current()
+    assert changed["gates"]["design_direction_approved"]["status"] == "stale"
+    assert changed["gates"]["preparation_approved"]["status"] == "stale"
+    assert changed["gates"]["preparation_approved"]["history"][-1] == {
+        key: value for key, value in original["gates"]["preparation_approved"].items() if key != "history"
+    }
+    assert "ready_for_play: false" in (campaign / "setup_profile.yaml").read_text(encoding="utf-8")
+
+    # Rematerialize in dependency order while old approvals remain historical.
+    for stage in manifest["stages"][:8]:
+        _complete_stage(campaign, stage, manifest, topology="revised")
+        if stage["id"] == "02_research_canon_grounding":
+            gate("research_scope_locked")
+    gate("stages_1_8_complete")
+    gate("first_act_design_complete")
+    with pytest.raises(state_tool.StateError) as stale:
+        gate("design_direction_approved")
+    assert stale.value.category == "gate_blocked"
+    # Accepting the same answer against a new reviewed input is a new approval.
+    decide("09_design_direction_review", decisions["09_design_direction_review"]["value"])
+    gate("design_direction_approved")
+    refs = _owner_outputs(manifest["stages"][-1], manifest)
+    package_digest = state_tool.compute_output_digest(campaign, refs)
+    gate("preparation_materialized", output_digest=package_digest)
+    gate("cross_read_passed")
+    with pytest.raises(state_tool.StateError) as stale:
+        gate("preparation_approved")
+    assert stale.value.category == "gate_blocked"
+    decide("09_preparation_approval", decisions["09_preparation_approval"]["value"])
+    gate("preparation_approved")
+    _complete_stage(campaign, manifest["stages"][-1], manifest, topology="revised")
+    state = current()
+    approval = next(item for item in state["decisions"] if item["decision_id"] == "09_preparation_approval")
+    assert approval["created_revision"] == decisions["09_preparation_approval"]["created_revision"]
+    assert approval["revision"] > approval["created_revision"]
+    assert approval["history"][-1] == decisions["09_preparation_approval"]
+    assert approval["approval_basis"]["output_digest"] == package_digest
+    assert state["gates"]["preparation_approved"]["status"] == "complete"
+    with pytest.raises(state_tool.StateError) as unchanged:
+        decide("09_preparation_approval", approval["value"])
+    assert unchanged.value.category == "no_change"
+
+    for filename in ("play_profile.yaml", "companion_profile.yaml"):
+        _set_profile(campaign, filename, source_setup_revision=state["setup_revision"])
+    preflight = check_state.check_campaign(campaign, scope="full", preflight_ready=True)
+    assert preflight["error_count"] == 0, [finding for finding in preflight["findings"] if finding["severity"] == "error"]
+    gate("draft_preflight_passed")
+    state = current()
+    for filename in ("play_profile.yaml", "companion_profile.yaml"):
+        _set_profile(campaign, filename, source_setup_revision=state["setup_revision"])
+    snapshot = snapshot_tool.create_snapshot(campaign, "session-zero-start")
+    snapshot_ref = (Path(snapshot["snapshot_path"]).relative_to(campaign) / "snapshot_manifest.json").as_posix()
+    prepared = state_tool.prepare_ready_evidence(
+        campaign, operation_id="revised-ready-evidence", expected_revision=state["setup_revision"],
+        snapshot_ref=snapshot_ref, aggregate_check_ref="snapshots/revised-readiness.json",
+    )
+    state_tool.record_gate(campaign, {
+        "operation_id": "revised-ready", "expected_revision": state["setup_revision"],
+        "gate_id": "ready_and_snapshotted",
+        "input_digest": state["gates"]["draft_preflight_passed"]["output_digest"],
+        "output_digest": prepared["evidence"]["snapshot_digest"],
+        "decided_by": "coordinator", "evidence": prepared["evidence"],
+    })
+    report = check_state.check_campaign(campaign, scope="full")
+    assert report["error_count"] == 0, report["findings"]
 
 
 @pytest.mark.parametrize(
@@ -1070,6 +1366,7 @@ def test_non_deep_v8_and_legacy_deep_do_not_require_the_v8_state_ledger(
 ) -> None:
     campaign = tmp_path / "campaign"
     shutil.copytree(PUBLIC / "campaign", campaign)
+    _settle_play_language(campaign)
     (campaign / "session_zero_state.json").unlink(missing_ok=True)
     _set_setup(
         campaign,

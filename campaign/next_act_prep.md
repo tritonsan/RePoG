@@ -106,6 +106,10 @@ already clear.
 
 ## Next Act Frame
 
+- Experience/change-direction owner refs: relevant `player.md` headings.
+- Stable tie premise/limit refs and their current-world owner refs:
+- Explicit changed direction and its accepted owner/evidence ref, or none:
+- Which connection remains useful, changes for this act, or rests, and why:
 - Compass reference: `threads.md` / Act id
 - Horizon reference, or none:
 - What actual player choices changed in that connection:
@@ -117,6 +121,12 @@ question, closing conditions, or expectation statuses. Near possibilities may be
 concrete; distant outcomes stay open. Carrying the campaign promise forward can
 mean preserving, transforming, or explicitly retiring a question rather than
 repeating the same hook. Do not infer a new preference from one quiet or failed turn.
+
+Read protected thematic limits and applicable GM behavior at this boundary.
+An immediate chosen goal can change this act's opportunities without replacing
+the campaign experience. Do not turn the fields above into copied preferences,
+NPC state, mandatory personal tests, or another Session 0 interview. A declined
+hook stays declined; the independent process continues only by its actual causes.
 
 - Scale:
 - Starting place:

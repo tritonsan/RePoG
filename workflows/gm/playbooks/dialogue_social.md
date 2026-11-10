@@ -116,6 +116,20 @@ fears, can afford, knows, and controls. Routine requests that fit the
 relationship and cost little can succeed cleanly. Use resistance only for a
 real conflict of interest, uncertainty, risk, or meaningful cost.
 
+Genuine resistance is contested: persuading, deceiving, pressuring, or
+bargaining with someone who has a real reason to refuse is rolled like any
+other contest when `dice_mode` is not `judgment_only`. Declare it before any
+die is read: `actor`, `axis` and its `value`, `difficulty` from the NPC's stake
+and position with a one-line `reason`, `factors` such as leverage or a favor
+owed, and `stakes`. Roll it once through
+`python tools/roll_dice.py --campaign campaign --input-file -` with a new
+`roll_id` and that `call`, then play the band: a success gets the access,
+disclosure, or terms sought with no added setback; a cost comes only from a
+lower band or from another actor with a real cause.
+
+An NPC never hands the Player the solution or volunteers the decisive fact
+unless their own motive, obligation, or fear causes it.
+
 Social success changes observable behavior—access, disclosure, terms,
 commitment, posture, or timing. It does not let the GM declare the player
 character convinced, trusting, ashamed, frightened, or morally persuaded.

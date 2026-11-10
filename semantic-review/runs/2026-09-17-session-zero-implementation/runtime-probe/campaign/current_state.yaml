@@ -1,0 +1,36 @@
+campaign_id: synthetic_kiyi
+continuity_revision: 4
+status: active
+fictional_time:
+  day: 2
+  phase: morning
+  elapsed_index: 1
+player:
+  name: Mira
+  concept: boat repairer
+  condition: ready
+  current_goal: Look over the established shared bench before choosing an activity.
+  capabilities: [ordinary boat repair, tool maintenance]
+current_scene:
+  title: A quiet workshop morning
+  location: public_workshop
+  summary: Mira stands at the public shared bench; no immediate danger or due interruption.
+  present_npcs: [ece, nehir]
+  immediate_pressure: ""
+  open_choices: []
+scene_frame:
+  scene_id: scene_teaching_morning
+  mode: breather
+  ongoing_process: Ece finishes a paid cabinet order; Nehir has a short break before carrying its handles to the quay.
+  disruption: none
+  last_causal_beat:
+    player_intent: Return to the familiar public bench.
+    world_response: The bench and its ordinary tools are available under existing daytime access.
+    changed_fact: none
+    returned_control_at: Mira is looking at the prepared tools and can choose whether to engage.
+  pending_consequences: []
+  resume_anchor: Nehir has already asked to see how a simple wooden guide is shaped during her break; Mira has not accepted. Ece continues her own order.
+inventory: []
+conditions: []
+active_clocks: []
+active_threats: []

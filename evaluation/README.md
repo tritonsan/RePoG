@@ -93,3 +93,17 @@ macro coherence/transformation, earned payoff and reading momentum. These extra
 average away a critical authorship, knowledge, act-identity or promise-scope failure.
 For claims of improvement, use blind paired comparison from the same seed/settings;
 a single run provides observations only. No fresh run is bundled by this fixture.
+
+## Session Zero Handoff Run
+
+`session_zero_handoff.json` is a bounded ten-turn replay plus short declared
+branches for differing accepted experience, a rule correction, and an explicit
+retcon. It tests owner retrieval after opening consumption and act turnover,
+thematic limits, voice transfer, refusal, and local versus ongoing OOC direction.
+Use the same disposable-workspace, actual-restart, evidence-freeze, and independent
+evaluation protocol above. Do not send its evaluator section to the acting agent.
+
+A narrow `read_only_behavior` probe may draft one continuation from frozen owners
+without mutating them. Report only the observed owner reads and response behavior;
+it cannot pass readiness, persistence, OOC-write, or complete-replay lanes. Missing
+required branch premises are `not_reached`, not permission to invent a result.

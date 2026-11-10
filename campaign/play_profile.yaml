@@ -13,6 +13,17 @@ performance:
   latency_notice_policy: exceptional_only
   estimate_acknowledged: false
 
+# Runtime layer around each turn. Each switch is a locked preference the
+# Player changes through an OOC request. presentation_lint and scene_capsule
+# act only where a host hook runs them. A missing key uses the helper default,
+# which matches these values except boundary_curator (background), so an older
+# campaign needs no migration; inline curation works on every host.
+runtime:
+  persistence_order: commit_then_narrate
+  presentation_lint: on
+  scene_capsule: on
+  boundary_curator: inline
+
 # Optional RPG browser-agent seats. Session Zero must choose mode explicitly
 # inside the existing Play/System decision. Companion experience mode keeps
 # this inactive. A ready character is never bound without an explicit seat
@@ -39,8 +50,36 @@ mechanics:
   travel_tracking: abstract
   wound_tracking: narrative
   dice_mode: judgment_only
+  # Optional numeric resolution scale for roll calls. Uncomment and adapt it
+  # only with numeric grounding and a dice mode, and read the odds table
+  # before locking it. These values illustrate the shape; they are not a
+  # default. A call whose lowest roll, one per die, already reaches a
+  # success band never rolls. A call whose value + factors - difficulty
+  # reaches auto_success_margin also succeeds without a roll, at the band
+  # its lowest roll reaches, or at the lowest success band when that roll
+  # falls short of it. The lowest success band is the one a margin of 0
+  # lands in, even when a better band such as a critical is listed first.
+  # Set the margin to that band's at_least minus the lowest roll, one per
+  # die (0 - 2 = -2 for 2d6 here), or leave it out: either way exactly the
+  # calls that cannot fail skip the roll. A lower margin also skips calls
+  # that could fail; a higher one adds nothing, and the full check flags
+  # it as auto_success_dead_zone.
+  # resolution:
+  #   die: 2d6
+  #   stat_min: 1
+  #   stat_max: 5
+  #   difficulty_min: 4
+  #   difficulty_max: 13
+  #   auto_success_margin: -2
+  #   bands:
+  #     - {at_least: 0, band: success}
+  #     - {at_least: -2, band: partial_small_cost}
+  #     - {at_least: -4, band: partial_heavy_cost}
+  #     - {at_least: -99, band: failure}
 
 narration:
+  language: auto
+  records_language: same
   point_of_view: second
   tense: present
   camera: close
@@ -99,6 +138,16 @@ visuals:
 # wound_tracking: narrative | conditions
 # dice_mode: judgment_only | player_rolls | open_gm_rolls |
 #   hidden_gm_rolls | hybrid
+# mechanics.resolution: optional; die as NdM, stat and difficulty ranges,
+#   optional auto_success_margin, and bands ordered by at_least (first
+#   match wins); see rules.md Dice
+# mechanics.resolution.auto_success_margin: optional integer; the at_least
+#   of the lowest success band (where a margin of 0 lands) minus the lowest
+#   roll, one per die, or unset
+# narration.language: auto | a BCP-47 primary language subtag such as
+#   en, tr, de, es, or fr
+# narration.records_language: same | a language code; every record's
+#   content is written in it, and same means narration.language
 # point_of_view: first | second | third
 # tense: past | present
 # camera: close | medium | wide
@@ -140,10 +189,15 @@ visuals:
 # visuals.dashboard_placement: gallery_only | dashboard_after_approval
 # performance.cold_distill_policy: every_durable |
 #   scene_checkpoint_or_3_durable | scene_checkpoint_or_5_durable |
-#   scene_checkpoint_only
+#   scene_checkpoint_only; Fast and Balanced use
+#   scene_checkpoint_or_5_durable, Maximum Continuity every_durable
 # performance.semantic_parallelism: off | selective_structural |
 #   aggressive_structural
 # performance.max_parallel_workers: 1 | 2 | 3
+# runtime.persistence_order: commit_then_narrate | narrate_then_commit
+# runtime.presentation_lint: on | off
+# runtime.scene_capsule: on | off
+# runtime.boundary_curator: background | inline | off
 # agent_seats.mode: off | on_demand
 # agent_seats.transport: webmcp
 # agent_seats.autonomy: bounded_full

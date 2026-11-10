@@ -1,9 +1,10 @@
 # RPG Quick Session 0 — Schema v9
 
-Load for `schema_version >= 9`, `experience_mode: rpg`, and `session_zero_mode:
+Load for `schema_version == 9`, `experience_mode: rpg`, and `session_zero_mode:
 quick`. Existing Quick setups keep their schema and contract unless the user
 explicitly requests migration. Quick v9 has **nine unique decision slots**,
 `question_target: 9`, and empty Deep pack lifecycle lists.
+New schema-v10+ setups use `rpg_quick_v10.md`; do not silently migrate this route.
 
 ## Decision Order
 

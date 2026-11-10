@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import importlib.util
 import json
+import math
 import re
 import sys
 from functools import lru_cache
 from pathlib import Path
+
+from file_transaction import FileTransactionError, is_applied_validation_journal
 
 
 REQUIRED_FILES = [
@@ -171,7 +175,7 @@ TURN_PROTOCOL_PRESETS = {
         "style_review_policy": "sampled_and_distill",
     },
     "balanced": {
-        "cold_distill_policy": "scene_checkpoint_or_3_durable",
+        "cold_distill_policy": "scene_checkpoint_or_5_durable",
         "validation_policy": "full_on_distill",
         "dashboard_refresh_policy": "every_visible_change",
         "style_review_policy": "every_2_durable_and_distill",
@@ -188,6 +192,9 @@ LEGACY_TURN_PROTOCOL_PRESETS = {
     "balanced": {**TURN_PROTOCOL_PRESETS["balanced"], "cold_distill_policy": "scene_or_3_durable"},
     "maximum_continuity": TURN_PROTOCOL_PRESETS["maximum_continuity"],
 }
+# Before 0.4.0 Balanced distilled after three durable turns; a campaign that
+# still holds that policy keeps it until the Player changes it.
+TURN_PRESET_ACCEPTED = {"balanced": {"cold_distill_policy": {"scene_checkpoint_or_3_durable"}}}
 TURN_PROTOCOLS = set(TURN_PROTOCOL_PRESETS) | {"custom"}
 COLD_DISTILL_POLICIES = {
     "every_durable",
@@ -255,7 +262,7 @@ BREATHER_EXIT_POLICIES = {
     "player_led_with_established_triggers",
     "world_led",
 }
-SCENE_MODES = {"ambient", "focused", "crisis", "aftermath", "transition", "breather"}
+SCENE_MODES = {"ambient", "focused", "crisis", "aftermath", "transition", "breather", "downtime"}
 ADVANCEMENT_CADENCES = {"none", "session", "scenario", "arc", "campaign"}
 ADVANCEMENT_PRESENTATIONS = {"none", "explicit_ooc", "automatic_fictional"}
 DASHBOARD_MODES = {"off", "on"}
@@ -406,6 +413,8 @@ def _yaml_list(value: str) -> list[str]:
 
 
 STATUS_BLOCK_HEADINGS = (
+    "RPG Quick v10 Required Decision Status",
+    "RPG Standard v10 Required Decision Status",
     "RPG Quick v9 Decision Slot Status",
     "RPG Standard v9 Module Status",
     "RPG Quick Decision Slot Status",
@@ -415,12 +424,42 @@ STATUS_BLOCK_HEADINGS = (
     "Module Status",
 )
 
+# Coverage areas, not a quota of interview answers. The coordinator owns the
+# meaning of each answer; this boundary only verifies declared completion.
+RPG_V10_REQUIRED_DECISIONS = {
+    "quick": (
+        "Campaign Promise And Player Fantasy",
+        "Agency, Authorship, And Boundaries",
+        "Character Identity, Current Desire, And Why Now",
+        "Competence, Limitation, And Social Position",
+        "Play And System Contract", "Presentation Contract",
+        "Character–World Relationship Pattern", "Reciprocity Design Review",
+        "Preparation Review And Approval",
+    ),
+    "standard": (
+        "Campaign Promise And Player Fantasy", "Research Need And Source Boundary",
+        "Agency, Authorship, And Content Boundaries",
+        "Character Identity, Current Desire, And Why Now",
+        "Competence, Limitation, Social Position, And Change Appetite",
+        "Play And System Contract", "Presentation And Visual Contract",
+        "Canon Policy", "Palette", "World Truths And Operating Model",
+        "Scale, Everyday Life, Access, And Routes",
+        "Independent Issues And World Dynamics", "Factions And Institutions",
+        "Faces, Places, And Independent Relationships", "Progression And Rewards",
+        "Character–World Reciprocity Pass", "Starting Situation Design",
+        "Continuity, Ownership, And Preparation Contract", "Reciprocity Design Review",
+        "Preparation Review And Approval",
+    ),
+}
+
 
 def _selected_status_heading(experience_mode: str, mode: str, schema_version: int) -> str:
     """Name the one status block this route owns; the others must stay untouched."""
 
     if experience_mode == "companion":
         return "Companion Module Status"
+    if schema_version >= 10 and mode in RPG_V10_REQUIRED_DECISIONS:
+        return f"RPG {mode.title()} v10 Required Decision Status"
     if schema_version >= 9 and mode == "quick":
         return "RPG Quick v9 Decision Slot Status"
     if schema_version >= 9 and mode == "standard":
@@ -432,6 +471,40 @@ def _selected_status_heading(experience_mode: str, mode: str, schema_version: in
     if schema_version >= 7 and mode in {"standard", "deep"}:
         return "RPG Standard / Deep Reciprocity Module Status"
     return "Module Status"
+
+
+def _check_v10_decisions(
+    campaign_path: Path, findings: list[dict], *, mode: str, content_ready: bool,
+    setup_revision: int, design_revision: int | None, preparation_revision: int | None,
+) -> None:
+    path = campaign_path / "session_zero.md"
+    section = _markdown_section(_read(path, findings), _selected_status_heading("rpg", mode, 10)) if path.is_file() else ""
+    expected = RPG_V10_REQUIRED_DECISIONS[mode]
+    rows = re.findall(r"(?m)^-\s+(\d+)\.\s+(.+?):\s*(\S+)\s*$", section)
+    row_names = [(int(number), name.strip()) for number, name, _ in rows]
+    if row_names != list(enumerate(expected, 1)):
+        if section or content_ready or design_revision is not None or preparation_revision is not None:
+            _add(findings, "error", "setup_required_decisions_invalid", "The selected v10 block must contain every required numbered area exactly once, in order.", path)
+        return
+    states = [state for _, _, state in rows]
+    if any(state not in {"open", "locked"} for state in states):
+        _add(findings, "error", "setup_required_decisions_invalid", "Required areas use open or locked; defaults and deferrals belong to their subordinate decisions.", path)
+    if content_ready and any(state != "locked" for state in states):
+        _add(findings, "error", "setup_modules_open", "All required v10 areas must be locked before readiness.", path)
+    if states[-2] == "locked" or design_revision is not None:
+        if any(state != "locked" for state in states[:-2]) or states[-2] != "locked":
+            _add(findings, "error", "setup_design_approval_early", "Design approval requires all prior decision areas and its own review row locked.", path)
+        if design_revision is None:
+            _add(findings, "error", "setup_design_approval_missing", "The design review requires explicit revision-bound approval.", path)
+    if states[-1] == "locked" or preparation_revision is not None or content_ready:
+        if states[-2:] != ["locked", "locked"]:
+            _add(findings, "error", "setup_preparation_approval_early", "Preparation approval requires both explicit review rows locked.", path)
+        if preparation_revision is None:
+            _add(findings, "error", "setup_preparation_approval_missing", "Preparation review requires current-revision approval.", path)
+        elif design_revision is None or preparation_revision <= design_revision:
+            _add(findings, "error", "setup_approval_order_invalid", "Preparation approval must follow design approval at a later revision.", path)
+    if preparation_revision is not None and preparation_revision != setup_revision:
+        _add(findings, "error", "setup_preparation_approval_stale", "Preparation approval must match the current setup revision.", path)
 
 
 def _check_setup_profile(
@@ -525,8 +598,9 @@ def _check_setup_profile(
 
     deep_v8 = schema_version >= 8 and experience_mode == "rpg" and mode == "deep"
 
-    if schema_version not in {1, 2, 3, 4, 5, 6, 7, 8, 9}:
-        _add(findings, "error", "setup_schema_invalid", "setup_profile schema_version must be between 1 and 9.", path)
+    decision_route_v10 = schema_version >= 10 and experience_mode == "rpg" and mode in RPG_V10_REQUIRED_DECISIONS
+    if schema_version not in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}:
+        _add(findings, "error", "setup_schema_invalid", "setup_profile schema_version must be between 1 and 10.", path)
     if questions_completed < 0 or last_checkpoint < 0 or last_checkpoint > questions_completed:
         _add(findings, "error", "setup_progress_invalid", "Question and checkpoint progress is inconsistent.", path)
     if schema_version >= 3 and setup_revision < 0:
@@ -569,6 +643,7 @@ def _check_setup_profile(
 
     setup_content_present = bool(
         questions_completed > 0
+        or (schema_version >= 10 and not mode and setup_revision > 0)
         or question_target_raw
         or activated
         or completed
@@ -591,6 +666,8 @@ def _check_setup_profile(
             _add(findings, "error", "experience_mode_missing", "Ready play requires an experience_mode.", path)
         if not experience_mode and setup_content_present:
             _add(findings, "error", "setup_content_before_experience", "Do not begin Session 0 content before the RPG/Companion experience gate.", path)
+        # v10 may retain a short premise as an intake note before choosing
+        # depth. It is not a terminal route decision and advances no counters.
         if experience_mode and not mode and setup_content_present:
             _add(findings, "error", "setup_content_before_depth", "Do not begin Session 0 content before the Quick/Standard/Deep depth gate.", path)
     elif not experience_mode:
@@ -679,7 +756,10 @@ def _check_setup_profile(
             )
 
     if schema_version >= 5 and mode:
-        if deep_v8:
+        if decision_route_v10:
+            if question_target is not None:
+                _add(findings, "error", "setup_question_target_forbidden", "RPG v10 uses required decision areas, not a readiness answer quota; leave question_target blank.", path)
+        elif deep_v8:
             if question_target is not None:
                 _add(
                     findings,
@@ -757,7 +837,7 @@ def _check_setup_profile(
     if schema_version >= 5:
         if content_ready and not deep_v8 and defaults_reviewed is not True:
             _add(findings, "error", "setup_defaults_not_reviewed", "Final approval must review the visible defaulted and deferred decisions.", path)
-        if mode == "quick" and content_ready and not defaulted_decisions:
+        if mode == "quick" and content_ready and not defaulted_decisions and not decision_route_v10:
             _add(findings, "error", "quick_defaults_missing", "Completed Quick setup must record its inferred choices in defaulted_decisions.", path)
         if deep_extension_approved is True and mode != "deep":
             _add(findings, "error", "deep_extension_invalid", "Only Deep Session 0 may record extension approval.", path)
@@ -773,7 +853,14 @@ def _check_setup_profile(
             path,
         )
 
-    if schema_version >= 6 and experience_mode == "rpg" and mode == "quick":
+    if decision_route_v10:
+        _check_v10_decisions(
+            campaign_path, findings, mode=mode, content_ready=content_ready,
+            setup_revision=setup_revision, design_revision=design_direction_approved_revision,
+            preparation_revision=preparation_approved_revision,
+        )
+
+    if 6 <= schema_version < 10 and experience_mode == "rpg" and mode == "quick":
         preparation_slot = 9 if schema_version >= 9 else 10
         design_required = questions_completed >= 8 or content_ready
         preparation_required = questions_completed >= preparation_slot or content_ready
@@ -859,7 +946,7 @@ def _check_setup_profile(
                     path,
                 )
 
-    if schema_version >= 7 and experience_mode == "rpg" and mode in {"standard", "deep"} and not deep_v8:
+    if 7 <= schema_version < 10 and experience_mode == "rpg" and mode in {"standard", "deep"} and not deep_v8:
         route_name = "RPG Standard" if mode == "standard" else "RPG Deep"
         if content_ready and design_direction_approved_revision is None:
             _add(
@@ -926,7 +1013,7 @@ def _check_setup_profile(
     if mode == "quick" and content_ready:
         if experience_mode == "companion" and questions_completed != 7:
             _add(findings, "error", "quick_question_target", "Completed Companion Quick setup must record exactly 7 content decisions; routing and triggered research gates do not count.", path)
-        elif experience_mode != "companion" and schema_version >= 9 and questions_completed != 9:
+        elif experience_mode != "companion" and schema_version == 9 and questions_completed != 9:
             _add(findings, "error", "quick_question_target", "Completed schema-v9 RPG Quick setup must record exactly 9 content decisions.", path)
         elif experience_mode != "companion" and 6 <= schema_version < 9 and questions_completed != 10:
             _add(findings, "error", "quick_question_target", "Completed schema-v6 RPG Quick setup must record exactly 10 content decisions; routing and triggered research gates do not count.", path)
@@ -935,7 +1022,7 @@ def _check_setup_profile(
     if mode == "standard" and content_ready:
         if schema_version >= 5 and experience_mode == "companion" and questions_completed != 15:
             _add(findings, "error", "setup_question_target", "Completed Companion Standard setup must record exactly 15 content decisions.", path)
-        elif schema_version >= 9 and experience_mode != "companion" and not 20 <= questions_completed <= 29:
+        elif schema_version == 9 and experience_mode != "companion" and not 20 <= questions_completed <= 29:
             _add(findings, "error", "setup_question_target", "Completed schema-v9 RPG Standard setup must record 20–29 content decisions.", path)
         elif 7 <= schema_version < 9 and experience_mode != "companion" and not 21 <= questions_completed <= 30:
             _add(findings, "error", "setup_question_target", "Completed schema-v7 RPG Standard setup must record 21–30 content decisions.", path)
@@ -1529,8 +1616,9 @@ def _check_play_profile(
             "dashboard_refresh_policy": refresh_policy,
             "style_review_policy": style_policy,
         }
+        accepted = TURN_PRESET_ACCEPTED.get(turn_protocol, {}) if schema_version >= 2 else {}
         for field, expected_value in expected.items():
-            if actual.get(field) and actual[field] != expected_value:
+            if actual.get(field) and actual[field] != expected_value and actual[field] not in accepted.get(field, ()):
                 _add(findings, "error", "turn_preset_mismatch", f"{turn_protocol} requires {field}: {expected_value}.", path)
     if required:
         system_fit_path = campaign_path / "system_fit.md"
@@ -1543,14 +1631,22 @@ def _check_play_profile(
             _add(findings, "error", "turn_profile_summary_missing", "session_zero.md does not mirror the selected Turn Protocol.", session_zero_path)
 
     mechanics_path = campaign_path / "mechanics_state.json"
-    if required and modules and mechanics_path.is_file():
+    stateful_tracking = any(
+        mechanic_fields[field][0] in values
+        for field, values in {
+            "mechanics.inventory_tracking": {"quantified", "encumbrance"},
+            "mechanics.time_tracking": {"scene", "step"},
+            "mechanics.travel_tracking": {"route_time"},
+            "mechanics.wound_tracking": {"conditions"},
+        }.items()
+    )
+    if required and (set(modules) - {"dice_resolution"} or stateful_tracking):
         try:
             enabled = json.loads(mechanics_path.read_text(encoding="utf-8")).get("enabled") is True
         except (OSError, json.JSONDecodeError, AttributeError):
             enabled = False
-        stateful_modules = set(modules) - {"dice_resolution"}
-        if stateful_modules and not enabled:
-            _add(findings, "error", "mechanics_state_disabled", "Approved stateful mechanic modules require mechanics_state enabled.", mechanics_path)
+        if not enabled:
+            _add(findings, "error", "mechanics_state_disabled", "Approved stateful modules or tracking settings require mechanics_state enabled.", mechanics_path)
 
     return {
         "ready": ready,
@@ -1700,7 +1796,7 @@ def _check_ready_snapshot(
         return
 
     if (
-        setup.get("schema_version") == 8
+        isinstance(setup.get("schema_version"), int) and setup["schema_version"] >= 8
         and setup.get("experience_mode") == "rpg"
         and setup.get("session_zero_mode") == "deep"
     ):
@@ -1759,17 +1855,49 @@ def _check_ready_snapshot(
             v2_manifests.append((manifest_path, data))
 
     if v2_manifests:
-        if not any(all(data.get(key) == value and type(data.get(key)) is type(value) for key, value in expected.items()) for _, data in v2_manifests):
+        # A start snapshot proves setup acceptance at an earlier continuity
+        # revision. Advancing play never requires rewriting that evidence.
+        matches = [
+            (manifest_path, data) for manifest_path, data in v2_manifests
+            if all(data.get(key) == value and type(data.get(key)) is type(value)
+                   for key, value in expected.items() if key != "continuity_revision")
+            and type(data.get("continuity_revision")) is int
+            and 0 <= data["continuity_revision"] <= expected["continuity_revision"]
+        ]
+        if not matches:
             _add(
                 findings,
                 "error",
                 "ready_snapshot_stale",
-                "No v2 snapshot matches the current campaign, setup revision, continuity revision, experience, and ready state.",
+                "No v2 start snapshot matches this accepted setup and experience at a non-future continuity revision.",
                 snapshot_root,
             )
+        else:
+            from snapshot import validate_snapshot_files
+            verified = False
+            legacy = False
+            failures = []
+            for manifest_path, data in matches:
+                if "file_records" not in data and "content_digest" not in data:
+                    legacy = True
+                    continue
+                failure = validate_snapshot_files(manifest_path, data)
+                if failure is None:
+                    verified = True
+                else:
+                    failures.append(failure)
+            if not verified:
+                if failures or not legacy or int(setup.get("schema_version", 1)) >= 10:
+                    _add(findings, "error", "ready_snapshot_invalid", failures[0] if failures else "Current setup requires a content-verified start snapshot.", snapshot_root)
+                else:
+                    _add(findings, "warning", "snapshot_content_unverified", "Legacy start snapshot has revision identity but no content hashes.", snapshot_root)
         return
 
     if legacy_count:
+        if int(setup.get("schema_version", 1)) >= 10:
+            _add(findings, "error", "ready_snapshot_invalid",
+                 "Current setup requires a content-verified v2 start snapshot; legacy evidence is insufficient.", snapshot_root)
+            return
         _add(
             findings,
             "warning",
@@ -2610,10 +2738,14 @@ def _check_rpg_transaction_journal(
                 # writer is active. A caller may validate while holding it.
                 continue
             elif entry.name == "files" and entry.is_dir():
-                pending = pending or next(entry.iterdir(), None) is not None
+                for batch in entry.iterdir():
+                    # Only the exact active callback's fully applied, intact
+                    # batch can be checked before its prepared journal commits.
+                    if not is_applied_validation_journal(campaign_path, batch):
+                        pending = True
             else:
                 pending = True
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, FileTransactionError) as exc:
         _add(findings, "error", "rpg_transaction_recovery_required",
              f"The transaction journal cannot be inspected: {exc}", journal)
         return
@@ -2630,9 +2762,13 @@ def _check_style_state_activity(campaign_path: Path, *, revision: int, findings:
 
     An empty history after many durable revisions means the only repetition and
     speaker memory stayed inert, which is how distinct voices drift together.
+    With the presentation lint on, its history is that memory and distill no
+    longer samples replies into style_state.json, so an empty one is expected.
     """
     path = campaign_path / "style_state.json"
     if not path.is_file() or revision < STYLE_ACTIVITY_REVISION_THRESHOLD:
+        return
+    if _runtime_checks().lint_keeps_style_memory(campaign_path):
         return
     try:
         state = json.loads(path.read_text(encoding="utf-8"))
@@ -3185,22 +3321,33 @@ def _check_early_stage_power(
     tier: str,
     power_band: str,
     level_band: str,
+    capped: bool = False,
 ) -> None:
-    recommended_max = _campaign_recommended_max(level_band)
-    if recommended_max is None or recommended_max >= STAT_MAX:
+    budget_max = _campaign_recommended_max(level_band)
+    if budget_max is None:
+        return
+    # Level-band figures are written for 1-5; a declared stat range rescales them.
+    rescaled = _runtime_checks().rescaled
+    recommended_max = rescaled(budget_max, (STAT_MIN, STAT_MAX))
+    if recommended_max >= STAT_MAX:
         return
 
     band_text = power_band.lower()
-    high_power_justified = any(word in band_text for word in HIGH_POWER_WORDS)
+    upper = _content_checks().band_upper(power_band)
+    high_power_justified = any(word in band_text for word in HIGH_POWER_WORDS) or (
+        upper is not None and bool(parsed) and upper >= max(parsed.values())
+    )
     high_stats = sorted(name for name, value in parsed.items() if value > recommended_max)
     elite_stats = sorted(name for name, value in parsed.items() if value >= STAT_MAX)
 
-    if tier == "t2" and high_stats and not high_power_justified:
+    # A rules.md Tier Caps entry replaces the level-band ceiling for its tier;
+    # check_content reports a stat above that cap under this same rule id.
+    if tier == "t2" and high_stats and not high_power_justified and not capped:
         _add(
             findings,
             "warning",
             "early_stage_power_spike",
-            f"{context} has stats above the {level_band} recommended max without a high-power band: {', '.join(high_stats)}.",
+            f"{context} has stats above the {level_band} recommended max {int(recommended_max)} without a high-power band: {', '.join(high_stats)}.",
             path,
         )
 
@@ -3213,14 +3360,15 @@ def _check_early_stage_power(
             path,
         )
 
-    if level_band and _normalize_level(level_band) in {"beginner", "local_rookie", "local_rookie_beginner"}:
-        very_high_count = sum(1 for value in parsed.values() if value >= 4)
+    if not capped and level_band and _normalize_level(level_band) in {"beginner", "local_rookie", "local_rookie_beginner"}:
+        very_high = math.ceil(rescaled(4, (STAT_MIN, STAT_MAX)))
+        very_high_count = sum(1 for value in parsed.values() if value >= very_high)
         if very_high_count > 1 and not high_power_justified:
             _add(
                 findings,
                 "warning",
                 "early_stage_power_inflation",
-                f"{context} has {very_high_count} stats at 4+ in a beginner-stage campaign without a high-power band.",
+                f"{context} has {very_high_count} stats at {very_high}+ in a beginner-stage campaign without a high-power band.",
                 path,
             )
 
@@ -3233,6 +3381,7 @@ def _check_character_notes(
     resolution_grounding: str,
     ready: bool,
     contract_v3: bool,
+    caps: dict[str, int] | None = None,
 ) -> None:
     active_path = campaign_path / "active_cast.md"
     active_rows = _markdown_table(_read(active_path, findings)) if active_path.is_file() else []
@@ -3241,6 +3390,10 @@ def _check_character_notes(
         for row in active_rows
         if row.get("NPC") and _slug(row.get("NPC", "")) != "example_npc"
     }
+    # rules.md Tier Caps; a caller checking one note outside its campaign passes them.
+    rules_path = campaign_path / "rules.md"
+    if caps is None:
+        caps = _content_checks().tier_caps(_read(rules_path, findings)) if rules_path.is_file() else {}
     for path in _markdown_files(campaign_path / "characters"):
         text = _read(path, findings)
         tier = _slug(_markdown_field(text, "Tier"))
@@ -3349,6 +3502,7 @@ def _check_character_notes(
             tier=tier,
             power_band=power_band,
             level_band=level_band,
+            capped=tier in caps,
         )
 
 
@@ -3582,6 +3736,15 @@ def _check_markdown_mechanics(
     )
 
 
+# Revision lag alone is not staleness: the content rules in check_content.py
+# report what is actually out of date, and a long lag is only noted.
+STALE_INFO_LAG = 25
+
+
+def _lag(label: str, revision: int, current: int) -> str:
+    return f"{label} revision {revision} trails state revision {current} by more than {STALE_INFO_LAG}."
+
+
 def _check_v2_memory(
     campaign_path: Path,
     *,
@@ -3601,8 +3764,8 @@ def _check_v2_memory(
     active_revision = _markdown_revision(active_text, "As of revision")
     if active_revision is None:
         _add(findings, "warning", "active_cast_revision_missing", "Active cast has no revision.", active_path)
-    elif scope == "full" and active_revision < revision:
-        _add(findings, "warning", "active_cast_stale", f"Active cast revision {active_revision} trails state revision {revision}.", active_path)
+    elif scope == "full" and revision - active_revision > STALE_INFO_LAG:
+        _add(findings, "info", "active_cast_stale", _lag("Active cast", active_revision, revision), active_path)
 
     active_by_name = {_slug(row.get("NPC", "")): row for row in active_rows if row.get("NPC") and _slug(row.get("NPC", "")) != "example_npc"}
     required_active_fields = ["Current location", "Current activity", "Immediate objective", "Availability", "Reason here", "Next move if ignored"]
@@ -3634,14 +3797,15 @@ def _check_v2_memory(
             row_location = row.get("Current location", "")
             if location and row_location and _slug(location) != _slug(row_location):
                 _add(findings, "error", "active_cast_location_conflict", f"Present NPC {npc} is tracked at {row_location}, not current location {location}.", active_path)
-        elif tier == "t1" and _slug(npc) not in active_by_name:
+        elif tier == "t1" and _slug(npc) not in active_by_name and scope != "full":
+            # A full check reports every missing row as cast_present_missing.
             _add(findings, "warning", "present_t1_presence_untracked", f"Present recurring T1 NPC has no active presence row: {npc}", active_path)
 
     graph_text = _read(graph_path, findings)
     graph_rows = _markdown_table(graph_text)
     graph_revision = _markdown_revision(graph_text, "As of revision")
-    if scope == "full" and graph_revision is not None and graph_revision < revision:
-        _add(findings, "warning", "location_graph_stale", f"Location graph revision {graph_revision} trails state revision {revision}.", graph_path)
+    if scope == "full" and graph_revision is not None and revision - graph_revision > STALE_INFO_LAG:
+        _add(findings, "info", "location_graph_stale", _lag("Location graph", graph_revision, revision), graph_path)
     seen_current_location = False
     for row in graph_rows:
         source = row.get("From", "")
@@ -3666,8 +3830,8 @@ def _check_v2_memory(
     relationship_revision = _markdown_revision(relationship_text, "As of revision")
     if relationship_revision is None:
         _add(findings, "warning", "relationship_revision_missing", "Relationship map has no revision.", relationship_path)
-    elif scope == "full" and relationship_revision < revision:
-        _add(findings, "warning", "relationship_map_stale", f"Relationship map revision {relationship_revision} trails state revision {revision}.", relationship_path)
+    elif scope == "full" and revision - relationship_revision > STALE_INFO_LAG:
+        _add(findings, "info", "relationship_map_stale", _lag("Relationship map", relationship_revision, revision), relationship_path)
     state_text = _read(campaign_path / "current_state.yaml", findings)
     player_name = _clean_scalar(_nested_values(_block(state_text, "player")).get("name", ""))
     required_relationship_fields = (
@@ -3726,8 +3890,8 @@ def _check_v2_memory(
         brief_revision = _markdown_revision(brief_text, "Prepared from revision")
         if brief_revision is None:
             _add(findings, "warning", "session_brief_revision_missing", "Session brief has no source revision.", brief_path)
-        elif brief_revision < revision:
-            _add(findings, "warning", "session_brief_stale", f"Session brief revision {brief_revision} trails state revision {revision}; current state remains authoritative.", brief_path)
+        elif revision - brief_revision > STALE_INFO_LAG:
+            _add(findings, "info", "session_brief_stale", _lag("Session brief", brief_revision, revision) + " Current state remains authoritative.", brief_path)
 
         dynamics_path = campaign_path / "world_dynamics.md"
         if dynamics_path.is_file():
@@ -4078,6 +4242,116 @@ def _narrative_checks():
     return module
 
 
+@lru_cache(maxsize=1)
+def _runtime_checks():
+    path = Path(__file__).with_name("check_runtime.py")
+    spec = importlib.util.spec_from_file_location("_repog_check_runtime", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load runtime checks")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@lru_cache(maxsize=1)
+def _content_checks():
+    path = Path(__file__).with_name("check_content.py")
+    spec = importlib.util.spec_from_file_location("_repog_check_content", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load content checks")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@contextlib.contextmanager
+def _configured_stat_scale(campaign_path: Path):
+    """Use the campaign's declared stat range while checking.
+
+    The range comes from mechanics.resolution and a rules.md `- Numeric scale:`
+    line; campaigns with neither keep the 1-5 scale.
+    """
+
+    global STAT_MIN, STAT_MAX
+    saved = (STAT_MIN, STAT_MAX)
+    try:
+        profile = campaign_path / "play_profile.yaml"
+        text = profile.read_text(encoding="utf-8") if profile.is_file() else ""
+        rules = campaign_path / "rules.md"
+        rules_text = rules.read_text(encoding="utf-8") if rules.is_file() else ""
+        STAT_MIN, STAT_MAX = _runtime_checks().stat_range(text, rules_text)
+    except Exception:
+        STAT_MIN, STAT_MAX = saved
+    try:
+        yield
+    finally:
+        STAT_MIN, STAT_MAX = saved
+
+
+@lru_cache(maxsize=1)
+def _owner_ops():
+    path = Path(__file__).with_name("owner_ops.py")
+    spec = importlib.util.spec_from_file_location("_repog_owner_ops", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load owner edit operations")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# Advisory curation budgets. They warn long before the writer's hard cap so a
+# growing record is consolidated while it is still cheap to read.
+OWNER_SIZE_WARNING = 300_000
+SESSION_LOG_SIZE_WARNING = 400_000
+
+
+def _check_curation(campaign_path: Path, findings: list[dict]) -> None:
+    """Warn about records that only ever grow.
+
+    Entity notes that stack "Current State (day N)" layers contradict
+    themselves, and owners near the size cap get slow to read and will
+    eventually refuse commits. Both stay warnings: what to keep is the GM's
+    call at a distill.
+    """
+
+    ops = _owner_ops()
+    for directory in ("characters", "places", "factions"):
+        folder = campaign_path / directory
+        if not folder.is_dir():
+            continue
+        for path in sorted(folder.glob("*.md")):
+            if path.name.startswith("_"):
+                continue
+            text = _read(path, findings)
+            for title, count in ops.stacked_headings(text):
+                _add(
+                    findings,
+                    "warning",
+                    "stacked_sections",
+                    f"{count} sections like '{title}'; keep one current section and replace it in place.",
+                    path,
+                )
+    for path in sorted(campaign_path.glob("*.md")):
+        text = _read(path, findings)
+        if path.name == "session_log.md":
+            if len(text) > SESSION_LOG_SIZE_WARNING:
+                _add(
+                    findings,
+                    "warning",
+                    "session_log_size",
+                    f"Session log holds {len(text)} characters; rotate it at the next commit-distill.",
+                    path,
+                )
+        elif len(text) > OWNER_SIZE_WARNING:
+            _add(
+                findings,
+                "warning",
+                "owner_size_budget",
+                f"{path.name} holds {len(text)} characters; consolidate or archive superseded entries.",
+                path,
+            )
+
+
 def check_changed_owners(campaign_path: Path, candidates: dict[str, bytes]) -> list[dict]:
     """Validate only staged RPG owner structures, without a campaign scan or write.
 
@@ -4395,6 +4669,8 @@ def _check_player_state(
     # axis, and a defining value from the first scene is paid for in the axes left
     # low. Flagging that choice would contradict the accepted rule on every check.
     max_total, _player_axis_ceiling_unused = budget
+    # Each stat's share of the 1-5 budget moves with a declared stat range.
+    max_total = int(_runtime_checks().rescaled(max_total, (STAT_MIN, STAT_MAX), len(parsed_stats)))
     total = sum(parsed_stats.values())
     budget_policy = _clean_scalar(player_values.get("stat_budget_policy", "standard"))
     budget_note = _clean_scalar(player_values.get("stat_budget_note", ""))
@@ -4420,6 +4696,22 @@ def check_campaign(
     *,
     scope: str = "full",
     preflight_ready: bool = False,
+) -> dict:
+    with _configured_stat_scale(Path(campaign_path).resolve()):
+        result = _check_campaign(Path(campaign_path), scope=scope, preflight_ready=preflight_ready)
+    if scope == "full" and result["findings"]:
+        # Directive rows (Scope `check`) turn acknowledged warnings into info.
+        root = Path(result["campaign_path"])
+        _content_checks().acknowledge(root, result["findings"])
+        result = _result(root, result["findings"], scope=scope)
+    return result
+
+
+def _check_campaign(
+    campaign_path: Path,
+    *,
+    scope: str,
+    preflight_ready: bool,
 ) -> dict:
     campaign_path = campaign_path.resolve()
     findings: list[dict] = []
@@ -4677,6 +4969,27 @@ def check_campaign(
             if path.is_file():
                 findings.extend(check(_read(path, findings), path))
         findings.extend(checks.check_references(campaign_path, ready=content_ready))
+        _check_curation(campaign_path, findings)
+
+        def add(severity: str, rule: str, message: str, path: Path, **extra: object) -> None:
+            _add(findings, severity, rule, message, path)
+            findings[-1].update(extra)  # e.g. `paths` of an aggregated finding
+
+        runtime_checks = _runtime_checks()
+        profile_path = campaign_path / "play_profile.yaml"
+        if profile_path.is_file():
+            profile_text = _read(profile_path, findings)
+            runtime_checks.check_profile(profile_text, profile_path, add)
+            runtime_checks.check_rolls(campaign_path, profile_text, profile_path, add)
+        runtime_checks.check_notes(campaign_path, present_npcs, add)
+        findings.extend(
+            _content_checks().check_campaign_content(
+                campaign_path,
+                location=location,
+                present_npcs=present_npcs,
+                numeric=resolution_grounding == "numeric",
+            )
+        )
 
     if memory_version >= 2 and all((campaign_path / relative).is_file() for relative in V2_FILES):
         _check_v2_memory(

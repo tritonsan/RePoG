@@ -3,6 +3,27 @@
 Schema v2 uses a monotonic ``operation_sequence``.  A retry of the most recent
 operation is idempotent; older or out-of-order operations are rejected instead
 of becoming valid again after a bounded id history rolls over.
+
+Downtime support (all optional, so older v2 ledgers stay valid unchanged):
+
+- A clock may carry ``owner`` (one line), ``tick: {unit, amount}`` and
+  ``on_fill`` (one line).  ``advance_time`` ticks every clock whose tick unit
+  matches, capped at its maximum, and marks the change ``filled`` when the
+  clock reaches its maximum.  ``add_clock`` starts a new clock during play and
+  ``remove_clock`` retires a resolved one, reporting the clock it removed.
+- ``obligations`` records recurring costs such as wages or rent, paid from
+  one holding of the actor: a resource (``resource_id``) or an inventory item
+  counted by quantity (``item_id``), such as coins kept in a purse.
+  ``settle_obligation`` spends from that holding at most once per
+  period key, so a time skip cannot charge the same wages twice.  A key is
+  stored trimmed and NFC-normalised as given, and compared without case or
+  compatibility differences: "Week-3", "week-3" and a fullwidth or no-break
+  space variant name the same period.  The comparison is the same in every
+  language and locale because every dotted and dotless i (I, i, the Turkish
+  capital dotted I and dotless i) folds to a plain "i" first.
+
+The helper never decides what a filled clock or an unpaid debt means in the
+fiction; it only reports the numbers.
 """
 
 from __future__ import annotations
@@ -14,11 +35,13 @@ import json
 import os
 import sys
 import tempfile
+import unicodedata
 from pathlib import Path
 from typing import Any
 
 
 SCHEMA_VERSION = 2
+MAX_LINE_TEXT = 2_000
 SUPPORTED_OPERATIONS = {
     "use",
     "use_ability",
@@ -33,9 +56,13 @@ SUPPORTED_OPERATIONS = {
     "set_item_quantity",
     "add_condition",
     "remove_condition",
+    "add_clock",
     "advance_clock",
     "set_clock",
+    "remove_clock",
     "advance_time",
+    "add_obligation",
+    "settle_obligation",
 }
 
 
@@ -72,6 +99,54 @@ def _identifier(value: Any, name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise MechanicError(f"{name} must be a non-empty string")
     return value.strip()
+
+
+def _one_line(value: Any, name: str) -> str:
+    text = _identifier(value, name)
+    # splitlines() also catches \v, \f, \x1c-\x1e, \x85, U+2028 and U+2029.
+    if len(text.splitlines()) != 1:
+        raise MechanicError(f"{name} must be one line")
+    if len(text) > MAX_LINE_TEXT:
+        raise MechanicError(f"{name} exceeds {MAX_LINE_TEXT} characters")
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        raise MechanicError(f"{name} must be valid Unicode text (it contains a lone surrogate)") from None
+    return text
+
+
+def _brief(value: Any) -> str:
+    """A bounded repr for error messages about arbitrary input values."""
+    text = repr(value)
+    return text if len(text) <= 80 else f"{text[:77]}..."
+
+
+def _id_list(container: Any) -> str:
+    """Up to ten sorted ids of a mapping for an error message; empty when it holds none."""
+    ids = sorted(str(key) for key in container) if isinstance(container, dict) else []
+    return ", ".join(ids[:10]) + (", ..." if len(ids) > 10 else "")
+
+
+def _period_key(value: Any, name: str) -> str:
+    """Return a settled-period key as it is stored: trimmed, one line, NFC."""
+    key = unicodedata.normalize("NFC", _one_line(value, name))
+    # NFC can lengthen a few strings, so the cap applies to the stored form.
+    if len(key) > MAX_LINE_TEXT:
+        raise MechanicError(f"{name} exceeds {MAX_LINE_TEXT} characters")
+    return key
+
+
+# Locales disagree about the letter i: Turkish pairs I with dotless i and the
+# dotted capital I with i.  Folding all of them to "i" keeps one rule for all.
+_DOTLESS_I = str.maketrans({"I": "i", "\N{LATIN SMALL LETTER DOTLESS I}": "i"})
+
+
+def _period_fold(key: str) -> str:
+    """Comparison form of a period key: caseless and the same in every locale."""
+    # NFKD splits the dotted capital I into I + a combining dot (dropped below) and
+    # maps compatibility forms, such as a no-break space, to their plain letters.
+    text = unicodedata.normalize("NFKD", key).translate(_DOTLESS_I).casefold()
+    return unicodedata.normalize("NFKC", text.replace("i\N{COMBINING DOT ABOVE}", "i"))
 
 
 def _actor(state: dict[str, Any], actor_id: str) -> dict[str, Any]:
@@ -161,14 +236,116 @@ def _condition(actor: dict[str, Any], condition_id: str) -> dict[str, Any]:
 
 def _clock(state: dict[str, Any], clock_id: str) -> dict[str, Any]:
     clocks = state.get("clocks")
-    if not isinstance(clocks, dict) or clock_id not in clocks or not isinstance(clocks[clock_id], dict):
-        raise MechanicError(f"unknown clock: {clock_id}")
+    if not isinstance(clocks, dict) or clock_id not in clocks:
+        known = _id_list(clocks)
+        hint = f"known: {known}" if known else "no clocks are recorded"
+        raise MechanicError(f"unknown clock: {clock_id} ({hint})")
     clock = clocks[clock_id]
+    if not isinstance(clock, dict):
+        raise MechanicError(f"clock {clock_id} must be an object")
     current = _integer(clock.get("current"), f"{clock_id}.current", 0)
     maximum = _integer(clock.get("maximum"), f"{clock_id}.maximum", 1)
     if current > maximum:
         raise MechanicError(f"{clock_id}.current exceeds maximum")
+    # Optional downtime fields; a null value counts as absent.
+    if clock.get("owner") is not None:
+        _one_line(clock["owner"], f"{clock_id}.owner")
+    if clock.get("on_fill") is not None:
+        _one_line(clock["on_fill"], f"{clock_id}.on_fill")
+    tick = clock.get("tick")
+    if tick is not None:
+        if not isinstance(tick, dict):
+            raise MechanicError(f"{clock_id}.tick must be an object")
+        _identifier(tick.get("unit"), f"{clock_id}.tick.unit")
+        _integer(tick.get("amount"), f"{clock_id}.tick.amount", 1)
     return clock
+
+
+def _clock_change(clock_id: str, clock: dict[str, Any], before: int, after: int) -> dict[str, Any]:
+    """Describe one clock movement; ``filled`` appears only when it reaches its maximum."""
+    change: dict[str, Any] = {"kind": "clock", "clock": clock_id, "before": before, "after": after}
+    if clock.get("owner") is not None:
+        change["owner"] = clock["owner"]
+    if after == clock["maximum"] and before < after:
+        change["filled"] = True
+        if clock.get("on_fill") is not None:
+            change["on_fill"] = clock["on_fill"]
+    return change
+
+
+# An obligation spends from exactly one holding of its actor: a resource with
+# bounds, or an inventory item counted by quantity (coins kept in a purse).
+SPEND_KEYS = ("resource_id", "item_id")
+
+
+def _spend_target(source: dict[str, Any], prefix: str, owner: str) -> tuple[str, str]:
+    """``(key, id)`` of the holding named by exactly one of resource_id or item_id.
+
+    A null value counts as absent, like the other optional fields.
+    """
+    keys = [key for key in SPEND_KEYS if source.get(key) is not None]
+    if len(keys) != 1:
+        given = "both are given" if keys else "neither is given"
+        raise MechanicError(f"{owner} needs exactly one of resource_id or item_id; {given}")
+    return keys[0], _identifier(source[keys[0]], f"{prefix}{keys[0]}")
+
+
+def _holding(actor_id: str, actor: dict[str, Any], key: str, holding_id: str) -> dict[str, Any]:
+    """The validated resource or inventory item an obligation spends from.
+
+    An unknown id names what the actor does hold and, when the id belongs to
+    the other kind of holding, the key that names it: money kept as an
+    inventory item is an ``item_id``, not a ``resource_id``.
+    """
+    is_resource = key == "resource_id"
+    held = actor.get("resources" if is_resource else "inventory")
+    if isinstance(held, dict) and holding_id in held:
+        return _resource(actor, holding_id) if is_resource else _item(actor, holding_id)
+    message = (
+        f"unknown {'resource' if is_resource else 'item'}: {holding_id} "
+        f"({actor_id} has resources: {_id_list(actor.get('resources')) or 'none'}; "
+        f"items: {_id_list(actor.get('inventory')) or 'none'})"
+    )
+    elsewhere = actor.get("inventory" if is_resource else "resources")
+    if isinstance(elsewhere, dict) and holding_id in elsewhere:
+        kind, other_key = ("an inventory item", "item_id") if is_resource else ("a resource", "resource_id")
+        message += f"; {holding_id} is {kind}, so name it with {other_key}"
+    raise MechanicError(message)
+
+
+def _obligation(state: dict[str, Any], obligation_id: str) -> dict[str, Any]:
+    obligations = state.get("obligations")
+    if not isinstance(obligations, dict) or obligation_id not in obligations:
+        # Name the recorded ids: a settlement often comes long after the obligation was added.
+        known = _id_list(obligations)
+        hint = f"known: {known}" if known else "no obligations are recorded"
+        raise MechanicError(f"unknown obligation: {obligation_id} ({hint})")
+    record = obligations[obligation_id]
+    if not isinstance(record, dict):
+        raise MechanicError(f"obligation {obligation_id} must be an object")
+    _identifier(record.get("actor_id"), f"{obligation_id}.actor_id")
+    _spend_target(record, f"{obligation_id}.", f"obligation {obligation_id}")
+    _integer(record.get("amount"), f"{obligation_id}.amount", 0)
+    _one_line(record.get("period_label"), f"{obligation_id}.period_label")
+    settled = record.get("settled")
+    if not isinstance(settled, list):
+        raise MechanicError(f"{obligation_id}.settled must be a list of non-empty strings")
+    seen: dict[str, str] = {}
+    for index, period in enumerate(settled):
+        key = _period_key(period, f"{obligation_id}.settled[{index}]")
+        folded = _period_fold(key)
+        if folded in seen:
+            raise MechanicError(
+                f"{obligation_id}.settled contains duplicate periods: {seen[folded]!r} and {key!r} are the same period"
+            )
+        seen[folded] = key
+    return record
+
+
+def _settled_periods(record: dict[str, Any]) -> dict[str, str]:
+    """Map each settled period's comparison form to its stored key (already validated)."""
+    keys = (unicodedata.normalize("NFC", period.strip()) for period in record["settled"])
+    return {_period_fold(key): key for key in keys}
 
 
 def _validate_state(state: dict[str, Any]) -> None:
@@ -239,6 +416,12 @@ def _validate_state(state: dict[str, Any]) -> None:
         raise MechanicError("clocks must be an object")
     for clock_id in clocks:
         _clock(state, clock_id)
+    obligations = state.get("obligations", {})
+    if not isinstance(obligations, dict):
+        raise MechanicError("obligations must be an object")
+    for obligation_id in obligations:
+        _identifier(obligation_id, "obligation id")
+        _obligation(state, obligation_id)
     elapsed = state.get("elapsed_time", {})
     if not isinstance(elapsed, dict):
         raise MechanicError("elapsed_time must be an object")
@@ -381,6 +564,134 @@ def _advance_time(state: dict[str, Any], payload: dict[str, Any], changes: list[
         for condition_id in expired:
             del actor["conditions"][condition_id]
             changes.append({"kind": "condition_removed", "actor": actor_id, "condition": condition_id, "reason": "duration_elapsed"})
+
+    for clock_id, clock in state.get("clocks", {}).items():
+        tick = clock.get("tick")
+        # The unit was validated as non-empty text; a hand-padded " day" still ticks.
+        if not isinstance(tick, dict) or tick["unit"].strip() != unit:
+            continue
+        before = clock["current"]
+        after = min(clock["maximum"], before + tick["amount"] * steps)
+        if after != before:
+            clock["current"] = after
+            change = _clock_change(clock_id, clock, before, after)
+            change["reason"] = "tick"
+            changes.append(change)
+
+
+def _add_obligation(state: dict[str, Any], payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
+    obligation_id = _one_line(payload.get("obligation_id"), "obligation_id")
+    actor_id = _identifier(payload.get("actor_id"), "actor_id")
+    key, holding_id = _spend_target(payload, "", "add_obligation")
+    _holding(actor_id, _actor(state, actor_id), key, holding_id)
+    amount = _integer(payload.get("amount"), "amount", 0)
+    period_label = _one_line(payload.get("period_label"), "period_label")
+    obligations = state.setdefault("obligations", {})
+    if obligation_id in obligations:
+        raise MechanicError(f"obligation already exists: {obligation_id}")
+    record = {
+        "actor_id": actor_id,
+        key: holding_id,
+        "amount": amount,
+        "period_label": period_label,
+        "settled": [],
+    }
+    obligations[obligation_id] = record
+    changes.append(
+        {"kind": "obligation_added", "obligation": obligation_id, "actor": actor_id, "after": copy.deepcopy(record)}
+    )
+
+
+def _settle_obligation(state: dict[str, Any], payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
+    obligation_id = _identifier(payload.get("obligation_id"), "obligation_id")
+    record = _obligation(state, obligation_id)
+    period = _period_key(payload.get("period"), "period")
+    recorded = _settled_periods(record).get(_period_fold(period))
+    if recorded is not None:
+        as_recorded = "" if recorded == period else f" (recorded as {recorded!r})"
+        raise MechanicError(f"obligation {obligation_id} is already settled for period {period!r}{as_recorded}")
+    # A null override counts as absent, like the optional clock fields.
+    raw_amount = payload.get("amount")
+    amount = record["amount"] if raw_amount is None else _integer(raw_amount, "amount", 0)
+    actor_id = record["actor_id"].strip()
+    key, holding_id = _spend_target(record, f"{obligation_id}.", f"obligation {obligation_id}")
+    try:
+        actor = _actor(state, actor_id)
+        holding = _holding(actor_id, actor, key, holding_id)
+    except MechanicError as exc:
+        raise MechanicError(f"obligation {obligation_id} cannot be settled: {exc}") from None
+    if key == "resource_id":
+        has, floor = holding["current"], holding["minimum"]
+        numbers = f"has {has} (minimum {floor})"
+    else:
+        # An item is counted, so its quantity may reach 0 but never go below it.
+        has, floor = holding["quantity"], 0
+        numbers = f"has {has}"
+    if has - amount < floor:
+        raise MechanicError(
+            f"insufficient {holding_id} to settle {obligation_id} for period {period!r}: "
+            f"needs {amount}, {numbers}, short {amount - (has - floor)}"
+        )
+    local: list[dict[str, Any]] = []
+    if key == "resource_id":
+        _change_resource(actor, holding_id, -amount, local)
+    else:
+        _change_item(actor, holding_id, -amount, local)
+    for change in local:
+        change["actor"] = actor_id
+    changes.extend(local)
+    record["settled"].append(period)
+    changes.append(
+        {
+            "kind": "obligation_settled",
+            "obligation": obligation_id,
+            "actor": actor_id,
+            ("resource" if key == "resource_id" else "item"): holding_id,
+            "period": period,
+            "amount": amount,
+        }
+    )
+
+
+def _add_clock(state: dict[str, Any], payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
+    """Start a clock during play, such as a threat that begins ticking mid-scene."""
+    clock_id = _one_line(payload.get("clock_id"), "clock_id")
+    clocks = state.setdefault("clocks", {})
+    if clock_id in clocks:
+        raise MechanicError(f"clock already exists: {clock_id}")
+    maximum = _integer(payload.get("maximum"), "maximum", 1)
+    # The optional fields follow a stored clock: a null value counts as absent.
+    current = payload.get("current")
+    clock: dict[str, Any] = {
+        "current": 0 if current is None else _integer(current, "current", 0, maximum),
+        "maximum": maximum,
+    }
+    if payload.get("owner") is not None:
+        clock["owner"] = _one_line(payload["owner"], "owner")
+    tick = payload.get("tick")
+    if tick is not None:
+        if not isinstance(tick, dict):
+            raise MechanicError("tick must be an object with unit and amount")
+        extra = sorted(str(name) for name in tick if name not in ("unit", "amount"))
+        if extra:
+            # A stray key such as "every" would otherwise be dropped while the GM relies on it.
+            raise MechanicError(f"tick takes only unit and amount, not {', '.join(extra)}")
+        clock["tick"] = {
+            "unit": _identifier(tick.get("unit"), "tick.unit"),
+            "amount": _integer(tick.get("amount"), "tick.amount", 1),
+        }
+    if payload.get("on_fill") is not None:
+        clock["on_fill"] = _one_line(payload["on_fill"], "on_fill")
+    clocks[clock_id] = clock
+    _clock(state, clock_id)  # the same checks every stored clock passes
+    changes.append({"kind": "clock_added", "clock": clock_id, "after": copy.deepcopy(clock)})
+
+
+def _remove_clock(state: dict[str, Any], payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
+    """Retire a clock whose threat is resolved; the change keeps the removed clock."""
+    clock_id = _identifier(payload.get("clock_id"), "clock_id")
+    _clock(state, clock_id)
+    changes.append({"kind": "clock_removed", "clock": clock_id, "before": state["clocks"].pop(clock_id)})
 
 
 def _apply_actor_operation(state: dict[str, Any], operation: str, payload: dict[str, Any], changes: list[dict[str, Any]]) -> None:
@@ -533,12 +844,23 @@ def apply_operation(state: dict[str, Any], payload: dict[str, Any]) -> tuple[dic
     resulting_continuity = _integer(resulting_continuity, "resulting_continuity_revision", expected_continuity)
 
     operation = payload.get("operation")
-    if operation not in SUPPORTED_OPERATIONS:
-        raise MechanicError("unsupported operation")
+    # A list or object here must not reach the set lookup (TypeError, not a typed error).
+    if not isinstance(operation, str) or operation not in SUPPORTED_OPERATIONS:
+        raise MechanicError(
+            f"unsupported operation: {_brief(operation)}; use one of {', '.join(sorted(SUPPORTED_OPERATIONS))}"
+        )
     updated = copy.deepcopy(normalized)
     changes: list[dict[str, Any]] = []
     if operation == "advance_time":
         _advance_time(updated, payload, changes)
+    elif operation == "add_obligation":
+        _add_obligation(updated, payload, changes)
+    elif operation == "settle_obligation":
+        _settle_obligation(updated, payload, changes)
+    elif operation == "add_clock":
+        _add_clock(updated, payload, changes)
+    elif operation == "remove_clock":
+        _remove_clock(updated, payload, changes)
     elif operation in {"advance_clock", "set_clock"}:
         clock_id = _identifier(payload.get("clock_id"), "clock_id")
         clock = _clock(updated, clock_id)
@@ -549,7 +871,7 @@ def apply_operation(state: dict[str, Any], payload: dict[str, Any]) -> tuple[dic
         else:
             after = _integer(payload.get("value"), "value", 0, clock["maximum"])
         clock["current"] = after
-        changes.append({"kind": "clock", "clock": clock_id, "before": before, "after": after})
+        changes.append(_clock_change(clock_id, clock, before, after))
     else:
         _apply_actor_operation(updated, operation, payload, changes)
 
@@ -580,6 +902,16 @@ def apply_operation(state: dict[str, Any], payload: dict[str, Any]) -> tuple[dic
     }
 
 
+def _load_json(text: str, label: str) -> Any:
+    """Parse one JSON document; the error names which input was malformed."""
+    try:
+        return json.loads(text)
+    except RecursionError:
+        raise MechanicError(f"{label} is not valid JSON: it is nested too deeply") from None
+    except ValueError as exc:  # JSONDecodeError, or an integer literal too long to convert
+        raise MechanicError(f"{label} is not valid JSON: {exc}") from None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("state_path", help="Path to mechanics_state.json.")
@@ -587,14 +919,27 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     path = Path(args.state_path).resolve()
     try:
-        state = json.loads(path.read_text(encoding="utf-8"))
-        payload = json.loads(args.input_json)
-        if not isinstance(state, dict) or not isinstance(payload, dict):
-            raise MechanicError("state and input must be JSON objects")
+        try:
+            # utf-8-sig tolerates a BOM left by Windows editors; the rewrite drops it.
+            text = path.read_text(encoding="utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise MechanicError(
+                f"{path.name} is not valid UTF-8 ({exc.reason} at byte {exc.start}); re-save it as UTF-8"
+            ) from None
+        state = _load_json(text, path.name)
+        payload = _load_json(args.input_json, "--input-json")
+        if not isinstance(state, dict):
+            raise MechanicError(f"{path.name} must contain a JSON object")
+        if not isinstance(payload, dict):
+            raise MechanicError("--input-json must be a JSON object")
         updated, result = apply_operation(state, payload)
         if not result["duplicate"]:
             _atomic_write(path, updated)
-    except (OSError, json.JSONDecodeError, MechanicError) as exc:
+    except RecursionError:
+        # A pathologically nested ledger can still exhaust the stack while it is copied.
+        print(json.dumps({"ok": False, "error": f"{path.name} or --input-json is nested too deeply"}, indent=2))
+        return 2
+    except (OSError, ValueError) as exc:  # MechanicError is a ValueError
         print(json.dumps({"ok": False, "error": str(exc)}, indent=2))
         return 2
     print(json.dumps(result, indent=2, ensure_ascii=True))

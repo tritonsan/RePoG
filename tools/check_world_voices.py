@@ -168,8 +168,13 @@ def validate_manifest(campaign: Path) -> tuple[list[dict], dict | None]:
     if sequences and max(sequences) > data.get("operation_sequence", -1):
         findings.append(_finding("error", "world_voices_operation_sequence_stale", "operation_sequence trails a completed operation.", path))
     campaign_revision = _current_continuity_revision(campaign / "current_state.yaml")
-    if campaign_revision is not None and data.get("continuity_revision") != campaign_revision:
-        findings.append(_finding("error", "world_voices_continuity_stale", "World Voices continuity_revision must match current_state.yaml after a durable change.", path))
+    indexed_revision = data.get("continuity_revision")
+    if campaign_revision is not None and type(indexed_revision) is int and indexed_revision > campaign_revision:
+        findings.append(_finding("error", "world_voices_continuity_stale", "World Voices cannot reference a future campaign revision.", path))
+    # This is the last revision relevant to this store. Unrelated durable
+    # changes (including a dormant, empty store) do not require a voices write.
+    # Artifact sources, creation revisions and projections are checked below
+    # against this store's own revision, so old or corrupt records are not hidden.
 
     knowledge_ids = _ids_from_knowledge(campaign / "knowledge_boundaries.md")
     protected_records = _protected_records(campaign / "knowledge_boundaries.md")

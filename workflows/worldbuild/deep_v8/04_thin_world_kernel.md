@@ -24,6 +24,10 @@ This stage defines how consequences arise, not an encyclopedia or cast roster.
 Present coherent causal alternatives for Player choice. The coordinator
 realizes subordinate fields; do not interview through society/economy/law schema
 headings.
+Keep unselected alternatives only within accepted scope; record explicit
+rejection and deliberate deferral in their existing owners with their scope.
+Do not turn a rejected experience into a dormant hook. Add counter-currents,
+side effects, or macro figures for causal relevance, never a detail quota.
 
 ## Creation Authority Gate
 
@@ -34,6 +38,10 @@ accepts it. Under bounded inference, derive only connective detail inside the
 accepted campaign promise, research boundary, and authorship limits and mark
 ordinary alternatives as visible defaults. Broad world-side preparation still
 cannot cross safety, canon, research, or protected-character boundaries.
+
+Record each decision with the fields in `decisions.md`. A Stage 4 decision
+recorded with source `derived` or `defaulted` must depend on
+`01_creation_authority`, and the helper refuses it under `approval_first`.
 
 ## Controlled Extension
 
@@ -52,6 +60,15 @@ current-scale truths, two-way local channels, independent movement,
 ordinary-life effects, and explicit unknowns. Every source-sensitive truth must
 cite the locked Stage 2 scope. Complete or explicitly default `world_fabric`
 before closing the stage.
+
+Write a price and bounty anchor table under `world_truths.md` /
+`## Economy And Resources` / `### Price And Bounty Anchors`, with the headers
+`| Anchor | Value | Notes |`: a few everyday prices (a meal, a night's lodging,
+a common weapon or tool, passage, a vessel or mount where relevant) and the
+current region's reward or bounty scale (a petty criminal, a local strongman, a
+regional threat), in the setting's own currency. Later prices, rewards, and
+bounties scale from these rows. `complete-stage` refuses Stage 4 without at
+least one row.
 
 ## Do Not
 

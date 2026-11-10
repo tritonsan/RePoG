@@ -108,6 +108,12 @@ source rather than choosing the cleaner story. Preserve
 meaningful append-only history. Structural validation cannot prove semantic
 equivalence; sampled clean-context replays must test that separately.
 
+A note's `## Now` holds the current state only: at most 800 characters and three
+dated entries, replaced in place and never appended to. Past that budget the
+writer moves the oldest dated entries into `## History` on the commit that
+touches the note; undated lines stay. A history line keeps its date and the
+qualifiers above, so the move loses no consequence.
+
 ## Resume An Unfinished Reply
 
 The restart-loss test already makes any new fact needed later durable,

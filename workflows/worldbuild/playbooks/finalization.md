@@ -18,6 +18,9 @@ coordinator is the sole campaign writer and player-facing voice.
 Schema-v9+ Quick/Standard reach this boundary through their single combined
 actual-preparation acceptance. Do not request a second readiness approval or
 legacy slot 10/module 21. Deep continues its existing ledger gates.
+Here "Deep ledger" means the `rpg_deep_v8` flow in every supported schema-v8+
+workspace, including v10. Schema-v10+ Quick/Standard require complete required
+decision rows instead of a numeric question target.
 
 # Route Boundary
 
@@ -53,7 +56,7 @@ containing:
 
 A current reciprocity RPG seed is valid only when design approval precedes the
 accepted preparation at the frozen setup revision. Schema-v7 Deep additionally
-requires every activated pack resolved. Schema-v8 Deep instead freezes
+requires every activated pack resolved. The Deep ledger instead freezes
 `session_zero_state.json`: all nine stages and activated stage extensions must
 be complete, no output may be stale, and every gate through
 `preparation_approved` must carry current revision/digest evidence.
@@ -133,12 +136,28 @@ voice message.
 
 # Readiness Order
 
-Use this order exactly:
+Use this order exactly. On the Deep ledger, steps 2, 3, and 5–7 are one call
+after Stage 9 completes:
+`tools/session_zero_state.py campaign finalize --operation-id <id>
+--expected-revision <current>`. It stops at the first failing step with a typed
+error, `failed_step`, and `completed_steps`; fix that step and call it again
+with the current revision. It never repeats a passed preflight gate. With
+approved projections (step 4), call it with `--stop-after lock_profiles`, build
+them, and call it again. Do not run the steps one by one or edit profile fields
+by hand.
+
+Before step 1 on every route, calibrate every NPC card to the accepted NPC
+power scale: each T2/T3 `Power Band:` inside the scale and its tier cap, and no
+stat above its band. A full check must show no calibration warning
+(`power_band_mismatch` and the early-stage power rules) and no
+`minor_romance_history`; on the Deep ledger `finalize` refuses readiness until
+they are resolved. A `records_language_mismatch` does not block: `finalize`
+reports it under `advisories`, and the records are translated when convenient.
 
 1. **Approval gate.**
    - Current reciprocity RPG: design approval exists; actual preparation review
      is accepted; preparation approval equals current `setup_revision`; schema-
-     v7 Deep has no unresolved pack; schema-v8 Deep has no incomplete/stale
+     v7 Deep has no unresolved pack; the Deep ledger has no incomplete/stale
      stage or extension and its gate chain is current through
      `preparation_approved`.
    - Legacy/Companion: existing final-summary approval applies.
@@ -150,15 +169,20 @@ Use this order exactly:
    ```
 
    It must report zero errors. Preflight never substitutes for an approval.
-   On schema-v8 Deep, record `draft_preflight_passed` now, bound to the current
+   On the Deep ledger, record `draft_preflight_passed` now, bound to the current
    preparation approval. That gate advances `setup_revision`; use the resulting
    revision for every profile, snapshot, aggregate-report, and final-gate step
    below.
-3. **Candidate profile fields.** Set the selected profile `locked` and the
-   unused profile `inactive`, and set the selected profile's
-   `source_setup_revision` to the current post-preflight revision. Keep setup
-   `status: in_progress` and `ready_for_play: false`; do not increment the
-   revision or narrate. The schema-v8 Deep final gate owns the readiness flip.
+3. **Candidate profile and route fields.** Set the selected profile `locked`,
+   the unused profile `inactive`, and `source_setup_revision` to the applicable
+   approved revision (the post-preflight revision for the Deep ledger). Do not
+   increment the revision or narrate. Then follow the explicit route split:
+   - **Deep ledger:** keep `status: in_progress`, `ready_for_play: false`;
+     its atomic final gate alone owns the readiness transition.
+   - **Quick/Standard, legacy non-ledger RPG, and Companion:** set
+     `status: complete`, `ready_for_play: true` at the same approved revision
+     before projections/snapshot, as their snapshot contract requires. This is
+     candidate-ready metadata, not permission to narrate before the final check.
 4. **Derived ready projections.** Serially compile approved RPG Atlas/Dashboard
    or Companion View at that revision and run their checks. When RPG Agent
    Seats are `on_demand`, validate `agent_roster.json`; every `ready` entry must
@@ -170,7 +194,7 @@ Use this order exactly:
    session-zero-start` after candidate profiles/projections. The command returns
    `snapshot_path`; append `snapshot_manifest.json` and express that file as a
    campaign-relative ref for the next command.
-6. **Final aggregate check.** For schema-v8 Deep, call
+6. **Final aggregate check.** For the Deep ledger, call
    `tools/session_zero_state.py campaign prepare-ready-evidence` with a stable
    operation id, the current expected revision, the returned snapshot-manifest
    ref, and a manifest-authorized `snapshots/*readiness*.json` target. The helper
@@ -178,14 +202,15 @@ Use this order exactly:
    report, validates every digest, and returns the complete `evidence` object;
    do not hand-author that report. Other routes run their existing full state
    check once, including Companion validation when selected.
-7. **Schema-v8 Deep final gate.** Record `ready_and_snapshotted` only after the
+7. **Deep ledger final gate.** Record `ready_and_snapshotted` only after the
    snapshot manifest exists, `draft_preflight_passed` remains current, and the
    helper has reported zero errors. Use the same expected revision; pass the
    helper's exact `evidence` object through `--evidence-json`, use its
    `snapshot_digest` as `--output-digest`, and use the
    `draft_preflight_passed` output digest as `--input-digest`. This
    revision-neutral gate atomically changes setup to `complete` and
-   `ready_for_play: true`.
+   `ready_for_play: true`. Other routes have already made their candidate
+   transition in step 3; they do not call this gate.
 8. **Handoff.** Enter the prepared RPG opening or Companion voice only after
    zero errors. On an RPG route, say one short out-of-fiction thing first, in the
    Player's own language, before the opening narration: they can mark any message
@@ -198,22 +223,41 @@ Use this order exactly:
    the aggregate state check does not cover leakage, and this narration is drafted
    after every other gate has already passed, so nothing else stands between the
    prohibited-terms list in `boundaries.md` and the Player.
+   Then make the opening's one commit (opening and first-session sources
+   `consumed`, the OOC line recorded as stated), never in the background, and
+   send the OOC line and the whole opening narration as text, the turn's last
+   message. A draft that passed the check has not been told until that message
+   is sent.
 
 # Failure And Invalidation
 
-If the initial draft preflight fails, correct the draft issue and rerun it;
-record `draft_preflight_passed` only after zero errors. If snapshot or
+If the initial draft preflight fails, correct the draft issue and rerun it.
+For the Deep ledger, record `draft_preflight_passed` only after zero errors. If snapshot or
 `prepare-ready-evidence` later fails only because of final metadata or a derived
 projection, do not record the preflight gate again. Keep its resulting revision,
 correct the non-substantive issue, then repeat candidate profile fields ->
 projections -> fresh snapshot -> `prepare-ready-evidence` with a new operation id
 for changed inputs -> final gate.
 
+For a non-ledger route, any projection/snapshot/final-check failure after its
+candidate transition restores setup to `in_progress`, `ready_for_play: false`,
+and the selected profile to `pending` before further work. Keep the accepted
+revision for metadata-only repair; rerun the applicable preflight and candidate
+sequence, never narrate from failed readiness. Deep failures retain the draft
+readiness state and follow their existing evidence/gate recovery; do not repeat
+an already successful revision-advancing preflight gate for metadata-only repair.
+
 For a current reciprocity RPG route, any substantive authoritative correction
 increments `setup_revision`, clears preparation approval, and returns to the
 integrated preparation review and approval. If the change affects design inputs
 or a Deep pack, clear both approvals and return to reciprocity design review.
 Never patch unreviewed substantive truth into readiness.
+
+After successful handoff, the accepted setup snapshot/report is historical
+evidence. Opening consumption, the recorded OOC introduction, ordinary play,
+and scoped runtime configuration changes update their current owners; they do
+not rewrite or renew the historical starting approval. An actual setup redesign
+uses the applicable invalidation/review procedure instead.
 
 Legacy and Companion routes retain their existing draft correction loop. Keep
 failed candidate snapshots as diagnostic history only.
@@ -222,7 +266,8 @@ failed candidate snapshots as diagnostic history only.
 
 Every current reciprocity RPG requires:
 
-- valid decision budget and status block;
+- schema-v10+ Quick/Standard: every selected required decision row locked;
+  earlier numeric routes: their valid decision budget and status block;
 - reviewed defaults/deferrals;
 - earlier design approval and current preparation approval;
 - permitted research and valid current-revision runtime profile;
@@ -237,11 +282,12 @@ Every current reciprocity RPG requires:
   routes and knowledge boundaries;
 - optional player-safe projections and successful starting snapshot.
 
-Schema-v8 Deep replaces the numeric budget/status-block/pack requirements in
+The Deep ledger replaces the numeric budget/status-block/pack requirements in
 that list with its canonical stage ledger, named extensions, output digests,
 and complete gate chain. Decision count remains a fatigue signal only.
 
-Structural checkers validate counts, revisions, statuses, packs, owner
+Structural checkers validate route-specific required rows or legacy counts,
+revisions, statuses, packs, owner
 existence, and existing readiness contracts. The coordinator and player-safe
 review judge semantic reciprocity quality.
 

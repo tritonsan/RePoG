@@ -5,6 +5,11 @@ Use this template for their social circle; read “player” as the user-facing
 counterpart only where relevant, and keep every contact's life independent of
 the user.
 
+Write every value in the campaign's records language
+(`play_profile.yaml.narration.records_language`, or the play language when it
+is `same`). Keep the structure exactly as this template writes it: headings,
+`- Label:` names, and enum values such as `alive`, `T2`, or `inactive`.
+
 Tier: T1/T2/T3
 
 First appeared:
@@ -12,6 +17,48 @@ First appeared:
 Linked elements:
 
 Power Band:
+
+## Core
+
+Stable identity facts that must survive a long session, a context reset, and a
+time skip. Fill it for every T2/T3 character, and for any other character whose
+status, kin, or form of address has mattered in play. Record only facts already
+established in play or in an owner file; leave a line blank rather than invent
+it. Keep each value on one line, and change a Core fact in the same commit as
+the owner whose change caused it.
+
+- Status: alive | dead | missing | unknown
+- Pronouns and address:
+- Kin:
+- Role:
+- Home:
+- Speaks:
+- Aliases:
+
+`Status` holds exactly one of the four listed words; the cause and date of a
+change go in `session_log.md`, not on this line. `Pronouns and address` gives
+the pronouns used for this character and how others address them: title,
+formal or familiar form. `Kin` names each relative with the relation and that
+relative's status, such as `Name (sister, dead)`, separated by semicolons; a
+dead or missing relative stays listed with that status. `Speaks` gives the
+language, the register, and how this character addresses the player's
+character. `Aliases` lists other names, titles, or nicknames people use for
+them, separated by commas.
+
+## Now
+
+<!--
+One short paragraph, at most 800 characters: the character's own situation as
+of the latest revision, such as their condition, circumstances, and what is
+pressing on them. Keep it consistent with the Agency Card's current task; it
+adds the situation, not a second agenda. Facts another owner holds stay there:
+in an RPG, `active_cast.md` owns where a tracked character is and what they are
+doing, `knowledge_boundaries.md` what they know, and `relationship_map.md` how
+they stand with others. Replace this section in place when it changes and never
+add a dated copy beside it. Earlier states stay in `session_log.md`; when
+stacked dated sections are consolidated, each superseded state may keep one
+short line in a `## History` list.
+-->
 
 ## At-The-Table Agency Card
 
@@ -75,6 +122,34 @@ Also check whether the important voices would remain distinguishable without
 their names: different occupations or goals alone do not establish different
 speech. Shared faction language may be intentional; preserve individual choices
 and social tactics around it.
+
+## Depth
+
+Fill for T2/T3 characters before their first long scene, from established fact
+and the accepted setting; leave a line blank rather than invent it. Depth
+explains the Agency Card and never competes with it: the card stays the hot
+contract. In a campaign that tells its own story in a source work's world,
+build the backstory from this campaign, not from a named canon figure, unless
+the Player asks for that link.
+
+- Backstory:
+- Contradiction:
+- Want and need:
+- Fear:
+- Dream:
+- Joys and habits:
+- Voice signature:
+- How they could change:
+- GM-only secret:
+
+<!-- Age rule: no romantic or sexual relationship in this character's past or present begins before 18, and no age or duration written here may imply one; when the character's age changes, recheck every dated line. -->
+
+`Backstory` is their history before play, with ages and dates where they
+matter. `Voice signature` is one line naming what makes their speech theirs:
+rhythm, register, a habit of address, a word they reach for. `How they could
+change` names a direction play could earn, not a planned arc. `GM-only secret`
+stays out of narration until play reveals it; once it matters, its fact belongs
+in `knowledge_boundaries.md`.
 
 ## Agent Playability Card
 
@@ -157,6 +232,19 @@ campaign.
 One visible detail and one playable mannerism the GM can use immediately at
 the table.
 
+## Distinct Appearance
+
+Five short lines that tell this character apart at a glance, in narration and
+in an image prompt. Compare them with the two most similar cast members before
+filling, and change at least two lines when they match. Keep them consistent
+with the fuller Appearance card below.
+
+- Face:
+- Height:
+- Build:
+- Silhouette:
+- Signature detail:
+
 ## Appearance
 
 See `appearance_guide.md`. For T1 characters, keep this to 1 or 2 lines. For
@@ -197,14 +285,16 @@ character.
 ## Plain Speech Sample
 
 A simple, ordinary line this character might say without sounding cryptic or
-polished.
+polished. Write it directly in the campaign's play language, in the register
+recorded under `Speaks`.
 
 ## Contextual Voice Examples
 
 Use selectively for a T3 or player-important T2 whose voice needs calibration.
 Two or three short examples are enough; leave this section empty for characters
 who do not need it. These are examples of phrasing, not lines or gestures to
-repeat, and do not establish new events, relationships, or known facts.
+repeat, and do not establish new events, relationships, or known facts. Write
+them directly in the campaign's play language.
 
 - Ordinary request or practical answer:
 - Refusal under pressure, with the boundary intact:

@@ -23,6 +23,15 @@ campaign horizon without designing the first act or fixing a plot.
    knowledge/reveal ownership, creation threshold, review scope, and what must be
    materialized before play.
 
+Record each with the fields in `decisions.md`. `08_two_way_reciprocity` and
+`08_campaign_horizon` recorded as `derived` or `defaulted` depend on
+`01_creation_authority`.
+
+Reuse already accepted source, authority, relationship, and protected-theme
+choices. This contract records their coherent application; it is not a second
+consent interview. Ask only a remaining consequential mismatch. Unknown or
+deferred personal detail grants no new authorship permission.
+
 ## Controlled Extensions
 
 - `advancement_detail` deepens multi-track growth, allied development, reward

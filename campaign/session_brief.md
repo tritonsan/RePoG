@@ -57,6 +57,10 @@ Domains from `world_dynamics.md` that may need an on-demand refresh:
 
 What the player seems interested in right now:
 
+Keep observations tentative and scoped to the current play. Explicit ongoing
+preferences belong in `player.md` or their configuration owner; this note cannot
+override them or turn one refusal into a permanent dislike.
+
 ## Context References
 
 The smallest triggered set likely to matter next:
@@ -67,6 +71,11 @@ The smallest triggered set likely to matter next:
 - Rules or resources:
 - Active Act id and Compass owner ref:
 - Relevant closure-condition owner refs:
+- Experience and protected thematic areas: `player.md#player-experience-contract`
+  and `player.md#change-appetite`; read the owners, not an inferred Player Focus.
+- Applicable behavior/authority limits: `boundaries.md#good-gm-behavior`,
+  `boundaries.md#bad-gm-behavior`, and the relevant authorship/consequence section.
+- Relevant stable tie premise and current-world owner refs:
 
 The live Compass remains in `threads.md#arc-compass`. Keep its current id and
 references here when the campaign has adopted act ids; do not copy the dramatic

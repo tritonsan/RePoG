@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "workspace_path": "D:\\Repog\\Codex RePoG\\public\\RePoG",
+  "campaign_path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\campaign",
+  "scope": "full",
+  "distribution": false,
+  "error_count": 0,
+  "warning_count": 0,
+  "info_count": 1,
+  "checks": [
+    {
+      "id": "layout",
+      "ok": true,
+      "error_count": 0,
+      "warning_count": 0,
+      "info_count": 0
+    },
+    {
+      "id": "python",
+      "ok": true,
+      "error_count": 0,
+      "warning_count": 0,
+      "info_count": 0
+    },
+    {
+      "id": "campaign",
+      "ok": true,
+      "error_count": 0,
+      "warning_count": 0,
+      "info_count": 1
+    },
+    {
+      "id": "dashboard",
+      "ok": true,
+      "error_count": 0,
+      "warning_count": 0,
+      "info_count": 0
+    }
+  ],
+  "findings": [
+    {
+      "severity": "info",
+      "rule": "location_blank",
+      "message": "Current location is blank; expected for a fresh template.",
+      "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\campaign\\current_state.yaml",
+      "check": "campaign"
+    }
+  ]
+}

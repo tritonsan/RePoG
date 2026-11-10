@@ -71,6 +71,21 @@ their benefit is parallel wall-clock progress on independent work. OpenAI's
 current Codex guidance likewise recommends parallel agents for read-heavy
 tasks and warns against overlapping write-heavy work:
 [Codex sub-agents](https://learn.chatgpt.com/docs/agent-configuration/subagents.md).
+Anthropic's Claude Code guidance similarly reserves subagents for parallel,
+isolated, read-heavy work:
+[Claude Code subagents](https://code.claude.com/docs/en/sub-agents).
+
+## Claude Code Lanes
+
+In Claude Code, lanes use the project subagents in `.claude/agents/`.
+`repog-proposal-lane` has only Read, Grep, and Glob. `repog-research-lane`
+adds WebSearch and WebFetch for a research packet that authorizes retrieval.
+Their tool lists make them read-only at the harness level, neither can start
+another agent, and both start without the project instructions, so the frozen
+task packet is their only brief. `CLAUDE.md` authorizes delegation only at the
+boundaries above and rules out forks and write-capable agents for campaign work.
+Claude Code may run lanes in the background; the coordinator still merges only
+after every lane has returned.
 
 ## Benchmark Protocol
 

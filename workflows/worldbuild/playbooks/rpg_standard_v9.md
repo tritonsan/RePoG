@@ -1,10 +1,11 @@
 # RPG Standard Session 0 — Schema v9
 
-Load for `schema_version >= 9`, `experience_mode: rpg`, and `session_zero_mode:
+Load for `schema_version == 9`, `experience_mode: rpg`, and `session_zero_mode:
 standard`. Standard v9 has **20 core modules** and a content-decision target of
 **20–29**. Revisions and clarification do not count as newly completed decisions.
 Deep pack lists stay empty. Preserve active legacy setups unless migration is
 explicitly requested; Deep continues its separate `rpg_deep_v8` flow.
+New schema-v10+ setups use `rpg_standard_v10.md`; this route retains its budget.
 
 ## Shared Semantic Modules
 

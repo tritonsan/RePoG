@@ -1,0 +1,158 @@
+{
+  "source_commit": "2ed60778ed22a7e9983da126f2453759900c139b",
+  "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+  "fixture": "tests/test_deep_session_zero_v8_integration.py::test_topology_replay_reaches_ready_through_the_full_lifecycle[personal_drama]",
+  "notes": [
+    "The imported test builds accepted setup and genuine full-preflight runtime owners without an LLM.",
+    "This is deterministic integration evidence, not a qualitative live GM playtest.",
+    "No product sources or live campaign state are mutated."
+  ],
+  "deep": [
+    {
+      "setup_schema_version": 8,
+      "revision_before_ready": {
+        "decision_id": "01_player_fantasy_tone_and_non_goals",
+        "expected_revision": 59,
+        "setup_ready": false,
+        "result": {
+          "ok": false,
+          "error_category": "state_invalid",
+          "error": "decision 09_design_direction_review was recorded before gate first_act_design_complete"
+        },
+        "state_unchanged": true
+      },
+      "lifecycle_test_assertions_passed": true,
+      "canonical_ready_validator_ok": true,
+      "baseline_full_check": {
+        "error_count": 0,
+        "errors": []
+      },
+      "revision_after_ready": {
+        "decision_id": "01_player_fantasy_tone_and_non_goals",
+        "expected_revision": 60,
+        "setup_ready": true,
+        "result": {
+          "ok": false,
+          "error_category": "state_invalid",
+          "error": "decision 09_design_direction_review was recorded before gate first_act_design_complete"
+        },
+        "state_unchanged": true
+      },
+      "world_voices_profile": {
+        "mode": "off",
+        "approval_policy": "review_each",
+        "dashboard_policy": "off",
+        "artifact_richness": "balanced",
+        "communication_speed": "setting_defined"
+      },
+      "world_voices_index_before": {
+        "schema_version": 1,
+        "revision": 0,
+        "continuity_revision": 0,
+        "operation_sequence": 0,
+        "completed_operations": {},
+        "artifacts": {}
+      },
+      "durable_payload": {
+        "operation_id": "audit-first-durable",
+        "expected_continuity_revision": 0,
+        "boundary": "ordinary",
+        "cause": "The player accepted a delivery task.",
+        "resume_impact": "The agreed delivery remains open.",
+        "changes": [
+          {
+            "id": "accepted-delivery",
+            "kind": "thread",
+            "established_delta": "The player agreed to deliver a sealed letter.",
+            "owners": [
+              "threads.md"
+            ],
+            "cold_targets": []
+          }
+        ],
+        "mutations": [
+          {
+            "path": "threads.md",
+            "exact_replacements": [
+              {
+                "old": "# Threads\n\nAs of revision: 0\n\n## Arc Compass\n\n- Act name: The Missing Morning Boat\n- Dramatic question: What changed the harbor's dependable supply route?\n- Active pressures: Essential deliveries are beginning to fall behind.\n- Setups awaiting payoff: The missing boat and the altered dock routine.\n- Climax availability conditions: Mira can identify and reach the cause of the disruption.\n- Closure conditions: The route's immediate future is decided through play.\n- Player interest signals: Investigation, local relationships, and open movement.\n\n### Act Scope\n\n- Places this act can reach: Test Harbor and the public road inland.\n- People who belong to it: Harbor workers and people affected by the delay.\n- What is already in motion as it opens: The delivery backlog is growing.\n- What stays true if the character does nothing: The harbor adapts without centering Mira.\n\n## Active Threads\n\n### Delayed Deliveries\n\n- Status: active\n- Pressure: The harbor's ordinary supply rhythm is slipping.\n- Who cares: Workers and residents who rely on the route.\n- What the player knows: One expected boat is late.\n- What is hidden: Why it is late.\n- Related issue or world-domain reference: Harbor supply disruption.\n- Next player-relevant question or consequence: Whether Mira investigates, helps, waits, or leaves.\n- Last changed revision: 0\n",
+                "new": "# Threads\n\nAs of revision: 0\n\n## Arc Compass\n\n- Act name: The Missing Morning Boat\n- Dramatic question: What changed the harbor's dependable supply route?\n- Active pressures: Essential deliveries are beginning to fall behind.\n- Setups awaiting payoff: The missing boat and the altered dock routine.\n- Climax availability conditions: Mira can identify and reach the cause of the disruption.\n- Closure conditions: The route's immediate future is decided through play.\n- Player interest signals: Investigation, local relationships, and open movement.\n\n### Act Scope\n\n- Places this act can reach: Test Harbor and the public road inland.\n- People who belong to it: Harbor workers and people affected by the delay.\n- What is already in motion as it opens: The delivery backlog is growing.\n- What stays true if the character does nothing: The harbor adapts without centering Mira.\n\n## Active Threads\n\n### Delayed Deliveries\n\n- Status: active\n- Pressure: The harbor's ordinary supply rhythm is slipping.\n- Who cares: Workers and residents who rely on the route.\n- What the player knows: One expected boat is late.\n- What is hidden: Why it is late.\n- Related issue or world-domain reference: Harbor supply disruption.\n- Next player-relevant question or consequence: Whether Mira investigates, helps, waits, or leaves.\n- Last changed revision: 0\n\n- Agreed delivery: Carry a sealed letter to the harbor office.\n"
+              }
+            ]
+          }
+        ]
+      },
+      "durable_commit": {
+        "ok": true,
+        "operation": "commit-durable",
+        "idempotent": false,
+        "operation_id": "audit-first-durable",
+        "continuity_revision": 1,
+        "durable_turns_since_distill": 1,
+        "pending_cold_targets": [],
+        "checkpoint_committed": false,
+        "full_distill_required": false,
+        "narration_allowed": true,
+        "distill_reason": null,
+        "changed_files": [
+          "current_state.yaml",
+          "session_log.md",
+          "threads.md"
+        ],
+        "mechanic_results": [],
+        "recovered_transactions": []
+      },
+      "post_commit_full_check": {
+        "error_count": 3,
+        "errors": [
+          {
+            "severity": "error",
+            "rule": "deep_v8_readiness_evidence_stale",
+            "message": "campaign file changed after the Session 0 start snapshot: current_state.yaml",
+            "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-session-zero-audit\\synthetic_session0_2gj0_w9o\\campaign\\session_zero_state.json"
+          },
+          {
+            "severity": "error",
+            "rule": "ready_snapshot_stale",
+            "message": "Deep-v8 final gate does not contain a valid hashed candidate snapshot and aggregate report.",
+            "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-session-zero-audit\\synthetic_session0_2gj0_w9o\\campaign\\snapshots"
+          },
+          {
+            "severity": "error",
+            "rule": "world_voices_continuity_stale",
+            "message": "World Voices continuity_revision must match current_state.yaml after a durable change.",
+            "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-session-zero-audit\\synthetic_session0_2gj0_w9o\\campaign\\world_voices\\index.json"
+          }
+        ]
+      }
+    },
+    {
+      "setup_schema_version": 9,
+      "lifecycle_test_assertions_passed": true,
+      "canonical_ready_validator_ok": true,
+      "baseline_full_check": {
+        "error_count": 1,
+        "errors": [
+          {
+            "severity": "error",
+            "rule": "ready_snapshot_stale",
+            "message": "No v2 snapshot matches the current campaign, setup revision, continuity revision, experience, and ready state.",
+            "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-session-zero-audit\\synthetic_session0_nhsj99n5\\campaign\\snapshots"
+          }
+        ]
+      }
+    }
+  ],
+  "generic_start_snapshot_check": {
+    "scope": "Isolated _check_ready_snapshot contract probe, not a full campaign fixture",
+    "continuity_0": [],
+    "continuity_1": [
+      {
+        "severity": "error",
+        "rule": "ready_snapshot_stale",
+        "message": "No v2 snapshot matches the current campaign, setup revision, continuity revision, experience, and ready state.",
+        "path": "D:\\Repog\\Codex RePoG\\public\\RePoG\\semantic-review\\runs\\2026-09-17-session-zero-audit\\synthetic_snapshot_mhdacsjj\\snapshots"
+      }
+    ]
+  }
+}

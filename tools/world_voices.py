@@ -31,6 +31,7 @@ from check_world_voices import (
     PRODUCTION_STATUSES,
     SAFE_ID,
     SOURCE_KINDS,
+    _current_continuity_revision,
     check_world_voices,
 )
 
@@ -164,11 +165,21 @@ def _prepare(root: Path, action: str, payload: dict[str, Any]) -> tuple[Path, di
     if state.get("revision") != expected:
         raise WorldVoicesError("stale_revision", f"Expected World Voices revision {expected}, found {state.get('revision')}.", exit_code=3)
     expected_continuity = _integer(payload, "expected_continuity_revision")
-    if state.get("continuity_revision") != expected_continuity:
-        raise WorldVoicesError("stale_continuity", f"Expected continuity revision {expected_continuity}, found {state.get('continuity_revision')}.", exit_code=3)
+    campaign_revision = _current_continuity_revision(root / "current_state.yaml")
+    indexed_revision = state.get("continuity_revision")
+    if type(indexed_revision) is not int or indexed_revision < 0:
+        raise WorldVoicesError("state_invalid", "World Voices continuity revision is invalid.")
+    # The store can be dormant across unrelated campaign revisions. The next
+    # relevant operation binds to current campaign truth, not its last use.
+    live_revision = indexed_revision if campaign_revision is None else campaign_revision
+    pending_next = indexed_revision == live_revision + 1
+    if indexed_revision > live_revision + 1 or expected_continuity not in ({live_revision, indexed_revision} if pending_next else {live_revision}):
+        raise WorldVoicesError("stale_continuity", f"Expected continuity revision {expected_continuity}, current campaign is {live_revision}.", exit_code=3)
     result_continuity = payload.get("result_continuity_revision", expected_continuity)
     if isinstance(result_continuity, bool) or not isinstance(result_continuity, int) or result_continuity not in {expected_continuity, expected_continuity + 1}:
         raise WorldVoicesError("input_invalid", "result_continuity_revision must preserve or advance continuity by exactly one.")
+    if result_continuity < indexed_revision or result_continuity > live_revision + 1:
+        raise WorldVoicesError("stale_continuity", "World Voices must not rewind or run more than one revision ahead of the campaign.", exit_code=3)
     state["_pending_continuity_revision"] = result_continuity
     if sequence != state.get("operation_sequence", 0) + 1:
         raise WorldVoicesError("operation_sequence_conflict", f"Next operation_sequence must be {state.get('operation_sequence', 0) + 1}.", exit_code=3)
@@ -230,7 +241,10 @@ def _propose(root: Path, payload: dict[str, Any]) -> dict[str, Any]:
         raise WorldVoicesError("source_event_missing", "The causal source artifact does not exist.")
     if source_event["kind"] == "durable_revision":
         revision_match = re.search(r"(?:^|[-_])(?:rev|revision)[-_]?(\d+)$", source_event["ref"])
-        if revision_match is None or int(revision_match.group(1)) > state.get("continuity_revision", -1):
+        # A dormant store may trail the causal event. Only committed campaign
+        # truth can establish that event; a pending result revision cannot.
+        campaign_revision = _current_continuity_revision(root / "current_state.yaml")
+        if revision_match is None or campaign_revision is None or int(revision_match.group(1)) > campaign_revision:
             raise WorldVoicesError("source_event_missing", "Durable source refs must end in an existing rev-N or revision-N.")
     claims = payload.get("claim_basis", [])
     if not isinstance(claims, list):

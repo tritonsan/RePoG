@@ -1,0 +1,50 @@
+{
+  "source_commit": "2ed60778ed22a7e9983da126f2453759900c139b",
+  "limitation": "Not an aggregate ready-campaign or narrative replay.",
+  "results": [
+    {
+      "case": "baseline",
+      "scope": "isolated profile validator",
+      "error_rules": [],
+      "mechanics_enabled": false,
+      "modules": []
+    },
+    {
+      "case": "quantified",
+      "scope": "isolated profile validator",
+      "error_rules": [],
+      "mechanics_enabled": false,
+      "modules": []
+    },
+    {
+      "case": "conditions",
+      "scope": "isolated profile validator",
+      "error_rules": [],
+      "mechanics_enabled": false,
+      "modules": []
+    },
+    {
+      "case": "step_time",
+      "scope": "isolated profile validator",
+      "error_rules": [],
+      "mechanics_enabled": false,
+      "modules": []
+    },
+    {
+      "case": "route_time",
+      "scope": "isolated profile validator",
+      "error_rules": [],
+      "mechanics_enabled": false,
+      "modules": []
+    },
+    {
+      "disabled_operation_error": "deterministic mechanics are not enabled for this campaign"
+    },
+    {
+      "positive_control_enabled": true,
+      "elapsed_time": {
+        "step": 1
+      }
+    }
+  ]
+}

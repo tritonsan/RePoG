@@ -13,7 +13,10 @@ silently arrive from genre.
 2. `05_social_position_access_and_belonging` — establish role, access,
    isolation or belonging, routine fit, and who could naturally know them.
 3. `05_resolution_grounding` — fictional, bands, or numeric; derive any stat
-   axes from this setting and stage.
+   axes from this setting and stage. With bands or numbers, carry the Stage 2
+   NPC power scale into `rules.md`: a `- Numeric scale: min-max` line and a
+   `## Tier Caps` block (`- T1: n`, one line per tier). Under
+   `region_anchored_open` the caps are the current region's.
 4. `05_reliable_competence_and_special_capabilities` — what succeeds cleanly,
    what special capability exists (including none), its world-specific source,
    and what affordances the world naturally provides.
@@ -22,8 +25,21 @@ silently arrive from genre.
 6. `05_simulation_fidelity` — explicitly approved modules and inventory, time,
    travel, wound, resource, clock, and dice tracking.
 
+Record each with the fields in `decisions.md`; Stage 5 values are summary
+objects with no further required fields.
+
 Offer contextual cards, one decision per message. A lens or world feature may
 suggest a module but never activates it.
+Ask only for surface detail the Player cares about or an actual upcoming
+dependency needs. Unspecified height, weight, and bodily facts do not block play
+or justify invented advantages, impediments, or NPC judgments.
+
+Describe tracking through its effect on choices, not a menu of selector names.
+If the Player remains unsure about resolution, use one short optional out-of-play
+example after the thin world and competence are known and before ecology expands.
+Show routine competence and genuine resistance within accepted limits; no real
+roll, resource use, character action, or continuity write occurs. This is part of
+the owning decision, never a new approval boundary.
 
 ## Controlled Extension
 

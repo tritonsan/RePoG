@@ -2,7 +2,7 @@
 
 ## Canon Limits
 
-Facts or rules Codex must not contradict.
+Facts or rules RePoG must not contradict.
 
 ## Tone Limits
 
@@ -11,6 +11,15 @@ What the campaign should feel like, and what would break that feeling.
 ## Power Scale
 
 What player characters, NPCs, factions, and threats can plausibly do.
+
+- NPC power scale: closed / region_anchored_open
+- NPC strength next to the character:
+
+`closed` keeps one range for the whole campaign. `region_anchored_open` gives
+each region its own cap, and reaching a stronger region raises it at an act
+boundary. With numeric grounding, `rules.md` carries the same scale as its
+`- Numeric scale:` line and `## Tier Caps` block, and every NPC card stays
+inside it.
 
 ## Content Boundaries
 
@@ -22,12 +31,17 @@ loosened by inference, is not downgraded to "maybe" during palette work, and is
 not asked about again.
 
 Use this standard category list every time, in this order, so the ask looks the
-same in every campaign and under any model:
+same in every campaign and under any model. The Session 0 content step
+(`workflows/worldbuild/playbooks/content_boundaries.md`) shows the Player notice
+first. Keep the Category and Setting words as written here; write Notes in the
+records language.
 
 | Category | Setting | Notes |
 | --- | --- | --- |
-| Sexual content | open / fade / avoid | |
-| Harm to children | open / fade / avoid | |
+| Anyone under 18 in a sexual or romantic context, including backstory | never (fixed) | No character's romantic or sexual relationship, past or present, begins before 18, and no age or duration arithmetic may imply it. When a character's age changes, re-check their dated history. |
+| Graphic violence against children on the page | never (fixed) | |
+| Sexual content | avoid / fade before it starts / implied, no explicit description | |
+| Harm to children | mentioned or offscreen / avoid | |
 | Torture and graphic violence | open / fade / avoid | |
 | Harm to animals | open / fade / avoid | |
 | Suicide and self-harm | open / fade / avoid | |
@@ -35,8 +49,15 @@ same in every campaign and under any model:
 | Addiction | open / fade / avoid | |
 | Illness, dying, and medical detail | open / fade / avoid | |
 | Captivity and slavery | open / fade / avoid | |
+| Limits the GM stated | stated | |
+| In-fiction stop word (optional) | none / the word | |
 
-- Everything open: yes / no
+The two `never (fixed)` rows are shown, not asked, and the Player cannot change
+them. `Limits the GM stated` records every limit the GM states for its own
+writing, such as: non-consensual acts are never written as scenes. The stop
+word is a word the Player can say inside the fiction to end the moment at once.
+
+- Every changeable row at its most open setting: yes / no
 - Additional limits stated by the Player:
 
 Two guarantees belong to this ask and must be said out loud when it is made:
@@ -143,7 +164,7 @@ Pre-authorization never widens a content boundary. Putting permanent loss in pla
 does not enable a category the Player set to avoid, and no accepted stance
 overrides the hard limits.
 
-Codex may freely add:
+RePoG may freely add:
 
 - sensory details;
 - minor bystanders;
@@ -151,7 +172,7 @@ Codex may freely add:
 - plausible complications;
 - NPC delivery and body language.
 
-Codex should ask before adding:
+RePoG should ask before adding:
 
 - major canon reveals;
 - permanent character death;
@@ -181,6 +202,11 @@ narration voice is accepted, from what the accepted sample actually did. Concret
 behavior, not adjectives: two or three lines, in the Player's own words where they
 gave them.
 
+Read these with Bad GM Behavior when restoring runtime context or accepting a
+behavior correction. They describe concrete campaign behavior; profile selectors
+remain authoritative for POV, length, pacing, and other runtime settings. Retain
+the accepted reason, not a transcript or a stock sentence to repeat.
+
 -
 
 ## Bad GM Behavior
@@ -188,5 +214,10 @@ gave them.
 Examples of responses that would break the intended experience. Written from the
 same decision, drawing on what the Player said they dislike and on the voice
 samples they turned down.
+
+Keep the applicable restrictions in the GM's compact context. An explicit ongoing
+correction updates this owner or the more specific `player.md` thematic limit;
+do not keep a competing copy in both. Local directions keep their stated scope.
+Use `workflows/gm/playbooks/ooc_adjustment.md` for the change procedure.
 
 -

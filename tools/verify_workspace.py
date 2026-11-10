@@ -33,6 +33,12 @@ REQUIRED_FILES = (
     "LICENSE",
     "DISTRIBUTION.md",
     "THIRD_PARTY_NOTICES.md",
+    ".claude/settings.json",
+    ".claude/launch.json",
+    ".claude/output-styles/repog.md",
+    ".claude/agents/repog-proposal-lane.md",
+    ".claude/agents/repog-research-lane.md",
+    "docs/claude-code.md",
     "campaign/setup_profile.yaml",
     "campaign/session_zero_state.json",
     "campaign/character_foundation.md",
@@ -68,6 +74,86 @@ REQUIRED_FILES = (
     "tools/agent_seat.py",
     "tools/compile_agent_brief.py",
     "tools/rpg_state.py",
+    "tools/owner_ops.py",
+    "tools/repog_runtime.py",
+    "tools/curation.py",
+    "tools/check_runtime.py",
+    "tools/lang_pack.py",
+    "tools/name_check.py",
+    "tools/odds.py",
+    "tools/presentation_lint.py",
+    "tools/check_content.py",
+    "tools/scene_capsule.py",
+    "packs/languages/de.json",
+    "packs/languages/en.json",
+    "packs/languages/en.md",
+    "packs/languages/es.json",
+    "packs/languages/fr.json",
+    "packs/languages/tr.json",
+    "packs/languages/tr.md",
+    "templates/campaign/active_cast.md",
+    "templates/campaign/appearance_guide.md",
+    "templates/campaign/arc_closure.md",
+    "templates/campaign/boundaries.md",
+    "templates/campaign/campaign_one_pager.md",
+    "templates/campaign/character_foundation.md",
+    "templates/campaign/characters/_companion_template.md",
+    "templates/campaign/characters/_template.md",
+    "templates/campaign/companion_profile.yaml",
+    "templates/campaign/companion_state.json",
+    "templates/campaign/creation_ledger.md",
+    "templates/campaign/current_state.yaml",
+    "templates/campaign/directives.md",
+    "templates/campaign/faces_and_places.md",
+    "templates/campaign/factions/_template.md",
+    "templates/campaign/first_session.md",
+    "templates/campaign/glossary.md",
+    "templates/campaign/issues.md",
+    "templates/campaign/knowledge_boundaries.md",
+    "templates/campaign/location_graph.md",
+    "templates/campaign/map_atlas.json",
+    "templates/campaign/mechanics_state.json",
+    "templates/campaign/next_act_prep.md",
+    "templates/campaign/opening_brief.md",
+    "templates/campaign/palette.md",
+    "templates/campaign/places/_template.md",
+    "templates/campaign/play_profile.yaml",
+    "templates/campaign/player.md",
+    "templates/campaign/player_ties.md",
+    "templates/campaign/progression.md",
+    "templates/campaign/relationship_map.md",
+    "templates/campaign/research_dossier.md",
+    "templates/campaign/rules.md",
+    "templates/campaign/secrets_and_clues.md",
+    "templates/campaign/session_brief.md",
+    "templates/campaign/session_log.md",
+    "templates/campaign/session_zero.md",
+    "templates/campaign/session_zero_state.json",
+    "templates/campaign/setup_profile.yaml",
+    "templates/campaign/snapshots/README.md",
+    "templates/campaign/storytelling.md",
+    "templates/campaign/style_state.json",
+    "templates/campaign/system_fit.md",
+    "templates/campaign/threads.md",
+    "templates/campaign/user_context.md",
+    "templates/campaign/visual_gallery.md",
+    "templates/campaign/visual_state.json",
+    "templates/campaign/visual_style.md",
+    "templates/campaign/visuals/README.md",
+    "templates/campaign/visuals/_drafts/README.md",
+    "templates/campaign/visuals/characters/README.md",
+    "templates/campaign/visuals/factions/README.md",
+    "templates/campaign/visuals/items/README.md",
+    "templates/campaign/visuals/places/README.md",
+    "templates/campaign/visuals/scenes/README.md",
+    "templates/campaign/world.md",
+    "templates/campaign/world_dynamics.md",
+    "templates/campaign/world_truths.md",
+    "templates/campaign/world_voices/README.md",
+    "templates/campaign/world_voices/artifacts/README.md",
+    "templates/campaign/world_voices/index.json",
+    "campaign/directives.md",
+    "campaign/glossary.md",
     "tools/file_transaction.py",
     "contracts/agent-seat/v1/agent-session-pack.schema.json",
     "contracts/agent-seat/v1/agent-turn-brief.schema.json",
@@ -129,6 +215,7 @@ REQUIRED_FILES = (
     "workflows/worldbuild/deep_v8/07_runtime_experience_contract.md",
     "workflows/worldbuild/deep_v8/08_reciprocity_campaign_horizon.md",
     "workflows/worldbuild/deep_v8/09_first_act_preparation.md",
+    "workflows/worldbuild/deep_v8/decisions.md",
     "docs/companion-mode.md",
     "docs/agent-seat.md",
     "docs/semantic-parallelism.md",
@@ -139,8 +226,10 @@ REQUIRED_FILES = (
     "workflows/reference/optional-surfaces.md",
     "workflows/gm/playbooks/persistence.md",
     "workflows/gm/playbooks/advancement.md",
+    "workflows/gm/playbooks/visuals.md",
     "workflows/worldbuild/playbooks/rpg_quick_v9.md",
     "workflows/worldbuild/playbooks/rpg_standard_v9.md",
+    "workflows/worldbuild/playbooks/content_boundaries.md",
     "evaluation/README.md",
     "evaluation/sustained_rpg.json",
     "evaluation/companion_continuity.json",
@@ -180,7 +269,22 @@ DISTRIBUTION_ROOT_FILES = {
     "START_HERE.md",
     "THIRD_PARTY_NOTICES.md",
 }
-DISTRIBUTION_PRODUCT_TREES = {"assets", "briefs", "contracts", "docs", "evaluation", "tools", "workflows"}
+DISTRIBUTION_PRODUCT_TREES = {
+    "assets",
+    "briefs",
+    "contracts",
+    "docs",
+    "evaluation",
+    "packs",
+    "templates",
+    "tools",
+    "workflows",
+}
+# Claude Code reads project configuration from `.claude/`. Only the shared
+# product files ship; machine-local state such as `settings.local.json`,
+# session worktrees, or subagent memory never does.
+DISTRIBUTION_CLAUDE_FILES = {".claude/settings.json", ".claude/launch.json"}
+DISTRIBUTION_CLAUDE_MARKDOWN_DIRS = {"agents", "output-styles"}
 DISTRIBUTION_CAMPAIGN_ROOT_FILES = {
     "active_cast.md",
     "appearance_guide.md",
@@ -194,8 +298,10 @@ DISTRIBUTION_CAMPAIGN_ROOT_FILES = {
     "agent_roster.json",
     "creation_ledger.md",
     "current_state.yaml",
+    "directives.md",
     "faces_and_places.md",
     "first_session.md",
+    "glossary.md",
     "issues.md",
     "knowledge_boundaries.md",
     "location_graph.md",
@@ -277,6 +383,12 @@ def distribution_path_allowed(relative: str | Path) -> bool:
         return normalized in DISTRIBUTION_ROOT_FILES
     if parts[0] in DISTRIBUTION_PRODUCT_TREES:
         return True
+    if parts[0] == ".claude":
+        return normalized in DISTRIBUTION_CLAUDE_FILES or (
+            len(parts) == 3
+            and parts[1] in DISTRIBUTION_CLAUDE_MARKDOWN_DIRS
+            and Path(normalized).suffix == ".md"
+        )
     if normalized in DISTRIBUTION_CAMPAIGN_EXACT_FILES:
         return True
     if any(
@@ -411,6 +523,122 @@ def _check_layout(workspace: Path) -> list[dict[str, Any]]:
             )
     findings.extend(_check_gm_replay_fixture(workspace / "tools" / "gm_replay_suite.json"))
     findings.extend(_check_companion_acceptance_fixture(workspace / "tools" / "companion_acceptance_suite.json"))
+    findings.extend(_check_claude_code_layer(workspace))
+    return findings
+
+
+# Supporting-agent lanes are read-only proposal workers that never start other
+# agents. Any tool outside this set could let a lane write, execute, or delegate.
+CLAUDE_LANE_TOOLS = {"Glob", "Grep", "Read", "WebFetch", "WebSearch"}
+
+
+def _markdown_frontmatter(path: Path) -> dict[str, str]:
+    """Read flat `key: value` frontmatter; Claude Code layer files use no nesting."""
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    fields: dict[str, str] = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            return fields
+        key, separator, value = line.partition(":")
+        if separator and key.strip() and not key.startswith((" ", "\t")):
+            fields[key.strip()] = value.strip()
+    return {}
+
+
+def _check_claude_code_layer(workspace: Path) -> list[dict[str, Any]]:
+    """Check the bundled Claude Code configuration without starting Claude Code."""
+
+    findings: list[dict[str, Any]] = []
+    claude = workspace / ".claude"
+
+    def error(rule: str, message: str, path: Path) -> None:
+        findings.append(_finding("error", rule, message, path, check="layout"))
+
+    def load_object(path: Path) -> dict[str, Any] | None:
+        if not path.is_file():
+            return None  # Reported by the required-file check.
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            error("claude_config_invalid", f"{path.name} is not valid JSON: {exc}", path)
+            return None
+        if not isinstance(value, dict):
+            error("claude_config_invalid", f"{path.name} must contain a JSON object.", path)
+            return None
+        return value
+
+    settings_path = claude / "settings.json"
+    settings = load_object(settings_path)
+    if settings is not None:
+        style_names = {
+            _markdown_frontmatter(style).get("name") or style.stem
+            for style in sorted((claude / "output-styles").glob("*.md"))
+        }
+        if settings.get("outputStyle") not in style_names:
+            error(
+                "claude_output_style_missing",
+                "settings.json outputStyle must name a bundled style in .claude/output-styles/.",
+                settings_path,
+            )
+        if settings.get("autoMemoryEnabled") is not False:
+            error(
+                "claude_auto_memory_enabled",
+                "Claude Code auto memory must stay off: campaign/ is the only consent-governed memory.",
+                settings_path,
+            )
+
+    launch_path = claude / "launch.json"
+    launch = load_object(launch_path)
+    if launch is not None:
+        if launch.get("autoVerify") is not False:
+            error(
+                "claude_preview_autoverify_enabled",
+                "launch.json must set autoVerify to false so campaign edits never trigger preview verification.",
+                launch_path,
+            )
+        configurations = launch.get("configurations")
+        if not isinstance(configurations, list) or not configurations:
+            error("claude_config_invalid", "launch.json needs a non-empty configurations list.", launch_path)
+        else:
+            for item in configurations:
+                arguments = item.get("runtimeArgs") if isinstance(item, dict) else None
+                script = arguments[0] if isinstance(arguments, list) and arguments else None
+                if not isinstance(script, str) or not script.startswith("tools/") or not (workspace / script).is_file():
+                    error(
+                        "claude_preview_target_missing",
+                        "Each launch.json preview must start a bundled tools/ server script.",
+                        launch_path,
+                    )
+
+    # Only the bundled `repog-*` lanes are product files; a Designer's own
+    # agents are outside this check.
+    for agent_path in sorted((claude / "agents").glob("repog-*.md")):
+        fields = _markdown_frontmatter(agent_path)
+        granted = {
+            entry.split("(", 1)[0].strip() for entry in fields.get("tools", "").split(",") if entry.strip()
+        }
+        if fields.get("name") != agent_path.stem or not fields.get("description"):
+            error(
+                "claude_agent_invalid",
+                "Each bundled agent needs a description and a name matching its file name.",
+                agent_path,
+            )
+        if not granted:
+            error(
+                "claude_agent_tools_missing",
+                "Each bundled agent must list its tools on one comma-separated tools: line; "
+                "an omitted list inherits every tool.",
+                agent_path,
+            )
+        elif granted - CLAUDE_LANE_TOOLS:
+            error(
+                "claude_agent_not_read_only",
+                f"Supporting-agent lanes must stay read-only: {', '.join(sorted(granted - CLAUDE_LANE_TOOLS))}.",
+                agent_path,
+            )
     return findings
 
 
@@ -1174,7 +1402,7 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
 
             source_setup_text = (campaign / "setup_profile.yaml").read_text(encoding="utf-8")
             pristine_setup = (
-                re.search(r"(?m)^schema_version:\s*(?:8|9)\s*$", source_setup_text) is not None
+                re.search(r"(?m)^schema_version:\s*(?:8|9|10)\s*$", source_setup_text) is not None
                 and re.search(r"(?m)^status:\s*pending\s*$", source_setup_text) is not None
                 and re.search(r'(?m)^experience_mode:\s*""\s*$', source_setup_text) is not None
                 and re.search(r'(?m)^session_zero_mode:\s*""\s*$', source_setup_text) is not None
@@ -1474,7 +1702,7 @@ def _companion_contract_check(workspace: Path, campaign: Path) -> list[dict[str,
             shutil.copytree(campaign, legacy_campaign)
             legacy_source = (legacy_campaign / "setup_profile.yaml").read_text(encoding="utf-8")
             legacy_setup, legacy_schema_edits = re.subn(
-                r"(?m)^schema_version:\s*(?:8|9)\s*$",
+                r"(?m)^schema_version:\s*(?:8|9|10)\s*$",
                 "schema_version: 3",
                 legacy_source,
                 count=1,

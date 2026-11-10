@@ -219,3 +219,60 @@ def test_stale_v2_snapshot_cannot_be_masked_by_legacy_manifest(tmp_path: Path) -
     rules = _snapshot_rules(campaign)
     assert "ready_snapshot_stale" in rules
     assert "snapshot_revision_unverified" not in rules
+
+
+@pytest.mark.parametrize("version", [1, 2])
+def test_new_setup_cannot_use_legacy_unhashed_start_evidence(tmp_path: Path, version: int) -> None:
+    campaign = tmp_path / "campaign"
+    _write_identity_campaign(campaign)
+    _write_manifest(campaign, "unhashed", {
+        "manifest_version": version, "campaign_id": "snapshot_test",
+        "setup_revision": 7, "continuity_revision": 9,
+        "ready_for_play": True, "setup_status": "complete", "experience_mode": "rpg",
+    })
+    findings = []
+    check_state._check_ready_snapshot(campaign, setup={
+        "schema_version": 10, "session_zero_mode": "quick",
+        "setup_revision": 7, "experience_mode": "rpg",
+    }, findings=findings)
+    assert any(item["rule"] == "ready_snapshot_invalid" and item["severity"] == "error" for item in findings)
+
+
+@pytest.mark.parametrize("experience", ["rpg", "companion"])
+def test_start_evidence_survives_normal_live_progress(tmp_path, experience):
+    campaign = tmp_path / "campaign"
+    _write_identity_campaign(campaign, experience_mode=experience)
+    result = snapshot.create_snapshot(campaign, "session-zero-start")
+    assert result["ok"]
+    manifest_path = Path(result["snapshot_path"]) / "snapshot_manifest.json"
+    original = manifest_path.read_bytes()
+    _write_identity_campaign(campaign, experience_mode=experience, continuity_revision=12)
+    (campaign / "new_live_owner.md").write_text("A normal fact established after setup.\n", encoding="utf-8")
+    findings = []
+    check_state._check_ready_snapshot(campaign, setup={"setup_revision": 7, "experience_mode": experience}, findings=findings)
+    assert not findings
+    assert manifest_path.read_bytes() == original
+
+
+@pytest.mark.parametrize("damage", ["file", "identity", "record", "extra_file", "future_live", "path_escape"])
+def test_historical_snapshot_integrity_remains_enforced(tmp_path, damage):
+    campaign = tmp_path / "campaign"
+    _write_identity_campaign(campaign)
+    result = snapshot.create_snapshot(campaign, "session-zero-start")
+    copied = Path(result["snapshot_path"])
+    manifest_path = copied / "snapshot_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if damage == "file":
+        (copied / "current_state.yaml").write_text("modified\n", encoding="utf-8")
+    elif damage == "identity":
+        manifest["continuity_revision"] = 8  # Non-future, but disagrees with copied state.
+    elif damage == "record":
+        manifest["content_digest"] = "sha256:" + "0" * 64
+    elif damage == "extra_file":
+        (copied / "unrecorded.md").write_text("unrecorded\n", encoding="utf-8")
+    elif damage == "future_live":
+        _write_identity_campaign(campaign, continuity_revision=8)
+    else:
+        manifest["file_records"][0]["path"] = "../outside"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    assert _snapshot_rules(campaign) & {"ready_snapshot_invalid", "ready_snapshot_stale"}

@@ -48,8 +48,12 @@ REQUIRED_DEEP_V8_FILES = (
     "workflows/gm/playbooks/advancement.md",
     "workflows/worldbuild/playbooks/rpg_quick_v9.md",
     "workflows/worldbuild/playbooks/rpg_standard_v9.md",
+    "workflows/worldbuild/playbooks/rpg_quick_v10.md",
+    "workflows/worldbuild/playbooks/rpg_standard_v10.md",
+    "workflows/gm/playbooks/ooc_adjustment.md",
     "evaluation/sustained_rpg.json",
     "evaluation/companion_continuity.json",
+    "evaluation/session_zero_handoff.json",
 )
 
 LOCAL_ONLY_ARTIFACTS = (

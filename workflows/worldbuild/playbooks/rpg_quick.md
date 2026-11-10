@@ -12,7 +12,8 @@ order:
 
 `character seed -> world scaffold -> two-way reciprocity pass -> design approval -> materialized preparation -> player-safe preparation review -> preparation approval -> readiness`
 
-Schema-v9+ Quick uses `rpg_quick_v9.md`. Its selected semantic slot guidance
+Schema-v9 Quick uses `rpg_quick_v9.md`; schema-v10+ uses `rpg_quick_v10.md`.
+Their selected semantic slot guidance
 may refer here, but this legacy accounting/approval contract does not apply.
 
 # Decision Accounting
@@ -59,13 +60,14 @@ separate slots into one answer:
    research policy—`off`, `ask_first`, or `bounded_auto`—with its per-turn cost
    stated.
 2. **Character Identity, Current Desire, And Why Now** — the playable identity,
-   the concrete physical basics (gender or presentation, age, height, weight or
-   frame, body type, distinguishing features), the character's striking qualities
-   and manner, the current desire, and the reason action matters at the opening
-   scale now. Ask about the character rather
-   than about how others should react to them. Quick keeps this in one slot: take
-   what the Player gives, infer the rest coherently unless authorship is fully
-   player-owned, and show every inference at review. Record the described surface
+   the surface details the Player wants established, striking qualities and manner,
+   current desire, and why it matters at the opening scale now. Ask about the
+   character rather than how others should react. Height, weight, and a complete
+   physical card are not required; ask only when volunteered, requested, or an
+   actual upcoming dependency needs them. Unknown protected facts stay unknown
+   and create no invented advantage, impediment, or NPC judgment. Before authorship
+   is settled, use only volunteered truth and explicitly labeled proposals.
+   Earlier fixed-count Quick keeps this within its owning slot. Record the described surface
    in `player.md` and derive the public read from it, since NPC first reactions
    come from that derivation.
 3. **Competence, Limitation, And Social Position** — ask the resolution grounding
@@ -85,16 +87,21 @@ separate slots into one answer:
    none. Under fictional grounding, ask the limitation contract directly. A self-image or ambition may conflict with the distribution, but is not a
    guaranteed capability. If the Player requests reliable competence beyond
    that distribution, agree a scoped ability/ruling with its cost and limit,
-   or revise the distribution before accepting it as reliable. If the Player volunteers which parts of the character should be tested
-   or left alone, record it here; otherwise infer it from the promise and show the
-   inference at review. Growth cadence and presentation stay in slot 5.
+   or revise the distribution before accepting it as reliable. Record which parts
+   of the character the Player wants tested or left alone. Ask only what remains
+   consequentially unresolved; never infer this personal permission from tone,
+   promise, or a weak stat. An explicit "discover later" can settle that no
+   directed personal test is authorized yet while the character detail stays
+   open; mere uncertainty is not permission. Growth cadence and presentation
+   stay in the play/system decision.
 4. **Agency, Authorship, And Boundaries** — ask the content boundary first and
-   alone, using the same standard category set as every other route, each as
-   open, fade, or avoid, with "everything open" as a real answer and both
-   guarantees stated: a limit may be added at any time including mid-play, and
-   adding one is never a cost. It never sits inside a card. Then, within this
-   same fixed slot, settle the authorship and consequence stance as two
-   independent parts—who authors the character's inner life, past, and decisions,
+   alone, following `content_boundaries.md` like every other route: the notice,
+   the two fixed rows, each row's own options, the GM's stated limits, an
+   optional stop word, and both guarantees stated: a limit may be added at any
+   time including mid-play, and adding one is never a cost. It never sits
+   inside a card. Then, within this same fixed slot, settle the authorship
+   and consequence stance as two independent parts—who authors the
+   character's inner life, past, and decisions,
    and whether permanent loss is in play. Derive the character-side approval
    triggers from those answers instead of asking for a list, and settle world-side
    creation authority as a threshold on the creation tiers the ledger tracks—
@@ -102,7 +109,8 @@ separate slots into one answer:
    asked in plain language rather than in tier codes. Incidental colour stays free,
    anything named is logged with its tier, and nothing above the threshold is
    created silently. Quick has ten fixed slots, so this never splits into another
-   decision; infer what the Player leaves open and show it at review.
+   decision. Ordinary details may be visibly defaulted within accepted authority;
+   unanswered safety, consequence, authorship, or creation permission stays open.
    Clarification stays a default, not a question, and character-specific limits
    are applied from this stance when the character takes shape.
 Progression in Quick rides the play/system slot: settle at which closure growth
@@ -124,7 +132,12 @@ using a disabled mechanic.
    tracking are on, each with the obligation it carries per `rules.md`—and pace
    and pressure, which stay under their own settings. Fidelity does not set
    tension, and a setting the card omits stays off with no invented precision.
-   Each card also states dominant play, resolution grounding inherited from slot 3,
+   Explain tracking through consequences for actual choices, such as provisions
+   constraining a journey, rather than presenting only selector names. If the
+   resolution choice remains unclear, show an optional short out-of-play example
+   of routine competence and genuine resistance before detailed ecology; it uses
+   no real roll, resource spend, character action, or continuity write and adds no
+   approval turn. Each card also states dominant play, resolution grounding inherited from slot 3,
    tracking and failure stance, progression stance, Turn Protocol
    timing/freshness, and the semantic parallelism tradeoff, plus the cost of
    heavier tracking. Acceptance enables only mechanics explicitly listed in
@@ -139,7 +152,8 @@ using a disabled mechanic.
 6. **Presentation Contract** — let the Player choose the voice by ear: write the
    same short moment two to four times in different voices and ask which reads
    right, then derive point of view, tense, camera, density, and length from the
-   accepted sample rather than asking for craft terms. Ask what they dislike in
+   accepted sample rather than asking for craft terms. Preserve its source and
+   why its behavior fit in `storytelling.md` / Accepted Voice Evidence. Ask what they dislike in
    narration to fill the avoid-list, and derive the three signature anchors and the
    sensory focus from the sample and the setting's register, since readiness needs
    three meaningful anchors. Within this same fixed slot, state the
@@ -288,15 +302,15 @@ following at the first playable scale:
 - an actionable opening and resumable scene frame under the accepted runtime
   and presentation contracts.
 
-Infer only enough setting content for this core: a short campaign promise and
-World Operating Model, three to seven playable truths, limited first-scale
-faces/factions, one starting place, and one independent pressure or valid calm
-affordance.
+Realize only enough accepted setting content for this core: a short campaign
+promise and World Operating Model, useful playable truths, causally relevant
+faces/factions, starting place, and an independent pressure or valid calm
+affordance. These are causal requirements, not detail or roster quotas.
 
 Quick still decides the world at macro scale, compressed to three to five lines:
 the era anchor, who holds large-scale power, one or two movements that run
 without the character, and the channel that makes them visible locally. Fill the
-macro seats the setting implies with about three named figures at roster detail—
+macro seats the accepted setting actually needs with relevant figures at roster detail—
 name and title, seat, one line of disposition and current movement—so later
 mentions stay consistent. A roster figure graduates to a character note with a
 filled Agency Card before it appears onstage or speaks. Every ordinary inferred choice receives a stable label in

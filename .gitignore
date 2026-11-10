@@ -37,7 +37,14 @@ campaign/visuals/_drafts/*
 # Local dashboard/runtime noise
 campaign/dashboard/*.log
 campaign/dashboard/.cache/
+# Runtime working files (lint history keeps Player prompt samples)
+campaign/.repog-runtime/
 
 # Optional local secrets
 .env
 .env.*
+
+# Machine-local Claude Code state
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md

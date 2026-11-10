@@ -36,6 +36,36 @@ These guarantees cover process interruption and caught filesystem failures.
 They do not claim a power-loss-safe multi-file filesystem commit or protection
 against hardware failures. Keep explicit campaign snapshots for recovery.
 
+## Validating an applied maintenance batch
+
+For accepted coupled configuration changes, hold `campaign_lock` across
+`recover`, current-owner reads, stale-byte/hash comparisons, and `commit_files`.
+Pass a `validate_applied` callback that calls
+`check_state.check_campaign(campaign, scope="full")` in that same process and
+thread, and raises if `error_count` is nonzero. The callback runs after every
+candidate file has been applied but before the journal is marked committed;
+an ordinary validation exception rolls the entire batch back.
+
+From the workspace root, import both helpers using the same local tool path:
+
+```python
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("tools").resolve()))
+import check_state
+import file_transaction
+```
+
+The full checker recognizes only that callback's exact active journal, after
+verifying its original manifest, before/after payload hashes, and all current
+target bytes against the proposed candidates. Holding the lock is insufficient.
+Other journals, partially applied or corrupt candidates, and checks from another
+thread or process still require recovery. This temporary context ends even when
+the callback raises; it is not a CLI option or a persistent bypass. Never remove
+the journal to make validation pass. A process interruption leaves the prepared
+journal for normal rollback on the next mutating entry.
+
 ## One-time migration of older sentinel locks
 
 Older releases used `campaign/.session-zero-state.lock` and

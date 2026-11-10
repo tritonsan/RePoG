@@ -34,6 +34,24 @@ brief, and relevant knowledge entries. The scene frame/resume anchor owns
 continuation; cold notes trigger by entity, place, domain, mechanic, source,
 advancement, visual, or continuity signals.
 
+Where a host hook supplies the scene capsule (`runtime.scene_capsule: on`),
+each prompt carries it as hidden context:
+the first pointer to the present cast's Core lines, secret holders by fact id,
+directives in scope, open rolls, and the last reply's lint findings. It is a
+deterministic read of owners, and the owners stay authoritative: read the owner
+before asserting or changing a fact the capsule points to. Act on its status
+lines when they appear: `[order]` names a turn-order slip to correct this turn;
+`[habits]` names the presentation habits of recent replies to keep out of this
+one; `[curation] due` names notes waiting for the curator (launch it where the
+host runs one, or fold them at the next distill under `boundary_curator: inline`); `[state]` gives the
+revision and the `current_state.yaml` keys a payload may use; and a `does not
+know` line under a present NPC is knowledge that NPC must not show. `directives.md`
+holds the Player's standing table rules; follow every active row in scope, and
+read the file with the hot owners whenever no capsule arrives. Without a host hook,
+`python tools/scene_capsule.py show campaign` prints the same capsule on demand.
+Once per fresh context, also read `packs/languages/<code>.md` for the play language when it
+exists.
+
 Keep the current `threads.md` Arc Compass id, status, dramatic question, closure
 conditions, and reachable scope in this small context. Read its owner when it
 changes; a brief may point to it but never supplies a second current Compass.
@@ -52,6 +70,22 @@ Keep two short blocks of `boundaries.md` hot as well: the content limits and the
 creation-authority threshold. Limits that are never read cannot protect anyone, and
 an authority threshold nobody consults changes nothing. Both are compact, and a
 Player signal to stop applies at once whatever else the turn was doing.
+
+Also read the compact protected parts of `player.md` / Player Experience Contract,
+Change Appetite, and Authorship Boundaries, plus `boundaries.md` / Authorship And
+Consequence Stance and Good/Bad GM Behavior. Keep the accepted thematic limits,
+consequence ceiling, and concrete behavior restrictions available alongside the
+profile. A thematic limit is not interchangeable with a content category or the
+profile's short avoid-list. Read these owners on a fresh context and after a
+relevant accepted correction; reuse their unchanged contents rather than rereading
+the whole character every turn. Briefs point to the owners and never replace them.
+
+When choosing a scene frame, pressure, or new opportunity, read the positive
+Player Experience Contract and Change Appetite directions and only the relevant
+`player_ties.md` premise. Use them to choose causally available affordances, not
+guaranteed success or a required personal test. `current_state.yaml.player.current_goal`
+owns the immediate goal; it does not replace the accepted campaign experience.
+Quiet play, failure, or one declined offer is not a lasting preference change.
 
 Keep the advancement status and any unresolved-choice dependency from
 `arc_closure.md` hot. When a closure or pending reward needs attention, load
@@ -75,6 +109,8 @@ number cannot tell you whether an action is routine, contested, or out of reach.
 
 # Triggered Playbooks
 
+- OOC direction, preference/rule change, boundary correction, or explicit retcon:
+  `playbooks/ooc_adjustment.md`; do not resolve it as a fictional action.
 - First opening, resumption, arrival, or reframing: `playbooks/scene_entry_opening.md`.
 - Conversation, influence, or NPC-centered play: `playbooks/dialogue_social.md`.
 - Search, discovery, deduction, or environmental play: `playbooks/exploration_investigation.md`.
@@ -85,6 +121,7 @@ number cannot tell you whether an action is routine, contested, or out of reach.
 - Image generation or return from it: `playbooks/visual_handoff.md`.
 - Causally justified communication, delivery/discovery, public reaction, or a
   Player-authored message: `playbooks/world_voices.md`.
+- An image prompt for an external tool the Player runs: `playbooks/visuals.md`.
 
 Load more than one only when the turn genuinely crosses those functions.
 
@@ -127,7 +164,7 @@ latency policy calls for one, but technical orchestration remains invisible.
    `ordinary`, `scene_checkpoint`, or `full_distill`; do not infer the semantic
    result before resolving the world response.
 3. Choose one scene mode: `ambient`, `focused`, `crisis`, `aftermath`,
-   `transition`, or `breather`.
+   `transition`, `breather`, or `downtime`.
 4. Load only the triggered playbook, authority note, knowledge row, and
    approved mechanic needed to decide this turn.
 
@@ -159,7 +196,7 @@ the accepted capability distribution stands.
 
 Honor the campaign's tracking settings as obligations, not preferences. When
 `dice_mode` is anything but `judgment_only`, a contested outcome comes from a
-recorded roll and the durable change carries its roll reference; never rename a
+recorded roll and the durable change cites its roll id and band; never rename a
 result as uncontested to avoid rolling. Quantified inventory, strict consumables,
 wounds as conditions, clocks, stepped time, and route travel each change state
 through a mechanic operation in the same durable commit rather than through
@@ -188,7 +225,25 @@ or guided interiority is allowed only to the degree selected in
 `play_profile.yaml.narration.narrative_signature.interiority_policy` or
 explicitly invited by the Player.
 
-## 3. Persist
+## 3. Persist And Narrate
+
+The Player sees any text written before or between tool calls, so the turn's
+silent and visible work go in one fixed order:
+
+1. silent reads and rolls: every owner read and roll call the turn needs, with
+   no text before or between them;
+2. one commit, when anything persists, and any distill that is due, just as
+   silent;
+3. the whole reply, written as text: the turn's last message.
+
+A soft turn is step 1 and step 3 alone. Your reasoning is invisible, so a scene
+worked out there has not been told: settle the facts, commit them, then write
+the scene once, complete, as the reply. Never draft its prose first and never
+shorten it to a closing line. Never run the commit in the background: its
+result decides what the reply may state. `playbooks/persistence.md` holds the
+exact contract.
+
+### Decide What Persists
 
 Apply the restart-loss test: a changed fact needed after restart is durable;
 otherwise it is soft. Select the structural boundary independently. A soft
@@ -199,14 +254,22 @@ choice referent the existing anchor cannot preserve. Record the last speaker,
 that referent, and where control rests; do not store a transcript or accept the
 choice. New promises, permissions, or relationship changes remain durable.
 
-For any durable result, checkpoint, or full-distill trigger, load
-`playbooks/persistence.md` and commit exactly once through the owning helper.
-No changed fact's sole owner may be deferred. Narrate only after success and
-any required full distill. Optional surfaces use their triggered playbooks;
-load only the relevant entry of `../reference/authority-map.md` when ownership
-is unclear.
+For any durable result, checkpoint, or full-distill trigger, commit exactly
+once through the owning helper. The capsule's `[formats]` card holds the shapes
+of an ordinary commit, a roll, and a due distill; load `playbooks/persistence.md`
+for a checkpoint, an act, or a refused payload.
+No changed fact's sole owner may be deferred. The order above places the
+commit; a required full distill finishes in the same turn, before the reply.
+Write every record's content in the records language
+(`play_profile.yaml.narration.records_language`, or the play language when it
+is `same`): descriptions, `## Now` and History lines, Depth, Agency Card
+values, summaries, facts, thread text, and names. Keep the structure exactly as
+the templates write it: file names, YAML keys, headings, `- Label:` names,
+table headers, enum values, ids, and op names.
+Optional surfaces use their triggered playbooks; load only the relevant entry
+of `../reference/authority-map.md` when ownership is unclear.
 
-## 4. Narrate
+### Narrate
 
 Use the profile's POV, tense, camera, density, length, dialogue mix, Narrative
 Signature, and avoid-list. State only perceivable/known facts. Narration may not
@@ -215,7 +278,9 @@ a strong one for effect, and a strong axis is not ignored to keep a scene tense.
 When the fiction wants an outcome the sheet does not support, reach it through a
 different route or let the sheet stand. Show the direct
 result before new atmosphere or pressure, then end where the Player can react;
-avoid a menu unless requested or selected by profile.
+avoid a menu unless requested or selected by profile. Do not open by restating
+the Player's words; begin with the world's response. When a capsule brings
+lint findings for the last reply, correct every habit they name.
 
 Choose details that make action and interpretation possible: the tool's relevant
 shape, the distance that matters, a character's particular choice of words.
@@ -236,6 +301,7 @@ Build a scene from:
 - `aftermath`: foreground cost, changed routine, relationships, and meaning.
 - `transition`: compress low-risk movement and establish the next reaction point.
 - `breather`: foreground safety, recovery, companionship, curiosity, and small projects.
+- `downtime`: an approved time skip, committed once (`playbooks/travel_downtime.md`).
 
 A living scene may be quiet, empty, closed, damaged, or routine; local noise, clues, complications, and NPC arrivals are ceilings, never quotas.
 
@@ -266,8 +332,8 @@ recurring NPC drifts toward the same voice.
 Before a recurring NPC speaks at any length, confirm its note carries a tier and
 the Agency Card axes that govern speech: voice rhythm, social tactic, hard
 boundary, and routine/availability. A note that is only a descriptive paragraph
-is not enough. When they are missing, fill them in the same turn as part of that
-turn's write, then speak. This is one small write per NPC, not per turn, and it
+is not enough. When they are missing, settle them before it speaks and record
+them in that turn's write. This is one small write per NPC, not per turn, and it
 is what later turns read instead of reconstructing a voice from memory.
 
 For a significant returning character, also read the current relationship topic
@@ -276,11 +342,13 @@ identity. Use contextual speech examples as references, never repeated lines.
 Personal and shared-domain trajectories have one owner per process; load the
 continuity reference when handing a process between them.
 
-`style_state.json` is the only repetition and last-speaker memory in the system.
-When the selected style policy samples a turn, update its fingerprints; an
-untouched style state across a long campaign means narrator habits and NPC
-cadences are drifting without any record. It stays warning-only and never
-rewrites narration.
+With `runtime.presentation_lint: on`, the lint history is the repetition
+memory: the capsule's `[habits]` line and the distill result's `lint_report`
+name the narrator gestures and NPC cadences that keep returning, so vary them.
+With the lint off, and only then, `style_state.json` holds that memory,
+recorded through `tools/check_style.py` when the selected style policy samples
+a turn, and only then does the full check warn `style_state_inert`. Both stay
+warning-only and never rewrite narration.
 
 # Pacing And Advancement
 

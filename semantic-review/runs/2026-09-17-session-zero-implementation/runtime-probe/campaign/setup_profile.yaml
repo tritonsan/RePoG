@@ -1,0 +1,7 @@
+schema_version: 9
+experience_mode: rpg
+session_zero_mode: standard
+status: complete
+ready_for_play: true
+setup_revision: 12
+# Synthetic read-only evaluation snapshot; readiness was not executed in this packet.

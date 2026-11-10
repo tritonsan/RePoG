@@ -1,4 +1,4 @@
-# Schema-v9 Materialized Preparation Acceptance
+# Schema-v9+ Materialized Preparation Acceptance
 
 Load only for schema-v9+ RPG Quick or Standard at the preparation boundary.
 This contract replaces the old separate factual-review and readiness-approval
@@ -25,6 +25,20 @@ Show one compact player-safe package:
 - the complete consequential locked/defaulted/deferred record, accepted optional
   features, and what starting now means.
 
+Show the concrete affordance of a few relevant accepted choices: what the
+desired activity can use here, how requested pressure and protected themes
+coexist, and what independent or ordinary activity remains available. Every
+example must already exist in its owner; no guaranteed success, hidden solution,
+or new truth is introduced to make a preference look honored. Keep preparation
+reasoning in `first_session.md` / Character–World Opening Fit and the existing
+Player-Safe Integrated Preparation Review, with links to the actual owners.
+
+Before display, internally check engagement, refusal, everyday action, and leaving
+for causal viability. Do not write four mandatory branches or bring a rejected
+hook back through another NPC. Voice calibration uses the accepted evidence in
+`storytelling.md`; if another scene function reveals a real mismatch, correct the
+owning choice within this review, without a sample quota or extra approval.
+
 Ask one decision: request corrections, or approve this prepared package and
 proceed to readiness checks/start. This is both factual acceptance and readiness
 permission. Never ask the player to approve the unchanged package a second time.
@@ -32,9 +46,15 @@ A request for a correction is not terminal acceptance.
 
 ## Persist Acceptance Once
 
-For Quick, the combined decision is slot 9 in
+For schema-v10+ Quick, use row 9 in
+`## RPG Quick v10 Required Decision Status`; for v10+ Standard, use row 20 in
+`## RPG Standard v10 Required Decision Status`. All other required rows must
+already be locked; count is informative, not a readiness quota.
+
+For schema-v9 Quick, the combined decision is slot 9 in
 `## RPG Quick v9 Decision Slot Status`. For Standard, it is module 20 in
-`## RPG Standard v9 Module Status`. Its label is `Preparation Review And Approval`.
+`## RPG Standard v9 Module Status`. In both versions the label is
+`Preparation Review And Approval`.
 
 On acceptance, increment `setup_revision` once, increment `questions_completed`
 only on the decision's first completion, and set `preparation_approved_revision`

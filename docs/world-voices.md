@@ -166,6 +166,12 @@ Every mutating input includes `expected_revision`,
 `result_continuity_revision` to the next campaign revision. Player acquisition
 requires `knowledge_update_confirmed` and a matching `knowledge_revision`.
 
+`expected_continuity_revision` is the currently loaded campaign revision.
+The index records the last revision relevant to World Voices and can remain
+older through unrelated turns, including while the feature is off. Its next
+real operation catches up under the campaign lock; no empty per-turn operation
+is needed. Stored artifact/source/projection references must still be valid.
+
 After a player-visible projection, add or patch the documents tile through
 `tools/update_dashboard.py` with expected source/dashboard revisions. A stale
 Dashboard write is rejected rather than overwriting newer state.

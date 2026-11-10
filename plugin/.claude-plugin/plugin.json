@@ -1,0 +1,14 @@
+{
+  "name": "repog",
+  "displayName": "RePoG",
+  "version": "0.1.1",
+  "description": "A persistent solo RPG Game Master and AI Companion for adults (18+). Each campaign lives in its own folder, and small local helpers keep its state consistent.",
+  "author": {
+    "name": "tritonsan",
+    "url": "https://github.com/tritonsan"
+  },
+  "homepage": "https://github.com/tritonsan/RePoG",
+  "repository": "https://github.com/tritonsan/RePoG",
+  "license": "Apache-2.0",
+  "keywords": ["rpg", "game-master", "roleplay", "interactive-fiction", "companion", "storytelling"]
+}

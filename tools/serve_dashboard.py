@@ -9,9 +9,31 @@ import sys
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlsplit
 
-from agent_seat import AgentSeatError, check_state as check_agent_seat, get_context, get_next_turn, get_turn_status, set_session_status, submit_turn
+if TYPE_CHECKING:
+    from agent_seat import AgentSeatError, check_state as check_agent_seat, get_context, get_next_turn, get_turn_status, set_session_status, submit_turn
+
+    AGENT_SEAT_AVAILABLE = True
+else:
+    try:  # the Agent Seat layer is optional; a build may leave it out
+        from agent_seat import AgentSeatError, check_state as check_agent_seat, get_context, get_next_turn, get_turn_status, set_session_status, submit_turn
+
+        AGENT_SEAT_AVAILABLE = True
+    except ModuleNotFoundError as exc:
+        if exc.name != "agent_seat":
+            raise
+        AGENT_SEAT_AVAILABLE = False
+
+        class AgentSeatError(Exception):  # never raised without the layer
+            exit_code = 1
+            category = "agent_seat_unavailable"
+
+        def _agent_seat_unavailable(*_args, **_kwargs):
+            raise AgentSeatError("The Agent Seat layer is not part of this install.")
+
+        check_agent_seat = get_context = get_next_turn = get_turn_status = set_session_status = submit_turn = _agent_seat_unavailable
 from check_dashboard import check_dashboard
 from check_world_voices import validate_projection_file
 
@@ -73,6 +95,9 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return
         request = urlsplit(self.path)
         request_path = request.path
+        if not AGENT_SEAT_AVAILABLE and request_path.startswith("/api/seat/"):
+            self._json_response(HTTPStatus.NOT_FOUND, {"ok": False, "failure_category": "route_missing", "failure_reason": "API route not found."})
+            return
         if request_path == "/api/seat/context":
             try:
                 self._json_response(HTTPStatus.OK, get_context(self._seat_state_path()))
@@ -137,7 +162,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._json_response(HTTPStatus.FORBIDDEN, {"ok": False, "failure_category": "origin_invalid", "failure_reason": "A same-origin browser request is required."})
             return
         request_path = urlsplit(self.path).path
-        if request_path not in {"/api/seat/turn", "/api/seat/pause", "/api/seat/resume", "/api/seat/complete"}:
+        if not AGENT_SEAT_AVAILABLE or request_path not in {"/api/seat/turn", "/api/seat/pause", "/api/seat/resume", "/api/seat/complete"}:
             self._json_response(HTTPStatus.NOT_FOUND, {"ok": False, "failure_category": "route_missing", "failure_reason": "API route not found."})
             return
         if self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower() != "application/json":
@@ -187,6 +212,8 @@ def validate_directory(directory: Path) -> dict:
             "failure_reason": "Dashboard state has validation errors.",
             "validation": result,
         }
+    if not AGENT_SEAT_AVAILABLE:
+        return {"ok": True, "directory": str(directory), "validation": result}
     agent_seat = check_agent_seat(directory.parent / "agent_seat_state.json")
     if not agent_seat["ok"]:
         return {

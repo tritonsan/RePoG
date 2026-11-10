@@ -418,6 +418,8 @@ def test_durable_checkpoint_uses_one_continuity_revision(campaign: Path) -> None
         "scene_mode": "aftermath",
         "resume_anchor": "Mira stands at the east-gate map.",
         "active_cast_handoff": "none",
+        # A scene checkpoint names what the Player can do next.
+        "open_choices": ["study the east-gate map"],
     }
     payload["changes"][0]["owners"].append("current_state.yaml")
     payload["mutations"].append(

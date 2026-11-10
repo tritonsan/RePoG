@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "autoVerify": false,
+  "configurations": [
+    {
+      "name": "repog-dashboard",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["tools/serve_dashboard.py", "campaign/dashboard", "--port", "8787"],
+      "port": 8787,
+      "autoPort": false,
+      "url": "http://127.0.0.1:8787"
+    },
+    {
+      "name": "repog-companion-view",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["tools/serve_companion_view.py", "campaign/companion_view", "--port", "8790"],
+      "port": 8790,
+      "autoPort": false,
+      "url": "http://127.0.0.1:8790"
+    }
+  ]
+}

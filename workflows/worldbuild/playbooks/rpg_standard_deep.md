@@ -16,7 +16,8 @@ The schema-v7 causal order is:
 
 `campaign promise -> character seed -> character-aware world scaffold -> Deep expansion when selected -> two-way reciprocity pass -> design approval -> materialized preparation -> player-safe preparation review -> preparation approval -> readiness`
 
-Schema-v9+ Standard uses `rpg_standard_v9.md` and its single combined preparation
+Schema-v9 Standard uses `rpg_standard_v9.md`; schema-v10+ uses
+`rpg_standard_v10.md`. Both retain a single combined preparation
 acceptance. It may reuse only selected semantic modules below. Legacy accounting
 and split approvals remain applicable only to their recorded route.
 
@@ -87,11 +88,12 @@ question list.
    dependent truth when needed. Each unresolved source or risk permission stays
    a budget-exempt separate turn.
 3. **Agency, Authorship, And Content Boundaries:** split this module by kind.
-   Ask the content boundary first and alone, using the standard category set in
-   `boundaries.md` with open, fade, or avoid for each, "everything open" as a
-   real answer, and both guarantees said out loud: a limit may be added at any
-   time including mid-play, and adding one is never a cost. Never place it in a
-   card, and never let a card acceptance set it.
+   Ask the content boundary first and alone, following `content_boundaries.md`:
+   the notice, the standard rows in `boundaries.md` with the two fixed rows and
+   each row's own options, the GM's stated limits, an optional stop word, and
+   both guarantees said out loud: a limit may be added at any time including
+   mid-play, and adding one is never a cost. Never place it in a card, and never
+   let a card acceptance set it.
 
    The separately counted decision is the authorship and consequence stance, with
    its two axes kept independent: who authors the character's inner life, past,
@@ -114,13 +116,13 @@ question list.
 
    - **4a identity core:** name, concept, and what they do now. Feeds world
      placement and how strangers address them.
-   - **4b character surface:** the concrete physical basics—gender or
-     presentation, age, height, weight or frame, body type and condition, and
-     distinguishing features—plus the most striking quality, physical or not;
-     appearance direction; manner and habits; how they express themselves; and
-     anything else the Player considers essential. Ask the basics plainly; they
-     settle physical resolution, concealment and disguise plausibility, how
-     strangers guess age and standing, and visual continuity. Ask about the character, not
+    - **4b character surface:** the details the Player considers essential—the
+      most striking quality, physical or not; appearance direction; manner and
+      habits; how they express themselves. Height, weight, and a complete physical
+      card are not required for play. Ask a bodily detail only when the Player
+      cares or an actual upcoming dependency needs it. Leave unknown facts unknown;
+      do not derive an advantage, obstacle, or NPC judgment from missing detail.
+      Ask about the character, not
      about how others should react to them. Record it in `player.md` and derive
      the public read—assumptions, who relaxes and who bristles, what they can
      pass as—from it. That derivation feeds NPC first reactions and social
@@ -236,8 +238,13 @@ question list.
      Describe the rhythm in the setting's own units—its arcs, journeys, seasons, or
      shifts—rather than in abstract tempo words alone.
 
-   In Standard, keep 6b and 6c as one decision to protect the 21–30 budget; Deep
-   asks all three separately. Turn Protocol and semantic parallelism ride with 6a
+    Earlier Standard routes keep 6b and 6c inside their existing budget contract;
+    schema-v10+ Standard and Deep ask independently when the preferences remain
+    unresolved. If resolution is unclear, a short optional out-of-play example
+    may show routine competence, actual resistance, and the role of a recorded
+    roll before ecology expands. It is explanation within the owning choice,
+    not an extra approval, roll, resource spend, character action, or continuity
+    write. Turn Protocol and semantic parallelism ride with 6a
    as performance settings. Agent Seats also ride with 6a: ask explicitly for
    `off` or `on_demand`, explain that only validated T3 party-capable characters
    can be activated, and materialize WebMCP with bounded-full autonomy and one
@@ -259,7 +266,9 @@ question list.
      sample and the native register, then confirm them—readiness requires exactly
      three meaningful anchors, so they are authored here rather than left empty.
      Keep the operative values in the profile, which is hot every turn, and let
-     `storytelling.md` carry the explanation.
+      `storytelling.md` / Accepted Voice Evidence carry the sample's source and
+      why its behavior fit. Calibration on another scene function is conditional
+      within the existing review, never a new sample quota or approval boundary.
 
      Then write the wanted and unwanted GM behavior records in `boundaries.md`. No
      module has owned them, so they stay empty, and they are the most directly
@@ -333,11 +342,11 @@ question list.
     levies, rumor. A few lines each; a frame, not an encyclopedia. The macro must
     not require the character to matter to it, and the local slice needs at least
     one legible link to it.
-11. **Scale, Everyday Life, Access, And Routes:** ask the starting aperture and
-    nothing else. Everything this module used to list is owned elsewhere and must
+11. **Scale, Everyday Life, Access, And Routes:** ask the starting aperture.
+    Governing content already owned elsewhere must
     not be asked again here: governing truths and the channels that carry the macro
     belong to module 10, what moves without the character to module 12, places and
-    routines to module 14, travel cost and route knowledge to `location_network`,
+    routines to module 14, and in Deep additional route detail to `location_network`,
     and the opening scene's own place and arrival to module 17. A module that asks
     for fields other modules own is a form, and the interview contract forbids
     treating a module as a form.
@@ -357,24 +366,26 @@ question list.
     consequential act, where distance spends real time and leaving loses ground
     here. Neither answer restricts where the Player may go.
 
-    This feeds the act scope in module 17, the graph the route layer builds, and how
-    much is prepared before play. When `location_network` is active, resolve it
-    before treating travel structure as settled.
+    Standard owns a short travel contract here because its Deep packs stay off:
+    distance cost, known versus discovered routes, and whether movement leaves
+    an actionable trace, where relevant and not already answered. The Player
+    chooses those consequences; the coordinator supplies edges and routines.
+    Preserve earlier Standard counting and permissions; v10 has no question quota.
+    This feeds act scope, the route graph, and preparation depth. In Deep, resolve
+    an active `location_network` before treating detailed travel as settled.
 12. **Independent Issues And World Dynamics:** active/impending problems and
     bounded domains that would exist and move without the character: who
     benefits, who suffers, visible signs, ignored movement, and open dramatic
-    questions. Include two to four large movements that belong to the macro
+    questions. Include causally relevant large movements that belong to the macro
     frame, each with the channel that makes it visible locally, so a later
     zoom-out finds a world already in motion.
 
-    A selection here sets salience, not exclusivity, and it must not narrow the
-    world into a single track. Keep every unselected candidate as a dormant domain
-    with the trigger that would surface it. Give each selected issue three or four
-    side conditions—secondary effects, second-order consequences, and what would
-    shift its direction—so later turns improvise from prepared material instead of
-    following one line. Give each one counter-current as well: something that looks
-    like it contradicts the issue yet fits this world, such as a decent officer
-    inside a corrupt branch. Record no predetermined resolution.
+    A selection sets salience, not exclusivity. Keep an unselected candidate
+    dormant only inside accepted scope; preserve deliberate deferral conditions,
+    and record explicit rejection in its palette/boundary/experience owner.
+    Rejected play does not return as a renamed hook. Add secondary consequences
+    or counter-currents when they explain actual causality and meaningful choice,
+    not to meet a per-issue quota. Record no predetermined resolution.
 13. **Factions And Institutions:** ask which initially relevant force or
     conflict pattern should matter at the opening scale. The Player chooses or
     changes the salient forces and their high-level relationship to play. The
@@ -385,8 +396,8 @@ question list.
     Also fill the macro seats the setting implies—top-tier powers, ranking
     officers, sanctioned or tolerated figures—with named occupants at roster
     detail: name and title, seat, one line of disposition and method, current
-    large-scale movement, and where their reach could touch the local slice. Four
-    to eight is enough, one or two lines each, recorded in the macro frame rather
+    large-scale movement, and where their reach could touch the local slice. Only
+    relevant seats need occupants; keep them compact in the macro frame rather
     than as full character notes. Under `canon_world_original_cast` the seats
     come from the source and the occupants are original. A roster figure
     graduates to a character note with a filled Agency Card before it appears
@@ -470,8 +481,8 @@ question list.
     runs on, what is planted, what would make a climax reachable, and what would
     close it. Then fill its scope in names rather than categories—which places
     this act can reach, which people belong to it, what is already in motion as it
-    opens, and what stays true if the character does nothing. Scope is the test of
-    whether an act exists: a single place and one person is an opening, not an act.
+    opens, and what stays true if the character does nothing. Scope follows the
+    playable question; no minimum number of places or people defines an act.
     Leave the closure record empty; it is written when the act actually closes.
 
     Then present two to four coherent player-safe
@@ -698,10 +709,9 @@ setting's own terms rather than generic ones.
 
 Fill individual edges yourself from the accepted answers and existing place notes,
 and let the Player name any route they specifically care about. Remove the example
-row, keep every endpoint resolvable to a place note or an explicitly incidental
-current location, and record at least one asymmetry—one-way, closed, costly, watched,
-or unknown—unless the accepted answers deliberately removed all travel friction.
-Without one the graph is a list of places rather than a network.
+row and keep endpoints resolvable to a place note or an explicitly incidental
+current location. Record one-way, closed, costly, watched, or unknown connections
+when established causes justify them; no artificial asymmetry is required.
 
 ### `faction_information` Resolution
 

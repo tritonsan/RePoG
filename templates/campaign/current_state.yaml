@@ -1,0 +1,67 @@
+campaign_id: new_campaign
+mode: lite
+memory_version: 3
+continuity_revision: 0
+status: draft
+last_updated: ""
+
+persistence:
+  last_distilled_revision: 0
+  durable_turns_since_distill: 0
+  pending_cold_targets: []
+
+fictional_time:
+  day: 0
+  phase: setup
+  elapsed_index: 0
+
+player:
+  name: ""
+  concept: ""
+  level_band: beginner
+  stat_budget_policy: standard
+  stat_budget_note: ""
+  condition: ready
+  current_goal: ""
+  # Fill one entry per declared axis in rules.md, only when
+  # play_profile.yaml.mechanics.resolution_grounding is numeric. Fictional
+  # campaigns use capabilities and limits; bands campaigns may store only the
+  # broad bands they actually use.
+  stats: {}
+  capabilities: []
+
+current_scene:
+  title: ""
+  location: ""
+  summary: ""
+  present_npcs: []
+  # May be blank when scene_frame.mode is breather. Issues or threads may
+  # remain active without becoming immediate scene pressure.
+  immediate_pressure: ""
+  open_choices: []
+
+# This compact frame is the resumable causal contract for the live scene. A
+# draft campaign may leave its strings blank. Before play, scene_id,
+# ongoing_process, last_causal_beat.returned_control_at, and resume_anchor must
+# be meaningful enough to resume without inventing a new beat.
+scene_frame:
+  scene_id: ""
+  mode: ambient
+  ongoing_process: ""
+  disruption: ""
+  last_causal_beat:
+    player_intent: ""
+    world_response: ""
+    changed_fact: ""
+    returned_control_at: ""
+  # At most 3 consequences that have already been caused but not yet surfaced.
+  pending_consequences: []
+  resume_anchor: ""
+
+inventory: []
+
+conditions: []
+
+active_clocks: []
+
+active_threats: []

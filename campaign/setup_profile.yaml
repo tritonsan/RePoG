@@ -1,4 +1,4 @@
-schema_version: 9
+schema_version: 10
 workspace_mode: standalone
 status: pending
 setup_revision: 0
@@ -11,14 +11,19 @@ preparation_approved_revision: null
 # First gate. Leave blank only before the user chooses an experience.
 # Allowed: rpg | companion
 experience_mode: ""
-# Ask Session 0 depth only after experience_mode is set. Experience/depth
-# routing and triggered Research Gate work do not increment questions_completed.
+# After RPG experience selection, collect/reuse a short premise before asking
+# depth explicitly. Keep pending and this field blank during intake. Companion
+# retains its existing routing. Intake does not advance revision/counts; the
+# selected route records the saved answer. Routing gates do not count.
+# RPG depth is written by `session_zero_state.py set-depth`, never by hand.
 session_zero_mode: ""
-# Deep v8 uses the stage ledger instead of a readiness question quota. Quick
-# and Standard select 9 and 20–29 decisions respectively for schema v9.
+# Schema-v10 RPG Quick/Standard complete required decision rows; Deep uses its
+# stage ledger. Leave blank for these routes. Earlier RPG and Companion retain
+# their versioned numeric targets; never silently migrate an active setup.
 question_target: ""
-# Deep v8 derives this mirror from session_zero_state.json. Quick, Standard,
-# Companion, and legacy routes retain their existing accounting behavior.
+# Deep derives this mirror from session_zero_state.json. In v10 Quick/Standard
+# this count tracks unique accepted consequential decisions for progress/fatigue,
+# never readiness. Revisions do not recount an already accepted decision.
 questions_completed: 0
 # Decision-level accounting. Use short stable labels here and keep readable
 # detail in session_zero.md.

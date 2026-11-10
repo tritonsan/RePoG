@@ -14,6 +14,10 @@ and writer of authoritative campaign state. Supporting agents are read-only
 analysts. If the active agentic tool cannot create sub-agents, perform the same
 lanes serially; readiness and quality requirements do not change.
 
+The boundary curator is not a lane: `runtime.boundary_curator` and the Distill
+workflow govern it, and it writes only its staging file, which the writer
+applies only to notes that are still unchanged.
+
 # Runtime Policy
 
 Read `performance.semantic_parallelism` and

@@ -46,6 +46,13 @@ version in `opening_brief.md`.
 
 Trace the approved reciprocity design into actual preparation.
 
+For a consequential accepted preference, point to its owner and to the actual
+place/person/access/affordance it helped prepare. Explain the causal fit briefly
+in the existing fields below. A desired experience should change playable
+opportunity, not only descriptive adjectives; it never guarantees an outcome.
+Use the meaningful links this preparation needs, without a per-answer or scene
+quota. The owning world notes retain their independent routines and purposes.
+
 - Character current desire:
 - Why now:
 - Why this opening belongs to this character without centering the whole world:
@@ -166,6 +173,13 @@ Prepare consequences, not required routes.
 
 Summarize only what may be shown before the selected route's preparation
 approval.
+
+Make the important answer-to-opportunity links legible using already materialized,
+player-safe facts. Show what can be attempted and what remains the Player's
+choice, not hidden causes or promised success. The accepted voice sample/why-it-
+worked reference belongs in `storytelling.md` / Accepted Voice Evidence; reuse
+the selected route's review or non-play proof when calibration is needed. This
+does not advance fiction or add an approval round.
 
 - Character and current desire:
 - Place/routine/arrival:

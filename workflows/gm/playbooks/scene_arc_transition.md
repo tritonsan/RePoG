@@ -22,17 +22,25 @@ failure, a refusal, or an outcome nobody prepared is a real closure and not a
 stalled act.
 
 The action that satisfied or foreclosed the condition is the decisive action.
-Record it in that Act id's Compass closure record with the resolved/foreclosed
-condition and the revision it happened at. Set `Act status: closed` in the same
-`commit-durable` transaction as the decisive outcome and its immediate owners.
-Only include advancement changes if the accepted reward cadence actually applies.
-Recognize it as it resolves rather than reconstructing it from the log afterwards;
-a decisive action identified later usually credits the wrong turn.
+Recognize it as it resolves rather than reconstructing it from the log
+afterwards; a decisive action identified later usually credits the wrong turn.
+The durable commit of that turn names it in its `established_delta`, so the
+answer survives a restart. Close the act only after the scene that answered it
+has ended, never in the middle of an exchange, and close it with one
+`commit-act` call (Activate The Successor below), whose `close.summary` names
+the decisive action and the revision it happened at. Only include advancement
+changes if the accepted reward cadence actually applies.
 
 Do not close because a scene ended well, a count was reached, or the act merely
 feels long. Conversely, a refusal, failed plan, or new solution can answer or
-foreclose the real question without delivering a prepared ending. A closed
-Compass remains current during its aftermath and cannot close a second time.
+foreclose the real question without delivering a prepared ending. An answered
+act stays current through any aftermath played before its successor is ready,
+and it closes once.
+
+A thread or threat closes the same way: the commit that closes it gives its
+owner a `Resolution:` line naming what resolved it, which is a roll id, a
+Player decision, or a played scene. Nothing closes silently or off-screen, a
+time skip included.
 
 ## When Direction Seems Stalled
 
@@ -70,7 +78,9 @@ checkpoint containing:
 4. relevant active-cast whereabouts, activity, objective, availability,
    reason-here, and next move;
 5. the resume anchor: last Player action, direct result, last world/NPC move,
-   and returned-control moment.
+   and returned-control moment;
+6. `open_choices`: one to five short strings naming what the Player can take up
+   next, which the writer requires at a `scene_checkpoint` boundary.
 
 If the result is `durable`, include this checkpoint and its exact
 `current_state.yaml` / `active_cast.md` mutations in the same
@@ -87,9 +97,10 @@ continuity revision or durable event.
 
 Run the Distill workflow when:
 
-- Fast reaches five durable turns;
-- Balanced reaches three durable turns;
-- Maximum Continuity completes any durable turn;
+- the durable count in `performance.cold_distill_policy` is reached: five
+  under `scene_checkpoint_or_5_durable` (Fast and Balanced), three under
+  `scene_checkpoint_or_3_durable`;
+- Maximum Continuity (`every_durable`) completes any durable turn;
 - the session pauses or ends;
 - a scenario, arc, or campaign closes;
 - an advancement/reward boundary requires reconciliation;
@@ -97,7 +108,9 @@ Run the Distill workflow when:
 - the Designer explicitly requests it.
 
 A scene end alone is not on this list. Before changing away from a batching
-profile, reconcile all pending cold targets.
+profile, reconcile all pending cold targets. At an act closure, the distill may
+also launch the boundary curator (Distill workflow) to fold flagged notes; it
+creates no truth and closes nothing.
 
 ## Structural Parallelism
 
@@ -178,6 +191,41 @@ gate from the status word alone.
 Tie every reward to player action and an established fictional source. Do not
 interrupt the middle of live danger to distribute it.
 
+Stat points from an act go only to axes the character actually rolled in it:
+list them with `python tools/roll_dice.py --campaign campaign axes
+--since-revision N`, where N is the act's `Opened at revision`; a receipt it
+counts as `auto` took its band without dice. No award lifts an axis or a
+Mastery level past the region cap in `progression.md` unless the Player
+explicitly accepts the overreach, and that acceptance is recorded with the
+award.
+
+## Act-Close Review
+
+Once the scene that answered the act has ended, and before the successor opens:
+
+1. Review the Agency Card and Depth of every T2/T3 character seen in the act.
+   Replace each field the act made untrue: a task finished, a fear faced, a
+   secret out, a want met or abandoned. The capsule hides the Agency Card of a
+   note no commit has touched since the act opened, so read such a note before
+   giving its character a scene.
+2. Review `issues.md`, `world_dynamics.md`, and the Planted Expectations in
+   `threads.md`: what the act moved, resolved, transformed, or left waiting.
+   Run `python tools/world_pulse.py --input-file -` once for the domains whose
+   trigger the act made due, and give each timed threat of the next act an
+   `active_clocks` entry in `current_state.yaml` (and, with the `clocks`
+   module on, its clock through `add_clock`).
+3. Under `explicit_ooc` presentation, offer the act-close menu out of
+   character, in the Player's language: a table of the character's stats before
+   and after the award, a suggested allocation the Player may change, and the
+   time-skip options for the gap before the next act (none, a short montage, or
+   skip until something happens; `travel_downtime.md`). Under other
+   presentations the same content stays in the fiction, as the Advancement
+   section above describes.
+
+Put what the review changed in the `changes` and `mutations` of the
+`commit-act` call itself, so the reviewed notes carry the new act's opening
+revision; the award, the time skip, and the review share that one transaction.
+
 ## Next Act
 
 At scenario/arc/campaign closure, carry established truth into `next_act_prep.md`
@@ -186,6 +234,19 @@ an unresolved award. An independent aftermath remains playable.
 
 At this boundary—not every turn—consider the accepted campaign horizon and the few
 planted expectations touched by actual play:
+
+First read `player.md` / Player Experience Contract and Change Appetite, and the
+relevant stable premises and limits in `player_ties.md`. Read changing NPC,
+relationship, knowledge, and world facts from the owners those ties reference.
+Compare the still-accepted experience with the Player's explicit new direction:
+which connection remains useful, was deliberately revised, or can lie dormant?
+Record only owner references and preparation rationale in `next_act_prep.md`.
+New accepted preference or tie truth goes to its owner before dependent prep.
+Do not infer a permanent preference from silence, failure, or refusing one offer,
+and do not repeat Session 0 merely because an act ended. A changed immediate goal
+may change this act's opportunities without changing the whole campaign contract.
+
+Then consider:
 
 - Which longer question could this next act affect, or is there no relevant link?
 - How did the Player's expressed choices change that connection?
@@ -203,26 +264,31 @@ A `must_return` item still needs its causal trigger and a credible visible chann
 
 ### Activate The Successor
 
-For an identified campaign, perform these steps in order:
+For an identified campaign, perform these steps in order.
 
-1. Finish the current act's closure transaction. Keep its closed Compass/record
-   intact while the successor is only draft preparation. Choose a fresh stable
-   `Next act id` in `next_act_prep.md`, citing the closed `Previous act id`.
+1. Wait until the scene that answered the act has ended. Choose a fresh stable
+   `Next act id` in `next_act_prep.md`, citing the closing act as its
+   `Previous act id`.
 2. Prepare an open dramatic question, reachable scope, conditional climax access,
    and closure conditions from actual consequences and chosen direction. Preserve
    meaningful alternative answers, refusal, and failure. Record any relevant
    horizon/expectation references; do not author required scenes or outcomes.
 3. When the new act is ready and any dependent choice is resolved or explicitly
-   non-blocking, create one `threads.md` candidate that archives the closed Compass
-   under `## Act Archive` / `### <old act id>` (nested headings become `####`)
-   and replaces it with the new Compass:
-   fresh `Act id`, `Act status: active`, `Previous act id` naming that archive,
-   `Opened at revision` matching the resulting continuity revision, and an empty
-   new Closure Record. Never reuse an archived id or its completed condition.
-4. Commit that candidate and any changed immediate current-state/owner facts in
-   one `rpg_state.py commit-durable` transaction with boundary `full_distill`.
-   Advancing the act is durable even if no reward is due. Do not split archive
-   creation from current-Compass replacement or manually increment continuity.
+   non-blocking, make one `commit-act` call (persistence playbook 3E). `close`
+   gives the act id, whether its condition was met or foreclosed, and a
+   summary naming the decisive action and its revision; `open` gives the fresh
+   act id, a title, the dramatic question, the reachable scope, the closure
+   conditions, and optional prepared expectations; `checkpoint` is the handoff
+   into the new act's first scene, with its `open_choices`. The writer archives
+   the closed Compass under `## Act Archive`, writes the new active Compass with
+   its `Opened at revision` and an empty Closure Record, and commits both as one
+   durable transaction at a `scene_checkpoint` boundary. Never hand-build the
+   archive or the Compass, reuse an archived id or its completed condition, or
+   increment continuity by hand. Advancing the act is durable even if no reward
+   is due.
+4. Carry the Act-Close Review in that same call: the award, the time skip, and
+   every changed immediate current-state or owner fact go in its `changes` and
+   `mutations`.
 5. After success, reconcile the secondary `next_act_prep.md` references and prepare
    `opening_brief.md` with the new `Opening act id`. Keep it `pending` until its
    identity matches the committed active Compass and its frame is playable. Then

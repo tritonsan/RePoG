@@ -21,13 +21,16 @@ only the needed ownership section in `workflows/reference/authority-map.md`.
 
 | Situation | Load |
 | --- | --- |
-| Schema-v9+ RPG Quick | `playbooks/rpg_quick_v9.md` |
-| Schema-v9+ RPG Standard | `playbooks/rpg_standard_v9.md` |
+| Schema-v10+ RPG Quick | `playbooks/rpg_quick_v10.md` |
+| Schema-v10+ RPG Standard | `playbooks/rpg_standard_v10.md` |
+| Schema-v9 RPG Quick | `playbooks/rpg_quick_v9.md` |
+| Schema-v9 RPG Standard | `playbooks/rpg_standard_v9.md` |
 | Schema-v6–v8 RPG Quick interview, reciprocity review, or preparation review | `playbooks/rpg_quick.md` |
 | Schema-v7–v8 RPG Standard or schema-v7-and-earlier Deep | `playbooks/rpg_standard_deep.md` |
 | Deep ledger flow (schema-v8+) | `deep_v8/manifest.json`, then only `deep_v8/<active stage>.md` |
 | Companion Quick, Standard, or Deep | `playbooks/companion_setup.md` |
 | Research Gate or source work | `playbooks/research_gate.md` |
+| Content-boundary decision, every route | `playbooks/content_boundaries.md` |
 | Final readiness boundary | `playbooks/finalization.md` |
 | Eligible semantic parallelism | `workflows/orchestration/WORKFLOW.md` plus the active playbook boundary |
 
@@ -45,16 +48,47 @@ If `experience_mode` is blank, ask only:
 Persist `rpg` or `companion`. This routing choice does not count toward content
 decisions. Legacy schema-v1–v3 campaigns without the field remain RPG.
 
-If experience is selected and `session_zero_mode` is blank, ask only:
+For a new schema-v10+ RPG, collect a short campaign intention after experience
+selection and before asking depth. Reuse a volunteered premise rather than
+asking again. Record only the stated world anchor, desired experience, and
+explicit non-goals in the existing campaign promise/session decision owners;
+this is not permission to research, invent protected truth, or prepare the world.
+Keep setup `pending`, depth blank, and readiness false until the Player selects
+depth. This is a non-terminal intake note: do not advance decision counters,
+setup revision, or profile locks before a route owns the recorded decision.
+After explicit depth selection, the selected route records the supplied answer
+at its normal decision boundary without asking it again. The premise belongs
+to its campaign-promise area, not an extra question. A premise supplied before experience selection may be retained
+as context, but cannot infer the experience selector.
+
+If experience is selected and `session_zero_mode` is blank, ask depth separately.
+For schema-v10+ RPG, explain the working relationship using the known intention:
+
+- **Quick:** choose the essential direction and review bounded GM proposals;
+  prepare the first playable scale and its outward connections.
+- **Standard:** jointly choose meaningful alternatives for character, world,
+  play, and opening; prepare the relationships and movement supporting an act.
+- **Deep:** jointly deepen the relevant domains and their dependencies;
+  irrelevant domains do not acquire detail merely because this is Deep.
+
+A contextual recommendation is not acceptance. Do not infer the choice or merge
+it with a new content question. For Companion and schema-v1–v9 RPG, retain the
+existing pre-pitch depth gate:
 
 > Which Session 0 depth do you want: Quick (compact), Standard (expanded core),
 > or Deep (a dependency-guided, staged design with only relevant branches)?
 
-Persist `quick`, `standard`, or `deep`; set status `in_progress`. Quick,
-Standard, Companion, and legacy Deep set a numeric `question_target`:
+Persist `quick`, `standard`, or `deep`; set status `in_progress`. For
+schema-v10+ RPG and schema-v8+ RPG Deep,
+`tools/session_zero_state.py campaign set-depth --depth <depth>` does this, never
+a hand edit, and for Deep also initializes the ledger mirrors and summary.
+Schema-v10+ RPG Quick/Standard leave `question_target` blank and complete the
+selected required decision map; `questions_completed` is progress/fatigue
+information, never a readiness quota. Earlier Quick/Standard, Companion, and legacy Deep
+retain their numeric `question_target`:
 
-- schema-v9+ RPG Quick: exactly 9;
-- schema-v9+ RPG Standard: 20–29;
+- schema-v9 RPG Quick: exactly 9;
+- schema-v9 RPG Standard: 20–29;
 - schema-v6–v8 RPG Quick: exactly 10;
 - schema-v7–v8 RPG Standard: 21–30;
 - Companion Quick: exactly 7;
@@ -63,7 +97,7 @@ Standard, Companion, and legacy Deep set a numeric `question_target`:
 - legacy schema-v1–v5 RPG Quick: 6–8;
 - legacy schema-v1–v6 RPG Standard: 17–25.
 
-Do not combine either routing gate with the pitch. Numeric setup-duration
+Do not combine a routing gate with a content question. Numeric setup-duration
 promises for redesigned RPG Quick and Standard are withheld until measured;
 turn-performance estimates remain separate and still apply.
 
@@ -71,24 +105,38 @@ Route to the matching playbook. An already active legacy Standard/Deep
 campaign keeps its existing module numbering and approval behavior unless the
 Player explicitly approves migration.
 
-Schema-v8 RPG Deep does not use a readiness question quota or the legacy pack
+The `rpg_deep_v8` flow in schema-v8+ RPG Deep does not use a readiness question quota or the legacy pack
 lists. Initialize `session_zero_state.json`, leave `question_target` blank,
 derive `questions_completed` from its decision ledger, and follow its nine
 stages. Load the manifest plus only the active stage. The manifest owns
 prerequisites, controlled trigger tags, stage-local extensions, and the gate
 chain; the stage playbook owns semantic interviewing and materialization.
 
+# Play Language
+
+Right after the depth choice, and before any content is written, settle the
+play language on every RPG route: the language the Player writes in, unless
+they ask for another, confirmed in one line. Persist it with
+`tools/session_zero_state.py campaign set-language --language <code>` (or
+`set-depth --language`), which writes `play_profile.yaml` `narration.language`.
+From then on, write every record's content in that language: descriptions,
+summaries, facts, names, Notes cells, `## Now` and History lines, Depth and
+Agency Card values, and thread text. Keep the structure exactly as the
+templates write it: file names, YAML keys, headings, `- Label:` names, table
+headers, enum values, and ids. The Deep ledger refuses Stage 1 content until
+the language is set.
+
 # Shared Interview Contract
 
 For every content decision:
 
-1. name the current module or slot;
+1. name the current player-facing section and its purpose, not a storage field;
 2. ask exactly one decision question;
 3. explain why it matters in one or two sentences;
 4. offer two to four contextual, neutral options when useful;
 5. stop and wait.
 
-For schema-v8 Deep, record the decision through `tools/session_zero_state.py`
+For Deep `rpg_deep_v8`, record the decision through `tools/session_zero_state.py`
 and render the managed Deep-v8 summary; do not edit a legacy status block. For
 all other routes, write into the selected status block only. The legacy route blocks share slot and module
 names—both open with the campaign promise—so an edit keyed to a name alone lands in
@@ -100,9 +148,12 @@ landed. A write that silently changes nothing is reported later as a missing fie
 which points at the wrong problem: the answer was accepted and recorded in the log,
 so the field looks forgotten rather than unwritten.
 
-Write accepted answers immediately. Schema-v8 Deep writes once to its atomic
-decision ledger; only safety, research permission, and creation authority also
-receive an immediate semantic-owner write. Its controlled trigger tags activate
+Write accepted answers immediately. Deep writes its atomic decision ledger and
+every critical semantic owner in the acceptance turn, including but not limited
+to safety, research permission, and creation authority. If a critical owner
+write fails, do not finalize the terminal decision or advance its stage; recover
+the failed write before proceeding. Remaining coordinator detail is materialized
+at stage completion. Its controlled trigger tags activate
 stage-local extensions automatically. Other routes retain their existing pack
 scan and immediate persistence behavior.
 
@@ -112,6 +163,51 @@ hide unrelated choices inside a bundle.
 
 Treat each named slot or module as one decision boundary, not as a form to
 complete.
+
+For schema-v10+ Quick/Standard, the named rows are required coverage areas,
+not one-question boundaries or count targets. Show progress as intention and
+authority; character seed; world and competence; living ties and access; play
+and narration; design and actual preparation. These sections promise neither
+six questions nor six messages. Independent permissions stay separate, and
+early answers may resolve several areas without repeated questions. Preserve
+Deep's dependency order and all earlier versions' order/count contracts.
+
+### Answers, Uncertainty, And Resuming
+
+Classify the meaning of the Player's answer before choosing the next question:
+an explicit accepted preference, an unaccepted suggestion, uncertainty, an
+explicit rejection, a deliberate deferral, or a change to a previous decision.
+Record only the short decision and its scope in existing owners/session notes,
+not a raw transcript or a new user profile. A multi-answer message can resolve
+several decisions; persist them in dependency-safe order and do not prematurely
+complete a future Deep stage. Keep a volunteered later-stage answer in the
+existing decision summary until its prerequisite permits the owner write.
+
+"Maybe" and "I don't know" are not approval. Offer a reasoned ordinary proposal,
+or defer detail not yet needed; protected truth and permission stay unresolved.
+Do not invent a conflict between compatible choices such as calm play and heavy
+tracking. When two accepted choices really conflict, explain only that conflict
+and ask the smallest consequential correction. An explicit correction replaces
+the affected choice; preserve all unrelated answers and their provenance.
+
+"That is enough" stops optional expansion. Resolve only the remaining decisions
+needed to start, defaulting ordinary detail visibly within accepted authority.
+It grants no missing consent or readiness approval and never changes depth
+automatically. If the selected legacy contract cannot be shortened, explain the
+remaining requirement or offer an explicit migration, without silently skipping it.
+"Pause" stops questions. Keep a short resume note in `session_zero.md` with the
+current unresolved decision, pending proposal, and next prerequisite. On return,
+briefly restore that position and ask only the next genuinely unresolved choice.
+Earlier accepted choices do not need re-consent merely because context changed.
+
+During setup, distinguish a local request such as "shorten this example" from
+"use shorter narration from now on". Only the latter changes the persistent
+owner. Narrowed safety/thematic boundaries apply immediately; update affected
+unplayed preparation and invalidate applicable approvals without reopening
+unrelated decisions. A requested fictional revision has its own affected-owner
+scope and is never implemented by changing only a summary. After readiness,
+route persistent OOC changes through the GM configuration workflow instead of
+turning historical setup approval into a current preference lock.
 
 - **Player Chooses:** ask only for a consequential preference or permission:
   something that materially changes promised play, safety, agency, authorship,
@@ -155,15 +251,23 @@ Follow the source's own rule for who earns a reputational title, so ordinary
 working people are not handed grand ones. A cast named ahead of this check belongs
 to no world.
 
-A Player's selection narrows attention, never the world's possibility space. When
-they pick which issues, forces, faces, or opening shapes matter, keep the
-unselected candidates dormant with the trigger that would surface them rather than
-discarding them. Give each selected element three or four side conditions—secondary
-effects and the kinds of change that would shift its direction—and one
-counter-current that appears to contradict it while still fitting the setting.
-Prepared latitude is what lets later turns improvise without inventing new truth,
-and a world whose every force points the same way leaves nothing to play against.
-Record no predetermined resolution for any of it.
+A selection sets attention; it does not alone ban other possibilities. Keep an
+unselected candidate dormant only when it remains inside accepted scope. Distinguish
+"not selected", "perhaps later", and "I do not want this": a deliberate deferral
+retains its accepted condition, an unaccepted suggestion remains unaccepted, and an
+explicitly rejected experience goes to the relevant palette/boundary/experience
+owner with its scope. Never return it as a renamed hook. Rejecting political play
+does not erase an established institution; clarify only if the requested change
+actually conflicts with source or world truth. Do not ask a classification question
+when the Player's meaning is already clear.
+
+Prepare side effects, counter-currents, and alternative affordances only when they
+explain a real choice or independent cause. There is no per-element detail quota.
+Record no predetermined resolution. Before review, internally consider whether
+engagement, refusal, ordinary activity, and leaving remain meaningful in this
+world. These are causal checks, not four required scene branches. Refusal cannot
+make the same request return through another NPC; real independent consequences
+are neither accelerated nor erased to steer the Player back.
 
 Ask about companions as a contract, not a roster. A company is assembled over the
 course of play, so the decision fixes intent and shape rather than a membership list,
@@ -281,8 +385,8 @@ decide: whether distance costs anything, whether the map is known at the start o
 discovered through play, and whether movement leaves a trace others can act on.
 Derive how movement behaves in the declared setting and period before offering those
 choices, and phrase them in that setting's terms. Let the Player name any route they
-care about, and record at least one asymmetry—one-way, closed, costly, watched, or
-unknown—unless the accepted answers deliberately removed all travel friction.
+care about, and record asymmetry—one-way, closed, costly, watched, or unknown—
+when established conditions cause it; do not manufacture friction to fill a quota.
 
 Bind the ongoing creation authority to the creation tiers the ledger already
 tracks, so the answer changes when the coordinator stops to ask. The threshold is
@@ -319,25 +423,36 @@ faces, opening shapes, and reward kinds all follow it.
 
 Ask the content-boundary decision on its own, in every route and for every
 setting, using the same structure so it does not depend on the model or the
-campaign. Never place it inside a style, bundle, or profile card, and never let
-accepting a card set it. Offer the standard categories recorded in
-`boundaries.md`—sexual content, harm to children, torture and graphic violence,
+campaign: follow `playbooks/content_boundaries.md`, which shows the Player
+notice first. Never place it inside a style, bundle, or profile card, and never
+let accepting a card set it. Two rows recorded in `boundaries.md` are fixed and
+never offered: no one under 18 in any sexual or romantic context, including
+backstory, and no graphic violence against children on the page. Sexual content
+is avoid, fade before it starts, or implied with no explicit description; harm
+to children is mentioned or offscreen, or avoid; torture and graphic violence,
 harm to animals, suicide and self-harm, severe humiliation or discrimination,
-addiction, illness and dying, captivity and slavery—each as open, fade, or avoid,
-with "everything open" available as a real answer. State both guarantees when
-asking: a limit may be added at any time including mid-play and takes effect
-immediately, and adding one is never framed as a cost or a penalty. A Player
+addiction, illness and dying, and captivity and slavery are each open, fade, or
+avoid. "Everything at its most open" is a real answer. The GM states and
+records its own limits (at least: non-consensual acts are never written as
+scenes), and the Player may set an in-fiction stop word. State both
+guarantees when asking: a limit may be added at any time including mid-play and
+takes effect immediately, and adding one is never framed as a cost or a
+penalty. A Player
 signal to stop applies at once. An open-ended "is there anything?" is not
 sufficient, because a blank answer would be recorded as consent.
 
 Build the character through a short ordered sequence rather than one broad
 question. The Player discovers the character while answering, and the coordinator
 needs enough of them to decide how the world reads them, who reacts and how, what
-clean success looks like, and where pressure lands. Depth scales with the route:
-fixed-count Quick keeps its two character slots and infers what is left open,
-while Standard and Deep ask identity, public read, desire and why-now,
-competence, limit, position, and change appetite as separate counted decisions.
-Deep adds the character-foundation layer when its trigger fires.
+clean success looks like, and where pressure lands. Earlier fixed-count Quick
+retains its slot contract, without inferring protected facts or thematic
+permission. New Quick/Standard complete required areas rather than a question
+quota; Standard and Deep can separate identity, desire, competence, limit,
+position, and change appetite when those choices remain unresolved. Ask about
+the Player's chosen surface, not an obligatory inventory of bodily measurements.
+Unknown physical facts stay unknown until requested or genuinely needed; they
+cannot justify invented advantages, obstacles, or NPC judgments. Deep adds its
+relevant character extension only when the accepted trigger warrants it.
 
 Every character question must name what it feeds—a world reaction, an opening
 affordance, a pressure channel, or a progression gate. A question with no such
@@ -347,6 +462,14 @@ turning into a long form.
 Settle the resolution grounding before asking how competence is expressed, since
 `fictional`, `bands`, and `numeric` produce different questions. The play and
 system module inherits that answer rather than asking twice.
+
+Ask the NPC power scale before the first named cast, on every route: how strong
+the people at the current scale are next to the character, and whether the
+scale is closed (one range for the whole campaign) or region-anchored open (each
+region has its own cap, and reaching a stronger region raises it at an act
+boundary). Record it in `boundaries.md` / Power Scale and, with bands or
+numbers, in `rules.md` as its `- Numeric scale:` line and `## Tier Caps` block.
+Calibrate every NPC card to it before readiness.
 
 State the host dependency when offering a layer that needs a capability outside
 this workspace. Image generation only works when the running tool or model can
@@ -364,8 +487,11 @@ accepted sample and show what was recorded. A list of craft terms asks the Playe
 to guess at labels. Ask them directly what they dislike in narration, because the
 avoid-list is theirs to fill, and derive the signature anchors and sensory focus
 from the accepted sample and the setting's native register. Keep the operative
-values in the profile, which is read every turn, and let the readable narration
-note carry explanation rather than the working contract.
+values in the profile, which is read every turn, and let `storytelling.md` /
+Accepted Voice Evidence preserve the selected sample's source and why its
+behavior fit. The note explains the working profile, never competes with it.
+When a different scene function exposes uncertainty, calibrate inside the
+existing review; do not require a new sample quota or third approval.
 
 Keep simulation fidelity, play mix, and pace as separate questions. How much the
 engine tracks, what the campaign spends time on, and how tense it feels vary
@@ -491,7 +617,7 @@ schedule. Extending it later is a revision, not a new campaign. Record it in
 
 Decide the world at macro scale even when the character is local. Before world
 truths are locked, establish a bounded macro frame: the era anchor, who holds
-large-scale power and what could upset it, two to four large movements that run
+large-scale power and what could upset it, relevant large movements that run
 without the character, and the visible channels through which the macro reaches
 the local slice—news, prices, patrols, migration, levies, rumor. Keep each to a
 few lines; this is a frame, not an encyclopedia. Fill the macro seats the source
@@ -499,12 +625,21 @@ or setting implies with named figures at roster detail so later references stay
 consistent, and give the local slice at least one legible link to that frame
 without making the character matter to it.
 
+When world truths are written, add a price and bounty anchor table under
+`world_truths.md` / `## Economy And Resources` / `### Price And Bounty Anchors`
+(`| Anchor | Value | Notes |`): a few everyday prices and the current region's
+reward or bounty scale, in the setting's own currency. Later prices, rewards,
+and bounties scale from these rows instead of being invented per scene.
+
 Macro depth scales with reach. A contained reach keeps the frame thin; a long
 journey deepens it, makes the roster matter, and opens later regions through
 staged research passes rather than researching every region up front.
 
-The first accepted completion of a decision increments `questions_completed`.
-A genuinely separate follow-up may count within the selected budget. Revising
+The first accepted completion of a consequential decision increments
+`questions_completed`. Schema-v10+ Quick/Standard use that count only for
+progress/fatigue; required rows and approvals determine completion. Earlier
+routes retain their selected budget. A genuinely separate follow-up counts
+when the route permits it. Revising
 an already completed decision increments `setup_revision` but never increments
 `questions_completed` again.
 
@@ -515,17 +650,18 @@ permits additional decisions and all of the following are true:
 2. it materially changes Player experience or permission;
 3. it cannot safely be derived or recorded as an ordinary displayed default;
 4. it is asked and explicitly accepted as a separate decision;
-5. the selected route's current question target has remaining capacity.
+5. for a legacy numeric route, its current question target has remaining capacity.
 
 Clarification needed to finish the current card, an `accept|mix|change`
 exchange, implementation-field collection, factual correction, or acceptance
 of a named review is not a separate follow-up. Explicit research source and
 risk permissions retain their existing budget-exempt treatment.
 
-Quick's fixed ten-slot route never opens an eleventh content decision. Any
-required explicit opt-in must be visible inside its owning coherent slot card
-or remain off. Standard and Deep may use their existing variable budget only
-for genuinely independent consequential choices.
+Schema-v6–v8 Quick retains ten slots; schema-v9 Quick retains nine. Required
+explicit opt-ins must be visible inside their owning coherent slot or remain
+off. Earlier Standard and legacy Deep use their existing variable budget only
+for genuinely independent consequential choices. Schema-v10+ Quick/Standard and
+the Deep ledger do not compress independent permissions to satisfy a quota.
 
 Experience/depth gates do not count. Triggered research execution, evidence
 review, and each explicit source/risk permission are budget-exempt separate
@@ -543,8 +679,10 @@ Versioned routes own their exact acceptance contract:
 
 | Route | Design approval | Actual-preparation acceptance |
 | --- | --- | --- |
-| Schema-v9+ Quick | Slot 8 | Slot 9 combines factual review and readiness approval |
-| Schema-v9+ Standard | Module 19 | Module 20 combines factual review and readiness approval |
+| Schema-v10+ Quick | Required row 8 | Required row 9 combines factual review and readiness approval |
+| Schema-v10+ Standard | Required row 19 | Required row 20 combines factual review and readiness approval |
+| Schema-v9 Quick | Slot 8 | Slot 9 combines factual review and readiness approval |
+| Schema-v9 Standard | Module 19 | Module 20 combines factual review and readiness approval |
 | Schema-v6–v8 Quick | Slot 8 | Legacy slot 9 review, slot 10 approval |
 | Schema-v7–v8 Standard / schema-v7 Deep | Module 19 | Legacy module 20 review, module 21 approval |
 | Deep `rpg_deep_v8` | Its design gate | Its single combined preparation acceptance |
@@ -554,7 +692,8 @@ approvals; preparation-only changes clear preparation approval. The current
 preparation approval must match the setup revision. New routes use
 `playbooks/preparation_review_v9.md`; never ask their player to approve unchanged
 preparation twice or write a phantom legacy completion row. Deep retains its
-manifest and ledger even in a schema-v9 workspace. Legacy and Companion routes
+manifest and ledger in schema-v9+ workspaces. Its schema-v10 Agent Seats decision
+does not retroactively become required for schema-v8/v9 ledgers. Legacy and Companion routes
 retain their existing final-summary behavior unless explicitly migrated.
 
 # Starter Bundles
@@ -636,11 +775,13 @@ Shared finalization order:
 
 1. verify the route's approval gate and frozen revision;
 2. draft-state preflight while not ready;
-3. final status/profile/readiness fields without advancing setup revision;
+3. candidate profiles at the applicable revision; non-Deep routes set complete/
+   ready without advancing it, while the Deep ledger remains not ready;
 4. serial approved projections at that revision;
 5. starting snapshot;
-6. one aggregate check;
-7. handoff only after zero errors.
+6. one aggregate check; the Deep ledger then atomically records its final ready gate;
+7. handoff only after zero errors, preserving historical setup evidence when
+   opening consumption or later play changes current truth.
 
 A substantive correction to a current reciprocity RPG returns to preparation
 review/approval, or to design review if design or Deep-pack truth changed.

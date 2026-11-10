@@ -1,0 +1,45 @@
+schema_version: 2
+profile_status: locked
+source_setup_revision: 12
+performance:
+  turn_protocol: balanced
+mechanics:
+  modules: []
+  resolution_grounding: fictional
+  inventory_tracking: abstract
+  time_tracking: coarse
+  travel_tracking: abstract
+  wound_tracking: narrative
+  dice_mode: judgment_only
+narration:
+  point_of_view: second
+  tense: present
+  camera: close
+  prose_density: lean
+  response_length: brief
+  option_prompting: natural
+  challenge_density: low
+  clue_density: balanced
+  dialogue_style: plain
+  pacing: deliberate
+  narrative_signature:
+    anchors: [ordinary practical detail, clear direct consequences, room for voluntary action]
+    avoid_habits: [automatic question endings, explanatory inner feelings]
+    interiority_policy: player_owned
+    sensory_focus: [sight]
+    dialogue_balance: balanced
+    humor: situational
+    emotional_distance: close
+  breather_frequency: generous
+  breather_exit_policy: player_led_with_established_triggers
+advancement:
+  cadence: none
+  presentation: none
+dashboard:
+  mode: off
+visuals:
+  mode: off
+world_voices:
+  mode: off
+agent_seats:
+  mode: off

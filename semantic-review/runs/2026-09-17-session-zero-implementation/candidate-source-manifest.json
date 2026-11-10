@@ -1,0 +1,389 @@
+{
+  "recorded_at": "2026-09-17T12:30:25.180910+00:00",
+  "base_commit": "2ed60778ed22a7e9983da126f2453759900c139b",
+  "candidate_kind": "uncommitted_working_tree",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "b2b707c77dff664c1ea4143985ffaf35e912f6232e395751441da612474ff9f4",
+      "bytes": 20706
+    },
+    {
+      "path": "START_HERE.md",
+      "sha256": "5e7a1aae6815b3a1bcce9846b6e566f2812539d7caf59577d443dc2b1f16ca7d",
+      "bytes": 2106
+    },
+    {
+      "path": "campaign/boundaries.md",
+      "sha256": "d3c919353d08c1dbb473dea7d05c167a719220cba975b9ea0aebc989a61d7565",
+      "bytes": 8057
+    },
+    {
+      "path": "campaign/first_session.md",
+      "sha256": "d4564bfbf9843365461043c97556314cd7f13fe1366adb21082197fdacbdf153",
+      "bytes": 6870
+    },
+    {
+      "path": "campaign/next_act_prep.md",
+      "sha256": "4b580916c5abe5813430159e99d14f6b37605eed40066def0c02581b2e3c7ca8",
+      "bytes": 4925
+    },
+    {
+      "path": "campaign/player.md",
+      "sha256": "cdb87ea2ea0c4844dba076d2d69c69070fc85faace77435bc1674f65440a17b9",
+      "bytes": 8600
+    },
+    {
+      "path": "campaign/player_ties.md",
+      "sha256": "a552bdb3ff41cf20e2f546ba0cbfe28529fc13c30459cc61a25284b62d619edb",
+      "bytes": 7500
+    },
+    {
+      "path": "campaign/session_brief.md",
+      "sha256": "60ff60c0d04ee4d8c657674db456dc5d490ffc05ef2190568c5a6eb36418f045",
+      "bytes": 4757
+    },
+    {
+      "path": "campaign/session_zero.md",
+      "sha256": "c4e167164f7074cf73d7de718a544f77a386251f9791eaa4083d3e7fa3164473",
+      "bytes": 29416
+    },
+    {
+      "path": "campaign/setup_profile.yaml",
+      "sha256": "283f7bd0545c74177b024114ca35066c8cd431038f4ba5c643d786d3956f2395",
+      "bytes": 2086
+    },
+    {
+      "path": "campaign/storytelling.md",
+      "sha256": "dce2be0b36eaaa4094d87dd690aa9e9c660cb489a103616e6ec98814d3cc3a98",
+      "bytes": 17852
+    },
+    {
+      "path": "docs/file-transactions.md",
+      "sha256": "748f008e60e682e29c427408965f89a4287fd2bcf79a88a854e868c1e070259e",
+      "bytes": 5455
+    },
+    {
+      "path": "docs/world-voices.md",
+      "sha256": "d5ed02e766fce91f0a06dc1f7e57cd089535846a67b783ef5b7acb4db1e29304",
+      "bytes": 9826
+    },
+    {
+      "path": "evaluation/README.md",
+      "sha256": "aac890ccba08dcd7815ec8cc6a6a51d32e601a5d0b59d4eba3ba1cfc740ac79d",
+      "bytes": 6844
+    },
+    {
+      "path": "evaluation/session_zero_handoff.json",
+      "sha256": "b351e569637004fd4c6272979da6baa6536db1f141948fcb8c2b1aa25dff1c7d",
+      "bytes": 12267
+    },
+    {
+      "path": "tests/test_deep_session_zero_v8_integration.py",
+      "sha256": "584606cd8f07d8ecbfd2d81ab11653fc93a1e3683fc28548d39021ef1965eabe",
+      "bytes": 55327
+    },
+    {
+      "path": "tests/test_deep_v8_distribution.py",
+      "sha256": "5186a6b17762d5f6875728ba0efc8157b9058e70f8866157a6be0e33bd320f6d",
+      "bytes": 8616
+    },
+    {
+      "path": "tests/test_file_transaction.py",
+      "sha256": "f48b0ff34663a9a79d39b42d297b19c822589fed0b2a4a4cc275686bcbdaa9d6",
+      "bytes": 20071
+    },
+    {
+      "path": "tests/test_session_zero_state_v8.py",
+      "sha256": "a97713e3123a8baf0346da6e245c0e72d84269dcbe0fd99e13ddddbda05ee94b",
+      "bytes": 37502
+    },
+    {
+      "path": "tests/test_setup_handoff_v10.py",
+      "sha256": "30b1eb3d8c991895929520e321ce718d0c851a4b1d4ae7d5fced29147fe50ea1",
+      "bytes": 6755
+    },
+    {
+      "path": "tests/test_setup_v10.py",
+      "sha256": "7f677cf56c7d9e672229be1ea847e9b93667e164f08aa6ee1e8bce03c1e905e1",
+      "bytes": 6663
+    },
+    {
+      "path": "tests/test_state_preflight_snapshot.py",
+      "sha256": "7b05ad3b3cbce18c9be47482c0a6b6bc857a877aa03e615986a6f4431756693d",
+      "bytes": 10892
+    },
+    {
+      "path": "tests/test_world_voices_handoff.py",
+      "sha256": "fd902a8f501bdfad977facc87d3b6fb1f2d2dcdfbe5918a62429cf3a57ec5ffc",
+      "bytes": 3890
+    },
+    {
+      "path": "tools/check_state.py",
+      "sha256": "8f83febb77d95fdea4053b2c048f776a8bbf2fca71a9b74a341e2a1c4fe296c7",
+      "bytes": 229366
+    },
+    {
+      "path": "tools/check_world_voices.py",
+      "sha256": "0812fe3b4cb3bbb239ed0809b1749478c42d0105f348720ecb2598b9380dfd35",
+      "bytes": 34251
+    },
+    {
+      "path": "tools/file_transaction.py",
+      "sha256": "fa58e0f9de880b109b5001cea9930eea88f775450a49a44c4e5a3292274e651c",
+      "bytes": 16457
+    },
+    {
+      "path": "tools/session_zero_state.py",
+      "sha256": "498e96f0a4fa58d1de41555e7a673b918ff5d6aadd3120841365eba4b5ee83a1",
+      "bytes": 123579
+    },
+    {
+      "path": "tools/snapshot.py",
+      "sha256": "17af636450605a505c658d2b433bc6d25f9d8d4b7407943319cada545efbf691",
+      "bytes": 10216
+    },
+    {
+      "path": "tools/verify_workspace.py",
+      "sha256": "56b5414d618fbd26c71c9b9b50bb737e5b247f3975921e270dfc84efa67a01a3",
+      "bytes": 84770
+    },
+    {
+      "path": "tools/world_voices.py",
+      "sha256": "85cd02630a9ec15afb238d3de1894c7e98b1fd30085c7dbb7661c53c5a344c71",
+      "bytes": 37357
+    },
+    {
+      "path": "workflows/distill/WORKFLOW.md",
+      "sha256": "e5eb8900132aad028bcc29243bc21f68ef80eb00417d8e3df56eb4fa916c3a6d",
+      "bytes": 39844
+    },
+    {
+      "path": "workflows/gm/WORKFLOW.md",
+      "sha256": "f1c980bbcb45659c0bfa1cc52bad93b2e8c37e26b26324036c058260a9cca56e",
+      "bytes": 17844
+    },
+    {
+      "path": "workflows/gm/playbooks/ooc_adjustment.md",
+      "sha256": "270084637c4cf5ada488b2d361e3028c715c27f048957fa743bfebec57d506d2",
+      "bytes": 5542
+    },
+    {
+      "path": "workflows/gm/playbooks/scene_arc_transition.md",
+      "sha256": "eb26bf7832add73e73dc75ba7963b96f61652daad81efd4734b50f9ab7ae2263",
+      "bytes": 15039
+    },
+    {
+      "path": "workflows/gm/playbooks/scene_entry_opening.md",
+      "sha256": "65e9682c0f319c03dfe424a8ae0b7053528dd7b2395135804b7532dec0cecc0d",
+      "bytes": 5276
+    },
+    {
+      "path": "workflows/reference/authority-map.md",
+      "sha256": "adaa41a17497b4e0f2e2e178263c2c3bdcb6b934e7ba30097694390b3c716942",
+      "bytes": 27105
+    },
+    {
+      "path": "workflows/reference/setup-contract.md",
+      "sha256": "df831f8de3ccc9c94b8a56eea3e3a9968f81afd296cb7f13bfc2fd839ccf1a56",
+      "bytes": 9629
+    },
+    {
+      "path": "workflows/worldbuild/WORKFLOW.md",
+      "sha256": "1df13c30100de33c5002fe60ce40cc41cd714086d60a7c9d0ba838433fed808e",
+      "bytes": 47166
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/01_north_star_authority.md",
+      "sha256": "52a4fdd5c58429f21c4352f652b225237beac3901a72c4158c1019391fc64a97",
+      "bytes": 2438
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/03_character_core.md",
+      "sha256": "40273213a24184f821319b47273b13429462df148b613d592334f423d3ed6d43",
+      "bytes": 2799
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/04_thin_world_kernel.md",
+      "sha256": "7ec47743eb6c32becdf4f5acafc2440ec024c752b0da9243663f0455dcf1edee",
+      "bytes": 3185
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/05_character_realization_mechanics.md",
+      "sha256": "f6cd28a6c7b3e62f86e6c5cab52f682db3cbf955247409596f57409aece01a1d",
+      "bytes": 3089
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/06_living_world_ecology.md",
+      "sha256": "4547dae13195823671e96541ca8ab493e459f11af54a91a2257136875993ec7d",
+      "bytes": 3456
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/07_runtime_experience_contract.md",
+      "sha256": "8f8731e4bfd275d93ed4608118f4516befccddf0799a3b0b754febbb651f53d1",
+      "bytes": 2668
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/08_reciprocity_campaign_horizon.md",
+      "sha256": "2827dcdc262bd8731dfc65af37398f3be1e04c2c5dbd859d5da7c2846b5c0a6b",
+      "bytes": 3552
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/09_first_act_preparation.md",
+      "sha256": "b4a1cb171e2c4425531ab478a2610fe46b1accce4d857533bf76eb41e88744ec",
+      "bytes": 6072
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/README.md",
+      "sha256": "911b80e05ea99ecd6f76ade754f1d0a09d896ed27ed79c9ad05d62c84206b990",
+      "bytes": 5225
+    },
+    {
+      "path": "workflows/worldbuild/deep_v8/manifest.json",
+      "sha256": "bf6cabfd322189898f60f4796129d11ee86b4309b8ef081122d5f5908be5364c",
+      "bytes": 26983
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/finalization.md",
+      "sha256": "d6079263be4a8bf8a9c347686ba0eac4e88c03feeb48dfaadb3a8cd592fa52f8",
+      "bytes": 14786
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/full_reference.md",
+      "sha256": "bd83d94e7aa8e37dd5ce03350eeb6d7afada6ef58c6ee4f284969ff53234f328",
+      "bytes": 81153
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/preparation_review_v9.md",
+      "sha256": "c596abe4394bf0609762b65e31098daa2ee0a372d77b780ac4f3fd701bcbdb23",
+      "bytes": 4345
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/rpg_quick.md",
+      "sha256": "639d334720bb0ecebe4a70f5cb6a8641850f0223e9a96bca4f2f82944760a51b",
+      "bytes": 25136
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/rpg_quick_v10.md",
+      "sha256": "edfb462b26a81ead5f6757ceeeae93b23aad060c6ed2b4b51346c7c8116d4d9a",
+      "bytes": 6251
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/rpg_quick_v9.md",
+      "sha256": "5a7286bcef4e16ade69ca91b6b319050fe783541513f5ad392b6e557e5c93c7f",
+      "bytes": 3475
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/rpg_standard_deep.md",
+      "sha256": "9bd922d5d0856f1b3852cc7c77a8fd62b71511fd436e1253685078693c36101c",
+      "bytes": 63013
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/rpg_standard_v10.md",
+      "sha256": "b03bbaa25723b64fe59dd2505007a86ea9904c499dc4b29d958deb57219e5c35",
+      "bytes": 6522
+    },
+    {
+      "path": "workflows/worldbuild/playbooks/rpg_standard_v9.md",
+      "sha256": "fd6df0bd3c33991bff98b4bc5d45a0a444957045d8d2040ad154219a8749a234",
+      "bytes": 3268
+    }
+  ],
+  "runtime_probe_files": [
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/active_cast.md",
+      "sha256": "dad8a24d133d09d1c9162981525d039a7ce60a58cf5c6ccdb7d09e0ba95ba148",
+      "bytes": 335
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/arc_closure.md",
+      "sha256": "494f550940993ff7d31eccb5ac00929c8672c282b4f3cdd5ff1e8623e9226bac",
+      "bytes": 225
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/boundaries.md",
+      "sha256": "59ef751f3069b3c779eb5a23b3884d9eb48c49b73a4b21bba7711726b3e5487d",
+      "bytes": 1115
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/characters/ece.md",
+      "sha256": "88f7b0ee3a5cffe4814891d27e9119aed8dbe253ee411764dd84a8f51580e04f",
+      "bytes": 650
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/characters/nehir.md",
+      "sha256": "326ffe876647704af474cdea1b58b9d584b4af4f6c98f2ceecdc39d6e8ad0ca0",
+      "bytes": 638
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/current_state.yaml",
+      "sha256": "44f2655540ea6e3ed4b2cf2fa6108994b1962b193d5d4e311001e9257fcfd62a",
+      "bytes": 1319
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/knowledge_boundaries.md",
+      "sha256": "9295953fd288be0b7995cd780a70746167598afe9c1a71f06e83701a66a4726e",
+      "bytes": 503
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/next_act_prep.md",
+      "sha256": "3a9a73d9c497cc1b5965a5aacf85bb7968807cfc69354c89e910e5b92115f6e0",
+      "bytes": 561
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/opening_brief.md",
+      "sha256": "c90c85fc1dbbc5bdc8c4f0a6aedf8668d211095b510a86a8241f9c6882b860d2",
+      "bytes": 220
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/places/public_workshop.md",
+      "sha256": "f3108b656dafed55bfb66b73d3bc17709ca87fea7a795d7d70201cbc0db8e1e3",
+      "bytes": 582
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/play_profile.yaml",
+      "sha256": "56c94a0f3999840b2ca3d6b01a2ddb49900bd3e15f9289d4fbb7b743df38595d",
+      "bytes": 1119
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/player.md",
+      "sha256": "9a443a2496bfa4198168af6b70c7934a18de31d0f376a2a8e2438a539bba0189",
+      "bytes": 1708
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/player_ties.md",
+      "sha256": "cb0555348bff2f7fa1bb597519f1f46c1c2077653898d8739546932ce94c92f7",
+      "bytes": 1049
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/relationship_map.md",
+      "sha256": "017904c8bffae5d11eab96863ded9bb09095bee248163c6eb41f51fe4b68889d",
+      "bytes": 342
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/session_brief.md",
+      "sha256": "e68afe671dc6cb270eb900515a68a58941952746a0fd8e0fb2533c246b22998c",
+      "bytes": 595
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/setup_profile.yaml",
+      "sha256": "9d22da2a12ea41cac9742824e2f097cd5a18709ea6a4143319b029899f221429",
+      "bytes": 210
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/storytelling.md",
+      "sha256": "828378fabb705a3fb9aaa36cde89f4032d606a80cbc0275f281007f61a271af5",
+      "bytes": 672
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/campaign/threads.md",
+      "sha256": "7a297cb581623d2f59282dbbbb53e0482604d56df5e6bc2f45d35dc815c3523d",
+      "bytes": 648
+    },
+    {
+      "path": "semantic-review/runs/2026-09-17-session-zero-implementation/runtime-probe/README.md",
+      "sha256": "c92adfe29735263d101ae966f829d0935a370adf96bde8c56c5ceed4dde061c3",
+      "bytes": 2830
+    }
+  ]
+}

@@ -18,6 +18,8 @@ def test_routed_runtime_files_are_self_contained_and_distributable() -> None:
     for source in sources:
         text = source.read_text(encoding="utf-8")
         for relative in re.findall(r"`((?:workflows|briefs|evaluation)/[^`\s]+\.(?:md|json))`", text):
+            if "<" in relative:  # a pattern such as `workflows/<name>/WORKFLOW.md`
+                continue
             assert (ROOT / relative).is_file(), (source.relative_to(ROOT), relative)
             assert distribution_path_allowed(relative), relative
 

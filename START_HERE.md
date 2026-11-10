@@ -12,7 +12,8 @@ maintainer files.
 1. If the workspace is still inside a ZIP archive, extract it into a new
    folder first.
 2. Open the extracted folder in Codex, Claude Code, or another compatible
-   agentic coding tool.
+   agentic coding tool. In Claude Code, accept the folder-trust prompt; see
+   [`docs/claude-code.md`](docs/claude-code.md).
 3. Start a new conversation in that workspace.
 4. Send exactly:
 
@@ -21,12 +22,16 @@ Start RePoG and guide me through setup.
 ```
 
 RePoG first asks whether you want an **RPG Campaign** or an **AI Companion**.
-It then asks whether you want Quick, Standard, or Deep setup.
+For a new RPG, it takes your short campaign idea first, then helps you explicitly
+choose Quick, Standard, or Deep. If you already supplied either answer, it keeps
+it instead of asking again. Companion keeps its existing depth-first setup.
 
-New RPG Quick uses 9 decision slots; Standard uses 20–29 decisions. Both end
-with one approval of the actual prepared campaign to lock and start. Decision
-slots may take more than one exchange. Existing campaigns retain their
-accepted setup version.
+Quick emphasizes essential choices and reviewing the GM's preparation; Standard
+designs the consequential alternatives together. Their internal completion maps
+are not quotas of questions. Both include design approval, then one approval of
+the actual prepared campaign to lock and start. Existing campaigns retain their
+accepted setup version. You can leave unneeded details open, pause, correct a
+choice, or ask to stop expanding without granting an unstated permission.
 
 RPG Deep uses nine dependency-gated stages: it establishes authority and
 research before the character/world loop, then builds the living world,

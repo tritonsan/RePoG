@@ -70,12 +70,15 @@ campaign/
   threads.md
   session_log.md
   rules.md
+  directives.md
+  glossary.md
   characters/
   places/
   factions/
   snapshots/
   visuals/
   dashboard/
+  .repog-runtime/
 ```
 
 The storage model is intentionally bounded and role-separated:
@@ -244,6 +247,9 @@ Mode rather than guessing.
   exposition, dialogue, openings, challenge density, and foreshadowing. It
   must not change profile values, knowledge ownership, or repository-wide
   authorship and causal guardrails.
+  Its Accepted Voice Evidence may retain a short accepted example/reference and
+  why it worked. It calibrates a fresh context without owning another profile or
+  making that sample's wording or paragraph shape mandatory.
 - `appearance_guide.md` owns campaign-wide appearance detail tiers, card
   structure, visual-continuity fields, and boundaries against invasive or
   spoiler-heavy description. It does not own a specific entity's appearance;
@@ -266,11 +272,21 @@ Mode rather than guessing.
   invent or alter player-authored interiority or history. `current_state.yaml`
   owns immediate condition and goal; enabled deterministic mechanics own their
   quantified values.
+  It also owns the accepted Player Experience Contract and thematic Change
+  Appetite, including directions to test and protected areas to leave alone.
+  Explicit ongoing player corrections may revise those directions; a current
+  goal, quiet turn, failure, or refused offer does not silently replace them.
+  Its `## Wishes` section holds the Player's long-term wishes as the
+  character's own aims; no NPC promise or scheduled event follows from them.
 - `player_ties.md` owns accepted RPG character integration: desired personal
   story, stable tie premises, linked issues, factions, faces, and places,
   personal pressures, and explicit backstory or do-not-use limits. It cannot
   invent an unapproved tie or secret history. `relationship_map.md` owns
   current relationship truth and `threads.md` owns live dramatic questions.
+  Keep evolving NPC work, availability, knowledge, relationship, and trajectory
+  details as references to their owners. Setup-era descriptions may remain
+  historical evidence but never a second current account. Reference limits
+  already owned by `player.md` and store only unique integration limits here.
 
 ### Current State, World Motion, and Transactions
 
@@ -382,6 +398,17 @@ Mode rather than guessing.
   profile selects resolution grounding and enabled modules, and
   `mechanics_state.json` owns enabled quantified state; this file cannot
   activate or silently replace either contract.
+- `directives.md` owns the Player's standing table rules: one row per lasting
+  OOC ruling, preference, or correction, with id, scope, source, and
+  `active`/`retired` status. A change whose kind contains `directive` must
+  mutate it. Directives shape table behavior only; they create no fiction and
+  never override `AGENTS.md`, safety boundaries, or a locked profile. A row
+  with Scope `check` whose Directive begins `acknowledge <rule_id>` turns the
+  matching full-check warnings into info; it never covers an error.
+- `glossary.md` owns how recurring terms render in the play language: titles
+  and honorifics, units, place names, and address forms, with variants to
+  avoid. It governs wording only; who holds a title, where a place lies, and
+  who knows what stay with their owners.
 - `characters/`, `places/`, and `factions/` own readable per-entity stable
   identity, baseline agency and routine, capabilities and limits, appearance,
   behavior, and reference links. A character note may own that NPC's personal
@@ -390,7 +417,10 @@ Mode rather than guessing.
   knowledge, relationship, domain trajectory, or event history. The primary
   Companion note additionally owns the stable fictional character and bounded
   Hot Character Kernel, not current condition, user memory, or relationship
-  context.
+  context. Every record's content is written in the records language
+  (`play_profile.yaml.narration.records_language`, or the play language when
+  it is `same`); file names, keys, headings, labels, table headers, enum
+  values, and ids keep the template's form.
 
 ### Assets, Derived Views, and Recovery
 
@@ -413,6 +443,14 @@ Mode rather than guessing.
   local clock, previously shared status, and player-safe shared cards. It must
   not expose private facts, user memory, internal relational context, scores,
   or labels, and it is never a source of truth.
+- `.repog-runtime/` holds runtime working files and is never authority:
+  scene-capsule state, presentation-lint findings and history (counts, short
+  snippets, and the prompt's language code, never full text), roll receipts
+  and their reread rows, the last turn's order (`order_last.json`), the notes
+  due for curation (`curation_due.json`), and staged curation with its applied
+  and rejected records. The writer checks receipts when a commit cites a roll
+  and applies staged curation only to unchanged files; deleting the folder
+  loses no campaign truth.
 
 Example rows, placeholder values, allowed-value menus, comments, and blank
 template sections are scaffolding, not accepted campaign truth. Remove or

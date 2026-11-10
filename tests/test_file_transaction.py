@@ -3,17 +3,22 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 import pytest
 
 import file_transaction as tx
 import agent_seat
+import check_state
 import session_zero_state
 import snapshot
 import world_voices
+
+from test_deep_session_zero_v8_integration import manifest, ready_deep_seed, ready_deep_campaign
 
 
 TOOLS = Path(__file__).resolve().parents[1] / "tools"
@@ -154,6 +159,181 @@ def test_batch_create_delete_and_exception_rollback(tmp_path):
             tx.commit_files(tmp_path, {"new.md": b"wrong", "another.md": b"created"}, validate_applied=fail_validation)
     assert (tmp_path / "new.md").read_bytes() == b"new"
     assert not (tmp_path / "another.md").exists()
+
+
+def _journal_findings(root):
+    findings = []
+    check_state._check_rpg_transaction_journal(root, findings)
+    return findings
+
+
+def _validate_full(root):
+    result = check_state.check_campaign(root, scope="full")
+    if result["error_count"]:
+        raise ValueError(result["findings"])
+
+
+def test_full_check_accepts_own_applied_maintenance_batch(ready_deep_campaign):
+    root = ready_deep_campaign
+    profile = (root / "play_profile.yaml").read_bytes()
+    before_state = (root / "current_state.yaml").read_bytes()
+    before_log = (root / "session_log.md").read_bytes()
+    assert b"response_length: dynamic" in profile
+    changes = {
+        "play_profile.yaml": profile.replace(b"response_length: dynamic", b"response_length: brief"),
+        "boundaries.md": (root / "boundaries.md").read_bytes() + b"\nUse short narration from now on.\n",
+    }
+    with tx.campaign_lock(root):
+        tx.recover(root)
+        tx.commit_files(root, changes, validate_applied=lambda: _validate_full(root))
+    assert all((root / path).read_bytes() == payload for path, payload in changes.items())
+    assert (root / "current_state.yaml").read_bytes() == before_state
+    assert (root / "session_log.md").read_bytes() == before_log
+    _validate_full(root)
+
+
+def test_full_check_invalid_profile_rolls_back_complete_batch(ready_deep_campaign):
+    root = ready_deep_campaign
+    before = {name: (root / name).read_bytes() for name in ("play_profile.yaml", "boundaries.md")}
+    seen = []
+
+    def validate():
+        report = check_state.check_campaign(root, scope="full")
+        seen.extend(report["findings"])
+        assert report["error_count"] > 0
+        assert not any(item["rule"] == "rpg_transaction_recovery_required" for item in seen)
+        raise ValueError("invalid profile candidate")
+
+    with tx.campaign_lock(root):
+        tx.recover(root)
+        with pytest.raises(tx.FileTransactionError) as failure:
+            tx.commit_files(root, {
+                "play_profile.yaml": before["play_profile.yaml"].replace(b"response_length: dynamic", b"response_length: invalid"),
+                "boundaries.md": before["boundaries.md"] + b"\nCandidate boundary.\n",
+            }, validate_applied=validate)
+        assert failure.value.category == "commit_rolled_back"
+    assert seen
+    assert all((root / path).read_bytes() == payload for path, payload in before.items())
+    _validate_full(root)
+
+
+def test_validation_exception_is_scoped_to_callback_thread_and_process(tmp_path):
+    (tmp_path / "deleted.md").write_bytes(b"delete this")
+    journals = []
+
+    def apply(path, payload):
+        tx.atomic_bytes(path, payload)
+        # Even after the last write, being inside commit_files or holding the
+        # lock does not grant the callback's temporary validation exception.
+        assert _journal_findings(tmp_path)
+
+    def validate():
+        journal = next((tmp_path / tx.TRANSACTION_DIR / tx.JOURNAL_DIR).iterdir())
+        journals.append(journal)
+        assert tx.is_applied_validation_journal(tmp_path, journal)
+        assert not _journal_findings(tmp_path)
+        threaded = []
+        worker = threading.Thread(target=lambda: threaded.extend(_journal_findings(tmp_path)))
+        worker.start()
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        assert threaded and threaded[0]["rule"] == "rpg_transaction_recovery_required"
+        result = child(tmp_path, '''import check_state
+findings=[]
+check_state._check_rpg_transaction_journal(root, findings)
+print(findings[0]["rule"])
+''')
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == "rpg_transaction_recovery_required"
+
+    with tx.campaign_lock(tmp_path):
+        tx.commit_files(tmp_path, {"a.md": b"candidate", "deleted.md": None}, apply_file=apply, validate_applied=validate)
+        assert not tx.is_applied_validation_journal(tmp_path, journals[0])
+
+
+@pytest.mark.parametrize("kind", ["other_batch", "legacy"])
+def test_validation_callback_does_not_hide_unrelated_journals(tmp_path, kind):
+    foreign = None
+
+    def validate():
+        nonlocal foreign
+        storage = tmp_path / tx.TRANSACTION_DIR
+        own = next((storage / tx.JOURNAL_DIR).iterdir())
+        if kind == "other_batch":
+            foreign = own.with_name("f" * 32)
+            shutil.copytree(own, foreign)
+        else:
+            foreign = storage / ("e" * 24)
+            foreign.mkdir()
+        assert tx.is_applied_validation_journal(tmp_path, own)
+        findings = _journal_findings(tmp_path)
+        assert findings and findings[0]["rule"] == "rpg_transaction_recovery_required"
+        raise ValueError("unrelated journal")
+
+    with tx.campaign_lock(tmp_path), pytest.raises(tx.FileTransactionError) as failure:
+        tx.commit_files(tmp_path, {"a.md": b"candidate"}, validate_applied=validate)
+    assert failure.value.category == "commit_rolled_back"
+    assert foreign is not None and foreign.exists()
+    assert not (tmp_path / "a.md").exists()
+
+
+@pytest.mark.parametrize("corruption", ["payload", "manifest", "unapplied_target"])
+def test_validation_callback_rechecks_own_journal_and_candidate_bytes(tmp_path, corruption):
+    (tmp_path / "a.md").write_bytes(b"before")
+
+    def validate():
+        own = next((tmp_path / tx.TRANSACTION_DIR / tx.JOURNAL_DIR).iterdir())
+        if corruption == "payload":
+            (own / "00000.before").write_bytes(b"corrupt")
+        elif corruption == "manifest":
+            path = own / "manifest.json"
+            manifest = json.loads(path.read_bytes())
+            manifest["unexpected"] = True
+            path.write_text(json.dumps(manifest))
+        else:
+            (tmp_path / "a.md").write_bytes(b"before")
+        findings = _journal_findings(tmp_path)
+        assert findings and findings[0]["rule"] == "rpg_transaction_recovery_required"
+        raise ValueError("invalid active journal")
+
+    with tx.campaign_lock(tmp_path), pytest.raises(tx.FileTransactionError) as failure:
+        tx.commit_files(tmp_path, {"a.md": b"candidate"}, validate_applied=validate)
+    assert failure.value.category == ("recovery_required" if corruption == "payload" else "commit_rolled_back")
+
+
+@pytest.mark.parametrize("error_type", [ValueError, KeyboardInterrupt])
+def test_callback_validation_context_cleared_on_all_exits(tmp_path, error_type):
+    journals = []
+
+    def validate():
+        own = next((tmp_path / tx.TRANSACTION_DIR / tx.JOURNAL_DIR).iterdir())
+        journals.append(own)
+        assert not _journal_findings(tmp_path)
+        raise error_type("callback interrupted")
+
+    with tx.campaign_lock(tmp_path):
+        expected = tx.FileTransactionError if error_type is ValueError else KeyboardInterrupt
+        with pytest.raises(expected):
+            tx.commit_files(tmp_path, {"a.md": b"candidate"}, validate_applied=validate)
+        assert not tx.is_applied_validation_journal(tmp_path, journals[0])
+        if error_type is KeyboardInterrupt:
+            assert _journal_findings(tmp_path)
+            assert len(tx.recover(tmp_path)) == 1
+        assert not (tmp_path / "a.md").exists()
+
+
+def test_process_exit_during_validation_still_requires_recovery_under_lock(tmp_path):
+    (tmp_path / "a.md").write_bytes(b"before")
+    result = child(tmp_path, '''import file_transaction as tx
+with tx.campaign_lock(root):
+    tx.commit_files(root, {"a.md": b"candidate"}, validate_applied=lambda: os._exit(75))
+''')
+    assert result.returncode == 75, result.stderr
+    with tx.campaign_lock(tmp_path):
+        assert (tmp_path / "a.md").read_bytes() == b"candidate"
+        assert _journal_findings(tmp_path)
+        assert len(tx.recover(tmp_path)) == 1
+    assert (tmp_path / "a.md").read_bytes() == b"before"
 
 
 @pytest.mark.parametrize("path", ["../escape.md", "a/../escape.md", "/absolute.md", "C:/drive.md", "nested:stream.md", ".repog-transactions/evil", "snapshots/old.md"])

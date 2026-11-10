@@ -43,6 +43,23 @@ of an unstated risk. `shared_when_invited` permits interior material only when
 the player asks for or establishes it. `guided` permits agreed prompts and
 suggestions, not irreversible decisions made for the player.
 
+## Accepted Voice Evidence
+
+Keep a short accepted sample or precise reference and why its behavior worked,
+when available. This is calibration evidence, not another selector authority;
+the locked profile and boundaries govern. Existing campaigns need no invented
+sample or migration to use it.
+
+- Accepted sample or evidence reference:
+- What worked in the Player's terms:
+- Relevant profile selectors and Good/Bad GM Behavior owner references:
+- Rejected habit illustrated, if any:
+
+On a fresh context or an actual voice mismatch, read this evidence and apply its
+behavior to the current function: dialogue, discovery, or causal result. Do not
+copy its wording, paragraph count, or ending. Calibration uses the existing
+preparation review when needed, never an extra sample quota or approval round.
+
 ## Option Prompting Policy
 
 Default: no menu prompts.
@@ -247,7 +264,9 @@ style. `style_state.json` retains the recent global ring plus up to eight named
 character voices with up to four fingerprints each; it stores no full dialogue.
 Named-voice samples survive intervening narrator turns, while least recently
 recorded voices eventually expire. Reload the character note after a long absence.
-Use this at the selected sampled/distill cadence, never as a gate on every turn.
+Use this at the selected sampled/distill cadence, and only with
+`runtime.presentation_lint: off` (with the lint on, its history is the
+repetition memory), never as a gate on every turn.
 Surface repetition warnings are prompts for judgment, not measures of literary
 quality. Deliberate motifs and shared faction phrases may be worth retaining.
 Do not add length, metaphors, threats, or gestures just to remove a warning.

@@ -27,6 +27,7 @@ JOURNAL_DIR = "files"
 LOCK_FILE = ".writer.lock"
 MAX_TARGETS = 12_000  # Includes bounded World Voices projection documents.
 _HELD = threading.local()
+_VALIDATING = threading.local()
 _HASH = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -276,6 +277,32 @@ def _validated_journal(root: Path, journal: Path) -> tuple[dict, list[tuple[Path
     return manifest, targets
 
 
+def is_applied_validation_journal(root: Path, journal: Path) -> bool:
+    """Recognize only this thread's fully applied ``validate_applied`` batch.
+
+    Holding a writer lock alone grants no exception. The in-memory context is
+    scoped to the callback and process; interrupted or unrelated journals stay
+    pending. Recheck both stored payloads and every live candidate on each use.
+    """
+    context = getattr(_VALIDATING, "journal", None)
+    if context is None:
+        return False
+    process_id, expected_root, expected_journal, expected_manifest = context
+    root = _root(root)
+    if os.getpid() != process_id or root != expected_root or Path(journal) != expected_journal:
+        return False
+    _require_lock(root)
+    _internal(root, JOURNAL_DIR)
+    manifest, targets = _validated_journal(root, journal)
+    if _json_bytes(manifest) != expected_manifest:
+        raise FileTransactionError("recovery_required", "active validation journal changed independently")
+    for target, _, after in targets:
+        current = target.read_bytes() if target.exists() else None
+        if current != after:
+            raise FileTransactionError("recovery_required", "active validation batch is not fully applied")
+    return True
+
+
 def recover(root: Path, *, allow_legacy: bool = False) -> list[str]:
     root = _root(root)
     _require_lock(root)
@@ -344,7 +371,12 @@ def commit_files(
         for _, target, _, after in targets:
             (apply_file or atomic_bytes)(target, after)
         if validate_applied is not None:
-            validate_applied()
+            previous = getattr(_VALIDATING, "journal", None)
+            _VALIDATING.journal = (os.getpid(), root, journal, _json_bytes(manifest))
+            try:
+                validate_applied()
+            finally:
+                _VALIDATING.journal = previous
         atomic_bytes(journal / "manifest.json", _json_bytes({**manifest, "status": "committed"}))
     except Exception as exc:
         try:

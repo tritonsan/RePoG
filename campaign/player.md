@@ -15,6 +15,12 @@ Who the character is in one clear playable sentence.
 What playing this character should let the Player experience. Keep this
 specific enough to guide preparation without predetermining choices.
 
+This is the accepted experience owner, not an inferred interest score. The GM
+reads its restrictions on a fresh context and its positive directions when
+framing scenes or opportunities. Change it from explicit Player direction, not
+from one refused offer, failure, or quiet scene. The current in-fiction goal
+belongs in `current_state.yaml.player.current_goal`.
+
 - Desired player fantasy:
 - Activities the Player wants spotlighted:
 - Decisions the Player wants to own:
@@ -98,6 +104,17 @@ arbitrary earlier or later moment.
 - What the character is already doing about it:
 - What happens emotionally or practically if they wait:
 
+## Wishes
+
+The Player's long-term wishes for the character, recorded as the character's
+own aims: a ship of their own, a name the world knows, a debt finally repaid.
+Record each in the Player's words when they say it, in or out of character,
+with the revision it arrived at. A wish is never an NPC promise, a scheduled
+event, or a guarantee. It tells the GM which openings the world may offer, and
+every NPC's will stays their own.
+
+- Wish:
+
 ## Social Position And World Centrality
 
 Describe how the character currently belongs—or does not belong—without making
@@ -138,6 +155,10 @@ Which parts of this character the campaign should test, and which it should leav
 alone. This is pressure direction, not permission: how growth is paced and
 presented belongs to the progression policy, and permission for permanent change
 is inherited from the accepted consequence stance.
+
+Protected parts remain available in the GM's compact context. Desired tests guide
+relevant preparation; they are invitations to opportunities and counterplay, not
+required scenes or predetermined growth. A narrowed limit applies immediately.
 
 - Parts of the character the Player wants tested:
 - Parts that must not be touched—a thematic limit, not a content boundary:

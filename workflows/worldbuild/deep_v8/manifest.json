@@ -114,6 +114,11 @@
     }
   },
   "structured_contracts": {
+    "agent_seats": {
+      "required_from_setup_schema": 10,
+      "decision_id": "07_agent_seats",
+      "modes": ["off", "on_demand"]
+    },
     "creation_authority": {
       "decision_id": "01_creation_authority",
       "modes": {
@@ -156,6 +161,10 @@
         "not_needed",
         "approved",
         "declined"
+      ],
+      "npc_power_scales": [
+        "closed",
+        "region_anchored_open"
       ]
     },
     "topology": {
@@ -842,6 +851,15 @@
           "owner_refs": [
             "play_profile",
             "visual_policy"
+          ]
+        },
+        {
+          "id": "07_agent_seats",
+          "required_from_setup_schema": 10,
+          "critical": true,
+          "defer_allowed": false,
+          "owner_refs": [
+            "play_profile"
           ]
         },
         {

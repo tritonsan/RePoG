@@ -16,12 +16,23 @@ new location, or a deliberate scene reframe. Do not load it for every turn.
   identified campaign, `Opening act id` must match the current active Compass
   before an opening is activated/narrated. Consumed older openings are history,
   not a reason to reuse an old Compass or rewrite its archived outcome.
+- For a newly framed scene, consult the GM spine's experience owners and the
+  relevant character–world tie references. At a fresh-context opening/resume,
+  recover protected limits from their owners even if the brief omitted a pointer.
+  Read `storytelling.md` / Accepted Voice Evidence when restoring the selected
+  voice or resolving a mismatch; examples calibrate behavior, not reusable lines.
 
 ## Frame The Scene
 
 Choose the scene mode before drafting and combine:
 
 `baseline routine + scene mode + current disruption + natural presence + arrival/action`
+
+Let an accepted activity or test direction influence the affordances this actual
+place can offer. Consult the place/person/domain owner before using a tie's
+reference; preparation rationale is not current presence, knowledge, or pressure.
+No scene owes a preference showcase. Preserve ordinary life, the protected
+character areas, and useful space unrelated to the prepared intersection.
 
 Establish only what the character can perceive or already knows:
 

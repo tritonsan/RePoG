@@ -1,0 +1,15 @@
+C:\Users\tekes\AppData\Local\Programs\Python\Python310\lib\site-packages\pytest_asyncio\plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 14%]
+........................................................................ [ 29%]
+...............................s........................................ [ 44%]
+.........................................................s.............. [ 59%]
+........................................................................ [ 74%]
+........................................................................ [ 88%]
+......................................................                   [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_file_transaction.py:350: host does not grant symlink creation
+SKIPPED [1] tests\test_narrative_memory.py:252: Host cannot create symbolic links
+484 passed, 2 skipped in 109.71s (0:01:49)

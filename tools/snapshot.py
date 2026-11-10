@@ -12,7 +12,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from file_transaction import FileTransactionError, JOURNAL_DIR, LOCK_FILE, campaign_lock
+from file_transaction import FileTransactionError, JOURNAL_DIR, LOCK_FILE, campaign_lock, target_path
 
 
 def _slug(value: str) -> str:
@@ -86,6 +86,50 @@ def _snapshot_identity(campaign_path: Path) -> dict[str, object]:
         "setup_status": str(setup.get("status", "")).strip(),
         "experience_mode": experience_mode,
     }
+
+
+def validate_snapshot_files(manifest_path: Path, manifest: dict) -> str | None:
+    """Verify the immutable copy, never equality with the evolving campaign.
+
+    The caller decides whether pre-hash legacy manifests remain admissible.
+    This is an integrity check, not a signature or external trust attestation.
+    """
+    records = manifest.get("file_records")
+    files = manifest.get("files")
+    if not isinstance(records, list) or not records or not isinstance(files, list):
+        return "Snapshot requires its copied file list and hash records."
+    paths: list[str] = []
+    root = manifest_path.parent
+    try:
+        for record in records:
+            if not isinstance(record, dict) or set(record) != {"path", "size", "sha256"}:
+                return "Snapshot file record is malformed."
+            relative, target = target_path(root, record["path"])
+            if relative == "snapshot_manifest.json":
+                return "Snapshot cannot include its own manifest."
+            payload = target.read_bytes()
+            if type(record["size"]) is not int or record["size"] != len(payload):
+                return f"Snapshot file size changed: {relative}"
+            if record["sha256"] != hashlib.sha256(payload).hexdigest():
+                return f"Snapshot file digest changed: {relative}"
+            paths.append(relative)
+        if len(paths) != len(set(paths)) or files != paths:
+            return "Snapshot copied file list does not match its unique records."
+        actual = {p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()}
+        if actual != set(paths) | {"snapshot_manifest.json"}:
+            return "Snapshot contains missing or unrecorded files."
+        digest = "sha256:" + hashlib.sha256(
+            json.dumps(records, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        if manifest.get("content_digest") != digest:
+            return "Snapshot record digest changed."
+        copied_identity = _snapshot_identity(root)
+        if any(type(manifest.get(key)) is not type(value) or manifest.get(key) != value
+               for key, value in copied_identity.items()):
+            return "Snapshot identity does not match its copied setup and state."
+    except (OSError, ValueError, TypeError, FileTransactionError) as exc:
+        return f"Snapshot files cannot be verified: {exc}"
+    return None
 
 
 def _create_snapshot_locked(campaign_path: Path, label: str) -> dict:

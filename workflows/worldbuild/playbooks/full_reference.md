@@ -1,11 +1,17 @@
 # Worldbuild Full Reference
 
-Version note: schema-v9+ Quick/Standard use the routed `rpg_quick_v9.md` and
+Version note: schema-v10+ Quick/Standard use `rpg_quick_v10.md` and
+`rpg_standard_v10.md`, required completion areas instead of a numeric quota,
+and one combined actual-preparation review/approval. Schema-v9 uses `rpg_quick_v9.md` and
 `rpg_standard_v9.md` playbooks: nine Quick slots, 20 Standard modules/20–29
 content decisions, and one combined actual-preparation review/approval. The
 legacy ten-slot/21-module sections below describe preserved older routes only.
 Deep keeps its `rpg_deep_v8` flow. This cold reference does not override the
 selected versioned playbook.
+The active router also supersedes historical inference/detail-quota language
+below: preserve unknown protected facts, distinguish rejected from unselected
+content, and prepare detail for causal need. Never apply old prose to bypass
+the selected version's explicit permissions or readiness contract.
 
 > Cold design reference preserving the pre-router workflow in full. Do not
 > load this file for an ordinary Session 0 turn. The compact router and
@@ -109,8 +115,9 @@ the Player explicitly approves migration.
 - An inherited decision is never re-asked or quietly weakened; a requested
   change is a revision of its owning module.
 - Ask the content boundary alone, never inside a card, using the same standard
-  categories in every route and setting, with open/fade/avoid per category and
-  "everything open" as a real answer. Say both guarantees: a limit may be added
+  rows in every route and setting as `content_boundaries.md` sets them: two
+  fixed rows, each row's own options, and "everything at its most open" as a
+  real answer. Say both guarantees: a limit may be added
   at any time including mid-play, and adding one is never a cost. A bare "is
   there anything?" is not enough, since silence would be recorded as consent.
 - Keep authorship breadth and consequence weight independent, and settle
@@ -488,7 +495,7 @@ progress only:
 | Profile | Cold distill | Validation | Dashboard | Style review |
 | --- | --- | --- | --- | --- |
 | `fast` | `scene_checkpoint_or_5_durable` | `full_on_distill` | `scene_and_major_visible_change` | `sampled_and_distill` |
-| `balanced` | `scene_checkpoint_or_3_durable` | `full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
+| `balanced` | `scene_checkpoint_or_5_durable` | `full_on_distill` | `every_visible_change` | `every_2_durable_and_distill` |
 | `maximum_continuity` | `every_durable` | `full_each_durable` | `every_visible_change` | `every_durable` |
 
 Use `exceptional_only` latency notices by default. This gives a brief OOC time
@@ -1118,7 +1125,7 @@ Ask how the character connects to:
 - one or more faces or places;
 - a personal pressure, debt, secret, rival, patron, mentor, family tie, or
   companion;
-- things Codex must not invent from the character's past.
+- things the GM must not invent from the character's past.
 
 If the Designer wants a companion or close relation in depth, create that NPC
 with the same seriousness as the player character: appearance card,

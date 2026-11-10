@@ -455,7 +455,11 @@ def migrate(campaign_path: Path, *, apply: bool = False) -> dict[str, Any]:
         elif companion_id:
             review.append(f"characters/: locate the primary companion note for {companion_id}")
 
-        template_view = Path(__file__).resolve().parent.parent / "campaign" / "companion_view"
+        engine = Path(__file__).resolve().parent.parent
+        # A plugin install keeps the blank campaign under templates/campaign.
+        template_view = engine / "templates" / "campaign" / "companion_view"
+        if not template_view.is_dir():
+            template_view = engine / "campaign" / "companion_view"
         for relative in VIEW_FILES:
             source = template_view / relative
             target = campaign / "companion_view" / relative

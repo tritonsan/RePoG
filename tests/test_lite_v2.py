@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -167,6 +168,13 @@ def test_relationship_graph_rejects_duplicate_current_pair(campaign: Path) -> No
 
 
 def test_stale_session_brief_and_due_domain_are_warnings(campaign: Path) -> None:
+    # A lagging brief is reported (as info) only past STALE_INFO_LAG revisions.
+    state = campaign / "current_state.yaml"
+    text = state.read_text(encoding="utf-8")
+    revision = int(re.search(r"continuity_revision: (\d+)", text).group(1))
+    if revision - 1 <= check_state.STALE_INFO_LAG:
+        text = text.replace(f"continuity_revision: {revision}", f"continuity_revision: {check_state.STALE_INFO_LAG + 2}", 1)
+        state.write_text(text, encoding="utf-8")
     _write(campaign / "session_brief.md", "# Session Brief\n\nPrepared from revision: 1\n")
     _write(campaign / "world_dynamics.md", "# World Dynamics\n\n## Active Domains\n- Due: yes\n")
     rules = _rules(check_state.check_campaign(campaign))

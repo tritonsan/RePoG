@@ -56,7 +56,14 @@ increase the count. A value mechanically entailed by an accepted answer is not
 an inferred default either; only a coordinator choice among plausible ordinary
 alternatives receives a stable label here.
 
-Schema-v9 Quick and Standard use design approval followed by one actual
+Schema-v10 Quick/Standard use the required status rows below, with no question
+quota. Keep `question_target` blank; the number of unique accepted consequential
+decisions is only progress/fatigue information. A required area locks when its
+consequential choices are resolved and owners written; ordinary subordinate
+default/defer records do not stand in for missing consent. Both explicit reviews
+remain required. Schema-v9 Quick and Standard retain their numeric contracts.
+
+Schema-v9+ Quick and Standard use design approval followed by one actual
 preparation review/approval (Quick slots 8/9; Standard modules 19/20).
 
 Legacy RPG reciprocity routes use two revision-bound approvals. Schema-v6–v8
@@ -77,6 +84,94 @@ separate readiness go/no-go. Schema-v8 Deep combines those functions in its
 second and final Player approval: show the audited preparation once and ask the
 Player to request a correction or `lock and start`. No route may introduce new
 campaign truth during readiness approval.
+
+## Interview Resume
+
+This is a short navigation aid, not a transcript or another truth owner. Link
+accepted choices to their owners. For early answers whose stage cannot yet
+write its owner, keep the explicit answer and its dependency here; do not treat
+an unaccepted suggestion as a decision or bypass a Deep prerequisite.
+
+- Current player-facing section: not started
+- Unresolved consequential decision: none
+- Pending proposal or uncertainty: none
+- Early answer awaiting its dependency: none
+- Next prerequisite: explicit experience selection
+- Interview control: active
+
+Schema-v10+ RPG may capture a short premise here before explicit depth selection.
+This is non-terminal intake: no decision count, setup revision, or profile lock
+changes until the selected route records it at its owning decision boundary.
+Reuse the supplied answer without asking it again, including when Deep is chosen.
+
+"Enough" stops optional expansion without supplying missing consent or changing
+depth. "Pause" stops new questions; resume from this note without re-asking
+accepted decisions. An explicit rejection belongs in its existing palette,
+boundary, or experience owner with its scope, not in a dormant-candidate list.
+
+## RPG Quick v10 Required Decision Status
+
+Use only for schema-v10+ RPG Quick. These are required coverage areas, not nine
+questions. Each remains `open` until its accepted owners and consequential
+choices are resolved, then becomes `locked`. Before row 8 approval, rows 1–7
+must be locked. Row 9 requires accepted row 8 and actual prepared truth. Numeric
+count is never a substitute. All inactive route blocks remain open.
+
+- 1. Campaign Promise And Player Fantasy: open
+- 2. Agency, Authorship, And Boundaries: open
+- 3. Character Identity, Current Desire, And Why Now: open
+- 4. Competence, Limitation, And Social Position: open
+- 5. Play And System Contract: open
+- 6. Presentation Contract: open
+- 7. Character–World Relationship Pattern: open
+- 8. Reciprocity Design Review: open
+- 9. Preparation Review And Approval: open
+
+### Quick v10 Approval References
+
+- Design direction approved revision: null
+- Preparation materialized while ready_for_play false: no
+- Integrated preparation reviewed player-safe: no
+- Preparation approved revision: null
+- Approval invalidation notes:
+
+## RPG Standard v10 Required Decision Status
+
+Use only for schema-v10+ RPG Standard. These twenty coverage areas are not a
+question quota. Each becomes `locked` only when its consequential choices and
+accepted owners are resolved. Rows 1–18 must be locked before row 19 approval;
+row 20 requires that design acceptance and actual prepared truth. Ordinary
+subdetail may be visibly defaulted/deferred; a required area or explicit consent
+cannot be skipped that way. All inactive route blocks remain open.
+
+- 1. Campaign Promise And Player Fantasy: open
+- 2. Research Need And Source Boundary: open
+- 3. Agency, Authorship, And Content Boundaries: open
+- 4. Character Identity, Current Desire, And Why Now: open
+- 5. Competence, Limitation, Social Position, And Change Appetite: open
+- 6. Play And System Contract: open
+- 7. Presentation And Visual Contract: open
+- 8. Canon Policy: open
+- 9. Palette: open
+- 10. World Truths And Operating Model: open
+- 11. Scale, Everyday Life, Access, And Routes: open
+- 12. Independent Issues And World Dynamics: open
+- 13. Factions And Institutions: open
+- 14. Faces, Places, And Independent Relationships: open
+- 15. Progression And Rewards: open
+- 16. Character–World Reciprocity Pass: open
+- 17. Starting Situation Design: open
+- 18. Continuity, Ownership, And Preparation Contract: open
+- 19. Reciprocity Design Review: open
+- 20. Preparation Review And Approval: open
+
+### Standard v10 Approval References
+
+- Design direction approved revision: null
+- Preparation materialized while ready_for_play false: no
+- Integrated preparation reviewed player-safe: no
+- Preparation approved revision: null
+- Approval invalidation notes:
 
 ## RPG Quick v9 Decision Slot Status
 
@@ -224,15 +319,15 @@ newer setup revision.
 
 ### Deep v8 Extensions
 
-- `character_interior`: not_applicable
-- `world_fabric`: not_applicable
-- `mechanics_detail`: not_applicable
-- `location_network`: not_applicable
-- `faction_information`: not_applicable
-- `group`: not_applicable
-- `character_embedding`: not_applicable
-- `advancement_detail`: not_applicable
-- `campaign_architecture`: not_applicable
+- `character_interior`: not_applicable / not_applicable
+- `world_fabric`: not_applicable / not_applicable
+- `mechanics_detail`: not_applicable / not_applicable
+- `location_network`: not_applicable / not_applicable
+- `faction_information`: not_applicable / not_applicable
+- `group`: not_applicable / not_applicable
+- `character_embedding`: not_applicable / not_applicable
+- `advancement_detail`: not_applicable / not_applicable
+- `campaign_architecture`: not_applicable / not_applicable
 
 ### Defaults And Deferrals
 
@@ -349,7 +444,7 @@ Status terms:
 
 - `locked`: decided and safe to use.
 - `open`: still needs a Designer answer.
-- `defaulted`: Codex chose a coherent default because the Designer allowed it.
+- `defaulted`: RePoG chose a coherent default because the Designer allowed it.
 - `defer`: intentionally left for play to discover.
 - `inactive`: belongs to the unselected RPG/Companion experience.
 - `locked_with_open_questions`: safe at the current scale, with named limits

@@ -206,7 +206,8 @@ def test_distill_marker_resets_persistence(campaign: Path) -> None:
 
 def test_hot_scope_skips_cold_freshness_warnings(campaign: Path) -> None:
     _select_fast(campaign)
-    _set_pending_revisions(campaign, 1)
+    # A lagging brief is reported (as info) only past STALE_INFO_LAG revisions.
+    _set_pending_revisions(campaign, check_state.STALE_INFO_LAG + 1)
     hot_rules = _rules(check_state.check_campaign(campaign, scope="hot"))
     full_rules = _rules(check_state.check_campaign(campaign, scope="full"))
     assert "session_brief_stale" not in hot_rules
