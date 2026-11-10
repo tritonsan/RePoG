@@ -183,7 +183,10 @@ supplies the established durable changes, their immediate owner paths,
 model-authored mutations, and any deferred secondary targets. A mutation is
 written as typed `ops` from `owner_ops.py` (set a YAML key, edit a list,
 append to, replace, remove, or insert a Markdown section, upsert or delete a
-table row), as `exact_replacements`, or as `create_text` for a new entity note.
+table row, or `set_cells` on the named columns of a row, which also stamps a
+`Revision` column), as `exact_replacements`, or as `create_text` for a new
+entity note. `resume_impact` is optional, and one roll may back several changes
+of a commit.
 `{{revision}}` and `{{next_id:PREFIX}}` placeholders resolve in new text. Key
 paths accept Unicode identifiers (`player.stats.Algı`) and quoted segments
 (`player.stats."Sokak Zekâsı"`), and a key keeps the form the file wrote it
@@ -209,9 +212,7 @@ fiction; it updates the scene frame and optional active-cast handoff without a
 continuity revision. It may also edit `directives.md` and `glossary.md`, so an
 OOC-only table rule needs no fictional revision. A successful durable response
 with `full_distill_required: true` has safely stored current truth but sets
-`narration_allowed: false` until the routed full distill completes (under
-`narrate_then_commit` the reply has already gone out, and the distill follows
-it in the same turn). Neither
+`narration_allowed: false` until the routed full distill completes. Neither
 command decides whether a turn was soft, what happened in the fiction, which
 facts matter, or what the Player should be told.
 
@@ -219,10 +220,9 @@ Every success result (durable, checkpoint, distill, curation, act, and an
 idempotent retry) carries `next_expected_revision`, the
 `expected_continuity_revision` the next payload needs; a `stale_revision`
 failure carries it too. Durable, checkpoint, distill, and act results add
-`hand_back`, a short English reminder to end the turn on the scene's last line
-or one OOC line if something could not be saved; the GM reads it and never
-shows it. `narration_allowed` stays, and is informational under
-`narrate_then_commit`. `template --kind durable|checkpoint|distill|act` is
+`reply`, a short English note on the next step: send the whole reply as text
+now, or first finish the distill when `narration_allowed` is false. The GM
+reads it and never shows it. `template --kind durable|checkpoint|distill|act` is
 read-only: it prints `{payload, reference}`, a payload skeleton plus the
 current revision, scene modes, boundaries, the `current_state.yaml` top-level
 keys, the `active_cast.md` and `relationship_map.md` columns, and the owner
@@ -247,8 +247,6 @@ Durable and checkpoint commits may also return these advisory warnings:
   `Jour 12`, or holding `(day N)`) had its oldest dated entries moved to
   `## History`, which is created right after `## Now` when missing. Undated
   lines stay; `now_overflow` means undated text alone is over budget.
-- `now_append`: an `append` op targeted `## Now`; use `replace_section` and
-  keep the current state only.
 - `death_projection` (with `rows`): a mutation set a note's Core status to dead
   or missing while unchanged `active_cast.md` or `relationship_map.md` rows
   still name it.
@@ -289,7 +287,7 @@ true, unless the payload sets `rotate_log: false`; an archive name that is
 taken gets a `-2`, `-3`, ... suffix. The result adds `curation_due` (Boundary
 Curation below; `curation_due_unwritten` warns when the file could not be
 written), `lint_report` (`presentation_lint.report_summary` over the last 20
-replies, or null), `next_expected_revision`, and `hand_back`.
+replies, or null), `next_expected_revision`, and `reply`.
 
 `commit-act` is the typed act transition. Its payload is `{operation_id,
 expected_continuity_revision, close: {act_id, outcome, summary}, open: {act_id,
@@ -704,33 +702,39 @@ deleting it loses none: roll receipts (`rolls.jsonl`), the lint record
 (`lint_last.json`, `lint_history.jsonl`), the capsule state, staged curation,
 `curation_due.json` (paths, rule names, and short reasons, written by the
 writer), and `order_last.json` (written by the Stop hook). `repog_runtime.py`
-reads four `play_profile.yaml` `runtime:` switches, each defaulting when
-absent: `persistence_order` (`narrate_then_commit`), `presentation_lint`
-(`on`), `scene_capsule` (`on`), and `boundary_curator` (`background`). It
-resolves the records language as `narration.records_language`, or
+reads the `play_profile.yaml` `runtime:` switches, each defaulting when
+absent: `presentation_lint` (`on`), `scene_capsule` (`on`), and
+`boundary_curator` (`background`). `persistence_order` has one effective value,
+`commit_then_narrate`; `narrate_then_commit` stays valid for older profiles and
+means the same order. It resolves the records language as
+`narration.records_language`, or
 `narration.language` when that is `same` or missing.
 
 - `hook_entry.py prompt|stop|session-start|pretool` is the single entry the
   hook scripts call. It reads the hook event on standard input, prints only
   the JSON Claude Code expects, and never raises.
 - `scene_capsule.py` builds the hidden capsule the prompt hook injects: a
-  header with revision, day, location, scene, and the locked order
-  (`order: reply → one commit → hand-back line` under `narrate_then_commit`,
-  `order: commit → reply` otherwise); the cast in scope with Core lines, the
+  header with revision, day, location, scene, and the order
+  (`order: reads and rolls → commit every changed fact → whole reply last`); the cast in
+  scope with Core lines, the
   newest `## Now` lines that fit, relationship rows, and knowledge; which
   protected facts each does not hold, by fact id; a `[knowledge]` section with
   up to three `- <Name> does not know: ...` items per present NPC from
   `knowledge_boundaries.md`; directives in scope; the language card; the last
   lint summary; open roll receipts; staged curation; and, once, what the last
-  curation run rejected or deferred. A full capsule adds
-  `[state] rev N · keys: ...` (the `current_state.yaml` top-level keys) and
+  curation run rejected or deferred. A session's first capsule, and the first
+  after a compaction, ends with the `[formats]` card: the call shapes of a
+  roll, an ordinary commit, money and items, and a due distill, with this
+  install's launcher path, outside the size cap. A full capsule adds
+  `[state] rev N · keys: ...` (the `current_state.yaml` top-level keys),
+  `[mechanics] <actor>: <resource> n/max, <item> n` from `mechanics_state.json`, and
   `[habits] last 20 replies: label (n), ...` from
   `presentation_lint.top_habits`; a delta shows `[habits]` only when its rules
   change. While `curation_due.json` lists targets, every capsule shows
   `[curation] due: N files (...)` with the next step for the
   `boundary_curator` setting. Each `order_last.json` record is shown once: an
-  `[order]` reminder when a turn committed before narrating under
-  `narrate_then_commit`, and another when a turn ended with no visible text.
+  `[order]` line when a turn ended with no visible text, or saved a result but
+  sent fewer than 60 words, because the Player has then not seen that scene.
   A note stamped `As of revision` before the `threads.md` Arc Compass
   `Opened at revision` shows Core, `Agency Card: hidden (...)`, its Depth
   `Voice signature`, and the tail of Now instead of its Agency Card. A new
@@ -763,9 +767,9 @@ resolves the records language as `narration.records_language`, or
 - The Stop hook also compares the first assistant text of 200 or more
   characters with the first `rpg_state ... commit-` call and writes
   `order_last.json` (`{at, prompt_uuid, session_id, expected, observed,
-  final_text}`, flags only). After a compaction or resume, the SessionStart
-  hook prints up to 1,500 characters of accepted style samples from
-  `storytelling.md` and `Locked persistence order: <value>; follow it, not any
+  final_text, reply_words}`, flags and a word count only). After a compaction
+  or resume, the SessionStart hook prints up to 1,500 characters of accepted
+  style samples from `storytelling.md` and the order, with `follow it, not any
   order rule from the summary.`
 - `lang_pack.py` loads `packs/languages/<code>.json` (stopwords, avoid phrases,
   patterns, common words, a guidance card), folds case per language, and

@@ -152,7 +152,7 @@ Never mention worker allocation, parallelism, consolidation, or fallback in
 Player Mode. A short natural wait expectation may be given when the selected
 latency policy calls for one, but technical orchestration remains invisible.
 
-# Route -> Resolve -> Narrate And Persist
+# Route -> Resolve -> Persist -> Narrate
 
 ## 1. Route
 
@@ -222,27 +222,23 @@ or guided interiority is allowed only to the degree selected in
 `play_profile.yaml.narration.narrative_signature.interiority_policy` or
 explicitly invited by the Player.
 
-## 3. Narrate And Persist
+## 3. Persist And Narrate
 
 The Player sees any text written before or between tool calls, so the turn's
-silent and visible work go in a fixed order. Under the default
-`runtime.persistence_order: narrate_then_commit`:
+silent and visible work go in one fixed order:
 
 1. silent reads and rolls: every owner read and roll call the turn needs, with
    no text before or between them;
-2. the narration, written as text;
-3. one commit, when anything persists;
-4. a hand-back line: the scene's last line, where control returns to the
-   Player, or one OOC line if something could not be saved.
+2. one commit, when anything persists, and any distill that is due, just as
+   silent;
+3. the whole reply, written as text: the turn's last message.
 
-A soft turn is step 1 and step 2 alone. Hold back the line that hands control
-to the Player until after the commit, so the turn ends on visible text and not
-on a tool call. Never run the commit in the background: its result decides
-whether the hand-back is the scene's last line or a correction. A distill and
-the full check run after the reply; when one is due it follows the commit, and
-the hand-back line still comes last. Under `commit_then_narrate`, reads, rolls,
-and the commit stay silent and the narration comes last.
-`playbooks/persistence.md` holds the exact contract.
+A soft turn is step 1 and step 3 alone. Your reasoning is invisible, so a scene
+worked out there has not been told: settle the facts, commit them, then write
+the scene once, complete, as the reply. Never draft its prose first and never
+shorten it to a closing line. Never run the commit in the background: its
+result decides what the reply may state. `playbooks/persistence.md` holds the
+exact contract.
 
 ### Decide What Persists
 
@@ -255,10 +251,12 @@ choice referent the existing anchor cannot preserve. Record the last speaker,
 that referent, and where control rests; do not store a transcript or accept the
 choice. New promises, permissions, or relationship changes remain durable.
 
-For any durable result, checkpoint, or full-distill trigger, load
-`playbooks/persistence.md` and commit exactly once through the owning helper.
+For any durable result, checkpoint, or full-distill trigger, commit exactly
+once through the owning helper. The capsule's `[formats]` card holds the shapes
+of an ordinary commit, a roll, and a due distill; load `playbooks/persistence.md`
+for a checkpoint, an act, or a refused payload.
 No changed fact's sole owner may be deferred. The order above places the
-commit; a required full distill finishes in the same turn, after the reply.
+commit; a required full distill finishes in the same turn, before the reply.
 Write every record's content in the records language
 (`play_profile.yaml.narration.records_language`, or the play language when it
 is `same`): descriptions, `## Now` and History lines, Depth, Agency Card

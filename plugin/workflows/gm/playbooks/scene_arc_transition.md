@@ -89,10 +89,9 @@ trigger supersedes it; a `full_distill` payload may carry the same coincident
 checkpoint. Never call `commit-checkpoint` after that durable transaction.
 
 If the result is `soft`, invoke one `commit-checkpoint` transaction for this
-resumability data only. Under `commit_then_narrate`, wait for either
-transaction to succeed before the Player-facing bridge; by default the bridge
-comes first and the hand-back line follows the commit. A pure checkpoint is not
-a full distill and creates no continuity revision or durable event.
+resumability data only. Wait for either transaction to succeed before the
+Player-facing bridge. A pure checkpoint is not a full distill and creates no
+continuity revision or durable event.
 
 ## Full Distill Triggers
 
@@ -265,10 +264,7 @@ A `must_return` item still needs its causal trigger and a credible visible chann
 
 ### Activate The Successor
 
-For an identified campaign, perform these steps in order. Under
-`narrate_then_commit` the bridge comes first, so "before narration" below means
-before the turn ends, and a bridge whose activation cannot be committed is
-withdrawn in one OOC line.
+For an identified campaign, perform these steps in order.
 
 1. Wait until the scene that answered the act has ended. Choose a fresh stable
    `Next act id` in `next_act_prep.md`, citing the closing act as its

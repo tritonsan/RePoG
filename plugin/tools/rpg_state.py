@@ -65,8 +65,9 @@ TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates" / "campaign"
 # A staged curation file younger than this may still be being written.
 CURATION_SETTLE_SECONDS = 3.0
 CURATION_DUE_FILE = "curation_due.json"
-# Read by the GM, never shown to the Player.
-HAND_BACK = "end the turn with the scene's last line or one OOC line if something could not be saved"
+# Read by the GM just before the reply, never shown to the Player.
+REPLY_NOTE = "send the whole reply now, as text: the Player sees only what you send, never your reasoning"
+REPLY_WAIT_NOTE = "finish the distill and repair any full-check error first, then send the whole reply as text"
 MAX_OPEN_CHOICES = 5
 MAX_OPEN_CHOICE_TEXT = 200
 # Content findings a distill may not leave behind: each one's file must be
@@ -188,6 +189,10 @@ def _require_keys(value: dict[str, Any], allowed: set[str], label: str) -> None:
     unknown = sorted(set(value) - allowed)
     if unknown:
         raise RPGStateError("input_invalid", f"{label} contains unsupported field(s): {', '.join(unknown)}")
+
+
+def _reply_note(narration_allowed: bool) -> str:
+    return REPLY_NOTE if narration_allowed else REPLY_WAIT_NOTE
 
 
 def _one_line(value: Any, label: str, *, maximum: int = MAX_LINE_TEXT) -> str:
@@ -1056,17 +1061,6 @@ def _mutation_advice(root: Path, relative: str, raw: dict[str, Any], records_cod
     """Advisory warnings about how a mutation writes, never about what it says."""
 
     warnings: list[dict[str, Any]] = []
-    for op in raw.get("ops") if isinstance(raw.get("ops"), list) else []:
-        if not isinstance(op, dict) or op.get("op") != "append":
-            continue
-        if str(op.get("heading") or "").lstrip("#").strip().casefold() == "now":
-            warnings.append(
-                {
-                    "rule": "now_append",
-                    "path": relative,
-                    "message": f"{relative}: ## Now holds the current state only; use replace_section, not append",
-                }
-            )
     texts = _mutation_texts(raw)
     try:
         code = _other_language("\n".join(texts), records_code, _record_template(relative)) if texts else ""
@@ -1197,9 +1191,9 @@ def _verify_rolls(
                 f"change {change['id']}: outcome '{change['outcome']}' does not match roll '{reference}' band "
                 f"'{band}'; narrate and record the band the roll produced",
             )
-        if receipt["roll_id"] in cited:
-            raise RPGStateError("input_invalid", f"roll '{reference}' is cited by more than one change")
-        cited.append(receipt["roll_id"])
+        # One roll may decide several changes of the same commit.
+        if receipt["roll_id"] not in cited:
+            cited.append(receipt["roll_id"])
     voided_ids: list[str] = []
     for item in voided:
         receipt = _usable_receipt(root, item["roll_id"], "void_rolls entry", base_revision=base_revision)
@@ -1267,13 +1261,13 @@ def _parse_mutations(
             relative, path = _owner_path(root, raw.get("path"), f"{label}.path")
         if relative == "mechanics_state.json":
             raise RPGStateError("input_invalid", "mechanics_state.json must be changed through mechanic_operations")
-        if relative in paths:
-            raise RPGStateError("input_invalid", f"duplicate mutation path: {relative}")
         paths.add(relative)
         modes = [mode for mode in ("ops", "exact_replacements", "create_text") if mode in raw]
-        if len(modes) != 1:
-            raise RPGStateError("input_invalid", f"{label} requires exactly one mutation mode: ops, exact_replacements, or create_text")
+        if not modes or ("create_text" in modes and len(modes) > 1):
+            raise RPGStateError("input_invalid", f"{label} needs ops, exact_replacements, or create_text alone")
         if modes[0] == "create_text":
+            if relative in candidates:
+                raise RPGStateError("input_invalid", f"{label}: create_text cannot follow another edit of {relative}")
             if distill:
                 raise RPGStateError("input_invalid", "a distill cannot create notes; creation is a durable change")
             pure = PurePosixPath(relative)
@@ -1297,22 +1291,17 @@ def _parse_mutations(
                 notes.extend(_mutation_advice(root, relative, raw, records_code))
             continue
 
-        if relative in TEMPLATE_OWNERS and not path.exists():
+        if relative in candidates:
+            # A second mutation of the same owner continues from the first.
+            text = candidates[relative].decode("utf-8")
+        elif relative in TEMPLATE_OWNERS and not path.exists():
             # Campaigns created before these owners existed start from the
             # blank template the first time the GM records one.
             text = _read_text(TEMPLATE_DIR / relative, f"{relative} template")
         else:
             text = _read_text(path, relative)
         original_meta = _state_meta(text) if relative == "current_state.yaml" else None
-        if modes[0] == "ops":
-            try:
-                ops = owner_ops.parse_ops(raw.get("ops"), relative=relative, label=label)
-                text = owner_ops.apply_ops(text, ops, relative=relative, label=label, placeholders=placeholders)
-            except owner_ops.OwnerOpError as exc:
-                raise RPGStateError(exc.category, f"{relative}: {exc}") from exc
-            if len(text) > MAX_FILE_TEXT:
-                raise RPGStateError("candidate_invalid", f"candidate file exceeds {MAX_FILE_TEXT} characters: {relative}")
-        else:
+        if "exact_replacements" in modes:
             replacements = raw.get("exact_replacements")
             if not isinstance(replacements, list) or not replacements:
                 raise RPGStateError("input_invalid", f"{label}.exact_replacements must be a non-empty array")
@@ -1332,7 +1321,7 @@ def _parse_mutations(
                     raise RPGStateError("input_invalid", f"{replacement_label}.new must be text")
                 new = placeholders.resolve(new, path=relative, file_text=original_text)
                 if old == new:
-                    raise RPGStateError("input_invalid", f"{replacement_label} does not change content")
+                    continue  # nothing to do, and not worth a refused commit
                 occurrences = text.count(old)
                 if occurrences != 1:
                     raise RPGStateError(
@@ -1342,6 +1331,14 @@ def _parse_mutations(
                 text = text.replace(old, new, 1)
                 if len(text) > MAX_FILE_TEXT:
                     raise RPGStateError("candidate_invalid", f"candidate file exceeds {MAX_FILE_TEXT} characters: {relative}")
+        if "ops" in modes:
+            try:
+                ops = owner_ops.parse_ops(raw.get("ops"), relative=relative, label=label)
+                text = owner_ops.apply_ops(text, ops, relative=relative, label=label, placeholders=placeholders)
+            except owner_ops.OwnerOpError as exc:
+                raise RPGStateError(exc.category, f"{relative}: {exc}") from exc
+            if len(text) > MAX_FILE_TEXT:
+                raise RPGStateError("candidate_invalid", f"candidate file exceeds {MAX_FILE_TEXT} characters: {relative}")
         if original_meta is not None and _state_meta(text) != original_meta:
             raise RPGStateError(
                 "input_invalid",
@@ -1955,7 +1952,8 @@ def _validate_durable_payload(
     expected = identity["expected_revision"]
     boundary = identity["boundary"]
     cause = _one_line(payload.get("cause"), "cause")
-    resume_impact = _one_line(payload.get("resume_impact"), "resume_impact")
+    # Optional: the scene frame's resume anchor usually says it already.
+    resume_impact = "" if payload.get("resume_impact") in (None, "") else _one_line(payload["resume_impact"], "resume_impact")
     changes, owners, cold_targets = _parse_changes(root, payload.get("changes"))
     notes: list[dict[str, str]] = []
     mutations, mutation_paths = _parse_mutations(
@@ -2075,7 +2073,7 @@ def _idempotent_result(
         "full_distill_required": required,
         "narration_allowed": not required,
         "distill_reason": reason,
-        "hand_back": HAND_BACK,
+        "reply": _reply_note(not required),
         "changed_files": [],
         "mechanic_results": [],
         "recovered_transactions": recovered,
@@ -2410,7 +2408,7 @@ def commit_durable(
             "full_distill_required": required,
             "narration_allowed": not required,
             "distill_reason": reason,
-            "hand_back": HAND_BACK,
+            "reply": _reply_note(not required),
             "changed_files": sorted(candidates),
             "mechanic_results": mechanic_results,
             "recovered_transactions": recovered,
@@ -2499,7 +2497,7 @@ def commit_checkpoint(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]
             "full_distill_required": required,
             "narration_allowed": not required,
             "distill_reason": reason,
-            "hand_back": HAND_BACK,
+            "reply": _reply_note(not required),
             "changed_files": sorted(candidates),
             "mechanic_results": [],
             "recovered_transactions": recovered,
@@ -2839,7 +2837,7 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
                 "continuity_revision": meta["revision"],
                 "next_expected_revision": meta["revision"],
                 "distilled_through": prior,
-                "hand_back": HAND_BACK,
+                "reply": REPLY_NOTE,
                 "changed_files": [],
                 "recovered_transactions": recovered,
                 "warnings": [],
@@ -2936,7 +2934,7 @@ def commit_distill(campaign: Path, payload: dict[str, Any]) -> dict[str, Any]:
         },
         "lint_report": _lint_report(root),
         "narration_allowed": check["ok"],
-        "hand_back": HAND_BACK,
+        "reply": _reply_note(check["ok"]),
         "recovered_transactions": recovered,
         "warnings": warnings,
     }
@@ -3442,7 +3440,6 @@ def template(campaign: Path, kind: str) -> dict[str, Any]:
             "expected_continuity_revision": revision,
             "boundary": "ordinary",
             "cause": "",
-            "resume_impact": "",
             "changes": [{"id": "c1", "kind": "", "established_delta": "", "owners": []}],
             "mutations": [{"path": "", "ops": []}],
         }

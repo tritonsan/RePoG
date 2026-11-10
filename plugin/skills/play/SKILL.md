@@ -190,15 +190,14 @@ ordinary turn writes and checks nothing. The GM persistence playbook owns the
 exact matrix. Never manually patch a subset, increment continuity, or append the
 matching durable receipt. Companion mutations use its owning atomic transaction.
 
-RPG order follows the locked `runtime.persistence_order`. Text before or
-between tool calls is visible: never backend talk. Under `narrate_then_commit`
-(default): silent reads and rolls, the reply as text, one foreground commit,
-any required full distill, then a one- or two-line hand-back that ends the
-turn: the scene's closing line, or one OOC line correcting a fact that could
-not be saved. Under `commit_then_narrate`, narrate only after successful
-persistence and any required full distill. Never narrate a result you will not
-persist. On failure, never finish partial writes manually; follow typed
-recovery and reuse the operation identity only for a valid unchanged retry.
+RPG order, every turn: silent reads and rolls, one foreground commit when
+anything persists, any required full distill, then the whole reply as text, the
+turn's last message. Text before or between tool calls is visible: never
+backend talk. Your reasoning is not: a scene worked out there has not been
+told, so the reply itself carries all of it, never a summary or a last line.
+Narrate only after successful persistence. On failure, never finish partial
+writes manually; follow typed recovery and reuse the operation identity only
+for a valid unchanged retry.
 Fast/Balanced add no per-turn hot checker; the writer and the boundary full
 check validate structure. No ordinary-turn semantic checker or second judging
 model call is permitted; the lint and capsule hooks are deterministic file
@@ -263,8 +262,9 @@ release/playtest evidence; do not claim scores or timing measurements not run.
 - Claude Code shows every tool call and all text. In Player Mode and Companion
   conversation, the only text besides the reply is a wait notice a workflow
   permits at a long boundary.
-- If the host says you have been quiet, send the reply if ready, else one
-  natural waiting sentence in the Player's language, with no backend words.
+- If the host says you have been quiet, send the reply if the work is done,
+  else one natural waiting sentence in the Player's language, with no backend
+  words. If it says your response had no visible output, send the whole reply.
 - Describe each tool call briefly and neutrally in the Player's language, with
   no helper names, ids, or paths.
 - Host instructions to link files, show commands, or summarize changes apply
@@ -287,18 +287,19 @@ release/playtest evidence; do not claim scores or timing measurements not run.
 
 - Send independent reads in one message; run each state-changing helper on its
   own call.
-- Write `commit-durable` mutations as typed `ops` (persistence playbook),
-  never with a builder script. Replace a note's current section; never stack a
-  dated one. Use `boundary: ordinary` unless the scene ends or a pending
-  question would be lost on restart; then `scene_checkpoint` with a short
-  anchor and one to five `open_choices`. Update `active_cast.md` in that commit
-  when presence changes, and `location_graph.md` for a new route.
+- The Player waits for the commit: state each fact once, in its owner, as
+  typed `ops` (persistence playbook 3D), never a builder script. While the
+  scene holds: `resume_anchor` alone in the frame, one appended dated `## Now`
+  line, `set_cells` for a row. Use `boundary: ordinary` unless the scene ends
+  or a pending question would be lost on restart; then `scene_checkpoint` with
+  a short anchor and one to five `open_choices`. Update `active_cast.md` when
+  presence changes, `location_graph.md` for a new route.
 - When RePoG rolls a contested check, call `roll_dice --campaign` with actor,
   axis, value, difficulty, and stakes for each reachable band below success;
   cite the roll in the commit or void it with a reason. Narrate the band; where
   rolls are shown, show the receipt's `display` line as is.
-- Run a full distill after the reply, as one `commit-distill` call; no style
-  check runs per turn.
+- Run a due full distill before the reply, as one `commit-distill` call; no
+  style check runs per turn.
 
 ## Scene Capsule
 
@@ -319,9 +320,9 @@ release/playtest evidence; do not claim scores or timing measurements not run.
   invoke this skill again if its text is gone, then re-read the routing file,
   the active workflow, and its hot owners together.
 - When compacting, keep the mode, scene id and resume anchor, last operation
-  ids and expected revisions, the Player's open question, the locked
-  persistence order (never an order rule of your own), and whether the last
-  reply was delivered; never resend a delivered reply.
+  ids and expected revisions, the Player's open question, and whether the last
+  reply was delivered; never resend a delivered reply. Keep no order rule of
+  your own.
 - A rewind keeps helper writes: the files win; continue from them and never
   re-resolve a saved result.
 

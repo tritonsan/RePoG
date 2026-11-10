@@ -121,25 +121,26 @@ record grows too large or a character note stacks dated sections. For
 measuring, `tools/session_report.py <transcript.jsonl>` prints turn times and
 bookkeeping counts from a local Claude Code transcript, numbers only.
 
-Since 0.3.0 the reply comes first by default and its save follows in the same
-turn. A save that fails is fixed and retried in that turn; a narrated fact that
-still cannot be saved is corrected in one out-of-character line.
+A saved turn saves first and then sends the whole reply as its last message;
+a due full distill and its check run before that reply. A save that fails is
+fixed and retried in that turn. Saves are kept small, because the Player waits
+for them: each fact is written once, in its owner.
 
-Since 0.4.0 a saved turn ends with a short hand-back line after the save, so
-Claude Code never waits on a silent tool call, and a full distill with its
-check runs after the reply instead of before it. A save can start from a
-skeleton the helper prints from the live files, and records are written in the
-play language unless the campaign sets another records language.
+0.3.0 and 0.4.0 asked for the reply before the save. On this host that never
+worked: the text stayed in the model's reasoning, and in 0.4.0 the Player saw
+only a closing line, so 0.4.1 went back to one order.
+
+A save can start from a skeleton the helper prints from the live files, and
+records are written in the play language unless the campaign sets another
+records language.
 
 ## Runtime Switches
 
-`campaign/play_profile.yaml` has a `runtime:` block with four switches; a
-missing switch takes its default. Ask the Game Master out of character to
-change one.
+`campaign/play_profile.yaml` has a `runtime:` block; a missing switch takes
+its default. Ask the Game Master out of character to change one. Its
+`persistence_order` line is kept for older profiles and changes nothing: every
+turn saves first and replies last.
 
-- `persistence_order`: `narrate_then_commit` (default) replies, saves once,
-  and ends the turn with a short hand-back line; `commit_then_narrate` saves
-  before replying.
 - `presentation_lint`: `on` (default) or `off`, the Stop hook's check of each
   reply.
 - `scene_capsule`: `on` (default) or `off`, the hidden capsule added to each

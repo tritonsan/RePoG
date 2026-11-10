@@ -223,11 +223,11 @@ reports it under `advisories`, and the records are translated when convenient.
    the aggregate state check does not cover leakage, and this narration is drafted
    after every other gate has already passed, so nothing else stands between the
    prohibited-terms list in `boundaries.md` and the Player.
-   Then send the OOC line and the opening narration as text, in the reply
-   itself. Text written before a tool call is visible to the Player. Only after
-   that make the opening's one commit (opening and first-session sources
+   Then make the opening's one commit (opening and first-session sources
    `consumed`, the OOC line recorded as stated), never in the background, and
-   end the turn with the hand-back line. Never commit first and narrate after.
+   send the OOC line and the whole opening narration as text, the turn's last
+   message. A draft that passed the check has not been told until that message
+   is sent.
 
 # Failure And Invalidation
 

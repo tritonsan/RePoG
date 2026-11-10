@@ -139,15 +139,14 @@ ordinary turn writes and checks nothing. The GM persistence playbook owns the
 exact matrix. Never manually patch a subset, increment continuity, or append the
 matching durable receipt. Companion mutations use its owning atomic transaction.
 
-RPG order follows the locked `runtime.persistence_order`. Text before or
-between tool calls is visible: never backend talk. Under `narrate_then_commit`
-(default): silent reads and rolls, the reply as text, one foreground commit,
-any required full distill, then a one- or two-line hand-back that ends the
-turn: the scene's closing line, or one OOC line correcting a fact that could
-not be saved. Under `commit_then_narrate`, narrate only after successful
-persistence and any required full distill. Never narrate a result you will not
-persist. On failure, never finish partial writes manually; follow typed
-recovery and reuse the operation identity only for a valid unchanged retry.
+RPG order, every turn: silent reads and rolls, one foreground commit when
+anything persists, any required full distill, then the whole reply as text, the
+turn's last message. Text before or between tool calls is visible: never
+backend talk. Your reasoning is not: a scene worked out there has not been
+told, so the reply itself carries all of it, never a summary or a last line.
+Narrate only after successful persistence. On failure, never finish partial
+writes manually; follow typed recovery and reuse the operation identity only
+for a valid unchanged retry.
 Fast/Balanced add no per-turn hot checker; the writer and the boundary full
 check validate structure. No ordinary-turn semantic checker or second judging
 model call is permitted; the lint and capsule hooks are deterministic file

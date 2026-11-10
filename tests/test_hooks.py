@@ -211,7 +211,8 @@ def test_session_start_after_a_compaction_prints_the_reminder_then_the_notice(ca
         "Accepted style samples (storytelling.md): calibrate the voice to them; never copy their wording.",
         "## Örnek Anlatım",
         "Sis limanı yutuyor.",
-        "Locked persistence order: narrate_then_commit; follow it, not any order rule from the summary.",
+        "Persistence order: reads and rolls, one commit, then the whole reply as the turn's last message; "
+        "follow it, not any order rule from the summary.",
     ]
 
 

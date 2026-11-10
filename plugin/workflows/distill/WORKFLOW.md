@@ -203,9 +203,8 @@ Full distill is mandatory at the first applicable trigger:
   conflict, explicit full-save request, or a change away from a batching
   profile.
 
-A full distill runs after the reply, in the same turn and in the foreground:
-under `narrate_then_commit`, after the turn's commit and before the hand-back
-line that ends the turn.
+A full distill runs before the reply, in the same turn and in the foreground,
+after the turn's commit.
 
 For each pending event:
 
@@ -234,9 +233,8 @@ For each pending event:
    reconcile or justify them. `curation_due` lists the notes waiting for the
    curator (Boundary Curator below), `lint_report` the presentation habits of
    the last replies (Narration Variety Review), and `next_expected_revision`
-   the revision the next payload expects. Under `commit_then_narrate`, narrate
-   only when the returned `full_check` is clean; under `narrate_then_commit`
-   the reply came first, so repair any error before the hand-back line.
+   the revision the next payload expects. Narrate only when the returned
+   `full_check` is clean.
 6. Run the dashboard checker only if dashboard state changed.
 7. Apply the Boundary Curator policy below; under `inline` its folds belong in
    the step 4 payload.
@@ -252,8 +250,8 @@ append its durable event by hand.
 
 A durable transaction may return `narration_allowed: false` because this gate
 is due; that means immediate truth is safe, not that it should be committed
-again. Complete the propagation and final full check before narration, or
-under `narrate_then_commit` before the turn ends. The full check validates
+again. Complete the propagation and final full check before narration. The
+full check validates
 structure and consistency; it does not judge whether the model selected the
 right semantic changes, and no second semantic model call is added.
 

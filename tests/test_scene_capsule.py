@@ -356,10 +356,11 @@ def test_a_reset_writes_nothing_for_sessions_it_does_not_know(campaign: Path) ->
 def test_header_names_revision_time_place_scene_and_persistence(campaign: Path) -> None:
     assert _build(campaign).splitlines()[0] == (
         "RePoG capsule — rev 0 · day 1 phase evening · old_dock · scene dock-interview · "
-        "order: reply → one commit → hand-back line"
+        "order: reads and rolls → commit every changed fact → whole reply last"
     )
-    _profile(campaign, "runtime:\n  persistence_order: commit_then_narrate\n")
-    assert _build(campaign, session="other").splitlines()[0].endswith(" · order: commit → reply")
+    # An older profile's value names the same order.
+    _profile(campaign, "runtime:\n  persistence_order: narrate_then_commit\n")
+    assert _build(campaign, session="other").splitlines()[0].endswith(" · order: reads and rolls → commit every changed fact → whole reply last")
 
 
 DUE_LINE = "Full distill is due after this turn's commit."
@@ -586,7 +587,7 @@ def test_dead_kin_line_survives_every_cut_verbatim(campaign: Path) -> None:
     _present(campaign, *titles)
 
     full = _build(campaign)
-    assert len(full) <= scene_capsule.FULL_MAX
+    assert len(full) <= scene_capsule.FULL_MAX + sum(len(line) + 1 for line in scene_capsule.format_card())
     assert f"\n  Kin: {kin}\n" in full
     assert "…" in full
     assert all(f"- {title} (characters/" in full for title in titles)
@@ -1235,7 +1236,7 @@ def test_size_caps_hold_with_truncation_markers(campaign: Path) -> None:
     _profile(campaign, "narration:\n  language: tr\n")
 
     full = _build(campaign)
-    assert len(full) <= scene_capsule.FULL_MAX
+    assert len(full) <= scene_capsule.FULL_MAX + sum(len(line) + 1 for line in scene_capsule.format_card())
     for label in ("[cast]", "[secrets]", "[directives]", "[language]", "[lint]", "[rolls]", "[curation]"):
         assert label in full
     assert full.count("…") >= 4
@@ -1311,7 +1312,7 @@ def test_missing_files_never_raise(tmp_path: Path) -> None:
     bare = tmp_path / "bare"
     bare.mkdir()
     text = scene_capsule.build_capsule(bare, "Hello Edric", session_id="s", settings={})
-    assert text.splitlines()[0] == "RePoG capsule — rev ? · day ? phase ? · ? · scene ? · order: reply → one commit → hand-back line"
+    assert text.splitlines()[0] == "RePoG capsule — rev ? · day ? phase ? · ? · scene ? · order: reads and rolls → commit every changed fact → whole reply last"
     ghost = tmp_path / "ghost"
     assert scene_capsule.build_capsule(ghost, "Hello", session_id="s", settings={}).startswith("RePoG capsule")
     scene_capsule.reset(ghost)

@@ -92,6 +92,7 @@ MARKDOWN_OP_KEYS: dict[str, frozenset[str]] = {
     "remove_section": frozenset({"heading", "under"}),
     "insert_section": frozenset({"heading", "under", "text"}),
     "upsert_row": frozenset({"heading", "under", "table", "key", "cells"}),
+    "set_cells": frozenset({"heading", "under", "table", "key", "cells"}),
     "delete_row": frozenset({"heading", "under", "table", "key"}),
     "replace": frozenset({"old", "new"}),
 }

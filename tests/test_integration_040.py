@@ -41,8 +41,8 @@ def test_agents_md_keeps_crlf_and_skill_keeps_lf() -> None:
 @pytest.mark.parametrize(
     "rule",
     [
-        "a one- or two-line hand-back",
-        "Text before or\nbetween tool calls is visible",
+        "then the whole reply as text, the turn's last message",
+        "Text before or between tool calls is visible",
         "Record content is in the records language",
         "No romantic or sexual relationship, past or present, begins before 18",
     ],
@@ -61,7 +61,7 @@ def test_agents_md_states_the_040_rules(rule: str) -> None:
         "never through `grep`, `head`, or `tail`",
         "show the receipt's `display` line as is",
         "On a language complaint",
-        "the locked persistence order (never an order rule of your own)",
+        "Keep no order rule of your own",
         "never resend a delivered reply",
     ],
 )
@@ -70,9 +70,9 @@ def test_play_skill_states_the_040_rules(rule: str) -> None:
     assert " ".join(rule.split()) in " ".join(skill.split())
 
 
-def test_plugin_manifest_is_040() -> None:
+def test_plugin_manifest_is_041() -> None:
     manifest = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.4.0"
+    assert manifest["version"] == "0.4.1"
 
 
 def _balanced_profile(campaign: Path, cold_policy: str) -> None:

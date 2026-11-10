@@ -24,7 +24,7 @@ copies and reports must never be committed.
    This writes:
    - `turns.jsonl`: one record per Player prompt, with waits (also the wait to
      the first narration), tool calls, helpers, errors, capsule notes, commit
-     order, commit calls and failures, distill results and compactions;
+     order, commit calls, sizes and failures, distill results and compactions;
    - `quant.json`: totals;
    - `segments/seg_NN.md`: readable segments of about 110 KB each, for review
      agents.
@@ -66,10 +66,28 @@ The page needs no network. It shows:
 - the full-check findings;
 - the report.
 
+## Replaying a game
+
+`replay.py` plays the same Player messages through the real host on a copy of a
+game, so two plugin versions can be compared turn by turn. A unit test cannot
+see what the model does with an instruction: the lost replies of 0.4.0 passed
+every test and showed up only here.
+
+```sh
+python dev/session_review/replay.py "<game folder>" <work dir>/old --prompts prompts.json
+python dev/session_review/replay.py "<game folder>" <work dir>/new --prompts prompts.json --plugin-dir plugin
+```
+
+The first run uses the installed plugin; the second uses the working tree in its
+place. `prompts.json` is a JSON list of Player messages. It holds real play, so
+it stays out of the repository. Then split each run's transcript with
+`extract.py`, which measures what reached the Player and how long it took.
+
 ## Success metrics
 
-`compare.py` prints the 0.4.0 success metrics (spec section 10) for one or two
-work dirs, with the target and whether the last dir meets it:
+`compare.py` prints the success metrics (0.4.0 spec section 10, as 0.4.1 changed
+them) for one or two work dirs, with the target and whether the last dir meets
+it:
 
 ```sh
 python dev/session_review/compare.py <old work dir> <new work dir> --labels G2 G3 [--json]

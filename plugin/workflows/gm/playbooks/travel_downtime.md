@@ -101,8 +101,8 @@ their language:
 
 The GM answers with a sectioned montage: one short section per stop, in the
 order given, each ending on what changed there. Keep the whole reply to about
-800 words unless the Player asks for more. Write the reply first; the commit
-follows it, and the hand-back line comes last.
+800 words unless the Player asks for more. The commit comes first, and the
+montage is the turn's last message.
 
 ### Skip Until Something Happens
 
@@ -141,19 +141,18 @@ due within the span the Player allowed, the skip ends at that span quietly.
      as one; `add_obligation` records a new recurring cost first;
    - projects, pending rewards, and whether the skip answers or forecloses the
      act's question.
-2. With a brief, write the montage as the reply. Without one, when the GM
-   must propose what the character did, draft that part OOC first and wait for
-   the Player's approval or edits; an edit may change what the character did,
-   and world moves change only where that causes them to. A change the Player
-   asks for after the montage is an amend of the last beat (OOC adjustment
-   playbook).
-3. Commit the skip in one `commit-durable` call after the reply: its owner
-   mutations (the new `fictional_time.day` among them), mechanic operations
-   (at most 16 per commit), every roll cited or voided, and a checkpoint with
-   scene mode `downtime` and its `open_choices` (boundary `scene_checkpoint`
-   unless a full distill is due). The montage ends at the arrival scene's
-   first reaction point (scene-entry playbook), and the hand-back line follows
-   the commit. Under `commit_then_narrate` the commit comes first.
+2. Without a brief, when the GM must propose what the character did, draft
+   that part OOC first and wait for the Player's approval or edits; an edit may
+   change what the character did, and world moves change only where that
+   causes them to.
+3. Commit the skip in one `commit-durable` call: its owner mutations (the new
+   `fictional_time.day` among them), mechanic operations (at most 16 per
+   commit), every roll cited or voided, and a checkpoint with scene mode
+   `downtime` and its `open_choices` (boundary `scene_checkpoint` unless a full
+   distill is due).
+4. Write the montage as the reply. It ends at the arrival scene's first
+   reaction point (scene-entry playbook). A change the Player asks for after
+   the montage is an amend of the last beat (OOC adjustment playbook).
 
 ## Handoff
 

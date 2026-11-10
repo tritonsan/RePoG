@@ -52,7 +52,7 @@ from pathlib import Path
 OOC_RE = re.compile(r"(?i)\b(ooc|occ)\b")
 LINT_LINE_RE = re.compile(r"(?m)^\[(lint|curation|distill|names?|roll|directives?|glossary|language|habits|order|state)[^\]]*\].*$")
 
-# A reply text block this long is narration; shorter ones are status or hand-back lines.
+# A reply text block this long is narration; shorter ones are status lines.
 NARRATION_CHARS = 200
 COMMIT_PREFIX = "rpg_state commit-"
 DISTILL_LABEL = "rpg_state commit-distill"
@@ -363,6 +363,7 @@ def new_turn(index: int, row: dict, text: str) -> dict:
         "agents": [],
         "skills": [],
         "commit_calls": 0,
+        "commit_chars": [],
         "commit_failures": 0,
         "failed_calls": [],
         "distills": [],
@@ -526,7 +527,10 @@ class TurnSplitter:
             current["helpers"].extend(helpers)
             if helpers:
                 self.calls[tool_id] = (current, helpers)
-            current["commit_calls"] += sum(1 for label in helpers if label.startswith(COMMIT_PREFIX))
+            commits = sum(1 for label in helpers if label.startswith(COMMIT_PREFIX))
+            current["commit_calls"] += commits
+            if commits:
+                current["commit_chars"].append(len(command))
         elif name in ("Write", "Edit", "Read"):
             head = str(data.get("file_path") or "")
         elif name == "Agent":
@@ -633,6 +637,7 @@ def summarize(turns: list[dict], compactions: list[str], since: dt.datetime | No
         "errors": sum(len(t["errors"]) for t in turns),
         "commit_calls": sum(t["commit_calls"] for t in turns),
         "commit_failures": sum(t["commit_failures"] for t in turns),
+        "median_commit_chars": med([size for t in turns for size in t["commit_chars"]]),
         "distill_calls": sum(len(t["distills"]) for t in turns),
         "capsule_turns": sum(1 for t in turns if t["capsules"]),
         "median_capsule_chars": med([t["capsule_chars"] for t in turns if t["capsules"]]),

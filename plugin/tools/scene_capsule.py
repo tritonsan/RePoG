@@ -94,6 +94,7 @@ from repog_runtime import (
     ORDER_FILE,
     RUNTIME_DEFAULTS,
     RUNTIME_DIR,
+    SHORT_REPLY_WORDS,
     block_scalars,
     find_campaign,
     is_ready_rpg,
@@ -218,21 +219,54 @@ PARTIAL_NOTE = ": changed lines only"
 GONE_NOTE = "(no longer recorded)"
 OMITTED = "… "  # opens a `## Now` line whose older lines are left out
 
-# The header names the locked persistence order as the steps to follow.
-ORDER_PHRASES = {
-    "narrate_then_commit": "order: reply → one commit → hand-back line",
-    "commit_then_narrate": "order: commit → reply",
-}
-ORDER_COMMIT_FIRST = (
-    "[order] last reply committed before narrating: send the reply first, then one commit, then the hand-back line"
+# The header names the persistence order as the steps to follow.
+ORDER_PHRASE = "order: reads and rolls → commit every changed fact → whole reply last"
+ORDER_NO_TEXT = (
+    "[order] last turn ended with no visible text, so the Player saw none of it: "
+    "tell that scene in full now, then answer this prompt"
 )
-ORDER_NO_TEXT = "[order] last turn ended with no visible text: end with the hand-back line"
+ORDER_SHORT_REPLY = (
+    "[order] last turn saved a result but sent only {words} words: if it played a scene, "
+    "the Player has not seen it; tell it in full now, then answer this prompt"
+)
+# Shown on a session's first capsule and after a compaction. Without it a fresh
+# session spends its first saved turns looking these shapes up, one tool call at
+# a time. The helpers still check every field; the playbooks keep the full contract.
+FORMAT_CARD = (
+    '[formats] Use these call shapes; never look them up. Run each as: sh "{launcher}" <helper> ... --input-file - <<\'JSON\'',
+    'roll_dice --campaign campaign: {"roll_id":"<scene>-<word>","call":{"actor":"","axis":"","value":0,"difficulty":0,'
+    '"reason":"","factors":[{"label":"","modifier":0}],"stakes":"each reachable band below success"}}',
+    'rpg_state campaign commit-durable: {"operation_id":"<scene>-t<revision+1>","expected_continuity_revision":<revision>,'
+    '"boundary":"ordinary","cause":"one sentence","changes":[{"id":"c1","kind":"scene_progress","established_delta":"one clause",'
+    '"owners":["current_state.yaml","characters/x.md"]}],"mutations":[{"path":"current_state.yaml","ops":[{"op":"set","values":'
+    '{"scene_frame.resume_anchor":"one line"}}]},{"path":"characters/x.md","ops":[{"op":"append","heading":"Now","text":"dated line"}]},'
+    '{"path":"active_cast.md","ops":[{"op":"set_cells","key":"Name","cells":{"Current activity":""}}]}]}',
+    "Commit this turn whatever a restart would lose: an item that changed hands, a place, the time, a promise, "
+    "anything learned. Only a turn that changes none of these is soft. Write each fact once: while the scene holds, "
+    "resume_anchor alone, never current_scene.summary, ongoing_process or last_causal_beat.",
+    'A change a roll decided adds "roll_reference":"<roll_id>","outcome":"<band>". A list in current_state.yaml: '
+    '{"op":"list_remove","key":"inventory","items":[""]}, also list_add and list_set. A passage in threads.md: '
+    '"exact_replacements":[{"old":"","new":""}].',
+    'Owners by kind: knowledge: knowledge_boundaries.md, heading "Player And Character Knowledge"; relationship: '
+    "relationship_map.md; presence: active_cast.md; clue, secret: secrets_and_clues.md; route: location_graph.md; "
+    'a new named person or place: creation_ledger.md, heading "Active Creations".',
+    'Money and items: "mechanic_operations":[{"operation_id":"","operation":"consume_item","actor_id":"","item_id":"","amount":1}] '
+    "with mechanics_state.json among the owners; add_item and remove_item take the same fields. [mechanics] lists "
+    "which ids are items and which resources: spend and gain take resource_id, and work on resources only.",
+    'A due distill with no pending targets is one call, the whole distill: rpg_state campaign commit-distill '
+    '{"operation_id":"distill-<revision>","expected_continuity_revision":"current","trigger":"cadence_limit",'
+    '"summary":"two sentences","mutations":[]}. A refusal names what to fix; load the distill workflow only then.',
+    "Load the persistence playbook only for a checkpoint, an act, or a refused payload.",
+)
 DUE_BACKGROUND = "build the packet (curation packet) and launch repog:repog-curator in the background"
 DUE_INLINE = "fold them at the next distill"
 DUE_RUNNING = "curator {ids} running; do not relaunch"
 DUE_UNCHANGED = "a finished curator left them unchanged; fold them at the next distill"
 SAMPLES_INTRO = "Accepted style samples (storytelling.md): calibrate the voice to them; never copy their wording."
-LOCKED_ORDER = "Locked persistence order: {order}; follow it, not any order rule from the summary."
+LOCKED_ORDER = (
+    "Persistence order: reads and rolls, one commit, then the whole reply as the turn's last message; "
+    "follow it, not any order rule from the summary."
+)
 # storytelling.md headings that hold accepted samples (the template's
 # `Accepted Voice Evidence` and the Stage 9 narrative proof among them) come
 # first, then those about the voice, whose selectors play_profile.yaml holds.
@@ -1007,29 +1041,17 @@ def _language(
 # ---------------------------------------------------------------------------
 
 
-def _persistence_order(settings: dict[str, Any]) -> str:
-    return str(settings.get("persistence_order") or RUNTIME_DEFAULTS["persistence_order"])
-
-
-def _order_phrase(settings: dict[str, Any]) -> str:
-    """The locked persistence order as the steps of a turn."""
-
-    order = _persistence_order(settings)
-    return ORDER_PHRASES.get(order, ORDER_PHRASES["commit_then_narrate"])
-
-
-def _header_lines(campaign: Path, summary: dict[str, Any], settings: dict[str, Any]) -> list[str]:
+def _header_lines(campaign: Path, summary: dict[str, Any]) -> list[str]:
     def shown(value: Any) -> str:
         return "?" if value is None or value == "" else _flat(value)
 
-    order = _order_phrase(settings)
     head = (
         f"RePoG capsule — rev {shown(summary.get('revision'))} · day {shown(summary.get('day'))} "
         f"phase {shown(summary.get('phase'))} · {shown(summary.get('location'))} · "
         f"scene {shown(summary.get('scene_id'))}"
     )
     # A long place or scene name is cut, never the order the reply must follow.
-    lines = [f"{_clip(head, HEADER_CHARS - len(order) - 3)} · {order}"]
+    lines = [f"{_clip(head, HEADER_CHARS - len(ORDER_PHRASE) - 3)} · {ORDER_PHRASE}"]
     policy = block_scalars(read_text(campaign / "play_profile.yaml"), "performance").get("cold_distill_policy", "")
     threshold = DISTILL_THRESHOLDS.get(policy)
     turns = summary.get("durable_turns_since_distill")
@@ -1652,6 +1674,35 @@ def _state_lines(campaign: Path, summary: dict[str, Any]) -> list[str]:
     return [_clip(f"{line} · keys: {', '.join(keys)}" if keys else line, STATE_CHARS)]
 
 
+def _mechanics_lines(campaign: Path) -> list[str]:
+    """`[mechanics] mira items: coin 500; resources: breath 3/5`: what a mechanic operation addresses."""
+
+    data = read_json(campaign / "mechanics_state.json", None)
+    if not isinstance(data, dict) or data.get("enabled") is not True or not isinstance(data.get("actors"), dict):
+        return []
+    parts: list[str] = []
+    for actor_id, sheet in data["actors"].items():
+        if not isinstance(sheet, dict):
+            continue
+        resources = sheet.get("resources") if isinstance(sheet.get("resources"), dict) else {}
+        items = sheet.get("inventory") if isinstance(sheet.get("inventory"), dict) else {}
+        carried = [f"{name} {value.get('quantity')}" for name, value in items.items() if isinstance(value, dict)]
+        pools = [
+            f"{name} {value.get('current')}/{value.get('maximum')}" for name, value in resources.items() if isinstance(value, dict)
+        ]
+        held = [f"items: {', '.join(carried)}"] if carried else []
+        held += [f"resources: {', '.join(pools)}"] if pools else []
+        parts.append(f"{_flat(actor_id)} {_flat('; '.join(held)) or 'tracks nothing'}")
+    return [_clip("[mechanics] " + "; ".join(parts), STATE_CHARS)] if parts else []
+
+
+def format_card() -> list[str]:
+    """The call shapes a session needs, with this install's launcher path."""
+
+    launcher = (Path(__file__).resolve().parents[1] / "scripts" / "repog.sh").as_posix()
+    return [line.replace("{launcher}", launcher) for line in FORMAT_CARD]
+
+
 def _habit_lines(campaign: Path, settings: dict[str, Any]) -> tuple[list[str], str]:
     """`[habits] last 20 replies: label (n), …` and its change basis: the habits, not their counts.
 
@@ -1702,10 +1753,11 @@ def _order_notice(campaign: Path, session_id: str) -> tuple[list[str], str]:
     else:
         stamp = _digest(json.dumps(data, sort_keys=True))
     lines: list[str] = []
-    if data.get("observed") == "commit_first" and data.get("expected") == "narrate_then_commit":
-        lines.append(ORDER_COMMIT_FIRST)
+    words = data.get("reply_words")
     if data.get("final_text") is False:
         lines.append(ORDER_NO_TEXT)
+    elif data.get("observed") != "no_commit" and isinstance(words, int) and words < SHORT_REPLY_WORDS:
+        lines.append(ORDER_SHORT_REPLY.format(words=words))
     return lines, stamp
 
 
@@ -2116,7 +2168,7 @@ def compose(
     show_cast = is_full or bool(cast_blocks) or (roster_changed and (bool(roster) or previous.get("cast") is not None))
     roster_lines = roster or ([CLEARED["cast"]] if show_cast and not is_full else [])
 
-    header = _header_lines(campaign, summary, settings)
+    header = _header_lines(campaign, summary)
     if not is_full:
         emitted = [key for key in SECTION_ORDER if key in pieces or (key == "cast" and show_cast)]
         header.append(
@@ -2127,7 +2179,7 @@ def compose(
     header = _fit_lines(header, caps["header"])
     # Reminders that are not deltas: the last turn's order once, the state
     # keys in full capsules, and the curation due on every capsule.
-    state_lines = _guarded("state", lambda: _state_lines(campaign, summary)) if is_full else []
+    state_lines = _guarded("state", lambda: [*_state_lines(campaign, summary), *_mechanics_lines(campaign)]) if is_full else []
     lead = [*header, *order_piece, *state_lines]
     used = sum(len(line) + 1 for line in (*lead, *due_lines)) + sum(
         len(line) + 1 for lines in pieces.values() for line in lines
@@ -2148,6 +2200,9 @@ def compose(
         body.extend(pieces.get(key, []))
     body.extend(due_lines)
     text = _clip("\n".join(line for line in body if line), limit)
+    if fresh:
+        # Outside the size cap: a long cast must never cost the session its call shapes.
+        text = "\n".join([text, *format_card()])
     # A notice cut off at the capsule's end by its size cap waits for the next capsule.
     delivered = set(text.split("\n"))
     if result_at and (not new_result or all(line in delivered for line in result_piece)):
@@ -2362,15 +2417,14 @@ def style_samples(campaign: Path, limit: int = SAMPLE_CHARS) -> str:
 
 
 def resume_notice(campaign: Path, settings: dict[str, Any]) -> str:
-    """What SessionStart prints after a compaction or a resume: the style samples, then the locked order.
+    """What SessionStart prints after a compaction or a resume: the style samples, then the order.
 
     A compaction summary keeps no accepted sample and may carry an order rule
-    of its own; the locked profile's order wins.
+    of its own; this one wins.
     """
 
-    order = LOCKED_ORDER.format(order=_persistence_order(settings if isinstance(settings, dict) else {}))
     samples = style_samples(campaign)
-    return "\n".join([SAMPLES_INTRO, samples, order] if samples else [order])
+    return "\n".join([SAMPLES_INTRO, samples, LOCKED_ORDER] if samples else [LOCKED_ORDER])
 
 
 # ---------------------------------------------------------------------------

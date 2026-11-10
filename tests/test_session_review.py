@@ -16,6 +16,7 @@ if str(REVIEW) not in sys.path:
 import build_page  # noqa: E402
 import compare  # noqa: E402
 import extract  # noqa: E402
+import replay  # noqa: E402
 
 LAUNCHER = 'sh "${CLAUDE_PLUGIN_ROOT}/scripts/repog.sh"'
 NARRATION = "Liman sisli. Halatlar gıcırdıyor, martılar suskun; iskelede kimse yok ve fener sönük kalıyor. " * 4
@@ -427,7 +428,8 @@ def test_compare_measures_every_metric(tmp_path: Path) -> None:
 
     cells = compare.measure(work)
     text = {key: cell.text for key, cell in cells.items()}
-    assert text["narrated_first"] == "2/3 (67%)"
+    assert text["full_reply"] == "3/3 (100%)"
+    assert text["commit_size"] == f"{len(commit()):.0f} chars"
     assert cells["status_lines"].value == 1
     assert text["narration_wait"] == "30 s"
     assert text["bad_band_rolls"] == "3/4 (75%), worst band 2/4, 1 unknown, 1 auto"
@@ -454,7 +456,7 @@ def test_compare_prints_a_table_with_the_last_dir_judged(tmp_path: Path, capsys)
     compare.main([str(old), str(new), "--labels", "G2", "G3"])
     table = capsys.readouterr().out
     assert table.splitlines()[0] == "| Metric | G2 | G3 | Target | Met (G3) |"
-    assert "| Committed turns narrated first | 2/3 (67%) | 1/1 (100%) | 90%+ | yes |" in table
+    assert "| Committed turns with a full reply | 3/3 (100%) | 1/1 (100%) | 100% | yes |" in table
     assert "| Rolls with a reachable bad band | n/a | 1/1 (100%) | every roll made | yes |" in table
     assert "| Model-error interventions | n/a (OOC play turns: 1) | n/a (OOC play turns: 0) | under 10 | n/a |" in table
 
@@ -500,7 +502,7 @@ def test_status_lines_leave_fiction_about_records_and_quoted_speech() -> None:
     assert compare.status_lines({"texts": ["\n".join(backend)]}) == backend
 
 
-def test_committed_turns_without_narration_count_as_not_narrated_first(tmp_path: Path) -> None:
+def test_committed_turns_without_narration_are_not_full_replies(tmp_path: Path) -> None:
     rows = [
         prompt("2026-11-04T10:00:00Z", "Bekliyorum."),
         bash("2026-11-04T10:00:05Z", commit(), "c1", "a1"),
@@ -511,8 +513,8 @@ def test_committed_turns_without_narration_count_as_not_narrated_first(tmp_path:
         bash("2026-11-04T10:01:12Z", commit(), "c2", "b2"),
         result("2026-11-04T10:01:13Z", "c2", '{"ok": true}'),
     ]
-    cell = compare.measure(make_work(tmp_path, "g3", rows))["narrated_first"]
-    assert (cell.text, cell.value) == ("1/2 (50%), 1 without narration", 0.5)
+    cell = compare.measure(make_work(tmp_path, "g3", rows))["full_reply"]
+    assert (cell.text, cell.value) == ("1/2 (50%)", 0.5)
 
 
 def test_a_partly_acknowledged_language_warning_still_stands(tmp_path: Path) -> None:
@@ -600,3 +602,52 @@ def test_build_page_reads_the_new_turn_records(tmp_path: Path) -> None:
     )
     page = build_page.build(args)
     assert "<title>Test</title>" in page and "1/1" in page
+
+
+# ------------------------------------------------------------------- replay
+
+
+def test_replay_copies_only_what_a_session_reads(tmp_path: Path) -> None:
+    source = tmp_path / "game"
+    (source / "campaign" / "snapshots").mkdir(parents=True)
+    (source / "portraits").mkdir()
+    (source / ".claude").mkdir()
+    (source / "campaign" / "current_state.yaml").write_text("revision: 1\n", encoding="utf-8")
+    (source / "campaign" / "snapshots" / "old.json").write_text("{}", encoding="utf-8")
+    (source / ".claude" / "settings.json").write_text("{}", encoding="utf-8")
+    (source / "CLAUDE.md").write_text("# Game\n", encoding="utf-8")
+
+    target = tmp_path / "out" / "game"
+    replay.copy_game(source, target)
+
+    assert (target / "campaign" / "current_state.yaml").is_file() and (target / ".claude" / "settings.json").is_file()
+    assert (target / "CLAUDE.md").is_file() and not (target / "AGENTS.md").exists()
+    # A distill's full check wants every required folder of the campaign.
+    assert (target / "campaign" / "snapshots" / "old.json").is_file()
+    assert not (target / "portraits").exists()
+
+
+def test_replay_starts_one_session_and_resumes_it() -> None:
+    first = replay.command("s-1", first=True, plugin_dir=None, model="m", effort="medium")
+    assert first[first.index("--session-id") + 1] == "s-1" and "--resume" not in first
+    assert (first[first.index("--model") + 1], first[first.index("--effort") + 1]) == ("m", "medium")
+    assert "--plugin-dir" not in first
+
+    later = replay.command("s-1", first=False, plugin_dir="plugin", model=None, effort=None)
+    assert later[later.index("--resume") + 1] == "s-1" and "--session-id" not in later and "--model" not in later
+    settings = json.loads(later[later.index("--settings") + 1])
+    assert later[later.index("--plugin-dir") + 1] == "plugin" and settings["enabledPlugins"][replay.INSTALLED_PLUGIN] is False
+
+
+def test_replay_runs_outside_the_session_that_started_it(monkeypatch) -> None:
+    monkeypatch.setenv("CLAUDECODE", "1")
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", "config")
+    environment = replay.host_environment()
+    assert "CLAUDECODE" not in environment and environment["CLAUDE_CONFIG_DIR"] == "config"
+
+
+def test_replay_refuses_a_bad_prompt_list(tmp_path: Path, capsys) -> None:
+    prompts = tmp_path / "p.json"
+    prompts.write_text('["go", ""]', encoding="utf-8")
+    assert replay.main([str(tmp_path), str(tmp_path / "out"), "--prompts", str(prompts)]) == 2
+    assert "non-empty strings" in capsys.readouterr().err

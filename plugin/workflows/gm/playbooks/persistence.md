@@ -1,39 +1,32 @@
 # RPG Persistence Contract
 
-Load after resolution when a durable result, checkpoint, or full-distill trigger
-requires work. Soft ordinary turns need no additional load.
+Load after resolution when a commit needs more than the capsule's `[formats]`
+card: a checkpoint, an act, or a refused payload. An ordinary commit and a soft
+turn need no load.
 
 ## Order
 
-`play_profile.yaml.runtime.persistence_order` orders the reply and the commit.
-The Player sees any text written before or between tool calls, so silent work
-and visible text never interleave.
+Every turn has one order. The Player sees any text written before or between
+tool calls, so silent work and visible text never interleave:
 
-- `narrate_then_commit` (default when unset):
-  1. silent reads and rolls;
-  2. the narration, written as text;
-  3. one commit;
-  4. a hand-back line: the scene's last line, or one OOC line if something
-     could not be saved.
+1. silent reads and rolls;
+2. one commit, when anything persists, and any distill that is due;
+3. the whole reply, written as text: the turn's last message.
 
-  Decide the semantic capture before writing the narration, and never narrate
-  a result this commit will not persist. Hold back the line that returns
-  control to the Player until after the commit, so the turn ends on visible
-  text. Never run the commit in the background. If the call fails, fix the
-  typed failure and retry in the same turn; only if a narrated fact still
-  cannot be persisted is the hand-back one OOC line that corrects it. A distill
-  or full check that is due, or that the result reports as
-  `full_distill_required`, runs after the reply: after the commit and before
-  the hand-back line. The result's `hand_back` field restates this for the GM
-  and is never shown; its `narration_allowed` is informational under this
-  order. A soft turn is the reads, rolls, and narration alone.
-- `commit_then_narrate`: wait for the command result and narrate only after
-  success; on failure, do not narrate the fact as established. On success, if
-  `full_distill_required` is true or `narration_allowed` is false, current
-  truth is safe but Distill must finish before narration.
+Your reasoning is invisible. A scene worked out there has not been told, and a
+reply written before a tool call does not reliably reach the Player. So settle
+the facts, commit them, then write the scene once, complete, as the reply:
+never draft its prose first, and never shorten it to a closing line because a
+commit came before it. A soft turn is the reads, rolls, and reply alone.
 
-Under either order, never complete a partial write manually, and keep the same
-operation id for a valid retry after the typed failure is addressed.
+Wait for the command result, and never run the commit in the background. On
+failure, fix the typed failure and retry in the same turn, keeping the same
+operation id; do not narrate the fact as established, and never complete a
+partial write manually. If `full_distill_required` is true or
+`narration_allowed` is false, current truth is safe but the distill must finish
+before the reply. The result's `reply` field restates the next step for the GM
+and is never shown. An older profile may still say `narrate_then_commit` in
+`runtime.persistence_order`; it means this same order.
 
 ## Classify And Commit
 
@@ -52,7 +45,8 @@ a soft result; it is a structural boundary, not durable fiction.
 For `durable`, author one capture with:
 
 - a stable `operation_id` and the loaded `expected_continuity_revision`;
-- `cause`, `resume_impact`, and the final `boundary`;
+- `cause` and the final `boundary`, and `resume_impact` only when the resume
+  anchor would not already say it;
 - one or more `changes`, each with a unique `id`, semantic `kind`, concise
   `established_delta`, non-empty immediate `owners`, and only genuinely
   secondary `cold_targets` with reasons;
@@ -72,7 +66,8 @@ revision) must be cited by one change or listed in the payload's `void_rolls`
 as `{"roll_id": "...", "reason": "..."}`, such as an attempt the Player
 withdrew or a soft result that changed nothing durable; otherwise the writer
 refuses the commit with `rolls_unaccounted`. A cited roll must be unused and
-from this revision, and an `outcome` that differs from its band is refused.
+from this revision, and an `outcome` that differs from its band is refused. One
+roll may back several changes of the same commit.
 Under `player_rolls` or `hybrid`, a roll the Player made with their own dice
 has no receipt: cite it as `"player: <what was rolled>"` with the band the
 reported result reached as `outcome`.
@@ -161,7 +156,23 @@ in the turn.
 
 ### 3D. Mutation Forms
 
-Each mutation names one `path` and exactly one form. Prefer `ops`: the writer
+The commit stands between the Player and the reply, so every word of it is
+waiting time. State each fact once, in its owner, and restate nothing:
+
+- `cause` is one sentence, and `established_delta` one short clause.
+- While the scene holds, `scene_frame.resume_anchor` carries it: one line saying
+  what stands and where control rests. A restart reads it first. Set another
+  `current_state.yaml` key only when its value changed, such as the time, the
+  place, `present_npcs`, or the inventory. `current_scene.summary`,
+  `ongoing_process`, and `last_causal_beat` wait for a scene change or a
+  checkpoint.
+- A note's `## Now` takes one appended dated line, never a retyped section: the
+  writer folds the oldest entries into `## History`. Use `replace_section` only
+  when an entry stopped being true.
+- A table row takes `set_cells` with the columns that changed. A note or a row
+  that is still true needs no edit, even when the scene touched it.
+
+Each mutation names one `path`. Prefer `ops`: the writer
 finds the place, so old text is never copied back and deleting costs as little
 as adding. `exact_replacements` (`old` must occur once) is for an edit no op
 can address; `create_text` makes a new note under `characters/`, `places/`, or
@@ -180,11 +191,12 @@ Markdown owners and notes (`heading` is the heading text, `#`s optional; add
 - `append` adds `text` at the end of a section, or of the file without a heading;
 - `replace_section` swaps a section's body; `remove_section` deletes it;
 - `insert_section` adds `heading` (with its `#`s) at the end of the file or of
-  `under`, and refuses one that already exists: replace a note's current state
-  in place, never add a dated layer. `## Now` changes only through
-  `replace_section`, holding the current state alone;
+  `under`, and refuses one that already exists: never add a dated section;
 - `upsert_row` / `delete_row` find a table row by `key`, its first cell or
   first cells such as `["Mira", "->", "Ilse"]`; `cells` is the whole row;
+- `set_cells` finds a row the same way and changes only the columns `cells`
+  names: `{"op": "set_cells", "key": "Mira", "cells": {"Current activity": "at
+  the pier"}}`. A `Revision` column is stamped for you;
 - `replace` is one exact replacement inside the list.
 
 `{{revision}}` becomes this commit's revision and `{{next_id:PC}}` the next
@@ -197,14 +209,13 @@ change that owns `current_state.yaml`, such as kind `scene_progress`.
 python tools/rpg_state.py campaign commit-durable --input-file - <<'JSON'
 {"operation_id": "dock-12-01", "expected_continuity_revision": 41,
  "boundary": "ordinary", "cause": "Mira pressed the witness.",
- "resume_impact": "A restart must keep the courier's name.",
  "changes": [
-  {"id": "scene", "kind": "scene_progress", "established_delta": "The talk turned to the courier.", "owners": ["current_state.yaml"]},
+  {"id": "scene", "kind": "scene_progress", "established_delta": "The talk turned to the courier.", "owners": ["current_state.yaml", "characters/witness.md"]},
   {"id": "name", "kind": "knowledge", "established_delta": "Mira knows the courier is Ilse.", "owners": ["knowledge_boundaries.md"]}],
  "mutations": [
   {"path": "current_state.yaml", "ops": [{"op": "set", "values": {
-    "scene_frame.last_causal_beat.changed_fact": "The courier is Ilse.",
-    "scene_frame.last_causal_beat.returned_control_at": "The witness waits."}}]},
+    "scene_frame.resume_anchor": "The witness named Ilse and waits for Mira's answer."}}]},
+  {"path": "characters/witness.md", "ops": [{"op": "append", "heading": "Now", "text": "Day 12: named the courier to Mira."}]},
   {"path": "knowledge_boundaries.md", "ops": [{"op": "append", "heading": "Player And Character Knowledge",
     "text": "- Fact: the courier is Ilse.\n  - Fact id: {{next_id:PC}}\n  - Last confirmed: revision {{revision}}"}]}]}
 JSON
@@ -284,8 +295,6 @@ Warnings ask for follow-up, not a retry. Each is `{"rule", "path", "message"}`:
 - `now_overflow_folded`: a note's `## Now` held more than 800 characters or
   more than three dated entries, so the writer moved the oldest dated entries
   into `## History`. Nothing to do.
-- `now_append`: an `append` targeted `## Now`; use `replace_section` and keep
-  the current state only.
 - `death_projection`: a note's Core Status became `dead` or `missing` while
   rows naming it in `active_cast.md` or `relationship_map.md` stayed unchanged.
   Fix the listed rows in the next commit. Rows still stale at the next

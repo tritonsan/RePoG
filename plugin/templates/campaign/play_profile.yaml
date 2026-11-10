@@ -17,7 +17,7 @@ performance:
 # so an older campaign needs no migration. Each switch is a locked preference
 # the Player changes through an OOC request.
 runtime:
-  persistence_order: narrate_then_commit
+  persistence_order: commit_then_narrate
   presentation_lint: on
   scene_capsule: on
   boundary_curator: background
@@ -192,7 +192,7 @@ visuals:
 # performance.semantic_parallelism: off | selective_structural |
 #   aggressive_structural
 # performance.max_parallel_workers: 1 | 2 | 3
-# runtime.persistence_order: narrate_then_commit | commit_then_narrate
+# runtime.persistence_order: commit_then_narrate | narrate_then_commit
 # runtime.presentation_lint: on | off
 # runtime.scene_capsule: on | off
 # runtime.boundary_curator: background | inline | off

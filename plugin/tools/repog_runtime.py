@@ -36,18 +36,27 @@ ORDER_FILE = "order_last.json"
 REPLACE_ATTEMPTS = 4
 # The first assistant text at least this long counts as the turn's narration.
 NARRATION_MIN_CHARS = 200
+# A turn that saved a result but sent fewer words than this has very likely
+# told its scene only in the model's reasoning, which the Player never sees.
+SHORT_REPLY_WORDS = 60
 
 # Defaults apply when play_profile.yaml has no `runtime:` block, so an existing
 # campaign gets the runtime layer without a migration. Each switch is a locked
 # profile preference the Player can change through an OOC request.
+#
+# `persistence_order` is the exception: there is one order, reads and rolls,
+# the commit, then the whole reply as the turn's last message. A reply written
+# before a tool call does not reliably reach the Player on this host: it ends
+# up in the model's reasoning, so `narrate_then_commit` stays a valid value for
+# older profiles and means this same order.
 RUNTIME_DEFAULTS: dict[str, str] = {
-    "persistence_order": "narrate_then_commit",
+    "persistence_order": "commit_then_narrate",
     "presentation_lint": "on",
     "scene_capsule": "on",
     "boundary_curator": "background",
 }
 RUNTIME_ALLOWED: dict[str, set[str]] = {
-    "persistence_order": {"narrate_then_commit", "commit_then_narrate"},
+    "persistence_order": {"commit_then_narrate", "narrate_then_commit"},
     "presentation_lint": {"on", "off"},
     "scene_capsule": {"on", "off"},
     "boundary_curator": {"background", "inline", "off"},
@@ -233,6 +242,7 @@ def runtime_settings(campaign: Path) -> dict[str, str]:
         value = configured.get(key, "")
         if value in allowed:
             settings[key] = value
+    settings["persistence_order"] = RUNTIME_DEFAULTS["persistence_order"]
     narration = block_scalars(profile, "narration")
     settings["language"] = narration.get("language", "") or "auto"
     return settings
@@ -459,21 +469,23 @@ def _is_commit(block: dict[str, Any]) -> bool:
 
 
 def turn_order(turn: dict[str, Any] | None, last_message: Any = None) -> dict[str, Any]:
-    """How a turn ordered its narration and its commit, and whether it ended with visible text.
+    """How a turn ordered its narration and its commit, and how much of it was sent.
 
     `observed` compares the first assistant text of NARRATION_MIN_CHARS or
     more against the first tool call whose command runs an `rpg_state`
     `commit-*` transaction: "narrate_first", "commit_first" (the commit came
     first, or no such text came at all), or "no_commit". `final_text` is True
-    when the turn's last block is visible text. The Stop event's
+    when the turn's last block is visible text, and `reply_words` counts the
+    words of every visible text in the turn. The Stop event's
     `last_assistant_message` stands in for a final text the transcript does
-    not hold yet. Counts positions only; reads no meaning.
+    not hold yet. Counts positions and words only; reads no meaning.
     """
 
     blocks = list(turn.get("blocks") or []) if isinstance(turn, dict) else []
     texts = [block.get("text", "") for block in blocks if block.get("type") == "text"]
     if isinstance(last_message, str) and last_message.strip() and (not texts or texts[-1].strip() != last_message.strip()):
         blocks.append({"type": "text", "text": last_message})
+        texts.append(last_message)
     commit = next((index for index, block in enumerate(blocks) if _is_commit(block)), None)
     narration = next(
         (
@@ -490,4 +502,4 @@ def turn_order(turn: dict[str, Any] | None, last_message: Any = None) -> dict[st
     else:
         observed = "commit_first"
     final_text = bool(blocks) and blocks[-1].get("type") == "text" and bool(blocks[-1].get("text", "").strip())
-    return {"observed": observed, "final_text": final_text}
+    return {"observed": observed, "final_text": final_text, "reply_words": sum(len(text.split()) for text in texts)}

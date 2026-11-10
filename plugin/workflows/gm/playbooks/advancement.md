@@ -49,7 +49,7 @@ none presentation keep that flag `no`.
 Advancement status, rewards, unspent amounts, realization conditions, and world
 consequences are durable facts. Capture all immediate-owner changes in one
 `rpg_state.py commit-durable` transaction with boundary `full_distill`, then finish
-required propagation/checks after the reply. At an act close they ride in that
+required propagation/checks before the reply. At an act close they ride in that
 act's `commit-act` call instead (scene and arc transition playbook). No manual
 revision or piecemeal reward write.
 

@@ -30,7 +30,8 @@ from repog_runtime import runtime_settings
 
 SESSION = "session-040"
 COMMIT = 'sh "${CLAUDE_PLUGIN_ROOT}/scripts/repog.sh" rpg_state campaign commit-durable --input-file -'
-NARRATION = "The fog swallows the harbour lamps one by one. " * 6  # well over 200 characters
+NARRATION = "The fog swallows the harbour lamps one by one. " * 8  # well over 200 characters, and 60 words
+NARRATION_WORDS = len(NARRATION.split())
 COMPASS = (
     "# Threads\n\n## Arc Compass\n\n- Act id: ACT-02\n- Act status: active\n- Previous act id: ACT-01\n"
     "- Opened at revision: {opened}\n\n### Act Scope\n\n- Places this act can reach: the dock\n\n"
@@ -120,7 +121,7 @@ def _runtime(campaign: Path) -> Path:
     return campaign / ".repog-runtime"
 
 
-def _hedda(campaign: Path, *, stamp: int, opened: int | None) -> Path:
+def _noted_card(campaign: Path, *, stamp: int, opened: int | None) -> Path:
     if opened is not None:
         _write(campaign / "threads.md", COMPASS.format(opened=opened))
     return _write(campaign / "characters" / "vera.md", VERA.format(stamp=stamp))
@@ -169,7 +170,7 @@ def test_a_long_place_name_never_cuts_the_order_phrase(campaign: Path) -> None:
     _replace(campaign / "current_state.yaml", "location: old_dock", "location: " + "the long harbour road " * 12)
     first = _build(campaign).splitlines()[0]
     assert len(first) <= scene_capsule.HEADER_CHARS
-    assert first.endswith("… · order: reply → one commit → hand-back line")
+    assert first.endswith("… · order: reads and rolls → commit every changed fact → whole reply last")
 
 
 def test_now_shows_its_newest_lines_and_marks_the_older_ones_left_out(campaign: Path) -> None:
@@ -191,7 +192,7 @@ def test_one_long_now_paragraph_keeps_its_last_sentences(campaign: Path) -> None
 
 
 def test_a_short_now_is_shown_whole(campaign: Path) -> None:
-    _hedda(campaign, stamp=0, opened=None)
+    _noted_card(campaign, stamp=0, opened=None)
     _present(campaign, "Vera Marr")
     assert "  Now: Day 8: holds the strongbox key. Day 51: the vault stands empty." in _build(campaign)
 
@@ -207,7 +208,7 @@ def test_tail_helper_cuts_an_overlong_newest_sentence_at_its_head() -> None:
 
 
 def test_a_card_stamped_before_the_act_opened_is_hidden(campaign: Path) -> None:
-    _hedda(campaign, stamp=12, opened=40)
+    _noted_card(campaign, stamp=12, opened=40)
     _present(campaign, "Vera Marr")
     assert _block(_build(campaign), "Vera Marr") == [
         "- Vera Marr (characters/vera.md)",
@@ -221,7 +222,7 @@ def test_a_card_stamped_before_the_act_opened_is_hidden(campaign: Path) -> None:
 
 @pytest.mark.parametrize(("stamp", "opened"), [(40, 40), (55, 40), (12, None)])
 def test_a_current_card_or_one_without_an_act_is_shown(campaign: Path, stamp: int, opened: int | None) -> None:
-    _hedda(campaign, stamp=stamp, opened=opened)
+    _noted_card(campaign, stamp=stamp, opened=opened)
     _present(campaign, "Vera Marr")
     block = _block(_build(campaign), "Vera Marr")
     assert "  Voice rhythm: clipped" in block and "  Hard boundary: never lends to pirates" in block
@@ -229,7 +230,7 @@ def test_a_current_card_or_one_without_an_act_is_shown(campaign: Path, stamp: in
 
 
 def test_a_note_without_a_stamp_keeps_its_card(campaign: Path) -> None:
-    path = _hedda(campaign, stamp=12, opened=40)
+    path = _noted_card(campaign, stamp=12, opened=40)
     _replace(path, "As of revision: 12\n", "")
     _present(campaign, "Vera Marr")
     assert "  Hard boundary: never lends to pirates" in _block(_build(campaign), "Vera Marr")
@@ -251,7 +252,7 @@ def test_a_legacy_note_from_an_earlier_act_shows_only_its_state_and_voice(campai
 
 
 def test_a_card_that_goes_stale_is_shown_whole_once_with_nothing_marked_gone(campaign: Path) -> None:
-    _hedda(campaign, stamp=12, opened=10)
+    _noted_card(campaign, stamp=12, opened=10)
     _present(campaign, "Vera Marr")
     assert "  Hard boundary: never lends to pirates" in _build(campaign)
     _replace(campaign / "threads.md", "Opened at revision: 10", "Opened at revision: 40")  # a new act opens
@@ -414,7 +415,7 @@ def _due_shown(campaign: Path) -> list[str]:
 
 
 def test_due_notes_a_launched_curator_holds_say_it_is_running(campaign: Path) -> None:
-    _hedda(campaign, stamp=1, opened=None)
+    _noted_card(campaign, stamp=1, opened=None)
     _due(campaign, "characters/vera.md", "characters/witness.md")
     running = f"curator {_issue(campaign)['curation_id']} running; do not relaunch"
     # Every later prompt while the curator works: no second launch is asked for.
@@ -491,31 +492,38 @@ def test_the_inline_curator_ignores_issued_packets(campaign: Path) -> None:
 def _order_record(campaign: Path, at: str, **fields: Any) -> None:
     """A Stop hook record; each `at` stands for a new Player turn unless `prompt_uuid` says otherwise."""
 
-    record = {"at": at, "prompt_uuid": f"u-{at}", "expected": "narrate_then_commit", "observed": "narrate_first", "final_text": True}
+    record = {
+        "at": at,
+        "prompt_uuid": f"u-{at}",
+        "expected": "commit_then_narrate",
+        "observed": "commit_first",
+        "final_text": True,
+        "reply_words": 240,
+    }
     _write(_runtime(campaign) / "order_last.json", json.dumps({**record, **fields}))
 
 
 def test_order_reminders_are_shown_once_after_the_turn_that_needs_them(campaign: Path) -> None:
     _build(campaign)
-    _order_record(campaign, "t1", observed="commit_first", final_text=False, session_id=SESSION)
+    _order_record(campaign, "t1", final_text=False, session_id=SESSION)
     assert _build(campaign).splitlines()[1:] == [
         "Delta: nothing changed since the last capsule.",
-        scene_capsule.ORDER_COMMIT_FIRST,
         scene_capsule.ORDER_NO_TEXT,
     ]
     assert "[order]" not in _build(campaign)  # the same record is not repeated
     _order_record(campaign, "t2", session_id=SESSION)
-    assert "[order]" not in _build(campaign)  # a turn in order needs no reminder
-    _order_record(campaign, "t3", observed="commit_first", session_id=SESSION)
+    assert "[order]" not in _build(campaign)  # a delivered reply needs no reminder
+    _order_record(campaign, "t3", reply_words=21, session_id=SESSION)
     full = _build(campaign, full=True)
-    assert full.splitlines()[1] == scene_capsule.ORDER_COMMIT_FIRST and scene_capsule.ORDER_NO_TEXT not in full
+    assert full.splitlines()[1] == scene_capsule.ORDER_SHORT_REPLY.format(words=21)
+    assert scene_capsule.ORDER_NO_TEXT not in full
 
 
-def test_order_reminders_follow_the_record_s_session_and_expected_order(campaign: Path) -> None:
-    _order_record(campaign, "t1", observed="commit_first", session_id="another-session")
+def test_order_reminders_follow_the_record_s_session_and_what_was_saved(campaign: Path) -> None:
+    _order_record(campaign, "t1", reply_words=21, session_id="another-session")
     assert "[order]" not in _build(campaign)
-    _order_record(campaign, "t2", observed="commit_first", expected="commit_then_narrate", session_id=SESSION)
-    assert "[order]" not in _build(campaign)  # committing first is the locked order there
+    _order_record(campaign, "t2", observed="no_commit", reply_words=12, session_id=SESSION)
+    assert "[order]" not in _build(campaign)  # a short answer that saved nothing lost nothing
     _order_record(campaign, "t3", observed="no_commit", final_text=False)  # no session recorded: any session
     assert scene_capsule.ORDER_NO_TEXT in _build(campaign)
     _write(_runtime(campaign) / "order_last.json", b"\xff{")
@@ -529,12 +537,12 @@ def test_order_reminders_follow_the_record_s_session_and_expected_order(campaign
 
 def test_narration_before_the_commit(tmp_path: Path) -> None:
     path = _transcript(tmp_path / "t.jsonl", [_text(NARRATION), _tool(COMMIT)], [_text("The fog waits.")])
-    assert _order(path) == {"observed": "narrate_first", "final_text": True}
+    assert _order(path) == {"observed": "narrate_first", "final_text": True, "reply_words": NARRATION_WORDS + 3}
 
 
 def test_commit_before_the_narration(tmp_path: Path) -> None:
     path = _transcript(tmp_path / "t.jsonl", [_tool("sh repog.sh roll_dice --campaign campaign")], [_tool(COMMIT)], [_text(NARRATION)])
-    assert _order(path) == {"observed": "commit_first", "final_text": True}
+    assert _order(path) == {"observed": "commit_first", "final_text": True, "reply_words": NARRATION_WORDS}
 
 
 def test_a_short_status_line_before_the_commit_is_not_narration(tmp_path: Path) -> None:
@@ -545,21 +553,21 @@ def test_a_short_status_line_before_the_commit_is_not_narration(tmp_path: Path) 
 def test_a_turn_without_a_commit(tmp_path: Path) -> None:
     for command in ("sh repog.sh rpg_state campaign template --kind durable", "git commit -m x"):
         path = _transcript(tmp_path / "t.jsonl", [_text(NARRATION), _tool(command)], [_text("Done.")])
-        assert _order(path) == {"observed": "no_commit", "final_text": True}
+        assert _order(path) == {"observed": "no_commit", "final_text": True, "reply_words": NARRATION_WORDS + 1}
 
 
 def test_a_turn_that_ends_on_the_commit_has_no_final_text(tmp_path: Path) -> None:
     thinking = [{"type": "thinking", "thinking": "Saved; nothing more to say.", "signature": "x"}]
     path = _transcript(tmp_path / "t.jsonl", [_text(NARRATION), _tool(COMMIT)], thinking)
-    assert _order(path) == {"observed": "narrate_first", "final_text": False}
+    assert _order(path) == {"observed": "narrate_first", "final_text": False, "reply_words": NARRATION_WORDS}
     assert _order(path, "")["final_text"] is False
 
 
 def test_the_stop_event_s_last_message_stands_in_for_a_lagging_transcript(tmp_path: Path) -> None:
     path = _transcript(tmp_path / "t.jsonl", [_tool(COMMIT)])
-    assert _order(path) == {"observed": "commit_first", "final_text": False}
-    assert _order(path, NARRATION) == {"observed": "commit_first", "final_text": True}
-    assert repog_runtime.turn_order(None) == {"observed": "no_commit", "final_text": False}
+    assert _order(path) == {"observed": "commit_first", "final_text": False, "reply_words": 0}
+    assert _order(path, NARRATION) == {"observed": "commit_first", "final_text": True, "reply_words": NARRATION_WORDS}
+    assert repog_runtime.turn_order(None) == {"observed": "no_commit", "final_text": False, "reply_words": 0}
 
 
 def test_last_turn_keeps_text_and_tool_blocks_in_order(tmp_path: Path) -> None:
@@ -579,14 +587,15 @@ def test_the_stop_hook_records_the_order_and_the_next_capsule_shows_it(
     assert _run("stop", {**event, "last_assistant_message": NARRATION}, capsysbinary, monkeypatch) == b""
 
     record = json.loads((_runtime(campaign) / "order_last.json").read_text(encoding="utf-8"))
-    assert set(record) == {"at", "prompt_uuid", "session_id", "expected", "observed", "final_text"}
+    assert set(record) == {"at", "prompt_uuid", "session_id", "expected", "observed", "final_text", "reply_words"}
     assert record["prompt_uuid"] == "u-1" and record["session_id"] == SESSION
-    assert (record["expected"], record["observed"], record["final_text"]) == ("narrate_then_commit", "commit_first", True)
-    assert "fog" not in json.dumps(record)  # flags only, never the reply's text
+    assert (record["expected"], record["observed"], record["final_text"]) == ("commit_then_narrate", "commit_first", True)
+    assert record["reply_words"] == NARRATION_WORDS
+    assert "fog" not in json.dumps(record)  # flags and a word count only, never the reply's text
 
     out = _run("prompt", {**event, "prompt": "I wait."}, capsysbinary, monkeypatch)
     context = json.loads(out)["hookSpecificOutput"]["additionalContext"]
-    assert scene_capsule.ORDER_COMMIT_FIRST in context and scene_capsule.ORDER_NO_TEXT not in context
+    assert "[order]" not in context  # the whole reply went out
 
 
 def test_the_stop_hook_writes_no_order_record_without_a_transcript(campaign: Path, tmp_path: Path, capsysbinary, monkeypatch) -> None:
@@ -628,19 +637,19 @@ def test_a_stop_after_a_task_notification_keeps_the_player_turn_s_record(
         {"type": "user", "uuid": "u-2", "message": {"role": "user", "content": "I follow her."}},
         {"type": "assistant", "message": {"role": "assistant", "content": [_tool(COMMIT)]}},
         {"type": "user", "message": {"content": [{"type": "tool_result", "content": "ok"}]}},
-        {"type": "assistant", "message": {"role": "assistant", "content": [_text(NARRATION)]}},
+        {"type": "assistant", "message": {"role": "assistant", "content": [_text("She nods.")]}},
     )
-    _run("stop", {**event, "last_assistant_message": NARRATION}, capsysbinary, monkeypatch)
+    _run("stop", {**event, "last_assistant_message": "She nods."}, capsysbinary, monkeypatch)
     record = json.loads(path.read_bytes())
     assert (record["prompt_uuid"], record["observed"], record["final_text"]) == ("u-2", "commit_first", True)
-    assert scene_capsule.ORDER_COMMIT_FIRST in _build(campaign)
+    assert scene_capsule.ORDER_SHORT_REPLY.format(words=2) in _build(campaign)
 
 
 def test_a_player_turn_is_reminded_of_once_however_often_its_record_is_written(campaign: Path) -> None:
     _build(campaign)
-    _order_record(campaign, "t1", prompt_uuid="u-7", observed="commit_first", session_id=SESSION)
-    assert scene_capsule.ORDER_COMMIT_FIRST in _build(campaign)
-    _order_record(campaign, "t2", prompt_uuid="u-7", observed="commit_first", final_text=False, session_id=SESSION)
+    _order_record(campaign, "t1", prompt_uuid="u-7", reply_words=5, session_id=SESSION)
+    assert scene_capsule.ORDER_SHORT_REPLY.format(words=5) in _build(campaign)
+    _order_record(campaign, "t2", prompt_uuid="u-7", reply_words=5, final_text=False, session_id=SESSION)
     assert "[order]" not in _build(campaign)
 
 
@@ -677,7 +686,7 @@ def test_session_start_after_a_compaction_or_resume_prints_samples_then_the_lock
     out = _run("session-start", {"cwd": str(tmp_path), "session_id": SESSION, "source": source}, capsysbinary, monkeypatch)
     lines = out.decode("utf-8").splitlines()
     assert lines[0] == scene_capsule.SAMPLES_INTRO
-    assert lines[-1] == "Locked persistence order: narrate_then_commit; follow it, not any order rule from the summary."
+    assert lines[-1] == scene_capsule.LOCKED_ORDER
     text = "\n".join(lines)
     # Accepted evidence, sample and proof sections in file order, without template guidance.
     assert text.index("## Accepted Voice Evidence") < text.index("## Örnek Anlatım") < text.index("## Stage 9 Proof")
@@ -690,11 +699,8 @@ def test_session_start_prints_only_the_order_without_samples_and_nothing_before_
     campaign: Path, tmp_path: Path, capsysbinary, monkeypatch
 ) -> None:
     _write(campaign / "storytelling.md", TEMPLATE)  # the template alone holds no accepted sample
-    _profile(campaign, "runtime:\n  persistence_order: commit_then_narrate\n")
     event = {"cwd": str(tmp_path), "session_id": SESSION, "source": "compact"}
-    assert _run("session-start", event, capsysbinary, monkeypatch) == (
-        b"Locked persistence order: commit_then_narrate; follow it, not any order rule from the summary.\n"
-    )
+    assert _run("session-start", event, capsysbinary, monkeypatch) == (scene_capsule.LOCKED_ORDER + "\n").encode("utf-8")
     _replace(campaign / "setup_profile.yaml", "ready_for_play: true", "ready_for_play: false")
     assert _run("session-start", event, capsysbinary, monkeypatch) == b""
 

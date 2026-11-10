@@ -22,7 +22,7 @@ from typing import Any
 
 YAML_OPS = frozenset({"set", "list_add", "list_remove", "list_set"})
 MARKDOWN_OPS = frozenset(
-    {"append", "replace_section", "remove_section", "insert_section", "upsert_row", "delete_row", "replace"}
+    {"append", "replace_section", "remove_section", "insert_section", "upsert_row", "set_cells", "delete_row", "replace"}
 )
 MAX_OPS = 64
 MAX_OP_TEXT = 60_000
@@ -322,6 +322,10 @@ def _set_key(lines: list[str], key_path: str, value: Any, label: str) -> None:
     if inline.startswith("{") or (nested and not block_scalar and not all(line.strip().startswith("- ") for line in nested)):
         raise OwnerOpError("candidate_invalid", f"'{key_path}' holds nested keys; set its children instead")
     if inline.startswith("[") or (nested and not block_scalar):
+        if isinstance(value, list):
+            # The intent is plain, and a refused commit costs a whole round trip.
+            _set_list(lines, key_path, [] if value == [] else _items(value, label))
+            return
         raise OwnerOpError("candidate_invalid", f"'{key_path}' is a list; use list_add, list_remove, or list_set")
     if isinstance(value, (list, dict)):
         raise OwnerOpError("input_invalid", f"{label} must be a scalar; use list_set for lists")
@@ -568,6 +572,37 @@ def _row_text(cells: list[str], newline: str) -> str:
     return "| " + " | ".join(escaped) + " |" + newline
 
 
+def _set_cells(
+    lines: list[str], op: dict[str, Any], header_row: int, row_index: int, key_width: int, label: str, newline: str
+) -> None:
+    """Change the named columns of one row and leave the others as they are.
+
+    A table with a `Revision` column gets this commit's revision unless the
+    op sets that column itself, so a row never needs retyping to stay stamped.
+    """
+
+    changes = op.get("cells")
+    if not isinstance(changes, dict) or not changes:
+        raise OwnerOpError("input_invalid", f"{label}.cells must map column names to their new text")
+    header = _split_row(lines[header_row])
+    positions = {name.casefold(): position for position, name in enumerate(header)}
+    row = _split_row(lines[row_index])
+    row += [""] * (len(header) - len(row))
+    named: set[int] = set()
+    for name, value in changes.items():
+        position = positions.get(str(name).strip().casefold())
+        if position is None:
+            raise OwnerOpError("candidate_invalid", f"{label}: no column '{name}'; columns: {header}")
+        if position < key_width:
+            raise OwnerOpError("input_invalid", f"{label}: '{name}' is part of the key; use upsert_row to rename a row")
+        row[position] = _text(value, f"{label}.cells[{name}]", allow_empty=True, one_line=True).strip()
+        named.add(position)
+    stamp = positions.get("revision")
+    if stamp is not None and stamp not in named and op.get("stamp") is not None:
+        row[stamp] = str(op["stamp"])
+    lines[row_index] = _row_text(row, newline)
+
+
 def _table_op(lines: list[str], op: dict[str, Any], label: str, newline: str) -> None:
     if op.get("heading") is not None:
         index, end, _ = _find_section(lines, op.get("heading"), op.get("under"), label)
@@ -595,6 +630,12 @@ def _table_op(lines: list[str], op: dict[str, Any], label: str, newline: str) ->
             keys = [_split_row(lines[index])[:width] for index in range(first + 2, last)][:40]
             raise OwnerOpError("candidate_invalid", f"{label}: no row with key {key}; keys: {keys}")
         del lines[rows[0]]
+        return
+    if op["op"] == "set_cells":
+        if not rows:
+            keys = [_split_row(lines[index])[:width] for index in range(first + 2, last)][:40]
+            raise OwnerOpError("candidate_invalid", f"{label}: no row with key {key}; add it with upsert_row; keys: {keys}")
+        _set_cells(lines, op, first, rows[0], width, label, newline)
         return
     raw_cells = op.get("cells")
     if not isinstance(raw_cells, list) or len(raw_cells) != columns:
@@ -636,7 +677,7 @@ def apply_markdown_ops(text: str, ops: list[dict[str, Any]], *, label: str) -> s
             _remove_section(lines, op, op_label)
         elif kind == "insert_section":
             _insert_section(lines, op, op_label, newline)
-        elif kind in {"upsert_row", "delete_row"}:
+        elif kind in {"upsert_row", "set_cells", "delete_row"}:
             _table_op(lines, op, op_label, newline)
         elif kind == "replace":
             lines = _replace_exact(lines, op, op_label)
@@ -681,7 +722,8 @@ def apply_ops(
 ) -> str:
     """Apply typed ops to one owner's text after resolving placeholders."""
 
-    resolved = [placeholders.resolve_any(op, path=relative, file_text=text) for op in ops]
+    stamped = [{**op, "stamp": "{{revision}}"} if op.get("op") == "set_cells" else op for op in ops]
+    resolved = [placeholders.resolve_any(op, path=relative, file_text=text) for op in stamped]
     if relative.endswith((".yaml", ".yml")):
         return apply_yaml_ops(text, resolved, label=label)
     return apply_markdown_ops(text, resolved, label=label)

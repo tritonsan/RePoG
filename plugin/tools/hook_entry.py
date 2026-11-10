@@ -169,10 +169,11 @@ def _recorded(path: Path, prompt_uuid: Any, session_id: str) -> bool:
 
 
 def _record_order(campaign: Path, event: dict[str, Any], settings: dict[str, str], turn: dict[str, Any] | None) -> None:
-    """Write `order_last.json`: whether the turn narrated before its commit and ended with text.
+    """Write `order_last.json`: how the turn ordered its commit and how much of it was sent.
 
-    The next capsule shows a short `[order]` reminder when the turn broke the
-    locked order or ended without visible text. Stores flags only, once per
+    The next capsule shows a short `[order]` reminder when a turn saved a
+    result but sent almost nothing, or ended without visible text: the Player
+    has not seen that scene. Stores flags and a word count only, once per
     Player turn: a Stop also ends a turn the Player did not start (a
     background task's notice, a slash command), whose transcript turn is the
     Player's turn already recorded, now followed by blocks the Player's turn
@@ -197,6 +198,7 @@ def _record_order(campaign: Path, event: dict[str, Any], settings: dict[str, str
             "expected": settings.get("persistence_order") or repog_runtime.RUNTIME_DEFAULTS["persistence_order"],
             "observed": order["observed"],
             "final_text": order["final_text"],
+            "reply_words": order["reply_words"],
         },
     )
 

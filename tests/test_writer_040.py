@@ -129,7 +129,7 @@ def test_launcher_runs_the_template_helper(campaign: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Results: next_expected_revision, hand_back, stale revisions
+# Results: next_expected_revision, reply, stale revisions
 # ---------------------------------------------------------------------------
 
 
@@ -138,7 +138,7 @@ def test_every_result_names_the_next_expected_revision(campaign: Path) -> None:
         campaign,
         _turn(owner="knowledge_boundaries.md", ops=[{"op": "append", "heading": "Player Knowledge", "text": "- Fact: x."}]),
     )
-    assert durable["next_expected_revision"] == 1 and durable["hand_back"] == rpg_state.HAND_BACK
+    assert durable["next_expected_revision"] == 1 and durable["reply"] == rpg_state.REPLY_NOTE
     assert "narration_allowed" in durable
     checkpoint = rpg_state.commit_checkpoint(
         campaign,
@@ -497,10 +497,11 @@ def test_undated_text_over_budget_warns_without_moving_anything(campaign: Path) 
     assert "## History" not in _read(campaign, "characters/ilse.md")
 
 
-def test_appending_to_now_is_flagged(campaign: Path) -> None:
+def test_appending_to_now_is_the_cheap_way_to_add_an_entry(campaign: Path) -> None:
     _write(campaign, "characters/ilse.md", NOTE)
     payload = _turn(owner="characters/ilse.md", ops=[{"op": "append", "heading": "## Now", "text": "- Day 4: waited."}])
-    assert "now_append" in _rules(rpg_state.commit_durable(campaign, payload))
+    assert "now_append" not in _rules(rpg_state.commit_durable(campaign, payload))
+    assert "- Day 4: waited." in (campaign / "characters/ilse.md").read_text(encoding="utf-8")
 
 
 def test_ordinal_day_markers_count_as_dated() -> None:

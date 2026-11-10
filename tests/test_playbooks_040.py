@@ -126,14 +126,14 @@ def _with_feature(module_name: str, attribute: str):
     return module
 
 
-ORDER_STEPS = ("silent reads and rolls", "narration", "one commit", "hand-back line")
+ORDER_STEPS = ("silent reads and rolls", "one commit", "the whole reply")
 
 
 def _assert_order_steps(items: list[str]) -> None:
-    assert len(items) == 4, items
+    assert len(items) == 3, items
     for item, keyword in zip(items, ORDER_STEPS):
         assert keyword in item, (keyword, item)
-    assert "the scene's last line" in items[3] and "one OOC line" in items[3]
+    assert "the turn's last message" in items[2]
 
 
 # ---------------------------------------------------------------------------
@@ -141,21 +141,19 @@ def _assert_order_steps(items: list[str]) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_gm_spine_narrates_and_persists_in_one_step() -> None:
+def test_gm_spine_persists_then_narrates() -> None:
     text = _text(GM)
     titles = [title for _, title in _headings(text)]
-    assert "Route -> Resolve -> Narrate And Persist" in titles
-    assert not any("Persist -> Narrate" in title for title in titles)
-    assert "4. Narrate" not in titles, "narration is no longer a step after persistence"
+    assert "Route -> Resolve -> Persist -> Narrate" in titles
 
-    section = _section(text, "3. Narrate And Persist")
+    section = _section(text, "3. Persist And Narrate")
     _assert_order_steps(_numbered(section))
     flat = _flat(section)
     assert "The Player sees any text written before or between tool calls" in flat
     assert "Never run the commit in the background" in flat
-    assert "A distill and the full check run after the reply" in flat
-    assert "the hand-back line still comes last" in flat
-    assert "`commit_then_narrate`" in flat
+    assert "Your reasoning is invisible" in flat
+    assert "Never draft its prose first and never shorten it to a closing line" in flat
+    assert "any distill that is due" in flat
 
 
 def test_persistence_playbook_opens_with_the_order() -> None:
@@ -165,18 +163,19 @@ def test_persistence_playbook_opens_with_the_order() -> None:
     order = _section(text, "Order")
     _assert_order_steps(_numbered(order))
     flat = _flat(order)
-    assert "Never run the commit in the background" in flat
-    assert "runs after the reply: after the commit and before the hand-back line" in flat
-    assert "`hand_back`" in flat and "`narration_allowed` is informational under this order" in flat
+    assert "never run the commit in the background" in flat
+    assert "the distill must finish before the reply" in flat
+    assert "`reply` field" in flat and "`narrate_then_commit`" in flat and "it means this same order" in flat
     # The order is stated once, at the top, not again inside Commit Once.
-    assert _flat(text).count("orders the reply and the commit") == 1
+    assert _flat(text).count("the whole reply, written as text") == 1
 
 
-def test_hand_back_line_matches_the_writer() -> None:
-    rpg_state = _with_feature("rpg_state", "HAND_BACK")
-    # The writer's reminder and the playbooks name the same two endings.
-    assert "the scene's last line" in rpg_state.HAND_BACK and "one OOC line" in rpg_state.HAND_BACK
-    assert rpg_state.HAND_BACK.isascii() and len(rpg_state.HAND_BACK) < 120
+def test_reply_notes_match_the_order() -> None:
+    rpg_state = _with_feature("rpg_state", "REPLY_NOTE")
+    assert "whole reply" in rpg_state.REPLY_NOTE and "reasoning" in rpg_state.REPLY_NOTE
+    assert "whole reply" in rpg_state.REPLY_WAIT_NOTE and "distill" in rpg_state.REPLY_WAIT_NOTE
+    for note in (rpg_state.REPLY_NOTE, rpg_state.REPLY_WAIT_NOTE):
+        assert note.isascii() and len(note) < 120
 
 
 def test_no_shipped_instruction_ends_a_turn_on_a_tool_call() -> None:
@@ -187,15 +186,16 @@ def test_no_shipped_instruction_ends_a_turn_on_a_tool_call() -> None:
             assert phrase not in flat, (path.name, phrase)
 
 
-def test_output_style_hand_back_limits_and_host_nudge() -> None:
+def test_output_style_reply_last_limits_and_host_nudge() -> None:
     flat = _flat(_text(STYLE))
     assert "any text you write before or between tool calls becomes part of it" in flat
-    assert "end the turn after the save with one hand-back line" in flat
+    assert "then write the whole reply as finished prose, the last message of the turn" in flat
+    assert "never a summary of it or only its last line" in flat
     assert "one fixed, plain sentence out of character, the same sentence each time" in flat
     assert "never go a little further with each push" in flat
     assert "On the second push, explain plainly out of character" in flat
     nudge = flat[flat.index("The host may remind you") :]
-    assert "Answer with the reply if it is ready" in nudge
+    assert "had no visible output, the Player has seen nothing: send the whole reply now" in nudge
     assert "one natural waiting sentence in the Player's language" in nudge
     for word in ("saving", "records", "files", "checks", "errors", "tools"):
         assert word in nudge.split("then finish the work")[0], word
@@ -216,7 +216,8 @@ PERSISTENCE_TOKENS = (
     "upsert_row",
     "never rename the kind",
     "now_overflow_folded",
-    "now_append",
+    "set_cells",
+    "takes one appended dated line",
     "death_projection",
     "inventory_count_duplicate",
     "cost_unrecorded",
@@ -469,10 +470,10 @@ def test_an_extra_packet_target_keeps_the_notes_due(campaign: Path, capsys: pyte
     assert {target["path"] for target in packet["targets"]} == {"places/harbor.md", "characters/witness.md"}
 
 
-def test_distill_runs_after_the_reply_and_reads_whole_results() -> None:
+def test_distill_runs_before_the_reply_and_reads_whole_results() -> None:
     text = _text(DISTILL)
     full = _flat(_section(text, "Full Distill"))
-    assert "A full distill runs after the reply, in the same turn and in the foreground" in full
+    assert "A full distill runs before the reply, in the same turn and in the foreground" in full
     assert "never filter helper output through `grep`, `head`, or `tail`" in full
     assert '`expected_continuity_revision` (the number, or `"current"`)' in full
     for field in ("`curation_due`", "`lint_report`", "`next_expected_revision`"):
@@ -661,14 +662,15 @@ def test_travel_downtime_time_skip_brief() -> None:
     flat = _flat(brief)
     assert "sectioned montage: one short section per stop" in flat
     assert "about 800 words unless the Player asks for more" in flat
-    assert "Write the reply first; the commit follows it, and the hand-back line comes last" in flat
+    assert "The commit comes first, and the montage is the turn's last message" in flat
     until = _flat(_section(text, "Skip Until Something Happens"))
     assert "until the first established trigger fires" in until and "Nothing is invented" in until
     clocks = _flat(_section(text, "Timed Threats"))
     assert "`active_clocks` entry in `current_state.yaml`" in clocks
     assert "At an act close, run `python tools/world_pulse.py --input-file -`" in clocks
     resolving = _numbered(_section(text, "Resolving The Skip"))
-    assert "after the reply" in resolving[2] and "`open_choices`" in resolving[2]
+    assert "Commit the skip" in resolving[2] and "`open_choices`" in resolving[2]
+    assert "Write the montage as the reply" in resolving[3]
 
 
 def test_visuals_playbook_is_routed_and_bounded() -> None:

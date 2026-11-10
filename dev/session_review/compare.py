@@ -1,4 +1,4 @@
-"""Print the 0.4.0 success metrics (spec section 10) for one or two review work dirs.
+"""Print the success metrics for one or two review work dirs (0.4.0 spec section 10, as 0.4.1 changed them).
 
     python compare.py WORK_A [WORK_B] [--labels A B] [--json]
 
@@ -15,11 +15,11 @@ Every dir is measured the same way, so two games compare fairly:
   that ran commit-durable;
 - narrated turn: a play turn without OOC that has a reply text block of 200 or
   more characters;
-- narrated first: committed turns (any that ran an rpg_state commit) whose
-  narration came before the first commit. A committed turn with no
-  narration-length text counts as not narrated first, as the capsule's
-  [order] check reads it (repog_runtime.turn_order); the cell says how many
-  there were;
+- full reply: committed turns (any that ran an rpg_state commit) outside OOC
+  that sent narration-length text. A turn that stayed under it sent the Player
+  a line instead of a scene, the failure of the 0.4.0 reply-first order;
+- commit size: median characters of an rpg_state commit command, heredoc
+  payload included: what the Player waits for while it is written;
 - status lines: short reply lines (300 characters or less) in non-OOC play
   turns that hold an unambiguous backend phrase: a helper, rule or failure
   name (any snake_case word, such as `rpg_state` or `stale_revision`), a
@@ -31,7 +31,7 @@ Every dir is measured the same way, so two games compare fairly:
   first; lines marked OOC and dialogue lines opening with a dash or a single
   quote are skipped;
 - wait to narration: prompt to the first narration text block, median over
-  narrated turns; "~20 s" counts as met up to 25 s;
+  narrated turns; "~30 s" counts as met up to 33 s;
 - reachable bad band: a rolled (not auto) receipt that could land below the
   lowest success band, read as roll_dice reads it (the band a margin of 0
   lands in, and every band above it). A 0.4.0 receipt says so in
@@ -403,13 +403,19 @@ def ratio(part: int, whole: int) -> Cell:
 NA = Cell("n/a")
 
 
-def m_narrated_first(review: Review) -> Cell:
+def m_full_reply(review: Review) -> Cell:
     if not review.turns:
         return NA
-    committed = [t for t in review.play if t.get("order") not in (None, "no_commit")]
-    cell = ratio(sum(t["order"] == "narrate_first" for t in committed), len(committed))
-    unnarrated = sum(t["order"] == "commit_no_long_text" for t in committed)
-    return Cell(cell.text + (f", {unnarrated} without narration" if unnarrated else ""), cell.value)
+    committed = [t for t in review.play if t.get("order") not in (None, "no_commit") and not t.get("ooc")]
+    return ratio(sum(t["order"] != "commit_no_long_text" for t in committed), len(committed))
+
+
+def m_commit_size(review: Review) -> Cell:
+    sizes = [size for t in review.play for size in t.get("commit_chars") or []]
+    if not sizes:
+        return NA
+    size = statistics.median(sizes)
+    return Cell(f"{size:.0f} chars", size)
 
 
 def m_status_lines(review: Review) -> Cell:
@@ -572,9 +578,10 @@ def m_records_language(review: Review) -> Cell:
 
 
 METRICS = [
-    ("narrated_first", "Committed turns narrated first", "90%+", m_narrated_first, lambda v: v >= 0.9),
+    ("full_reply", "Committed turns with a full reply", "100%", m_full_reply, lambda v: v == 1),
+    ("commit_size", "Median commit size", "under 2,500 chars", m_commit_size, lambda v: v < 2500),
     ("status_lines", "Status lines the Player saw", "0", m_status_lines, lambda v: v == 0),
-    ("narration_wait", "Median wait to narration", "~20 s", m_narration_wait, lambda v: v <= 25),
+    ("narration_wait", "Median wait to narration", "~30 s", m_narration_wait, lambda v: v <= 33),
     ("bad_band_rolls", "Rolls with a reachable bad band", "every roll made", m_bad_band_rolls, lambda v: v >= 1),
     ("empty_distills", "Empty distills with stale findings", "0", m_empty_distills, lambda v: v == 0),
     ("standing_warnings", "Standing warnings", "0 unacknowledged", m_standing_warnings, lambda v: v == 0),
