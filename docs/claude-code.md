@@ -73,45 +73,12 @@ in the README.
 
 ## Plugin Edition
 
-Since plugin 0.2.0 the plugin is maintained as its own project. The build
-below is frozen at plugin 0.1.1: it still runs, but it no longer tracks the
-plugin, and with the current `AGENTS.md` its play skill exceeds the size
-Claude Code re-attaches after compaction.
-
-RePoG also builds as a Claude Code plugin. One install then serves every
-campaign, and each campaign folder holds only its own `campaign/`. The plugin
-carries the same workflows, briefs, and helpers:
-
-- the `repog:play` skill includes `AGENTS.md` and the Claude Code rules above;
-- `repog:new` creates a campaign from the bundled blank template;
-- a SessionStart hook reminds Claude to load `repog:play` in a campaign folder,
-  and stays silent everywhere else;
-- helpers run through `scripts/repog.sh`, which picks a working Python 3.10+;
-- image generation, the Companion View, browser-agent seats, and the release
-  tooling are left out, because Claude cannot generate images and Claude Code
-  has no use for the rest;
-- campaign creation states that RePoG is for adults aged 18 or older and that
-  content settings are preferences, since Claude's own safety policies decide
-  what it writes.
-
-A plugin cannot ship permission rules or desktop preview entries, so Claude
-Code asks before helpers run until the user allows them, and the Dashboard or
-Companion View is started on request instead of from the preview pane.
-
-Build it from the source repository and load it for one session:
-
-```bash
-python -B tools/build_plugin.py --worktree --target ../repog-plugin
-```
-
-```bash
-claude --plugin-dir ../repog-plugin
-```
-
-Without `--worktree`, the build reads committed `HEAD`. It refuses an existing
-target and checks the result against the plugin directory's automated limits
-before writing anything; `claude plugin validate --strict ../repog-plugin`
-checks the manifests.
+RePoG also ships as a Claude Code plugin, maintained in `claude-plugin/`. One
+install serves every campaign, and each campaign folder holds only its own
+`campaign/`. Besides the same helpers and workflows, the plugin runs the scene
+capsule and the presentation lint from hooks, launches the boundary curator in
+the background, and creates campaigns with `repog:new`. See
+`claude-plugin/README.md` to install it.
 
 ## Maintaining The Source Repository
 

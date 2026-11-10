@@ -407,12 +407,7 @@ The builder packages `HEAD`, not the mutable working tree, then writes a
 SHA-256 manifest. See `DISTRIBUTION.md` for the canonical-source and vendor
 license contract.
 
-The Claude Code plugin edition builds from the same source; add `--worktree`
-to build uncommitted changes for local testing:
-
-```bash
-python -B tools/build_plugin.py --target ../repog-plugin
-```
+The Claude Code plugin edition is maintained in `claude-plugin/`.
 
 ## Dashboard, Companion View, And Visual Transactions
 
