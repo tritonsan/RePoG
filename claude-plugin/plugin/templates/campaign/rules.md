@@ -1,0 +1,458 @@
+# Rules And Rulings
+
+This file stores table rules, optional dice procedures, recurring rulings, and
+campaign-specific mechanics.
+
+## Core Approach
+
+The GM handles ordinary fictional positioning directly. Use deterministic rules
+only when they improve fairness, tension, or continuity.
+
+`play_profile.yaml.mechanics.resolution_grounding` selects the campaign's
+resolution basis:
+
+- `fictional` (default): permissions, competence, approach, leverage, limits,
+  opposition, and consequences decide outcomes in the fiction;
+- `bands`: broad setting-appropriate capability bands support comparison
+  without requiring a full stat block;
+- `numeric`: the declared axis set below, the 1–5 scale, and the budgets are
+  active. The axis count comes from the campaign's own declared set, not from a
+  fixed number.
+
+Do not require numeric player, NPC, faction, or obstacle stats unless the
+selected grounding is `numeric`.
+
+## Numeric Stat Scale
+
+When numeric grounding is active, stats use a 1 to 5 scale:
+
+- 1: weak or unreliable.
+- 2: ordinary but usable.
+- 3: capable and dependable.
+- 4: exceptional.
+- 5: elite or defining.
+
+When `play_profile.yaml.mechanics.resolution` declares `stat_min` and
+`stat_max`, that range replaces 1 to 5 everywhere in this file; restate the
+meanings above and rescale the starting budgets below for the declared range.
+See Dice below.
+
+- Numeric scale:
+
+Record the campaign's range on that line as `min-max`, matching
+`mechanics.resolution`, whenever it is not 1 to 5. The full check's power
+checks read it; left blank, they keep the 1 to 5 defaults.
+
+A long journey through regions of rising power may use a region-anchored open
+scale instead of a fixed top. 1 is an ordinary person, the best of the
+starting region sits a few steps up (4, say), and each wider region reaches
+higher values, with no ceiling set in advance. Record the anchors below, set
+`stat_max` and the line above to the widest region the campaign has reached,
+and raise both as a stage revision when the campaign crosses into a wider
+region; recorded values keep their numbers. The region cap in `progression.md`
+bounds awards inside each region.
+
+- Region anchors:
+
+### Declared Stat Axes
+
+Derive these axes from the researched world and the declared starting stage
+instead of importing a generic set. Leave out capabilities the campaign's stage
+has not reached, and add setting-specific axes when the stage warrants them.
+Offer the Player two to four candidate sets and record the accepted one here; the
+count may differ from the default of eight, and validation follows this list.
+
+Give every axis a meaning before the Player distributes anything. One line each,
+in this shape, so the block stays small enough to keep in hot context during
+play:
+
+`Axis — covers X; does not cover Y; at 1 …, at 3 …, at 5 … in this setting.`
+
+An axis with a name but no meaning is decorative. The Player chooses numbers only
+after reading what those numbers will do.
+
+- Power
+- Agility
+- Endurance
+- Technique
+- Perception
+- Wits
+- Presence
+- Will
+
+## Numeric Starting Level Budgets
+
+Starting distribution has one constraint: every declared axis receives at least
+one point. There is no per-axis cap. A Player who wants a defining strength at
+the top of the scale from the first scene may have it, and pays for it in the
+axes they left low.
+
+The totals below assume eight axes. With a different declared set, derive the
+total from the axis count—roughly twice the number of axes places ordinary axes
+near the middle of the scale—state it, and let the Player accept or change it.
+
+- Beginner: 16 points.
+- Competent: 20 points.
+- Advanced: 24 points.
+- Elite: 28 points.
+
+Campaigns may rename tiers to match the setting. These budgets do not apply to
+fictional grounding, and banded grounding uses band steps instead of points.
+
+The 1 to 5 scale still bounds every value. Unnamed world figures are a separate
+matter: giving an ordinary opponent elite numbers without declaring a high power
+band remains a flagged inconsistency.
+
+## Special Ability Points
+
+Some settings carry capabilities the stat axes cannot describe—a fruit power, a
+force discipline, a school of signs or spells, a bloodline. When the campaign has
+such a layer and grounding is numeric or banded, it gets its own pool, separate
+from stat points, so a special power never competes with ordinary competence for
+the same currency.
+
+- Does this setting have capabilities outside the axes: yes / no
+- What the layer is called here:
+- Starting special ability points:
+- What one point buys, in this setting's terms:
+- How a new power is acquired in the fiction:
+
+When the setting has no such layer, this pool does not exist and is not invented.
+Under fictional grounding, the same capabilities are recorded in prose with their
+source, cost, and limit, and carry no points.
+
+## Simulation Fidelity Obligations
+
+Each tracking setting names an instrument and a turn obligation. A setting that
+changes nothing about behavior is decoration, so treat this table as binding.
+
+| Setting | Obligation during play |
+| --- | --- |
+| `dice_mode` other than `judgment_only` | A contested outcome comes from a recorded roll, not from narration. A durable change that records a contested result carries its roll reference; the durable writer rejects one that does not. Who rolls and whether it is open follows the selected mode |
+| `dice_resolution` module | Contested resolution runs through the mechanic resolver where it applies |
+| `inventory_tracking: quantified` or `encumbrance` | Gaining or spending an item is a mechanic operation inside the durable commit, never prose alone |
+| `strict_consumables` | Supplies decrease when used, and running out is a state fact rather than a narrative flourish |
+| `wounds`, or `wound_tracking: conditions` | An injury becomes a recorded condition with the criteria for clearing it |
+| `clocks` | Named clocks advance only on their declared trigger, through a mechanic operation |
+| `time_tracking: scene` or `step` | Fictional time advances in that unit as part of the turn's write |
+| `travel_tracking: route_time`, `structured_travel` | Travel consumes recorded legs and time |
+| `bounded_resources`, `abilities_costs` | Using an ability spends its cost or sets its cooldown |
+
+The inverse is equally binding: when a setting is abstract or off, invent no
+precision. Do not report counts, distances, clock positions, or wound values the
+campaign does not track.
+
+Fidelity is not tension. A fully tracked campaign may spend a quiet month in
+port, and dice do not oblige danger. Pace, challenge density, and breathers are
+separate settings and stay under their own policy.
+
+Keep tracking out of the prose. Changed values belong in state; narration carries
+only their fictional weight, such as the last two bottles of water rather than a
+table. When a dashboard is enabled the numbers live there instead.
+
+Changing fidelity mid-campaign is a stage-boundary revision: crossing into
+waters that demand supplies and route discipline is a reason to turn those
+settings on, recorded as a revision rather than a silent drift.
+
+## Capability Model In Play
+
+Whatever capability model the campaign accepted stays binding during play, and
+the GM keeps it in hot context rather than recalling it. Under numeric or banded
+grounding that is the declared axis block with its band meanings; under fictional
+grounding it is the recorded competence, limit, cost, and counterplay.
+
+Each turn, before deciding the world's response:
+
+- name which axis or recorded capability the action leans on;
+- read its value or band to decide whether this is routine competence that
+  succeeds cleanly, a genuine contest, or beyond reach for now;
+- read the opposition on the same scale, so a contest is between two known
+  quantities rather than a feeling;
+- treat a low value as a pressure, cost, or counterplay channel instead of
+  automatic failure.
+
+Narration may not contradict the sheet. A character weak in an axis does not
+outperform someone strong in it because the moment wants drama, and a strong axis
+is not quietly ignored to keep a scene tense. If the fiction demands an outcome
+the sheet does not support, change the route to that outcome or let the sheet
+stand—do not narrate past it.
+
+## Stat Use And Opposition Model
+
+Under numeric grounding, stats are not only for the player. Use the same 1 to
+5 scale for T2+ NPCs, companions, major antagonists, important faction faces,
+and significant obstacles. Under fictional or banded grounding, use the
+equivalent prose permissions or broad bands instead.
+
+Use stats as fictional capability anchors:
+
+- 1: usually fails without help, leverage, time, or favorable conditions.
+- 2: handles ordinary pressure but struggles against specialists.
+- 3: reliable professional capability.
+- 4: exceptional local or regional capability.
+- 5: elite, defining, or campaign-stage-significant capability.
+
+When an action faces resistance, identify:
+
+- the player's relevant stat and capability;
+- the opposition stat, obstacle difficulty, or faction capability;
+- any leverage, preparation, tools, knowledge, injury, exhaustion, surprise, or
+  positional advantage;
+- what clean success, partial success, and failure mean in the fiction.
+
+Do not let special capabilities erase stats. A special capability changes what
+is possible and which stat matters, but it still has limits, counters, and
+fictional requirements.
+
+## Campaign Stage And Power Bands
+
+Calibrate stats to the current campaign stage. In a long campaign, early
+ordinary NPCs should not be built like endgame threats.
+
+Default bands:
+
+- Incidental: most stats 1 to 2; rarely one 3.
+- Local professional: one main stat 3; supporting stats 1 to 2.
+- Local elite / serious obstacle: one main stat 4; clear weak areas remain.
+- Regional threat: several 3 to 4 stats; rarely one 5.
+- Legendary / endgame: 5 only when the campaign stage supports it.
+
+Companions can have future potential, but their current stats should fit the
+present stage. Growth should be recorded through advancement, not assumed at
+creation.
+
+## Tier Caps
+
+Optional. The highest stat a character of each creation tier carries at the
+current stage, so ordinary figures do not drift up to the player character's
+level. The full check reads these lines in place of its defaults; leave them
+blank to keep the defaults. A figure above its tier's cap needs a Power Band
+that covers it, or a `check` directive that acknowledges it.
+
+- T1:
+- T2:
+- T3:
+
+## Obstacle Difficulty
+
+Important obstacles should have a difficulty note:
+
+- Trivial: should pass unless something unusual interferes.
+- Routine: succeeds with fitting stat/capability or enough time.
+- Challenging: requires a relevant strength, preparation, leverage, or risk.
+- Hard: requires strong stat/capability plus leverage or a costly approach.
+- Extreme: beyond current stage unless the player finds a major advantage.
+
+Record which stat applies, why the difficulty fits this campaign stage, and
+what each outcome changes.
+
+## Special Capabilities
+
+Special capabilities are setting-specific. They may be powers, expertises,
+social authorities, technologies, techniques, professions, or other unusual
+advantages.
+
+Every special capability needs:
+
+- what it does;
+- its limit;
+- its cost or risk;
+- when it does not help;
+- how it can create story trouble;
+- what can counter it.
+
+No special capability is unlimited.
+
+## Advancement And Rewards
+
+Use `progression.md` for advancement cadence, closure levels, reward pools,
+OOC upgrade check-ins, balance checks, and companion advancement. Use
+`arc_closure.md` to record actual closure reviews and chosen upgrades.
+
+Default stance:
+
+- session closure may give a minor adjustment or short-term edge;
+- scenario closure may offer a meaningful player-chosen upgrade;
+- arc closure should change both the character and the world;
+- companions or allied NPCs can advance when they meaningfully participated or
+  changed;
+- every durable upgrade needs a fiction source, limit, cost, or consequence.
+
+## Dice
+
+Dice are optional. Record one Session 0 mode:
+
+- `judgment_only`: no routine rolls; resolve from positioning and capability.
+- `player_rolls`: the player rolls and reports the result.
+- `open_gm_rolls`: RePoG rolls and shows the expression and result.
+- `hidden_gm_rolls`: RePoG may roll privately when hidden uncertainty matters.
+- `hybrid`: the player rolls decisive character actions; RePoG may roll
+  bounded world or opposition uncertainty.
+
+If dice are used, also define:
+
+- when to roll;
+- who rolls;
+- what success, partial success, and failure mean;
+- how consequences are chosen.
+
+A roll supplies numbers, never the fictional meaning of success or failure.
+For a plain expression, `tools/roll_dice.py` accepts only bounded `NdM`,
+`NdM+K`, or `NdM-K` and returns a seed that reproduces a disputed roll. A
+contested roll that RePoG makes under a dice mode is a roll call instead,
+described below; a roll the Player makes is still declared first and its
+reported result is read against that declaration.
+
+### Resolution Scale
+
+Under numeric grounding, a campaign that rolls declares its scale in
+`play_profile.yaml` under `mechanics.resolution`: the die, the stat and
+difficulty ranges, an optional automatic-success margin, and ordered outcome
+bands. A roll totals the stat value, every declared modifier, and the die. The
+margin is that total minus the difficulty, and the first band whose `at_least`
+the margin reaches names the outcome. Without the block, a margin of zero or
+more succeeds and anything lower fails.
+
+A call whose lowest roll, one per die, already lands in a success band is
+`certain`: it never rolls, whatever the margin. When the value plus modifiers
+minus the difficulty reaches the automatic-success margin, the call also
+succeeds without a roll, recorded at the band its lowest roll would reach, or
+at the lowest success band when that roll would fall short of it. The lowest
+success band is the one a margin of zero lands in, even when a better band
+such as a critical is listed above it. Set the margin to that band's
+`at_least` minus the lowest roll, one per die, or leave it out: either way
+exactly the calls that cannot fail skip the roll. A lower margin also skips
+calls that could fail; a higher one adds nothing, and the full check flags it
+as `auto_success_dead_zone`.
+
+Band names are the campaign's own, such as success, a partial success with a
+small or heavy cost, and failure. Record here what each band means in this
+setting before the first roll, and which difficulty number each Obstacle
+Difficulty word stands for on this scale, so a declared difficulty does not
+drift from scene to scene.
+
+### Declare Before Rolling
+
+Declare every contested roll in full before the die is read, and do not change
+the declaration afterward:
+
+- the actor and the axis or recorded capability the action leans on, with its
+  value;
+- the difficulty, read from the opposition or obstacle on the same scale;
+- factors such as preparation, leverage, tools, help, injury, or position, each
+  a labelled whole-number modifier;
+- the stakes: what each band below success that the call can reach costs, and
+  nothing for a band it cannot reach.
+
+Social pressure, persuasion, deception, and investigation roll the same way as
+violence whenever the outcome is genuinely uncertain and opposed. Routine
+competent action, and anything inside the automatic-success margin, succeeds
+without a roll. A success delivers what the action sought; a complication or
+cost belongs only to a lower band and comes from the declared stakes. A failed
+roll is not quietly reversed by an easier route, and an NPC does not hand over
+the solution in its place.
+
+### Factors And Crowds
+
+Factors cut both ways. What favors the opposition, such as numbers, ground, a
+wound, or no time, enters as a negative modifier as readily as an advantage
+enters as a positive one. Size each factor 2 to 6 for a small, clear, or
+decisive edge where one stat step is worth 2 on the total, and 1 to 3 where it
+is worth 1. Record the campaign's sizes here:
+
+- Small edge:
+- Clear edge:
+- Decisive edge:
+
+Against a crowd, use one of these, whichever the fiction supports: a negative
+small-edge factor (-2 at the default sizes) for each doubling of the opponents,
+several exchanges rolled in turn, or an alarm clock that fills as the fight
+goes on. A named enemy rolls separately from the extras around them, and a
+roll against the crowd never decides their fate.
+
+When the chance of a result below success is under about 15%, or nil, do not
+roll: the action succeeds. The odds table below gives that chance.
+
+### Roll Calls
+
+A roll call passes the declaration to
+`python tools/roll_dice.py --campaign <campaign> --input-file -` (or
+`--input-json`). The request is one JSON object: a short `roll_id`, and the
+declaration as `call` with `actor`, `axis`, `value`, `difficulty`, `stakes`,
+an optional one-line `reason` for the difficulty, and optional `factors`,
+each a `label` and a `modifier`. Without `mechanics.resolution`, the request
+also names its die in `NdM` form as `die`, beside `call`. The tool derives the
+seed from the campaign, the continuity revision, the roll id, and the call,
+checks the value and difficulty against the declared ranges, records a receipt
+in the campaign's runtime folder, and returns the band. Repeating the same roll
+id and call at the same continuity revision returns the same receipt; a roll id
+is never reused for a different call or at a later revision. A new attempt
+needs a fictional reason and a new roll id, and the first roll stays on record.
+Never roll a contested outcome with any other random source. The durable commit
+that records the outcome references the roll id and its band, and a roll made
+but not used is listed as void with a reason.
+
+### Odds Table
+
+`python tools/odds.py <campaign>` prints the exact chance of each band for every
+stat and difficulty in the declared ranges. Read it when the scale is chosen at
+Session 0, before any scale change, and whenever advancement brings a value to
+the top of the range. A working scale leaves every stat level some difficulty it
+can still fail, and lets the lowest stat reach the first band against ordinary
+difficulties. When the top stat reaches the first band against every
+difficulty, the scale is exhausted: rolls at that level decide nothing, and the
+full check warns about it.
+
+### Scale Migration
+
+Progression can outgrow a scale. When the top stat no longer faces a difficulty
+it can fail, or the campaign stage expands, change the scale through an OOC
+rules change instead of inflating difficulties scene by scene:
+
+1. Propose the new die, ranges, and bands, with the odds table before and after.
+2. Map every existing value to the new range by one stated rule, so the relative
+   standing of characters, NPCs, factions, and obstacles survives.
+3. Once the Player accepts, change `mechanics.resolution` together with this
+   file's axis meanings, budgets, and difficulty numbers through the OOC
+   configuration procedure. Then remap the recorded values, meaning the player
+   character's stats, NPC and faction stats, and obstacle difficulties, through
+   the durable writer. Make no roll call until both writes are done and the
+   full check passes.
+4. Record the change under Recurring Rulings with the revision that applied it.
+
+Until the scale itself changes, a roll call refuses a value or difficulty
+outside the declared range.
+
+## Deterministic Ledger
+
+Enable `mechanics_state.json` only after the player accepts a mechanic that
+benefits from exact tracking. The schema-v2 ledger may track:
+
+- bounded resources and configured ability costs/cooldowns;
+- quantified inventory and consumables;
+- short conditions or wounds with optional duration;
+- explicit progress clocks;
+- elapsed units used by configured regeneration, cooldowns, and durations.
+
+Every update supplies the current mechanics revision, continuity revision, and
+the next monotonic operation sequence. Retrying the latest sequence with the
+same operation id is safe. A stale sequence, revision, or continuity revision
+must be reconciled instead of forced through.
+
+The ledger does not decide social judgment, NPC motivation, clue meaning,
+world events, damage fiction, or narrative consequences. Those remain GM
+decisions grounded in the campaign.
+
+## Recurring Rulings
+
+### Ruling Title
+
+- Trigger:
+- Procedure:
+- Consequences:
+- Notes:
+
+## Campaign-Specific Mechanics
+
+Use this section for simple, human-readable mechanics. Do not create Python
+mechanics unless a repeated rule truly needs deterministic automation.

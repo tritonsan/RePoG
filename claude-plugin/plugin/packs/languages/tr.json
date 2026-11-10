@@ -1,0 +1,203 @@
+{
+  "code": "tr",
+  "name": "Türkçe",
+  "casefold": "turkish",
+  "stopwords": [
+    "ve", "ile", "ya", "veya", "ama", "fakat", "ancak", "oysa", "çünkü", "eğer",
+    "ki", "de", "da", "dahi", "bile", "mi", "mı", "mu", "mü", "ise",
+    "iken", "diye", "yani", "hem", "sanki", "işte", "hani", "acaba", "belki", "galiba",
+    "yine", "yoksa", "olduğu", "olduğunu",
+    "ben", "sen", "o", "biz", "siz", "onlar", "beni", "seni", "onu", "bizi",
+    "sizi", "onları", "bana", "sana", "ona", "bize", "size", "onlara", "benden", "senden",
+    "ondan", "benim", "senin", "onun", "bizim", "sizin", "onların", "bu", "şu", "bunu",
+    "şunu", "buna", "şuna", "bunun", "bundan", "bunlar", "bunları", "kendi", "kendisi", "kendine",
+    "kendini",
+    "bir", "biri", "birkaç", "biraz", "birçok", "bazı", "bazen", "her", "herkes", "hep",
+    "hepsi", "hiç", "hiçbir", "kimse", "bütün", "tüm", "öteki", "diğer", "başka", "aynı",
+    "şey", "şeyi", "çok", "az", "daha", "en", "pek", "fazla",
+    "kim", "kimin", "kime", "ne", "neden", "niye", "niçin", "nasıl", "nerede", "nereye",
+    "hangi", "kaç",
+    "için", "gibi", "kadar", "göre", "karşı", "doğru", "rağmen", "dolayı", "beri", "sonra",
+    "önce", "yerine", "boyunca", "olarak",
+    "içinde", "içine", "içeri", "içeride", "dışarı", "dışında", "üstünde", "üstüne", "üzerinde", "üzerine",
+    "altında", "yanında", "önünde", "arkasında", "arasında", "burada", "orada", "buraya", "oraya",
+    "şimdi", "hemen", "artık", "hâlâ", "henüz", "yalnız", "yalnızca", "sadece", "yeniden", "tekrar",
+    "zaten", "böyle", "şöyle", "öyle", "tam",
+    "var", "yok", "vardı", "yoktu", "değil", "değildi", "oldu", "olur", "olan", "idi",
+    "dedi", "etti", "et",
+    "evet", "hayır", "peki", "hadi", "tamam", "on", "iki",
+    "icin", "cok", "degil", "degildi", "simdi", "sey", "hic", "hicbir", "cunku", "boyle",
+    "oyle", "gore", "su", "icinde"
+  ],
+  "avoid_phrases": [
+    {"phrase": "bir an", "rolling_max": 3, "note": "overused pause beat; at most three in the last ten replies; show the pause through an action"},
+    {"phrase": "başka bir şey demedi", "max_per_reply": 0, "note": "stock closing beat; let what the character does carry the silence"},
+    {"phrase": "başka bir şey söylemedi", "max_per_reply": 0, "note": "stock closing beat; let what the character does carry the silence"},
+    {"phrase": "başka bir şey eklemedi", "max_per_reply": 0, "note": "stock closing beat; let what the character does carry the silence"},
+    {"phrase": "cevabını bekliyor", "max_per_reply": 0, "note": "turn-ending tic; end on a concrete moment instead"},
+    {"phrase": "cevabını bekledi", "max_per_reply": 0, "note": "turn-ending tic; end on a concrete moment instead"},
+    {"phrase": "yanıtını bekliyor", "max_per_reply": 0, "note": "turn-ending tic; end on a concrete moment instead"},
+    {"phrase": "sesi titremiyordu", "max_per_reply": 0, "note": "negated description; say how the voice sounded"},
+    {"phrase": "sessizlik uzadı", "max_per_reply": 1, "note": "stock beat"}
+  ],
+  "negated_description": [
+    "\\b\\w+m[ıiuü]yor(?:du|lardı|lar|sun|um)?(?:\\s*[,;])?(?:\\s+\\w+){0,2}?\\s+(?:ama|fakat|yalnızca|sadece)\\b",
+    "\\b\\w+(?:madı|medi)(?:lar)?(?:\\s*[,;])?\\s+(?:ama|fakat|yalnızca|sadece)\\b",
+    "\\b(?:sesi|eli|elleri|yüzü|bakışları|gözleri)\\s+(?:titremiyordu|titremedi|kıpırdamıyordu|kıpırdamadı|değişmiyordu|değişmedi)\\b",
+    "\\bhiç\\s*bir\\s+\\w+\\s+yoktu\\b",
+    "\\bdeğil(?:di)?\\s*[,;:—–-]\\s*\\w+[dt][ıiuü]\\b",
+    "\\bne\\s+\\w+\\s+ne\\s+de\\s+\\w+"
+  ],
+  "day_patterns": [
+    "\\b\\d+\\s*\\.\\s*gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*",
+    "\\b\\d+\\s*(?:['’]\\s*)?[ıiuü]?nc[ıiuü]\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*",
+    "(?<!\\bher\\s)(?<!\\bbir\\s)(?<!\\bo\\s)(?<!\\baynı\\s)\\bgün\\s*(?:[:#]\\s*)?\\d+\\b",
+    "\\b(?:(?:iki|üç|dört|beş|altı|yedi|sekiz|dokuz)\\s+)?(?:yüz\\s+)?(?:on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan)\\s+(?:birinci|ikinci|üçüncü|dördüncü|beşinci|altıncı|yedinci|sekizinci|dokuzuncu)\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*",
+    "\\b(?:(?:iki|üç|dört|beş|altı|yedi|sekiz|dokuz)\\s+)?(?:yüz\\s+)?(?:onuncu|yirminci|otuzuncu|kırkıncı|ellinci|altmışıncı|yetmişinci|sekseninci|doksanıncı|yüzüncü)\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*",
+    "\\byüz\\s+(?:birinci|ikinci|üçüncü|dördüncü|beşinci|altıncı|yedinci|sekizinci|dokuzuncu)\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*"
+  ],
+  "near_day_patterns": [
+    "\\b(?<!\\bon\\s)(?<!\\byirmi\\s)(?<!\\botuz\\s)(?<!\\bkırk\\s)(?<!\\belli\\s)(?<!\\baltmış\\s)(?<!\\byetmiş\\s)(?<!\\bseksen\\s)(?<!\\bdoksan\\s)(?<!\\byüz\\s)(?<!\\bbin\\s)(?P<day>birinci|ikinci|üçüncü|dördüncü|beşinci|altıncı|yedinci|sekizinci|dokuzuncu)\\s+gün(?!e[şsy]|ah|cel|dem|düz|bat|doğ)\\w*"
+  ],
+  "number_words": {
+    "bir": 1, "iki": 2, "üç": 3, "dört": 4, "dörd": 4, "beş": 5, "altı": 6, "yedi": 7, "sekiz": 8, "dokuz": 9,
+    "on": 10, "yirmi": 20, "otuz": 30, "kırk": 40, "elli": 50, "altmış": 60, "yetmiş": 70, "seksen": 80, "doksan": 90,
+    "yüz": 100, "bin": 1000,
+    "birinci": 1, "ikinci": 2, "üçüncü": 3, "dördüncü": 4, "beşinci": 5, "altıncı": 6, "yedinci": 7, "sekizinci": 8,
+    "dokuzuncu": 9, "onuncu": 10, "yirminci": 20, "otuzuncu": 30, "kırkıncı": 40, "ellinci": 50, "altmışıncı": 60,
+    "yetmişinci": 70, "sekseninci": 80, "doksanıncı": 90, "yüzüncü": 100
+  },
+  "age_patterns": [
+    "\\b(?P<age>\\d{1,3}|(?:on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan)(?:\\s+(?:bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz))?|bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz)\\s*(?:['’]\\s*)?yaş(?:(?:[ıi]m(?:[ıi]z)?|[ıi]n(?:[ıi]z)?|lar[ıi](?:m[ıi]z|n[ıi]z|n))(?:[dt][ae]|[ae]|[ıi])\\w*|ta\\w*|a\\b)",
+    "\\b(?P<age>on(?:\\s+(?:bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz))?)(?:[ıiuü]?m(?:[ıi]z)?[dt][ae]\\w*|[ıu]nd[ae]yken\\b)",
+    "(?<!\\bayın\\s)(?<!\\bayının\\s)(?<!['’][ıiuü]n\\s)(?<!['’]n[ıiuü]n\\s)(?<!\\b(?:martın|ekimin|ocağın)\\s)(?<!\\b(?:şubatın|nisanın|mayısın|eylülün|kasımın)\\s)(?<!\\b(?:temmuzun|aralığın)\\s)(?<!\\b(?:haziranın|ağustosun)\\s)\\b(?P<age>on\\s+(?:bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz))s?[ıiuü]n[dt][ae]\\w*",
+    "\\b(?P<age>\\d{1,2})['’](?:[ıiuü]?m(?:[ıi]z)?d[ae]\\w*|s?[ıiuü]nd[ae]yken\\b)",
+    "\\byaşı\\s+(?:henüz\\s+|daha\\s+|sadece\\s+|yalnızca\\s+|ancak\\s+)?(?P<age>\\d{1,3}|(?:on|yirmi|otuz|kırk|elli)(?:\\s+(?:bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz))?|bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz)(?:['’]?(?:y?[dt][ıiuü]r?|y?ken))?(?=\\s*(?:[,.;:!?…)\"”»—–\\n]|$)|\\s+(?:ve|ama|fakat|ancak|bile|da|de|olmasına|olsa|olunca)\\b)",
+    "\\b(?P<age>\\d{1,3}|(?:on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan)(?:\\s+(?:bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz))?|bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz)\\s*(?:['’]\\s*)?yaş(?:[ıi]m(?:[ıi]z)?|[ıi]n(?:[ıi]z)?|lar[ıi](?:m[ıi]z|n[ıi]z|n))?[dt][ae]n\\s+(?:\\d{1,3}|(?:on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan)(?:\\s+(?:bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz))?|bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz)(?:\\s*(?:['’]\\s*)?yaş\\w*|['’]?(?:[ıiuü]?m(?:[ıi]z)?|s?[ıiuü]n|y)?[ae]\\b)",
+    "(?<!\\bayın\\s)(?<!\\bayının\\s)(?<!['’][ıiuü]n\\s)(?<!['’]n[ıiuü]n\\s)(?<!\\b(?:martın|ekimin|ocağın)\\s)(?<!\\b(?:şubatın|nisanın|mayısın|eylülün|kasımın)\\s)(?<!\\b(?:temmuzun|aralığın)\\s)(?<!\\b(?:haziranın|ağustosun)\\s)\\b(?P<age>(?:on|yirmi|otuz|kırk|elli)(?:\\s+(?:bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz))?|\\d{1,2}['’])(?:[ıiuü]?m(?:[ıi]z)?|s?[ıiuü]n)[dt][ae]n\\s+(?:\\d{1,3}|(?:on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan)(?:\\s+(?:bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz))?|bir|iki|üç|dört|dörd|beş|altı|yedi|sekiz|dokuz)(?:\\s*(?:['’]\\s*)?yaş\\w*|['’]?(?:[ıiuü]?m(?:[ıi]z)?|s?[ıiuü]n|y)?[ae]\\b)"
+  ],
+  "romance_terms": [
+    "sevgilisi*", "sevgilim*", "sevgilin*", "sevgililer*", "sevgiliy*", "sevgili oldu*", "sevgili olmuş*",
+    "sevgili olmak*", "sevgili edin*", "aşık*", "ilk aşk*", "büyük aşk*", "aşk yaşa*", "aşk acısı", "aşk mektu*",
+    "aşk ilişki*", "aşk macera*", "aşk hikaye*", "aşk evliliğ*", "aşkını itiraf*", "seviş*", "öpüş*",
+    "dudağından öp*", "dudaklarından öp*", "dudaklarını öp*", "tutkuyla öp*", "ilk öpücü*", "cinsel*", "romantik*",
+    "flört*", "nişanlı*", "nişanlan*", "evlen*", "metres*", "şehvet*", "bekaret*", "gerdek*", "seks", "seksi",
+    "baştan çıkar*", "birlikte yat*", "beraber yat*", "koynuna gir*", "ilişkiye gir*"
+  ],
+  "affection_terms": [
+    "öp*"
+  ],
+  "affection_guards": [
+    "anne*", "baba*", "büyükanne*", "büyükbaba*", "nine*", "dedesi*", "dedem*", "oğlu*", "oğlum*", "oğlun*",
+    "kızım*", "kızını", "kızına", "kızının", "kızında", "kızıyla", "çocuğunu", "çocuğuna", "çocuğunun", "bebeğini",
+    "kardeş*", "abla*", "ağabey*", "abisi*", "torun*", "yeğen*", "evlat*", "amca*", "dayı*", "teyze*", "elini öp*",
+    "ellerini öp*", "alnından öp*", "alnını öp*", "yanağından öp*", "yanaklarından öp*"
+  ],
+  "pc_speech_patterns": [
+    "\\b(?:dedin|sordun|söyledin|fısıldadın|bağırdın|mırıldandın|seslendin|haykırdın|yanıtladın|cevapladın|ekledin)(?:[ıiuü]z)?\\b",
+    "\\b(?:diyor|soruyor|söylüyor|fısıldıyor|bağırıyor|mırıldanıyor|sesleniyor|haykırıyor|yanıtlıyor|cevaplıyor|ekliyor)sun(?:uz)?\\b",
+    "\\b(?:cevap|yanıt|karar|söz)\\s+(?:verdin(?:iz)?|veriyorsun(?:uz)?)\\b",
+    "\\b(?:başını\\s+(?:salladın|sallıyorsun)|gülümsedin|gülümsüyorsun|iç\\s+(?:çektin|çekiyorsun)|omuz\\s+(?:silktin|silkiyorsun)|kabul\\s+(?:ettin|ediyorsun)|onayladın|onaylıyorsun)\\b"
+  ],
+  "pc_say_patterns": [
+    "\\b(?:diye\\s+)?(?:dedin|diyorsun|sordun|soruyorsun|söyledin|söylüyorsun|fısıldadın|fısıldıyorsun|bağırdın|bağırıyorsun|mırıldandın|mırıldanıyorsun|seslendin|sesleniyorsun|yanıtladın|yanıtlıyorsun|cevapladın|cevaplıyorsun|ekledin|ekliyorsun)(?:[ıiuü]z)?\\b"
+  ],
+  "second_person_patterns": [
+    "\\b\\w+(?:yor|[ae]c[ae]k|m[ıiuü]ş|[ıiuüae]r|m[ae]z)s[ıiuü]n(?:[ıiuü]z)?\\b"
+  ],
+  "echo_patterns": [
+    "\\b(?:(?P<quote>diye)\\s+)?tekrarl(?:ıyor|adı|amış|ayarak|ayıp|ayınca|ar)\\w*",
+    "\\b(?:(?P<quote>diye)\\s+)?tekrar\\s+ed(?:iyor|er|di|ince|erek)\\w*",
+    "\\b(?:(?P<quote>diye)\\s+)?yinel(?:iyor|edi|er|eyerek)\\w*"
+  ],
+  "meta_words": [
+    "revizyon", "kayıt dosyası", "kampanya dosyası", "durum dosyası", "oturum günlüğü",
+    "karakter notu", "sahne kimliği", "işlem kimliği", "şema", "betik", "araç çağrısı",
+    "yardımcı araç", "kalıcılık", "commit", "payload", "kaydediyorum", "kayda geçiriyorum",
+    "dosyayı güncelliyorum", "kaydederken", "tablonun biçimi", "distill"
+  ],
+  "meta_patterns": [
+    "\\bkayıtlar\\s+tamam\\w*",
+    "\\bkaydı\\s+tamaml\\w*",
+    "\\bkayıt\\s+daha\\s+kal\\w*"
+  ],
+  "secret_words": ["sır", "sırrı*", "sırlar*", "gizli*"],
+  "gone_terms": [
+    "ölü", "öldü", "öldüğü*", "öldükten", "ölmüş*", "öldürül*", "vefat*", "hayatını kaybet*", "can verdi*", "şehit düş*",
+    "şehit oldu*", "kayıp", "kayıptır", "kaybol*", "ayrıldı*", "ayrılmış*", "gitti*", "gitmiş*", "terk etti*", "terk etmiş*",
+    "artık yok", "yok oldu*"
+  ],
+  "ended_terms": [
+    "ölü", "öldü", "öldüğü*", "ölmüş*", "öldürül*", "vefat*", "bitti*", "bitmiş*", "sona er*", "son buldu*",
+    "geçmiş", "geçmişte", "eski", "eskiden", "ayrıldı*", "ayrılmış*", "boşandı*", "boşanmış*", "koptu*", "kopmuş*",
+    "artık yok"
+  ],
+  "dotless_i_words": [
+    "ıhlamur", "ıkın", "ılgın", "ılık", "ılıca", "ılıman", "ılım", "ımızgan", "ırak", "ırgat",
+    "ırgala", "ırk", "ırmak", "ırz", "ısı", "ıskala", "ıskarta", "ıslah", "ıslak", "ıslan",
+    "ıslat", "ıslık", "ısmarla", "ıspanak", "ısrar", "ıssız", "ıstakoz", "ıstampa", "ıstavroz", "ıstırap",
+    "ışık", "ışıl", "ışın", "ışıma", "ıtır", "ıtri", "ızbandut", "ızdırap", "ızgara"
+  ],
+  "calques": [
+    {"bad": "yüzünde hiçbir şey yoktu", "better": "yüzünden ne düşündüğü okunmuyordu"},
+    {"bad": "sesi düzdü", "better": "sakin, tekdüze bir sesle konuştu"},
+    {"bad": "gözleri üstünde kaldı", "better": "gözlerini ayırmadı"},
+    {"bad": "gözleri senin üstünde kaldı", "better": "gözlerini senden ayırmadı"},
+    {"bad": "gözleri üzerinde kaldı", "better": "gözlerini ayırmadı"},
+    {"bad": "gözleri senin üzerinde kaldı", "better": "gözlerini senden ayırmadı"},
+    {"bad": "bir şeyi tartıyordu", "better": "aklından bir hesap geçirdiği belliydi"},
+    {"bad": "surlarda çok yakışıyorsun", "better": "surlarda durmak sana yakışıyor"},
+    {"bad": "boğazını temizledi", "better": "hafifçe öksürdü"},
+    {"bad": "gözleri yumuşadı", "better": "bakışları yumuşadı"},
+    {"bad": "çenesi gerildi", "better": "dişlerini sıktı"},
+    {"bad": "çenesi kasıldı", "better": "dişlerini sıktı"},
+    {"bad": "tuttuğunu bilmediği nefesi", "better": "rahatlayıp nefesini bıraktı"},
+    {"bad": "havada asılı kaldı", "pattern": "\\bhavada\\s+asılı\\s+kal\\w*", "better": "sözlerinin ardından oda sessizleşti"},
+    {"bad": "dudaklarının köşesi kıvrıldı", "better": "dudağının kenarında belli belirsiz bir gülümseme belirdi"},
+    {"bad": "bu mantıklı", "better": "akla yatıyor"},
+    {"bad": "gülüşü gözlerine ulaşmıyordu", "pattern": "\\bgözlerine\\s+(?:kadar\\s+)?(?:ulaş|çık)m[ıa]\\w*", "better": "gözleri gülmüyordu"},
+    {"bad": "gülümsemeye en yakın şey", "pattern": "\\b(?:gülümseme|gülüş|gülücük|kahkaha|tebessüm|öfke|sevinç|korku|şefkat|onay|teşekkür|özür|iltifat|duygu|ifade)\\w*\\s+en\\s+yakın\\s+şey\\w*", "better": "belli belirsiz bir gülümseme"},
+    {"bad": "taze et", "pattern": "(?<!\\bkilo\\s)(?<!\\bbiraz\\s)(?<!\\bbol\\s)\\b(?:taze|yeni)\\s+et(?:ler)?\\b(?!\\s*(?:[,;]|ve\\b|veya\\b|ile\\b|ya\\s+da\\b|sat|al[ıadm]|pişir|koku|kızar|haşla|kes|doğra|kilo|parça|yeme|yiye|yiyor|tabağ|suyu|ızgara|kavur|lokma|dilim|tezgâh|tezgah))", "better": "acemi, yeni gelen"},
+    {"bad": "ev para vermez", "pattern": "\\bev\\s+para\\s+ver(?:mez|miyor|medi)\\w*", "better": "kasa kaybetmez"},
+    {"bad": "gülümseme boşa gitti", "pattern": "\\bgülümseme(?:si|n|m)?\\s+boşa\\s+git\\w*", "better": "gülümsemesine karşılık gelmedi"},
+    {"bad": "hiçbir şey olmuyor", "pattern": "(?m)(?:^[\\s*_]*|(?<=[.!?…]\\s))hiç\\s*bir\\s+şey\\s+olmu(?:yor|yordu)\\w*", "better": "say what the moment holds instead"},
+    {"bad": "korku değil, öfke", "pattern": "(?m)(?:^[\\s*_]*|(?<=[.!?…]\\s))(?:\\w+\\s+){0,2}\\w+\\s+değil(?:di)?\\s*,\\s*(?!diye\\b)\\w+", "better": "name what it is: öfkeydi"}
+  ],
+  "gesture_families": [
+    {
+      "id": "lip_corner",
+      "label": "lip corner curls",
+      "example": "dudağının kenarı kıvrıldı",
+      "patterns": ["\\bduda[kğ]\\w*\\s+(?:kenar|köşe)\\w*\\s+(?:\\w+\\s+){0,2}?(?:kıvrıl|kıpırda|kalk|seğir)\\w*"]
+    },
+    {
+      "id": "eyebrow_raise",
+      "label": "eyebrow raise",
+      "example": "kaşını kaldırdı",
+      "patterns": ["\\bkaş(?:ı(?:n(?:ı)?)?|lar(?:ı(?:n(?:ı|dan)?)?|ın)?)?\\s+(?:\\w+\\s+){0,2}?(?:kalk|kaldır)\\w*"]
+    },
+    {
+      "id": "scar_touch",
+      "label": "touching a scar",
+      "example": "yara izine dokundu",
+      "patterns": ["\\b(?:yara|yanık)\\s*iz\\w*\\s+(?:\\w+\\s+){0,3}?(?:dokun|okşa|sıvazla|gezdir|gezin|götür)\\w*"]
+    },
+    {
+      "id": "says_nothing",
+      "label": "says nothing",
+      "example": "bir şey demiyor",
+      "patterns": [
+        "\\b(?:hiç\\s*)?bir\\s+şey\\s+de(?:miyor|medi|mez|meden)\\w*",
+        "\\bhiç\\s*bir\\s+şey\\s+söyle(?:miyor|medi|mez|meden)\\w*"
+      ]
+    }
+  ],
+  "common_words": [
+    "tam", "kara", "ak", "er", "bay", "han", "bey", "ay", "can", "nur",
+    "gül", "su", "yol", "taş", "dağ", "kurt", "ateş", "demir", "kaya", "toprak",
+    "deniz", "yıldız", "umut", "savaş", "barış", "emir", "aslan", "kartal", "doğan", "çelik",
+    "tan", "gün", "kar", "kan", "baş", "el", "ok", "yay", "dost", "şah",
+    "ağa", "paşa", "hoca", "usta", "efe", "alp", "ışık", "bahar", "ozan", "ulu"
+  ],
+  "card": "Write Turkish as a native novelist would, not as translated English. Keep the verb last and drop subject pronouns unless they carry contrast. Address the player character with 'sen' unless the profile sets 'siz'; NPCs choose sen or siz by rank, age and closeness, and titles follow the name (Halvar Usta, Ayşe Hanım, Murat Bey). Use -miş for hearsay. Avoid calques such as 'yüzünde hiçbir şey yoktu' or 'sesi düzdü', chains of negated descriptions, and stock beats like 'bir an' or 'cevabını bekliyor'. Keep the day count out of prose: 'iki hafta sonra', not 'seksen ikinci gün'."
+}

@@ -1,0 +1,67 @@
+# 05 — Character Realization And Mechanics
+
+## Purpose
+
+Translate the character and thin world into binding competence, counterplay,
+tracking, and growth contracts. Mechanics follow accepted play; they do not
+silently arrive from genre.
+
+## Decision Order
+
+1. `05_character_surface_and_world_read` — realize appearance, material
+   culture, and the public signals this specific world can actually read.
+2. `05_social_position_access_and_belonging` — establish role, access,
+   isolation or belonging, routine fit, and who could naturally know them.
+3. `05_resolution_grounding` — fictional, bands, or numeric; derive any stat
+   axes from this setting and stage. With bands or numbers, carry the Stage 2
+   NPC power scale into `rules.md`: a `- Numeric scale: min-max` line and a
+   `## Tier Caps` block (`- T1: n`, one line per tier). Under
+   `region_anchored_open` the caps are the current region's.
+4. `05_reliable_competence_and_special_capabilities` — what succeeds cleanly,
+   what special capability exists (including none), its world-specific source,
+   and what affordances the world naturally provides.
+5. `05_limitation_cost_and_counterplay` — real limit, causal cost, and a channel
+   for adaptation rather than automatic failure.
+6. `05_simulation_fidelity` — explicitly approved modules and inventory, time,
+   travel, wound, resource, clock, and dice tracking.
+
+Record each with the fields in `decisions.md`; Stage 5 values are summary
+objects with no further required fields.
+
+Offer contextual cards, one decision per message. A lens or world feature may
+suggest a module but never activates it.
+Ask only for surface detail the Player cares about or an actual upcoming
+dependency needs. Unspecified height, weight, and bodily facts do not block play
+or justify invented advantages, impediments, or NPC judgments.
+
+Describe tracking through its effect on choices, not a menu of selector names.
+If the Player remains unsure about resolution, use one short optional out-of-play
+example after the thin world and competence are known and before ecology expands.
+Show routine competence and genuine resistance within accepted limits; no real
+roll, resource use, character action, or continuity write occurs. This is part of
+the owning decision, never a new approval boundary.
+
+## Controlled Extension
+
+Activate `mechanics_detail` only from its manifest tags when tactical depth,
+multiple stateful modules, or a separate special-ability economy is accepted.
+Translate accepted choices into costs, cooldowns, regeneration, conditions,
+clocks, deterministic operations, and bounded state. Do not add a mechanic to
+make the extension appear useful.
+
+## Materialization Boundary
+
+Critical profile, player, and rules owners are written in the acceptance turn
+and share the current setup revision. At stage end, materialize the
+world-specific playable `player.md` card from the Stage 3 foundation, enable
+state only for explicitly
+approved stateful modules, and verify every module's required tracking field.
+Preserve wholly narrative commitments in their owner instead of inventing a
+mechanic. Advancement cadence and reward rhythm wait for Stage 8. Complete or
+explicitly default `mechanics_detail` before closing the stage.
+
+## Do Not
+
+- use unexplained generic axes or a fixed universal point budget;
+- make limitation mean routine failure or negate reliable competence;
+- postpone profile materialization to finalization.

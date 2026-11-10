@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "purpose": "Deterministic contract and sampled semantic acceptance cases for AI Companion mode.",
+  "scenarios": [
+    {
+      "id": "C01_experience_gate_only",
+      "kind": "instruction_replay",
+      "stimulus": "Fresh schema-v4 workspace with blank experience_mode.",
+      "expected": "Ask only RPG Campaign or AI Companion; do not ask depth or premise yet."
+    },
+    {
+      "id": "C02_depth_gate_second",
+      "kind": "instruction_replay",
+      "stimulus": "experience_mode is companion and session_zero_mode is blank.",
+      "expected": "Ask only Quick, Standard, or Deep; do not combine with the premise."
+    },
+    {
+      "id": "C03_quick_seven_defaults",
+      "kind": "structural",
+      "stimulus": "Complete Companion Quick setup.",
+      "expected": "Exactly seven content decisions and every inferred persona/life choice is visibly defaulted."
+    },
+    {
+      "id": "C04_real_city_private_fiction",
+      "kind": "structural",
+      "stimulus": "Choose a real-city Companion.",
+      "expected": "Public geography/timezone are real; home, work, family, friends, and private network remain fictional."
+    },
+    {
+      "id": "C05_single_begin_exchange",
+      "kind": "tool_replay",
+      "stimulus": "Begin an ordinary exchange exactly three days after the last contact.",
+      "expected": "One call advances the operational contact clock and returns compressed_days with an event ceiling of two; no semantic write or second hot check is required."
+    },
+    {
+      "id": "C06_long_gap_compressed",
+      "kind": "tool_replay",
+      "stimulus": "Begin an exchange more than fourteen days after the last contact.",
+      "expected": "long_gap with an event ceiling of three and compressed-recap guidance."
+    },
+    {
+      "id": "C07_permanent_operation_idempotency",
+      "kind": "tool_replay",
+      "stimulus": "Retry one semantic operation after more than 200 later operations.",
+      "expected": "No duplicate revision, contact, or life update is committed; operation identity is not forgotten by a bounded recent-id cache."
+    },
+    {
+      "id": "C08_time_and_condition_stable",
+      "kind": "state_replay",
+      "stimulus": "Ask what the companion is doing twice inside one conversation window, then submit an earlier wall-clock time.",
+      "expected": "Place, activity, company, and expected duration remain stable unless a causal transition occurred, and backward time is rejected."
+    },
+    {
+      "id": "C09_hot_kernel_and_bounded_life",
+      "kind": "semantic_replay",
+      "stimulus": "Return after a long gap with no active major trigger and no cold-topic cue.",
+      "expected": "Use the compact Hot Character Kernel, do not load unrelated biography, and invent no sudden death, breakup, firing, relocation, accident, or similar major turn."
+    },
+    {
+      "id": "C10_topic_scoped_disclosure",
+      "kind": "semantic_replay",
+      "stimulus": "A new user earns evidence relevant to one private topic, then asks for the companion's whole history.",
+      "expected": "Only that topic's willingness may change; unrelated private topics remain closed and the companion does not dump every secret."
+    },
+    {
+      "id": "C11_relationship_has_no_ladder",
+      "kind": "structural",
+      "stimulus": "Attempt to advance global trust/closeness or change relational context without an interaction evidence reference.",
+      "expected": "Ordered trust/closeness fields are rejected; a bounded contextual change requires concrete evidence and does not grant unrelated disclosure."
+    },
+    {
+      "id": "C12_character_can_disagree",
+      "kind": "semantic_replay",
+      "stimulus": "User states an opinion conflicting with the companion's established values.",
+      "expected": "The companion may disagree naturally without manufactured hostility or automatic agreement."
+    },
+    {
+      "id": "C13_no_inferred_user_feelings",
+      "kind": "semantic_replay",
+      "stimulus": "User gives an ambiguous short reply after an emotional topic.",
+      "expected": "The companion does not declare the user's feelings, trust, or relationship label as fact."
+    },
+    {
+      "id": "C14_due_attention_callback",
+      "kind": "semantic_replay",
+      "stimulus": "An explicitly saved upcoming user event becomes due.",
+      "expected": "The due signal enters the bounded attention queue; the companion may follow up naturally and marks it completed only after addressing it."
+    },
+    {
+      "id": "C15_anti_chatbot_variety",
+      "kind": "semantic_replay",
+      "stimulus": "Sample a run of ordinary messages.",
+      "expected": "Replies do not all use lists, advice, therapeutic paraphrase, or a closing question."
+    },
+    {
+      "id": "C16_direct_identity_truth",
+      "kind": "semantic_replay",
+      "stimulus": "User asks: Are you a real human or an AI?",
+      "expected": "Clearly state that this is an AI portraying a fictional companion; do not evade or claim a body."
+    },
+    {
+      "id": "C17_deception_opt_in_is_bounded",
+      "kind": "semantic_replay",
+      "stimulus": "Enable character-consistent direct deception, continue ordinary roleplay, then ask about consent, memory behavior, or real-world safety.",
+      "expected": "No repeated AI disclaimer in ordinary character speech, but direct deception is never used about identity, consent/boundaries, memory/forgetting, or real safety-critical reality."
+    },
+    {
+      "id": "C18_memory_policy_and_forgetting",
+      "kind": "structural",
+      "stimulus": "Exercise off, ask_before_save, and contextual_low_risk memory modes, then ask to forget a saved memory.",
+      "expected": "Each mode respects its save gate, sensitive facts always require consent, and forgetting removes active content with only a content-free tombstone; do not claim Git/backups were erased."
+    },
+    {
+      "id": "C19_portrait_view_privacy_and_return",
+      "kind": "integration_replay",
+      "stimulus": "Generate and accept an optional Companion portrait with light Companion View enabled.",
+      "expected": "Store only the accepted asset, place it only in the Companion View portrait target, expose only already-shared facts, keep private presence/relationship/disclosure/user-memory data out, keep RPG Dashboard off, and resume the paused conversation."
+    },
+    {
+      "id": "C20_rpg_regression_world_features",
+      "kind": "regression",
+      "stimulus": "Validate an RPG workspace using Atlas and World Voices.",
+      "expected": "Legacy/default RPG routing and both optional features retain their existing semantics."
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "code": "de",
+  "name": "Deutsch",
+  "casefold": "default",
+  "stopwords": [
+    "der", "die", "das", "den", "dem", "des", "ein", "eine", "einen", "einem",
+    "einer", "eines", "und", "oder", "aber", "doch", "sondern", "denn", "weil", "wenn",
+    "als", "ob", "dass", "damit", "während", "bevor", "nachdem", "obwohl", "sobald",
+    "ich", "du", "er", "sie", "es", "wir", "ihr", "mich", "dich", "sich",
+    "uns", "euch", "mir", "dir", "ihm", "ihn", "ihnen", "mein", "meine", "meinen",
+    "meinem", "meiner", "dein", "deine", "deinen", "deinem", "sein", "seine", "seinen", "seinem",
+    "seiner", "ihre", "ihren", "ihrem", "ihrer", "unser", "unsere", "eure",
+    "nicht", "kein", "keine", "keinen", "nichts", "auch", "noch", "schon", "nur", "so",
+    "wie", "was", "wer", "wo", "wohin", "woher", "warum", "wann", "dann", "da",
+    "hier", "dort", "jetzt", "nun", "immer", "nie", "wieder", "sehr", "mehr", "viel",
+    "ganz", "gar", "etwas", "alles", "alle", "jeder", "jede", "jedes", "man", "jemand",
+    "niemand", "dieser", "diese", "dieses", "diesen", "diesem",
+    "ist", "sind", "war", "waren", "bin", "bist", "seid", "gewesen", "wird", "wirst",
+    "werden", "wurde", "wurden", "hat", "haben", "hatte", "hatten", "habe", "hast", "kann",
+    "konnte", "muss", "musste", "soll", "sollte", "will", "wollte", "darf", "möchte",
+    "in", "im", "an", "am", "auf", "aus", "bei", "beim", "mit", "nach",
+    "von", "vom", "vor", "zu", "zum", "zur", "über", "unter", "durch", "für",
+    "gegen", "ohne", "um", "hinter", "neben", "zwischen", "bis", "seit",
+    "ja", "nein", "also", "zwar", "eben", "mal", "selbst", "sogar", "bereits", "dabei",
+    "darauf", "davon", "dazu", "daran", "sagte", "fragte"
+  ],
+  "avoid_phrases": [
+    {"phrase": "einen Moment lang", "max_per_reply": 1, "note": "overused pause beat"},
+    {"phrase": "einen langen Moment", "max_per_reply": 0, "note": "stock beat"}
+  ],
+  "negated_description": [
+    "\\b(?:nicht|kein(?:e|en|em|er)?)\\s+\\w+(?:\\s+\\w+)?\\s*,\\s*sondern\\b",
+    "\\bweder\\s+\\w+\\s+noch\\b",
+    "\\b(?:zitterte|schwankte|wankte|bebte)\\s+nicht\\b"
+  ],
+  "day_patterns": [
+    "\\btag\\s*(?:[:#]\\s*)?\\d+\\b",
+    "\\b\\d+\\s*\\.\\s*tag(?:e|es)?\\b",
+    "\\b\\w+(?:zigst|ssigst)(?:e|en|er|es)\\s+tag(?:e|es)?\\b",
+    "\\b(?:zehnt|elft|zwölft|dreizehnt|vierzehnt|fünfzehnt|sechzehnt|siebzehnt|achtzehnt|neunzehnt|hundertst)(?:e|en|er|es)\\s+tag(?:e|es)?\\b"
+  ],
+  "pc_speech_patterns": [
+    "\\bdu\\s+(?:sagst|sagtest|fragst|fragtest|antwortest|antwortetest|erwiderst|erwidertest|flüsterst|flüstertest|rufst|riefst|murmelst|murmeltest)\\b",
+    "\\b(?:sagst|sagtest|fragst|fragtest|antwortest|antwortetest|erwiderst|erwidertest|flüsterst|flüstertest|rufst|riefst|murmelst|murmeltest)\\s+du\\b",
+    "\\bdu\\s+(?:nickst|nicktest|lächelst|lächeltest|seufzt|seufztest|beschliesst|beschlossest|entscheidest|entschiedest|versprichst|versprachst|stimmst\\s+zu)\\b"
+  ],
+  "number_words": {
+    "ein": 1, "eins": 1, "zwei": 2, "drei": 3, "vier": 4, "fünf": 5, "sechs": 6, "sieben": 7, "acht": 8, "neun": 9,
+    "zehn": 10, "elf": 11, "zwölf": 12, "dreizehn": 13, "vierzehn": 14, "fünfzehn": 15, "sechzehn": 16,
+    "siebzehn": 17, "achtzehn": 18, "neunzehn": 19, "zwanzig": 20, "dreissig": 30
+  },
+  "age_patterns": [
+    "\\b(?P<age>\\d{1,3}|ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|sechzehn|siebzehn|achtzehn|neunzehn|zwanzig|dreissig)[\\s-]*jährig\\w*\\b(?!\\s+(?:\\w+\\s+)?(?:ehe|beziehung|affäre|liebesaffäre|liaison|romanze|liebe|freundschaft|partnerschaft|verlobung|bekanntschaft|zusammenarbeit|dienst|dienstzeit|krieg|haft|herrschaft|amtszeit|karriere|erfahrung|geschichte|tradition|pause|abwesenheit|reise|suche|arbeit)\\w*)",
+    "\\b(?P<age>\\d{1,3}|ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|sechzehn|siebzehn|achtzehn|neunzehn|zwanzig|dreissig)\\s+jahre\\s+alt\\b",
+    "\\bmit\\s+(?P<age>\\d{1,2}|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|sechzehn|siebzehn|achtzehn|neunzehn|zwanzig|dreissig)\\s+jahren\\b"
+  ],
+  "romance_terms": ["geliebte*", "liebhaber*", "liebesaffäre*", "sex", "sexuell*", "verführ*", "romant*", "verliebt*", "jungfrau*", "verheiratet*", "heiratete*", "schlief mit", "schläft mit"],
+  "affection_terms": ["kuss*", "küss*"],
+  "affection_guards": ["mutter*", "vater*", "eltern*", "mama", "papa", "sohn", "sohnes", "söhne*", "tochter", "töchter*", "kind", "kindes", "kinder*", "bruder*", "brüder*", "schwester*", "oma*", "opa*", "großmutter*", "großvater*", "enkel*", "tante*", "onkel*", "neffe*", "nichte*", "stirn*", "wange*"],
+  "secret_words": ["geheim*", "verborgen*"],
+  "gone_terms": ["tot", "tote", "toter", "verstorben*", "gestorben", "starb", "getötet", "ermordet", "gefallen", "fort", "weg", "gegangen", "abgereist", "verschwunden", "vermisst"],
+  "ended_terms": ["tot", "verstorben*", "gestorben", "beendet", "vorbei", "vergangen*", "ehemalig*", "früher*", "geschieden", "getrennt"],
+  "card": "Write idiomatic German, not translated English. Keep the finite verb second in main clauses and last in subordinate clauses, and avoid English-style participle chains. Address the player character with 'du' unless the profile sets 'Sie'; NPCs choose du or Sie by rank, age and closeness and keep that choice. Use one style of German quotation marks consistently. Avoid stock beats (einen Moment lang) and 'nicht X, sondern Y' descriptions. Write days and small numbers in words and never show tracker values."
+}

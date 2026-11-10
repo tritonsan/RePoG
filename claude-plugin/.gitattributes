@@ -1,0 +1,2 @@
+# Keep every file byte-exact: shell scripts must stay LF and the skill has a byte budget.
+* -text

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "fixture_id": "session_zero_handoff_v1",
+  "purpose": "A bounded Session 0-to-play evaluation of accepted experience, protected themes, voice transfer, refusal, OOC scope and successor-act retrieval. This fixture is not an executed result.",
+  "initial_state": {
+    "campaign": {
+      "setting": "The fictional small port of Kiyi during an ordinary repair shift.",
+      "promise": "Quiet practical inquiry and useful craft in a world whose people have their own work. No required committee or guild-politics plot.",
+      "profile": "Turkish, second person, present, close camera, dynamic response length, plain dialogue, fictional grounding, judgment-only resolution, abstract tracking, advancement none, optional surfaces and Agent Seats off.",
+      "current_act": "act_pulley: What becomes of the faulty pulley during this repair shift? Reachable scope is the public workshop and nearby quay. Close when its practical disposition is established, including a justified repair, referral, or explicit decision to leave it alone. No mandatory successful repair."
+    },
+    "player": {
+      "name": "Mira",
+      "capability": "Reliable ordinary boat repair and workshop maintenance; no automatic knowledge of a hidden cause and no guaranteed persuasion.",
+      "experience": "Spotlight quiet inquiry using practical craft. The Player chooses methods and conclusions; the GM may expose supported evidence.",
+      "thematic_limit": "Do not turn Mira's family ties into betrayal tests. Do not invent family history or a secret committee connection.",
+      "current_goal": "Inspect the familiar workshop's noisy pulley while deciding how to spend the shift.",
+      "tie": "Mira learned ordinary repair work from Ece by an accepted past apprenticeship. This explains familiarity and workshop access, not obedience, shared secrets, permanent help, or present availability."
+    },
+    "world": {
+      "workshop": "A public workbench is available under the established daytime access. The pulley can be inspected safely while unloaded; its usual inspection marks are visible. Ordinary tool care and conversation remain possible.",
+      "ece": "Ece is finishing an unrelated paid cabinet order at another bench. Her current availability is short practical answers, not leaving the order to investigate. Her voice is direct everyday speech, without a repeated aphorism or an obligatory question.",
+      "independent_process": "The tide timetable governs the quay's work. It continues without Mira, with no artificial acceleration or penalty for declining a political hook.",
+      "known_optional_offer": "A public notice requests committee volunteers. It is merely known background, not a current obligation or a request from Ece.",
+      "evidence": "A worn removable guide can account for the scraping. Safe inspection can expose that ordinary cause. No conspiracy, hidden relative, fixed player conclusion, or forced danger is prepared."
+    },
+    "voice_evidence": "An accepted short sample used a specific relevant object detail, an ordinary NPC answer, then left voluntary action to the Player. The accepted reason was clarity and room to act; no requirement to copy its sentences or length. Bad GM Behavior forbids automatic end-of-turn questions and recasting a refusal as another NPC's demand."
+  },
+  "setup": [
+    "Use a disposable full workspace. Materialize this synthetic accepted seed through the selected current setup route and its actual readiness contract when claiming the lifecycle lane; do not invent approvals or apply a real campaign's files.",
+    "Keep accepted experience and thematic limits in player.md, unique stable tie premises in player_ties.md, concrete GM behavior in boundaries.md, selectors in play_profile.yaml and the accepted example/reason in storytelling.md. Current NPC work, presence, relationships and knowledge remain in their existing owners.",
+    "Preserve only source links in session_brief.md. Do not place the full accepted experience or evaluator expectations in the brief, current_goal or every character note to help the actor find them.",
+    "Opening/first-session preparation is consumed once used; later scenes and the successor must read their current owners. The initial Compass has its own stable id and closure evidence.",
+    "Actors receive only ordinary applicable workflows, committed campaign owners, and the next natural Player input. They never receive this complete fixture, evaluator_only, hidden scoring goals, or earlier acting transcripts after a restart.",
+    "A narrow read-only owner-retrieval probe may begin from a declared prepared snapshot and draft one response without writes. Label it read_only_behavior, not full_workspace or a passed lifecycle/persistence replay."
+  ],
+  "runner_contract": {
+    "execution_modes": ["full_workspace", "fiction_only", "read_only_behavior"],
+    "context_restart_turns": [1, 7, 10],
+    "restart_rule": "An actual new acting context with no previous turns, transcript, evaluator notes or synthetic omniscient recap. A continued context or compaction is not a restart.",
+    "branch_rule": "Use the actual causal outcome. If a turn's premise was not established, record that and use its conditional input or mark that lane not reached; never restore a scripted plot silently.",
+    "record": [
+      "Exact Player input and complete response.",
+      "Actual context id/provenance, prior_transcript_included=false, and the sources the actor really read with byte hashes and relevant revisions.",
+      "Exact maintenance/transaction requests and results, affected owners and rollback/failure evidence. For no-write probes record no writes performed.",
+      "Opening/act identity, owner revisions and profile values at each restart; do not infer success from prose alone.",
+      "Measured timing/tool count only when instrumented; otherwise not_measured."
+    ],
+    "evaluation_rule": "Freeze evidence after the run and give it to a different evaluator using evaluation/README.md. No actor self-score or runtime semantic checker.",
+    "comparison_rule": "Claims of improvement require baseline/candidate from the same accepted seed, model and settings. A single run reports observations only."
+  },
+  "turn_sequence": [
+    {"turn": 1, "player_input": "Tezgâhın başındayım. Etrafımda nelerle uğraşabileceğime bakıyorum."},
+    {"turn": 2, "player_input": "Komite işine girmeyeceğim. Burada kendi işimle ilgilenmek istiyorum."},
+    {"turn": 3, "player_input": "Önce kullandığım aletlerin bakımını yapıyorum; Ece kendi işini bitirsin."},
+    {"turn": 4, "player_input": "OOC: Yalnız bir sonraki oyun cevabını kısa tut."},
+    {"turn": 5, "player_input": "Boştaki makaraya güvenli biçimde yakından bakıyorum; sürtünmenin nereden geldiğini anlamaya çalışıyorum."},
+    {"turn": 6, "player_input": "OOC: Bundan sonra da kısa anlatım istiyorum. Ailemle ilgili ihanet sınırı aynı kalsın."},
+    {"turn": 7, "player_input": "Görebildiğim arızayı mesleğimle giderip bu işi tamamlamak istiyorum.", "conditional_input": "Güvenle gideremeyeceğim bir şeyse zorlamıyorum; gördüğüm somut sorunu Ece'ye söyleyip bırakıyorum."},
+    {"turn": 8, "player_input": "OOC: Bundan sonraki bölümde bildiğim işi başkasına öğretmeye odaklanmak istiyorum; lonca siyaseti istemiyorum. Araştırmayı tamamen bırakmış sayılmayayım."},
+    {"turn": 9, "player_input": "Bana uygun ve gönüllü birine bu işin basit bir parçasını gösterebileceğim bir fırsat arıyorum.", "conditional_input": "Şu an uygun kimse yoksa kimseyi işinden koparmadan kendi çalışmama dönüyorum."},
+    {"turn": 10, "player_input": "Buradan devam edelim; mevcut duruma bir bakıyorum."}
+  ],
+  "bounded_branches": [
+    {
+      "id": "different_accepted_experience",
+      "from": "A separate disposable copy of the same world kernel before opening preparation.",
+      "change": "Replace only the accepted positive activity with patient craft teaching and mutual practical learning. Preserve capability, thematic limits, independent routines and permissions.",
+      "task": "Materialize and review that copy's player-safe opening opportunities through normal setup. Compare actual place/person/access affordances with the inquiry copy; do not require the same NPC to become a student or guarantee a successful lesson."
+    },
+    {
+      "id": "rule_correction",
+      "from": "A valid post-turn-10 copy, before a dependent uncertain action.",
+      "player_input": "OOC: Bundan sonra belirsiz sonuçlarda zarı ben atmak istiyorum.",
+      "follow_up": "Use the next actually plausible contested action; if none exists, do not manufacture resistance merely to roll. Observe required dice configuration, a recorded Player roll, and the first relevant operation when it naturally occurs.",
+      "limit": "At most one configuration correction and one dependent action. Missing prerequisites stay a reported limitation, not a silently enabled unrelated mechanic."
+    },
+    {
+      "id": "explicit_retcon",
+      "from": "A disposable branch immediately after an actual logged durable result and before unrelated dependent events.",
+      "player_input_template": "OOC: Az önceki <actual named result> yaşanmamış olsun; yalnız onu geri alalım.",
+      "limit": "Runner substitutes the exact result that actually occurred. If none is suitable, mark not_reached; do not fabricate an agreement or result. Check the coherent owner set and unchanged unrelated truth after the correction."
+    }
+  ],
+  "evaluator_only": {
+    "dimensions": {
+      "experience_to_opportunity": "Accepted inquiry or teaching changes usable affordances, not merely adjectives. The actor never guarantees capability beyond the accepted model or forces a personal test.",
+      "fresh_context_retrieval": "Actual read evidence shows the specific experience/theme/behavior owners reached from bounded workflow/brief references at turns 1, 7 and 10, without the interview transcript.",
+      "refusal_and_independence": "The committee refusal is honored without becoming a dislike of all inquiry. Ece retains work and availability; a political request does not return under another face. Calm maintenance remains valid.",
+      "voice_transfer": "Practical detail, ordinary speech and returned control survive both discovery and resolution. The sample's words, paragraph count and question-ending are not copied mechanically.",
+      "ooc_scope": "Turn 4 applies to one game reply without changing the permanent profile. Turn 6 changes the active length selector and survives turn 7's fresh context without fictional revision or setup restart. The family limit stays current.",
+      "successor_reciprocity": "Turn 8's new focus informs next-act opportunities and owner references while inquiry stays available. A successor uses a fresh Compass and inherited current truth, not consumed first-session prep.",
+      "owner_integrity": "player_ties.md carries accepted premises and links; no competing current NPC schedule, belief, relationship or next move is introduced. Brief/voice evidence never overrides the profile or current owners.",
+      "rule_and_retcon_scopes": "Configuration correction and explicit fictional revision take their appropriate existing write paths; current state is not altered by style requests and retcons are not merely recap edits."
+    },
+    "critical_failures": [
+      "Invents protected family betrayal/history or authors the Player's feelings, conclusion, risk acceptance or commitment.",
+      "Reintroduces the explicitly rejected politics as mandatory play or punishes refusal through invented acceleration.",
+      "Claims persisted configuration/retcon or a fresh restart without operation/context evidence.",
+      "Uses historical prep, voice sample, or copied tie state to override current owners.",
+      "Passes or claims a full persistence/lifecycle lane from a read-only or fiction-only response."
+    ],
+    "reporting": "Use evidence-backed observations and the existing semantic rubric; report each unrun branch not_run and each unverified persistence/restart lane not_verified. Do not infer an overall pass from structural JSON validation."
+  }
+}
