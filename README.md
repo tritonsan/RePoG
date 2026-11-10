@@ -26,17 +26,7 @@ then whether you want Quick, Standard, or Deep setup. Do not open the ZIP
 archive itself, and do not copy templates or run a campaign-creation command.
 
 For the compact offline setup card, see [`START_HERE.md`](START_HERE.md). The
-illustrated installation walkthrough is included below.
-
-## Full Walkthrough
-
-This walkthrough shows the earlier public RPG flow. The current workspace also
-includes World Voices, Atlas V1, the rebuilt GM contract, and AI Companion
-mode.
-
-[![Watch the RePoG demo](https://img.youtube.com/vi/jpXtyfrd5k0/maxresdefault.jpg)](https://youtu.be/jpXtyfrd5k0)
-
-▶ **[Watch the full RePoG demo on YouTube](https://youtu.be/jpXtyfrd5k0)**
+installation walkthrough is included below.
 
 ## What RePoG Includes
 
@@ -81,8 +71,8 @@ continuity rules.
 <details>
 <summary><strong>Show the four-step installation guide</strong></summary>
 
-The interface language and exact layout may differ from the recordings, but the
-four steps are the same.
+The interface language and exact layout depend on the agentic coding tool you
+use. Follow these four steps to open the workspace and begin.
 
 ### 1. Download the workspace
 
@@ -95,10 +85,8 @@ Alternatively, select **Code → Download ZIP** for the complete source
 workspace. It also supports play, but includes development tests, examples,
 and CI configuration.
 
-![Select Code and Download ZIP on GitHub](assets/getting-started/01-download-zip.gif)
-
-The recording shows the source-ZIP alternative. GitHub's source ZIP contains
-tracked files and excludes Git history and ignored local files. The validated
+GitHub's source ZIP contains tracked files and excludes Git history and ignored
+local files. The validated
 player ZIP additionally excludes tests, examples, and maintainer configuration;
 it includes the versioned Agent Seat contracts and a SHA-256 file manifest.
 
@@ -111,14 +99,10 @@ RePoG's local helpers require **Python 3.10 or later** available to the agentic
 tool as `python` (or `python3` on systems that use that command). The player
 workspace needs no third-party Python packages.
 
-![Extract the downloaded RePoG ZIP](assets/getting-started/02-extract-workspace.gif)
-
 ### 3. Open the folder
 
-In Codex, select **Open Folder** and choose the extracted workspace. The same
-folder can also be opened in Claude Code or another agentic coding tool.
-
-![Open the extracted RePoG folder in Codex](assets/getting-started/03-open-in-codex.gif)
+Open the extracted workspace folder in Claude Code or another compatible
+agentic coding tool. Use the extracted folder as the working directory.
 
 In Claude Code, start a new Code session on the extracted folder in the desktop
 app, or run `claude` inside it from a terminal. Accept the folder-trust prompt,
@@ -133,8 +117,6 @@ Start a new conversation in the opened workspace and send:
 ```text
 Start RePoG and guide me through setup.
 ```
-
-![Start a new conversation in the RePoG workspace](assets/getting-started/04-start-conversation.gif)
 
 Choose RPG Campaign or AI Companion, then choose Quick, Standard, or Deep
 Session 0 and answer naturally. After your pitch, RePoG offers a small Starter
