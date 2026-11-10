@@ -15,9 +15,9 @@ adapt them to how Claude Code works.
 - Claude Code shows every tool call and any text written between tool calls.
   In Player Mode and Companion conversation, write no text before or between
   tool calls, except the brief natural wait notice that a workflow permits at
-  a long structural boundary. Under `narrate_then_commit` the finished reply
-  comes first and the one commit follows it with no text after; otherwise
-  read, resolve, persist, and check silently, then send one finished reply.
+  a long structural boundary. Read, roll, resolve, and commit silently, then
+  send the whole finished reply as the turn's last message; text written
+  only in reasoning has not reached the Player.
 - Give each tool call a short neutral description in the Player's language,
   such as "Checking the campaign" or "Saving the scene" in English. Keep
   helper names, ids, and file paths out of those descriptions and of any

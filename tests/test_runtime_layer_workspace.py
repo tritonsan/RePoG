@@ -48,7 +48,10 @@ def test_template_mirror_covers_the_owners_the_helpers_read() -> None:
 
 @pytest.mark.parametrize("name", TEMPLATE_MIRROR)
 def test_template_mirror_matches_the_blank_campaign(name: str) -> None:
-    assert (ROOT / "templates" / "campaign" / name).read_bytes() == (ROOT / "campaign" / name).read_bytes()
+    # Git may check either copy out with CRLF; the stored text is what must match.
+    mirror = (ROOT / "templates" / "campaign" / name).read_bytes().replace(b"\r\n", b"\n")
+    blank = (ROOT / "campaign" / name).read_bytes().replace(b"\r\n", b"\n")
+    assert mirror == blank
     for relative in (f"templates/campaign/{name}", f"campaign/{name}"):
         assert distribution_path_allowed(relative), relative
     assert f"templates/campaign/{name}" in REQUIRED_FILES
