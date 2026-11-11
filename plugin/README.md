@@ -4,7 +4,10 @@ RePoG turns Claude into a persistent Game Master for a long-form solo
 roleplaying campaign, or into one persistent adult fictional companion with a
 life of their own. Claude interprets, portrays, and narrates; small local
 helpers validate and save the campaign's state, so the world remembers what
-happened across sessions.
+happened across sessions. It is a storytelling and game tool, not an
+adult-content service: the 18+ limit exists because campaigns can carry dark
+themes such as violence, death, and crime, and sexual content is never
+explicit.
 
 ## Requirements
 
@@ -17,7 +20,7 @@ happened across sessions.
 Add the marketplace that hosts this plugin, then install it:
 
 ```text
-/plugin marketplace add <owner>/<repository>
+/plugin marketplace add tritonsan/RePoG
 /plugin install repog@repog
 ```
 
@@ -57,8 +60,10 @@ can reveal material the Game Master keeps hidden.
   - `SessionStart`: adds a one-line reminder to load `repog:play` and marks
     the scene capsule for a full refresh in `campaign/.repog-runtime/`. After
     a compaction or a resume it also prints up to 1,500 characters of the
-    accepted style samples in `campaign/storytelling.md` and one line naming
-    the campaign's locked persistence order.
+    accepted style samples in `campaign/storytelling.md`, one line naming
+    the campaign's locked persistence order, and a full scene capsule, so the
+    first reply after a compaction has the cast, directives, and language
+    guidance.
   - `UserPromptSubmit`: in a ready RPG campaign, first applies waiting curator
     edits whose target notes are unchanged (editing those notes, adding an
     entry to `campaign/session_log.md`, moving each processed proposal into
@@ -71,7 +76,8 @@ can reveal material the Game Master keeps hidden.
     state keys, the last reply's presentation findings and the habits that
     keep returning, notes due for tidying, a note when the last turn saved
     before replying or ended without text, and, once, a curator proposal the
-    last run rejected or deferred. It keeps its capsule state in
+    last run rejected or deferred, and a `[limits]` line for a cast member whose
+    note holds years under 18: those years are told only as a childhood. It keeps its capsule state in
     `campaign/.repog-runtime/`.
   - `Stop` (runs in the background): reads the current session's last turn,
     your message and the reply, locally from Claude Code's transcript, and
@@ -155,7 +161,7 @@ RePoG is for adults aged 18 or older. Session 0 asks which content boundaries
 apply. Sexual content can be avoided, faded before it starts, or implied with
 no explicit description; harm to children is at most mentioned or kept
 offscreen, or avoided. Two rows are fixed and cannot be changed: no one under
-18 appears in any sexual or romantic context, backstory included, and no
+18 appears in any sexual or romantic context, backstory and hints included, and no
 graphic violence against children appears on the page. Those choices are your
 preferences, not guarantees: Claude applies its own safety policies to
 everything it writes, whatever a setting says, and may decline or soften
@@ -204,7 +210,9 @@ by Claude under your Anthropic account's terms. The hooks read campaign files
 and Claude Code's local transcript and write only inside `campaign/`, apart
 from the cached Python command in the plugin's data folder. RePoG's
 forget operation removes campaign content; it does not erase Claude Code's own
-session transcripts on your computer.
+session transcripts on your computer. A Companion remembers you only through
+plain files in its `campaign/` folder that you can read, edit, or delete;
+nothing is kept or profiled anywhere else.
 
 ## License
 

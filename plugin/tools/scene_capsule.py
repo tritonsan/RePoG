@@ -172,7 +172,7 @@ VOICE_FIELD = "Voice signature"  # in the Depth section
 OPENED_FIELD = "opened at revision"  # in the threads.md Arc Compass
 CARD_KEY = "Card"  # the capsule's own line about a hidden Agency Card
 
-SECTION_ORDER = ("cast", "secrets", "knowledge", "directives", "language", "lint", "habits", "rolls", "curation")
+SECTION_ORDER = ("cast", "secrets", "limits", "knowledge", "directives", "language", "lint", "habits", "rolls", "curation")
 # Per-section character caps. The cast gets whatever the other sections leave
 # under the capsule cap, up to its own cap. A delta shows the language section
 # only when it changed (a language detected after the first prompt).
@@ -181,6 +181,7 @@ CAPS: dict[bool, dict[str, int]] = {
         "header": 400,
         "cast": 4_400,
         "secrets": 600,
+        "limits": 400,
         "knowledge": 450,
         "directives": 1_100,
         "language": 900,
@@ -193,6 +194,7 @@ CAPS: dict[bool, dict[str, int]] = {
         "header": 400,
         "cast": 1_600,
         "secrets": 250,
+        "limits": 400,
         "knowledge": 300,
         "directives": 380,
         "language": 700,
@@ -206,6 +208,7 @@ CAPS: dict[bool, dict[str, int]] = {
 CLEARED = {
     "cast": "[cast] nobody present or named.",
     "secrets": "[secrets] nothing to guard for this cast.",
+    "limits": "[limits] no years under 18 in this cast's notes.",
     "knowledge": "[knowledge] no recorded limits for the present cast.",
     "directives": "[directives] none active in scope.",
     "lint": "[lint] last reply clean.",
@@ -2057,6 +2060,7 @@ def compose(
     except Exception:  # the habits line is advisory: a failing reader costs only that line
         habit_lines, habit_basis = [], ""
     rendered: dict[str, list[str]] = {
+        "limits": _guarded("limits", lambda: _minor_history_lines(scope.cast, pack)),
         "knowledge": _guarded("knowledge", lambda: _limit_lines(scope.cast, knowledge, matcher)),
         "directives": _guarded("directives", lambda: _directive_lines(campaign, summary, scope, matcher)),
         "language": _language_lines(campaign, code, source, pack),
@@ -2416,14 +2420,28 @@ def style_samples(campaign: Path, limit: int = SAMPLE_CHARS) -> str:
     return "\n".join(kept)
 
 
-def resume_notice(campaign: Path, settings: dict[str, Any]) -> str:
+MINOR_HISTORY = (
+    "their notes hold years under 18. Tell those years only as a childhood: never tie them to desire, "
+    "attraction, a sexual look, touch or offer, stated or implied."
+)
+
+
+def _minor_history_lines(cast: list[_Member], pack: dict[str, Any]) -> list[str]:
+    """`[limits] Name, Name: …` for the cast members whose notes state an age under 18; [] when none do."""
+
+    packs = lang_pack.all_packs(pack)
+    names = [member.name for member in cast if member.note is not None and lang_pack.states_minor_age(member.note.text, packs)]
+    return [f"[limits] {', '.join(names)}: {MINOR_HISTORY}"] if names else []
+
+
+def resume_notice(campaign: Path, settings: dict[str, Any], sample_limit: int = SAMPLE_CHARS) -> str:
     """What SessionStart prints after a compaction or a resume: the style samples, then the order.
 
     A compaction summary keeps no accepted sample and may carry an order rule
     of its own; this one wins.
     """
 
-    samples = style_samples(campaign)
+    samples = style_samples(campaign, sample_limit)
     return "\n".join([SAMPLES_INTRO, samples, LOCKED_ORDER] if samples else [LOCKED_ORDER])
 
 
