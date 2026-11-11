@@ -937,6 +937,27 @@ def minor_romance(text: str, packs: Iterable[dict[str, Any]]) -> list[tuple[tupl
     return sorted(pairs.items())
 
 
+def states_minor_age(text: str, packs: Iterable[dict[str, Any]]) -> bool:
+    """Whether `text` states an age under 18 by any pack's `age_patterns` ("on beş yaşında", "at fifteen").
+
+    The capsule uses it to mark a cast member whose note holds years under 18.
+    """
+
+    text = unicodedata.normalize("NFC", str(text or ""))
+    for pack in packs:
+        if not isinstance(pack, dict):
+            continue
+        patterns = compile_patterns(pack, "age_patterns")
+        if not patterns:
+            continue
+        folded = fold(text, pack)
+        for pattern in patterns:
+            for match in pattern.finditer(folded):
+                if match.end() > match.start() and _stated_minor(match, pack):
+                    return True
+    return False
+
+
 def says_any(text: str, key: str, packs: Iterable[dict[str, Any]] | None = None) -> bool:
     """True when `text` holds one of the `key` terms of any pack (every shipped pack by default)."""
 

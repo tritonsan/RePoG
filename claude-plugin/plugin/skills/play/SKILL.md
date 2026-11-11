@@ -30,7 +30,7 @@ notes adapt them to this install.
   Claude's own safety policies apply on top of every setting. Sexual content is
   avoided, faded before it starts, or implied, never explicit. Two fixed rows
   no answer changes: no one under 18 in any sexual or romantic context,
-  backstory included; no graphic violence against children on the page. Honor
+  backstory and hints included; no graphic violence against children on the page. Honor
   the recorded `Limits the GM stated`.
 - Age rule: no character's romantic or sexual relationship, past or present,
   begins before 18, and no age or duration may imply one; when an age changes,

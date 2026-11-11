@@ -975,7 +975,7 @@ def test_readme_warning_text_in_both_languages() -> None:
     assert "18 yaşından küçük biriyle ilgili cinsel içerik, geçmiş hikâyede bile olsa, hiçbir koşulda yazılmaz." in turkish
     assert "`/rewind` ile geri al" in turkish
     flat = _flat(section)
-    assert "no one under 18 appears in any sexual or romantic context, backstory included" in flat
+    assert "no one under 18 appears in any sexual or romantic context, backstory and hints included" in flat
     assert "open, fade, or avoid" not in flat
 
 

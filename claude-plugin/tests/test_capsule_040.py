@@ -678,7 +678,7 @@ def test_session_start_prints_nothing_for_a_fresh_or_cleared_session(
 
 
 @pytest.mark.parametrize("source", ["compact", "resume"])
-def test_session_start_after_a_compaction_or_resume_prints_samples_then_the_locked_order(
+def test_session_start_after_a_compaction_or_resume_prints_samples_the_order_and_a_full_capsule(
     campaign: Path, tmp_path: Path, capsysbinary, monkeypatch, source: str
 ) -> None:
     _storytelling(campaign, "\n## Örnek Anlatım\n\nSis limanı yutuyor; fenerler birer birer sönüyor.\n\n## Stage 9 Proof\n\nKısa bir kanıt anlatımı.\n")
@@ -686,13 +686,17 @@ def test_session_start_after_a_compaction_or_resume_prints_samples_then_the_lock
     out = _run("session-start", {"cwd": str(tmp_path), "session_id": SESSION, "source": source}, capsysbinary, monkeypatch)
     lines = out.decode("utf-8").splitlines()
     assert lines[0] == scene_capsule.SAMPLES_INTRO
-    assert lines[-1] == scene_capsule.LOCKED_ORDER
-    text = "\n".join(lines)
+    order = lines.index(scene_capsule.LOCKED_ORDER)
+    # The full capsule follows the order line: the summary dropped the
+    # sections a delta would call "as last shown".
+    assert lines[order + 1].startswith("RePoG capsule") and not _is_delta("\n".join(lines[order + 1 :]))
+    assert any(line.startswith("[formats]") for line in lines[order + 1 :])
+    text = "\n".join(lines[:order])
     # Accepted evidence, sample and proof sections in file order, without template guidance.
     assert text.index("## Accepted Voice Evidence") < text.index("## Örnek Anlatım") < text.index("## Stage 9 Proof")
     assert "Rüzgâr iskeleye vuruyor" in text
     assert "Keep a short accepted sample" not in text and "Point of view:" not in text
-    assert not _is_delta(_build(campaign))  # the capsule was marked for a full refresh too
+    assert _is_delta(_build(campaign))  # the full capsule was recorded, so the next prompt gets a delta
 
 
 def test_session_start_prints_only_the_order_without_samples_and_nothing_before_play(
@@ -700,7 +704,8 @@ def test_session_start_prints_only_the_order_without_samples_and_nothing_before_
 ) -> None:
     _write(campaign / "storytelling.md", TEMPLATE)  # the template alone holds no accepted sample
     event = {"cwd": str(tmp_path), "session_id": SESSION, "source": "compact"}
-    assert _run("session-start", event, capsysbinary, monkeypatch) == (scene_capsule.LOCKED_ORDER + "\n").encode("utf-8")
+    out = _run("session-start", event, capsysbinary, monkeypatch).decode("utf-8")
+    assert out.startswith(scene_capsule.LOCKED_ORDER + "\nRePoG capsule")
     _replace(campaign / "setup_profile.yaml", "ready_for_play: true", "ready_for_play: false")
     assert _run("session-start", event, capsysbinary, monkeypatch) == b""
 
@@ -723,3 +728,39 @@ def test_style_samples_stay_within_their_budget(campaign: Path) -> None:
     assert samples.endswith("…")
     assert len(samples) <= scene_capsule.SAMPLE_CHARS
     assert scene_capsule.style_samples(campaign / "missing") == ""
+
+
+# -- 0.4.2: a cast member whose note holds years under 18 -------------------
+
+
+def test_a_cast_member_with_years_under_18_gets_a_limits_line(campaign: Path) -> None:
+    card = _noted_card(campaign, stamp=1, opened=None)
+    capsule = _build(campaign, "Vera Marr limana bakıyor.", full=True)
+    assert "[limits]" not in capsule
+    _write(card, card.read_text(encoding="utf-8") + "\n- History: at fifteen she ran errands for the harbour clerk.\n")
+    capsule = _build(campaign, "Vera Marr limana bakıyor.", full=True)
+    line = next(line for line in capsule.splitlines() if line.startswith("[limits]"))
+    assert "Vera Marr" in line and "childhood" in line and "implied" in line
+
+
+def test_states_minor_age_reads_every_pack() -> None:
+    import lang_pack
+
+    packs = lang_pack.all_packs(lang_pack.load_pack("en"))
+    assert lang_pack.states_minor_age("At fifteen she ran errands.", packs)
+    assert lang_pack.states_minor_age("On dört yaşındayken limanda çalıştı.", packs)
+    assert not lang_pack.states_minor_age("A woman of forty runs the dock.", packs)
+    assert not lang_pack.states_minor_age("Fifteen years ago the dock burned.", packs)
+
+
+@pytest.mark.parametrize(
+    "language, critical, clean",
+    [("tr", "kritik başarı", "temiz başarı"), ("de", "kritischer Erfolg", "sauberer Erfolg"),
+     ("es", "éxito crítico", "éxito limpio"), ("fr", "réussite critique", "réussite nette")],
+)
+def test_success_bands_show_in_the_play_language(language: str, critical: str, clean: str) -> None:
+    import roll_dice
+
+    assert roll_dice.band_label("critical_success", language) == critical
+    assert roll_dice.band_label("clean_success", language) == clean
+    assert roll_dice.band_label("critical_success", "en") == "critical success"

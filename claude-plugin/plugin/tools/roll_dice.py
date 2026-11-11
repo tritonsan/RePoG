@@ -166,6 +166,8 @@ DISPLAY_WORDS: dict[str, dict[str, str]] = {
 # spaces for '_', and any other band name shows as written.
 BAND_PHRASES: dict[str, dict[str, str]] = {
     "tr": {
+        "critical_success": "kritik başarı",
+        "clean_success": "temiz başarı",
         "success_with_cost": "bedelli başarı",
         "partial_or_loss": "kısmi ya da kayıp",
         "partial_small_cost": "kısmi, küçük bedel",
@@ -173,6 +175,8 @@ BAND_PHRASES: dict[str, dict[str, str]] = {
         "partial_heavy_cost": "kısmi, ağır bedel",
     },
     "de": {
+        "critical_success": "kritischer Erfolg",
+        "clean_success": "sauberer Erfolg",
         "success_with_cost": "Erfolg mit Preis",
         "partial_or_loss": "teilweise oder Verlust",
         "partial_small_cost": "teilweise, kleiner Preis",
@@ -180,6 +184,8 @@ BAND_PHRASES: dict[str, dict[str, str]] = {
         "partial_heavy_cost": "teilweise, hoher Preis",
     },
     "es": {
+        "critical_success": "éxito crítico",
+        "clean_success": "éxito limpio",
         "success_with_cost": "éxito con coste",
         "partial_or_loss": "parcial o pérdida",
         "partial_small_cost": "parcial, coste leve",
@@ -187,6 +193,8 @@ BAND_PHRASES: dict[str, dict[str, str]] = {
         "partial_heavy_cost": "parcial, coste alto",
     },
     "fr": {
+        "critical_success": "réussite critique",
+        "clean_success": "réussite nette",
         "success_with_cost": "réussite avec un coût",
         "partial_or_loss": "partiel ou perte",
         "partial_small_cost": "partiel, coût léger",

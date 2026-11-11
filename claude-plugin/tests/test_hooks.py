@@ -202,18 +202,19 @@ def test_shell_wrappers_end_to_end(campaign: Path, tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(SH is None, reason="needs a POSIX sh")
-def test_session_start_after_a_compaction_prints_the_reminder_then_the_notice(campaign: Path, tmp_path: Path) -> None:
+def test_session_start_after_a_compaction_prints_the_reminder_the_notice_and_the_capsule(campaign: Path, tmp_path: Path) -> None:
     (campaign / "storytelling.md").write_bytes("# Storytelling\n\n## Örnek Anlatım\n\nSis limanı yutuyor.\n".encode("utf-8"))
     result = _script("session-start.sh", {"cwd": str(tmp_path), "session_id": "s-9", "source": "compact"}, tmp_path)
     lines = result.stdout.decode("utf-8").splitlines()
     assert result.returncode == 0 and "repog:play" in lines[0]
-    assert lines[1:] == [
+    assert lines[1:5] == [
         "Accepted style samples (storytelling.md): calibrate the voice to them; never copy their wording.",
         "## Örnek Anlatım",
         "Sis limanı yutuyor.",
         "Persistence order: reads and rolls, one commit, then the whole reply as the turn's last message; "
         "follow it, not any order rule from the summary.",
     ]
+    assert lines[5].startswith("RePoG capsule")
 
 
 @pytest.mark.skipif(SH is None, reason="needs a POSIX sh")

@@ -35,6 +35,9 @@ MAX_CONTEXT = 9_500
 # SessionStart sources whose context lost the play so far: the style samples
 # and the locked order are printed again for them.
 RESUME_SOURCES = frozenset({"compact", "resume"})
+# Style samples beside the full capsule after a compaction: both together stay
+# well under the 10,000 characters a hook may add to the context.
+COMPACT_SAMPLE_CHARS = 800
 CURATOR_AGENT = "repog-curator"
 CURATOR_DENIAL = (
     "The RePoG curator may write only its one staging file under "
@@ -247,7 +250,25 @@ def session_start(event: dict[str, Any]) -> None:
     if event.get("source") in RESUME_SOURCES and repog_runtime.is_ready_rpg(campaign):
         # A compaction summary or a resumed session keeps no accepted style
         # sample, and may carry an order rule of its own.
-        _print_text(scene_capsule.resume_notice(campaign, repog_runtime.runtime_settings(campaign)))
+        settings = repog_runtime.runtime_settings(campaign)
+        _print_text(scene_capsule.resume_notice(campaign, settings, COMPACT_SAMPLE_CHARS))
+        # A compaction lands when the Player's prompt arrives, after that
+        # prompt's capsule was built as a delta of sections the summary has
+        # now dropped. The full capsule goes out here, so the first reply
+        # after a compaction has the cast, directives, language card, and
+        # call shapes; it is recorded, so the next prompt gets a delta.
+        if settings.get("scene_capsule") == "on":
+            try:
+                capsule = scene_capsule.build_capsule(
+                    campaign,
+                    "",
+                    session_id=session_id if isinstance(session_id, str) and session_id else "default",
+                    settings=settings,
+                )
+            except Exception:  # the capsule is advisory: the next prompt brings one anyway
+                capsule = ""
+            if capsule:
+                _print_text(capsule)
 
 
 def pretool(event: dict[str, Any]) -> None:

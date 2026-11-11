@@ -1,8 +1,8 @@
 {
   "name": "repog",
   "displayName": "RePoG",
-  "version": "0.4.1",
-  "description": "A persistent solo RPG Game Master and AI Companion for adults (18+). Each campaign lives in its own folder, and small local helpers keep its state consistent.",
+  "version": "0.4.2",
+  "description": "A persistent solo RPG Game Master and AI Companion for adult players: campaigns can carry dark themes such as violence and crime, and sexual content is never explicit. Each campaign lives in its own local folder, and small local helpers keep its state consistent.",
   "author": {
     "name": "tritonsan",
     "url": "https://github.com/tritonsan"
