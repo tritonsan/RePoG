@@ -70,9 +70,9 @@ def test_play_skill_states_the_040_rules(rule: str) -> None:
     assert " ".join(rule.split()) in " ".join(skill.split())
 
 
-def test_plugin_manifest_is_042() -> None:
+def test_plugin_manifest_is_043() -> None:
     manifest = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "0.4.2"
+    assert manifest["version"] == "0.4.3"
 
 
 def _balanced_profile(campaign: Path, cold_policy: str) -> None:
