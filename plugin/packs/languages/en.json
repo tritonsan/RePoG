@@ -442,8 +442,8 @@
       "label": "mouth corner twitches",
       "example": "the corner of her mouth twitched",
       "patterns": [
-        "\\bcorners?\\s+of\\s+(?:his|her|their|its|the|a)\\s+(?:\\w+\\s+)?mouth\\s+(?:\\w+\\s+)?(?:twitch|curl|lift|quirk|tug|rise|rose|turn)\\w*",
-        "\\b(?:his|her|their)\\s+(?:mouth|lips?)\\s+(?:\\w+\\s+)?(?:twitch|quirk|curl)\\w*"
+        "\\bcorners?\\s+of\\s+(?:his|her|their|its|the|a)\\s+(?:\\w+\\s+)?mouth\\s+(?:\\w+\\s+)?(?:twitch|cur[l]|lift|quirk|tug|rise|rose|turn)\\w*",
+        "\\b(?:his|her|their)\\s+(?:mouth|lips?)\\s+(?:\\w+\\s+)?(?:twitch|quirk|cur[l])\\w*"
       ]
     },
     {
