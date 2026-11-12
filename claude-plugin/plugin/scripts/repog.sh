@@ -26,7 +26,8 @@ root=$(cd "$(dirname "$0")/.." && pwd) || fail helper_invalid "cannot locate the
 script="$root/tools/$helper.py"
 [ -f "$script" ] || fail helper_invalid "unknown helper: $helper" 2
 
-check='import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)'
+# The version probe is a file in the plugin, not an inline program.
+check="$root/tools/python_check.py"
 
 # UTF-8 for files, pipes, and the console, whatever the Windows code page is.
 PYTHONUTF8=1
@@ -38,14 +39,14 @@ export PYTHONUTF8 PYTHONIOENCODING
 usable() {
   found=$(command -v "$1" 2>/dev/null) || return 1
   case "$found" in *WindowsApps*) return 1 ;; esac
-  "$1" -c "$check" >/dev/null 2>&1
+  "$1" "$check" >/dev/null 2>&1
 }
 
 if usable python3; then
   exec python3 -B "$script" "$@"
 elif usable python; then
   exec python -B "$script" "$@"
-elif command -v py >/dev/null 2>&1 && py -3 -c "$check" >/dev/null 2>&1; then
+elif command -v py >/dev/null 2>&1 && py -3 "$check" >/dev/null 2>&1; then
   exec py -3 -B "$script" "$@"
 fi
 

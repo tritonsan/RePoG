@@ -16,17 +16,18 @@ if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
   fi
 fi
 if [ -z "$PY" ]; then
-  check='import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)'
+  # The version probe is a file in the plugin, not an inline program.
+  check="${CLAUDE_PLUGIN_ROOT:-$(dirname "$0")/..}/tools/python_check.py"
   for candidate in python python3; do
     found=$(command -v "$candidate" 2>/dev/null) || continue
     # The Windows Store alias only opens the Store; skip it.
     case "$found" in *WindowsApps*) continue ;; esac
-    if "$candidate" -c "$check" >/dev/null 2>&1; then
+    if "$candidate" "$check" >/dev/null 2>&1; then
       PY="$candidate"
       break
     fi
   done
-  if [ -z "$PY" ] && command -v py >/dev/null 2>&1 && py -3 -c "$check" >/dev/null 2>&1; then
+  if [ -z "$PY" ] && command -v py >/dev/null 2>&1 && py -3 "$check" >/dev/null 2>&1; then
     PY="py -3"
   fi
   if [ -n "$PY" ] && [ -n "$cache" ]; then

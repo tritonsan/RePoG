@@ -308,7 +308,7 @@ def test_a_cached_interpreter_that_left_path_is_probed_again(tmp_path: Path) -> 
     probe = subprocess.run(
         [SH, "-c", '. "$1"; printf "%s" "$PY"', "sh", str(PLUGIN / "scripts" / "hook-python.sh")],
         capture_output=True,
-        env={**os.environ, "CLAUDE_PLUGIN_DATA": str(data)},
+        env={**os.environ, "CLAUDE_PLUGIN_DATA": str(data), "CLAUDE_PLUGIN_ROOT": str(PLUGIN)},
         timeout=60,
     )
     chosen = probe.stdout.decode("ascii")
