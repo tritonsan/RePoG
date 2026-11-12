@@ -9,6 +9,8 @@ adult-content service: the 18+ limit exists because campaigns can carry dark
 themes such as violence, death, and crime, and sexual content is never
 explicit.
 
+Privacy: [what RePoG stores and where](https://github.com/tritonsan/RePoG/blob/main/claude-plugin/plugin/README.md#privacy).
+
 ## Requirements
 
 - Claude Code (terminal, IDE extension, or the desktop app's Code tab).
