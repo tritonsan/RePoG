@@ -202,6 +202,12 @@ The notice the Game Master gives before play, in English and Turkish:
 
 ## Privacy
 
+The JSON files in `packs/languages/` and the patterns in
+`tools/presentation_lint.py` are regular-expression word lists that the
+presentation lint matches against Claude's replies; nothing in them is run as a
+command, and no part of the plugin downloads or executes code. The hooks run
+only the bundled Python helpers in `tools/`.
+
 The plugin collects nothing and sends nothing to any service of its own. Its
 helpers and hooks make no network calls and it has no telemetry or accounts.
 Web research happens only when you ask for it, through Claude's own web tools.
